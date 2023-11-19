@@ -1719,6 +1719,9 @@ components:
       properties:
         "name": { type: string }
         "label": { type: string }
+        "description":
+          type: string
+          description: The description/tooltip shown in the user interface.
         "settings":
           type: array
           items: { $ref: "#/components/schemas/AvailableJobSetting" }
