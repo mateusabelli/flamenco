@@ -75,6 +75,8 @@ flamenco-worker:
 # development purposes. Flamenco Manager and Worker each perform their own
 # migration at startup. In normal use, you'll never need those commands. This is
 # also why the `with-deps` target doesn't install the Goose CLI program.
+#
+# Run `go install github.com/pressly/goose/v3/cmd/goose@latest` to install.
 db-migrate-status:
 	goose -dir ./internal/manager/persistence/migrations/ sqlite3 flamenco-manager.sqlite status
 db-migrate-up:
