@@ -76,8 +76,19 @@ class FLAMENCO_OT_fetch_job_types(FlamencoOpMixin, bpy.types.Operator):
             return {"CANCELLED"}
 
         if old_job_type_name:
-            # TODO: handle cases where the old job type no longer exists.
-            scene.flamenco_job_type = old_job_type_name
+            try:
+                scene.flamenco_job_type = old_job_type_name
+            except TypeError:  # Thrown when the old job type no longer exists.
+                # You cannot un-set an enum property, and 'empty string' is not
+                # a valid value either, so better to just remove the underlying
+                # ID property.
+                del scene["flamenco_job_type"]
+
+                self.report(
+                    {"WARNING"},
+                    "Job type %r no longer available, choose another one"
+                    % old_job_type_name,
+                )
 
         job_types.update_job_type_properties(scene)
         return {"FINISHED"}
