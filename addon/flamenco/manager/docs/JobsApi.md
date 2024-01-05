@@ -5,6 +5,7 @@ All URIs are relative to *http://localhost*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**delete_job**](JobsApi.md#delete_job) | **DELETE** /api/v3/jobs/{job_id} | Request deletion this job, including its tasks and any log files. The actual deletion may happen in the background. No job files will be deleted (yet). 
+[**delete_job_mass**](JobsApi.md#delete_job_mass) | **DELETE** /api/v3/jobs/mass-delete | Mark jobs for deletion, based on certain criteria.
 [**delete_job_what_would_it_do**](JobsApi.md#delete_job_what_would_it_do) | **GET** /api/v3/jobs/{job_id}/what-would-delete-do | Get info about what would be deleted when deleting this job. The job itself, its logs, and the last-rendered images will always be deleted. The job files are only deleted conditionally, and this operation can be used to figure that out. 
 [**fetch_global_last_rendered_info**](JobsApi.md#fetch_global_last_rendered_info) | **GET** /api/v3/jobs/last-rendered | Get the URL that serves the last-rendered images.
 [**fetch_job**](JobsApi.md#fetch_job) | **GET** /api/v3/jobs/{job_id} | Fetch info about the job.
@@ -87,6 +88,75 @@ No authorization required
 |-------------|-------------|------------------|
 **204** | Default response, deletion has been triggered. |  -  |
 **0** | Unexpected error. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **delete_job_mass**
+> delete_job_mass(job_mass_deletion_selection)
+
+Mark jobs for deletion, based on certain criteria.
+
+### Example
+
+
+```python
+import time
+import flamenco.manager
+from flamenco.manager.api import jobs_api
+from flamenco.manager.model.error import Error
+from flamenco.manager.model.job_mass_deletion_selection import JobMassDeletionSelection
+from pprint import pprint
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = flamenco.manager.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with flamenco.manager.ApiClient() as api_client:
+    # Create an instance of the API class
+    api_instance = jobs_api.JobsApi(api_client)
+    job_mass_deletion_selection = JobMassDeletionSelection(
+        last_updated_max=dateutil_parser('1970-01-01T00:00:00.00Z'),
+    ) # JobMassDeletionSelection | Parameters to determine which jobs to delete.
+
+    # example passing only required values which don't have defaults set
+    try:
+        # Mark jobs for deletion, based on certain criteria.
+        api_instance.delete_job_mass(job_mass_deletion_selection)
+    except flamenco.manager.ApiException as e:
+        print("Exception when calling JobsApi->delete_job_mass: %s\n" % e)
+```
+
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **job_mass_deletion_selection** | [**JobMassDeletionSelection**](JobMassDeletionSelection.md)| Parameters to determine which jobs to delete. |
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**204** | Jobs were succesfully marked for deletion. |  -  |
+**416** | There were no jobs that match the request. |  -  |
+**0** | Error message |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

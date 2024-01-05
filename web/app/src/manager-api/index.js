@@ -31,6 +31,7 @@ import JobAllOf from './model/JobAllOf';
 import JobBlocklistEntry from './model/JobBlocklistEntry';
 import JobDeletionInfo from './model/JobDeletionInfo';
 import JobLastRenderedImageInfo from './model/JobLastRenderedImageInfo';
+import JobMassDeletionSelection from './model/JobMassDeletionSelection';
 import JobPriorityChange from './model/JobPriorityChange';
 import JobStatus from './model/JobStatus';
 import JobStatusChange from './model/JobStatusChange';
@@ -241,6 +242,12 @@ export {
      * @property {module:model/JobLastRenderedImageInfo}
      */
     JobLastRenderedImageInfo,
+
+    /**
+     * The JobMassDeletionSelection model constructor.
+     * @property {module:model/JobMassDeletionSelection}
+     */
+    JobMassDeletionSelection,
 
     /**
      * The JobPriorityChange model constructor.

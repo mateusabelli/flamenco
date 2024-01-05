@@ -20,6 +20,7 @@ import Job from '../model/Job';
 import JobBlocklistEntry from '../model/JobBlocklistEntry';
 import JobDeletionInfo from '../model/JobDeletionInfo';
 import JobLastRenderedImageInfo from '../model/JobLastRenderedImageInfo';
+import JobMassDeletionSelection from '../model/JobMassDeletionSelection';
 import JobPriorityChange from '../model/JobPriorityChange';
 import JobStatusChange from '../model/JobStatusChange';
 import JobTasksSummary from '../model/JobTasksSummary';
@@ -90,6 +91,51 @@ export default class JobsApi {
      */
     deleteJob(jobId) {
       return this.deleteJobWithHttpInfo(jobId)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * Mark jobs for deletion, based on certain criteria.
+     * @param {module:model/JobMassDeletionSelection} jobMassDeletionSelection Parameters to determine which jobs to delete.
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing HTTP response
+     */
+    deleteJobMassWithHttpInfo(jobMassDeletionSelection) {
+      let postBody = jobMassDeletionSelection;
+      // verify the required parameter 'jobMassDeletionSelection' is set
+      if (jobMassDeletionSelection === undefined || jobMassDeletionSelection === null) {
+        throw new Error("Missing the required parameter 'jobMassDeletionSelection' when calling deleteJobMass");
+      }
+
+      let pathParams = {
+      };
+      let queryParams = {
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = [];
+      let contentTypes = ['application/json'];
+      let accepts = ['application/json'];
+      let returnType = null;
+      return this.apiClient.callApi(
+        '/api/v3/jobs/mass-delete', 'DELETE',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * Mark jobs for deletion, based on certain criteria.
+     * @param {module:model/JobMassDeletionSelection} jobMassDeletionSelection Parameters to determine which jobs to delete.
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}
+     */
+    deleteJobMass(jobMassDeletionSelection) {
+      return this.deleteJobMassWithHttpInfo(jobMassDeletionSelection)
         .then(function(response_and_data) {
           return response_and_data.data;
         });
