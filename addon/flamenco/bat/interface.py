@@ -224,6 +224,11 @@ def copy(  # type: ignore
     # these, Strict Pointer Mode is disabled.
     submodules.blendfile.set_strict_pointer_mode(False)
 
+    log.info("BAT pack parameters:")
+    log.info("base_blendfile = %r", base_blendfile)
+    log.info("project        = %r", project)
+    log.info("target         = %r", target)
+
     if packer_kwargs is None:
         packer_kwargs = {}
     packer = packer_class(
