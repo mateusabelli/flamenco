@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Callable, TypeAlias
 import dataclasses
 
+from .bat.submodules import bpathlib
+
 
 def for_blendfile(blendfile: Path, strategy: str) -> Path:
     """Return what is considered to be the project directory containing the given file.
@@ -43,7 +45,7 @@ def _finder_subversion(blendfile: Path) -> Path:
 def _search_path_marker(blendfile: Path, marker_path: str) -> Path:
     """Go up the directory hierarchy until a file or directory 'marker_path' is found."""
 
-    blendfile_dir = blendfile.absolute().parent
+    blendfile_dir = bpathlib.make_absolute(blendfile).parent
 
     directory = blendfile_dir
     while True:

@@ -29,6 +29,7 @@ from collections import deque
 from pathlib import Path
 
 from . import time_tracker
+from .submodules import bpathlib
 
 CACHE_ROOT = Path().home() / ".cache/shaman-client/shasums"
 MAX_CACHE_FILES_AGE_SECS = 3600 * 24 * 60  # 60 days
@@ -93,7 +94,7 @@ def _cache_path(filepath: Path) -> Path:
     """Compute the cache file for the given file path."""
 
     fs_encoding = sys.getfilesystemencoding()
-    filepath = filepath.absolute()
+    filepath = bpathlib.make_absolute(filepath)
 
     # Reverse the directory, because most variation is in the last bytes.
     rev_dir = str(filepath.parent)[::-1]

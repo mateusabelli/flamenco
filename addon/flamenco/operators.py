@@ -383,7 +383,11 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             self.log.info(
                 "File is not already in job storage location, copying it there"
             )
-            self.blendfile_on_farm = self._bat_pack_filesystem(context, blendfile)
+            try:
+                self.blendfile_on_farm = self._bat_pack_filesystem(context, blendfile)
+            except FileNotFoundError:
+                self._quit(context)
+                return {"CANCELLED"}
 
         context.window_manager.modal_handler_add(self)
         wm = context.window_manager
@@ -403,12 +407,11 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         # Get project path from addon preferences.
         prefs = preferences.get(context)
         project_path: Path = prefs.project_root()
-        try:
-            project_path = Path(bpy.path.abspath(str(project_path))).resolve()
-        except FileNotFoundError:
-            # Path.resolve() will raise a FileNotFoundError if the project path doesn't exist.
+        project_path = bpathlib.make_absolute(Path(bpy.path.abspath(str(project_path))))
+
+        if not project_path.exists():
             self.report({"ERROR"}, "Project path %s does not exist" % project_path)
-            raise  # TODO: handle this properly.
+            raise FileNotFoundError()
 
         # Determine where the blend file will be stored.
         unique_dir = "%s-%s" % (

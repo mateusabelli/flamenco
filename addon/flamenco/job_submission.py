@@ -131,10 +131,10 @@ def is_file_inside_job_storage(context: bpy.types.Context, blendfile: Path) -> b
         the job storage dir is accessible by the workers already.
     """
 
-    blendfile = blendfile.absolute().resolve()
+    blendfile = bpathlib.make_absolute(blendfile)
 
     prefs = preferences.get(context)
-    job_storage = Path(prefs.job_storage).absolute().resolve()
+    job_storage = bpathlib.make_absolute(Path(prefs.job_storage))
 
     log.info("Checking whether the file is already inside the job storage")
     log.info("    file   : %s", blendfile)
