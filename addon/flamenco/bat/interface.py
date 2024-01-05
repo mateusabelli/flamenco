@@ -147,7 +147,8 @@ class PackThread(threading.Thread):
         try:
             self._run()
         except BaseException as ex:
-            log.error("Error packing with BAT: %s", ex)
+            self._set_bat_status("ABORTED")
+            log.exception("Error packing with BAT: %s", ex)
             self.queue.put(MsgException(ex=ex))
         finally:
             with _packer_lock:
