@@ -8,6 +8,7 @@ bugs in actually-released versions.
 
 - Fix [#104263: Error performing BAT pack in Windows with shared storage](https://projects.blender.org/studio/flamenco/issues/104263).
 - Add API call for mass-deleting old jobs. This is not exposed in the Manager web interface yet, so it requires using the API explorer for now.
+- Upgrade Blender Asset Tracer (BAT) to 1.18 to fix a few bugs and add support for OpenVDB files.
 
 ## 3.3.1 - released 2023-12-14
 
