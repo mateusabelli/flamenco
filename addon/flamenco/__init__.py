@@ -12,7 +12,7 @@ bl_info = {
     "doc_url": "https://flamenco.blender.org/",
     "category": "System",
     "support": "COMMUNITY",
-    "warning": "This is version 3.4-beta0 of the add-on, which is not a stable release",
+    "warning": "",
 }
 
 from pathlib import Path
