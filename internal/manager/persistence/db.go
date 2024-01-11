@@ -18,6 +18,9 @@ import (
 // DB provides the database interface.
 type DB struct {
 	gormDB *gorm.DB
+
+	// See PeriodicIntegrityCheck().
+	consistencyCheckRequests chan struct{}
 }
 
 // Model contains the common database fields for most model structs.
@@ -96,6 +99,11 @@ func openDBWithConfig(dsn string, config *gorm.Config) (*DB, error) {
 
 	db := DB{
 		gormDB: gormDB,
+
+		// Buffer one request, so that even when a consistency check is already
+		// running, another can be queued without blocking. Queueing more than one
+		// doesn't make sense, though.
+		consistencyCheckRequests: make(chan struct{}, 1),
 	}
 
 	// Close the database connection if there was some error. This prevents

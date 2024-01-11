@@ -25,6 +25,8 @@ type PersistenceService interface {
 	// FetchJobsDeletionRequested returns the UUIDs of to-be-deleted jobs.
 	FetchJobsDeletionRequested(ctx context.Context) ([]string, error)
 	DeleteJob(ctx context.Context, jobUUID string) error
+
+	RequestIntegrityCheck()
 }
 
 // PersistenceService should be a subset of persistence.DB

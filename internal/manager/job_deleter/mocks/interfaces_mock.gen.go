@@ -81,6 +81,18 @@ func (mr *MockPersistenceServiceMockRecorder) FetchJobsDeletionRequested(arg0 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchJobsDeletionRequested", reflect.TypeOf((*MockPersistenceService)(nil).FetchJobsDeletionRequested), arg0)
 }
 
+// RequestIntegrityCheck mocks base method.
+func (m *MockPersistenceService) RequestIntegrityCheck() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RequestIntegrityCheck")
+}
+
+// RequestIntegrityCheck indicates an expected call of RequestIntegrityCheck.
+func (mr *MockPersistenceServiceMockRecorder) RequestIntegrityCheck() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestIntegrityCheck", reflect.TypeOf((*MockPersistenceService)(nil).RequestIntegrityCheck))
+}
+
 // RequestJobDeletion mocks base method.
 func (m *MockPersistenceService) RequestJobDeletion(arg0 context.Context, arg1 *persistence.Job) error {
 	m.ctrl.T.Helper()

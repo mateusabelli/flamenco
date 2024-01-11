@@ -49,6 +49,7 @@ func (db *DB) PeriodicIntegrityCheck(
 		case <-ctx.Done():
 			return
 		case <-time.After(period):
+		case <-db.consistencyCheckRequests:
 		}
 
 		ok := db.performIntegrityCheck(ctx)
@@ -59,11 +60,23 @@ func (db *DB) PeriodicIntegrityCheck(
 	}
 }
 
+// RequestIntegrityCheck triggers a check of the database persistency.
+func (db *DB) RequestIntegrityCheck() {
+	select {
+	case db.consistencyCheckRequests <- struct{}{}:
+		// Don't do anything, the work is done.
+	default:
+		log.Debug().Msg("database: could not trigger integrity check, another check might already be queued.")
+	}
+}
+
 // performIntegrityCheck uses a few 'pragma' SQL statements to do some integrity checking.
 // Returns true on OK, false if there was an issue. Issues are always logged.
 func (db *DB) performIntegrityCheck(ctx context.Context) (ok bool) {
 	checkCtx, cancel := context.WithTimeout(ctx, integrityCheckTimeout)
 	defer cancel()
+
+	log.Debug().Msg("database: performing integrity check")
 
 	if !db.pragmaIntegrityCheck(checkCtx) {
 		return false
