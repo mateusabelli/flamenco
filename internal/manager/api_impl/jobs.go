@@ -175,6 +175,7 @@ func (f *Flamenco) DeleteJob(e echo.Context, jobID string) error {
 	}
 
 	logger = logger.With().
+		Uint("dbID", dbJob.ID).
 		Str("currentstatus", string(dbJob.Status)).
 		Logger()
 	logger.Info().Msg("job deletion requested")
