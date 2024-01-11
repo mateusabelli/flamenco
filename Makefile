@@ -351,6 +351,7 @@ RELEASE_PACKAGE_SHAFILE := flamenco-${VERSION}.sha256
 
 .PHONY: release-package
 release-package:
+	$(MAKE) -s vet
 	$(MAKE) -s release-package-linux
 	$(MAKE) -s release-package-darwin
 	$(MAKE) -s release-package-windows
