@@ -491,7 +491,7 @@ func (f *Flamenco) TaskOutputProduced(e echo.Context, taskID string) error {
 		}
 	}
 
-	logger.Info().Msg("TaskOutputProduced: accepted last-rendered image for processing")
+	logger.Debug().Msg("TaskOutputProduced: accepted last-rendered image for processing")
 	return e.NoContent(http.StatusAccepted)
 }
 
