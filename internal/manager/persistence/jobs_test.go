@@ -155,6 +155,24 @@ func TestDeleteJob(t *testing.T) {
 		"all remaining tasks should belong to the other job")
 }
 
+func TestDeleteJobWithoutFK(t *testing.T) {
+	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	defer cancel()
+
+	authJob := createTestAuthoredJobWithTasks()
+	authJob.Name = "Job to delete"
+	persistAuthoredJob(t, ctx, db, authJob)
+
+	require.NoError(t, db.pragmaForeignKeys(false))
+
+	err := db.DeleteJob(ctx, authJob.JobID)
+	require.ErrorIs(t, err, ErrDeletingWithoutFK)
+
+	// Test the deletion did not happen.
+	_, err = db.FetchJob(ctx, authJob.JobID)
+	assert.NoError(t, err, "job should not have been deleted")
+}
+
 func TestRequestJobDeletion(t *testing.T) {
 	ctx, close, db, job1, authoredJob1 := jobTasksTestFixtures(t)
 	defer close()

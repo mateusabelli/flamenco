@@ -8,6 +8,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"time"
 
@@ -269,6 +270,15 @@ func (db *DB) FetchJob(ctx context.Context, jobUUID string) (*Job, error) {
 // DeleteJob deletes a job from the database.
 // The deletion cascades to its tasks and other job-related tables.
 func (db *DB) DeleteJob(ctx context.Context, jobUUID string) error {
+	// As a safety measure, refuse to delete jobs unless foreign key constraints are active.
+	fkEnabled, err := db.areForeignKeysEnabled()
+	if err != nil {
+		return fmt.Errorf("checking whether foreign keys are enabled: %w", err)
+	}
+	if !fkEnabled {
+		return ErrDeletingWithoutFK
+	}
+
 	tx := db.gormDB.WithContext(ctx).
 		Where("uuid = ?", jobUUID).
 		Delete(&Job{})

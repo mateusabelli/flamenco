@@ -13,6 +13,8 @@ var (
 	ErrTaskNotFound      = PersistenceError{Message: "task not found", Err: gorm.ErrRecordNotFound}
 	ErrWorkerNotFound    = PersistenceError{Message: "worker not found", Err: gorm.ErrRecordNotFound}
 	ErrWorkerTagNotFound = PersistenceError{Message: "worker tag not found", Err: gorm.ErrRecordNotFound}
+
+	ErrDeletingWithoutFK = errors.New("refusing to delete a job when foreign keys are not enabled on the database")
 )
 
 type PersistenceError struct {
