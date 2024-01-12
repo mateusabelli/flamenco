@@ -4,7 +4,7 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
-## 3.4 - released 2024-01-11
+## 3.4 - released 2024-01-12
 
 - Fix [#104263: Error performing BAT pack in Windows with shared storage](https://projects.blender.org/studio/flamenco/issues/104263).
 - Add API call for mass-deleting old jobs. This is not exposed in the Manager web interface yet, so it requires using the API explorer for now.
