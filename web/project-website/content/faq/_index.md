@@ -47,6 +47,39 @@ themselves. If you do, please [report a bug][bug].
 [bug]: https://projects.blender.org/studio/flamenco/issues/new?template=.gitea%2fissue_template%2fbug.yaml
 
 
+## How do I make the Workers render on GPU?
+
+Blender needs to know which method to use (CUDA, Optix, etc.), and on which
+video card. This is something you'll need to configure yourself. Start Blender
+on the worker machine, and then [update the preferences][cycles-gpu-prefs]. If
+you disabled automatic saving of preferences, be sure to save them before you
+quit Blender.
+
+Also be sure to *not* use `--factory-startup` in your Blender CLI arguments, as
+that will reset Blender back to using the CPU. If you're using bog-standard
+Flamenco settings, then don't worry about this, it doesn't use that option.
+
+[cycles-gpu-prefs]: https://docs.blender.org/manual/en/latest/editors/preferences/system.html#cycles-render-device
+
+
+## Can I make a Worker render on a specific GPU?
+
+In short: not really, not only with Flamenco, anyway.
+
+The issue is that Blender has no commandline options to reliably select the
+GPU(s) to use. The last information the Flamenco team heard of this was that
+certain drivers are unreliably reporting the GPU order when they are of
+identical make & model. So you could in theory tell Blender to run on GPU #1,
+and another Blender on GPU #2, but since the second Blender may see them in a
+different order, in the end both would use the same GPU, and one GPU would be
+idle.
+
+A possible workarounds could be to have multiple copies of Blender on your
+computer, and using the utilities of your video card to configure each Blender
+copy to only use a specific GPU. Then run multiple Flamenco Workers on that
+machine, each having a different Blender on its `$PATH`.
+
+
 ## My Worker cannot find my Manager, what do I do?
 
 First check the Manager output on the terminal, to see if it shows any messages
