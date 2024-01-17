@@ -163,22 +163,3 @@ complex project, and relies on a lot of components
 ([source](https://www.opencue.io/docs/getting-started/)), whereas Flamenco is
 made for simplicity and use in small studios or at home, running on your own
 hardware.
-
-## Why do I get an Error Performing BAT Pack Message?
-
-As of yet, we've only encountered the issue below on Windows installations. If
-you get this issue, please {{< flamenco/reportBugLink size="small" >}}let us
-know{{< /flamenco/reportBugLink >}} so that it can be properly investigated.
-
-```
-Error performing BAT pack: [WinError 267] The directory name is invalid:
-'C:\\The\\Path\\To\\Your\\Project.blend'
-```
-
-This is most likely some sort of incompatibility that occurs in some cases where
-you might be using linked assets from an asset library in your project.
-
-To work around this issue, try the following:
-
- * In Blender, use File → External Data → Make Paths Relative.
- * Submit your job again.
