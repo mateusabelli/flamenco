@@ -5,33 +5,26 @@ geekdocNav: false
 geekdocHidden: true
 ---
 {{< toc format=html >}}
-## What is new in Flamenco 3?
 
-Flamenco was pretty much rebuilt from scratch between versions 2 and 3. One of
-the major goals of Flamenco 3 is to simplify the installation & use.
+## Features
 
-Compared to version 2, Flamenco 3:
+### What is new in Flamenco 3?
 
-- no longer requires an online component; Flamenco Server has been removed.
-- no longer requires you to install & configure a database.
-- works 100% on your own infrastructure.
-- just has two executables for you to run (Manager and Worker).
-- has its own dedicated Blender add-on, which can be downloaded directly from Flamenco Manager.
-- supports [custom job types][custom-jobs] written in JavaScript.
-- comes bundled with FFmpeg; you only need to install Blender.
-
-[custom-jobs]: {{< ref "usage/job-types" >}}
-
-### Flamenco 3 Change Log
-
-The more interesting changes between Flamenco 3 versions are listed in the [changelog][changelog].
+The more interesting changes in Flamenco versions are listed in the [changelog][changelog].
 
 [changelog]: https://projects.blender.org/studio/flamenco/src/branch/main/CHANGELOG.md
 
 
+### ​What's the difference with OpenCue?
+
+OpenCue is aimed at a different audience than Flamenco. OpenCue is a large and
+complex project, and relies on a lot of components
+([source](https://www.opencue.io/docs/getting-started/)), whereas Flamenco is
+made for simplicity and use in small studios or at home, running on your own
+hardware.
 
 
-## I use a mix of different operating systems, can I still use Flamenco?
+### I use a mix of different operating systems, can I still use Flamenco?
 
 Yes, absolutely. To support multiple platforms, first configure your Manager for
 its own platform (so if you run that on Linux, use Linux paths). Then you can
@@ -47,7 +40,7 @@ themselves. If you do, please [report a bug][bug].
 [bug]: https://projects.blender.org/studio/flamenco/issues/new?template=.gitea%2fissue_template%2fbug.yaml
 
 
-## How do I make the Workers render on GPU?
+### How do I make the Workers render on GPU?
 
 Blender needs to know which method to use (CUDA, Optix, etc.), and on which
 video card. This is something you'll need to configure yourself. Start Blender
@@ -62,7 +55,7 @@ Flamenco settings, then don't worry about this, it doesn't use that option.
 [cycles-gpu-prefs]: https://docs.blender.org/manual/en/latest/editors/preferences/system.html#cycles-render-device
 
 
-## Can I make a Worker render on a specific GPU?
+### Can I make a Worker render on a specific GPU?
 
 In short: not really, not only with Flamenco, anyway.
 
@@ -80,34 +73,7 @@ copy to only use a specific GPU. Then run multiple Flamenco Workers on that
 machine, each having a different Blender on its `$PATH`.
 
 
-## My Worker cannot find my Manager, what do I do?
-
-First check the Manager output on the terminal, to see if it shows any messages
-about "auto-discovery" or "UPnP/SSDP". Most of the time it's actually Spotify
-getting in the way, so make sure to close that before you start the Manager.
-
-If that doesn't help, you'll have to tell the Worker where it can find the
-Manager. This can be done on the commandline, by running it like
-`flamenco-worker -manager http://192.168.0.1:8080/` (adjust the address to your
-situation) or more permanently by [editing the worker configuration
-file][workercfg].
-
-[workercfg]: {{< ref "usage/worker-configuration" >}}
-
-## My Worker cannot find Blender, what do I do?
-
-When installing and starting the Flamenco Worker you may see a warning in the logs that says
-the Worker cannot find Blender.
-
-```
-WRN Blender could not be found. Flamenco Manager will have to supply the full path to Blender when Tasks are sent to this Worker. For more help see https://flamenco.blender.org/usage/variables/blender/
-```
-
-If Flamenco cannot locate Blender on the system it is possible to use a [two-way variable named `blender`][blendervar] for each platform (eg: Windows, Linux, or MacOS). This path to Blender is then sent to the Worker for each render task. Note that the Worker will still show the warning at startup, as it cannot find Blender by itself; this is fine, because you now have configured the Manager to provide this path.
-
-[blendervar]: {{< ref "usage/variables/blender" >}}
-
-## Can I change the paths/names of the rendered files?
+### Can I change the paths/names of the rendered files?
 
 Where Flamenco places the rendered files is determined by the job type. You can
 create [your own custom job type][jobtypes] or check the existing
@@ -116,7 +82,7 @@ even add your own custom job settings like a sequence identifier and use that to
 determine the location of rendered files.
 
 
-## Can Flamenco render a single image across multiple Workers?
+### Can Flamenco render a single image across multiple Workers?
 
 Flamenco does not support this at the moment. In theory this would be possible
 with a [custom job type][jobtypes]. With the Cycles render engine it might be
@@ -127,7 +93,7 @@ If you have made a custom job type that does this, please contact us to get it
 added to the [third-party jobs section][thirdpartyjobs].
 
 
-## Can I use the Compositor to output multiple EXR files or Passes?
+### Can I use the Compositor to output multiple EXR files or Passes?
 
 This is possible with Flamenco, but it takes a bit of work. Although it's not
 managed by Flamenco's default job types, you can use a [custom job type][jobtypes]
@@ -148,7 +114,7 @@ If you wish to contribute to the project, you're invited to
 [getinvolved]: {{< ref "development/get-involved" >}}
 
 
-## Can I use SyncThing, Dropbox, Google Drive, or other file syncing software?
+### Can I use SyncThing, Dropbox, Google Drive, or other file syncing software?
 
 Flamenco assumes that once a file has been written by one worker, it is
 immediately available to any other worker, like what you'd get with a NAS.
@@ -167,14 +133,45 @@ but that's all untested. The hardest part is to know when all necessary files
 have arrived on a specific worker, without waiting for *all* syncing to be
 completed (as someone may have just submitted another job).
 
-## What do "Error: Cached job type is old" or "job type etag does not match" mean?
+
+
+## Troubleshooting
+
+### My Worker cannot find my Manager, what do I do?
+
+First check the Manager output on the terminal, to see if it shows any messages
+about "auto-discovery" or "UPnP/SSDP". Most of the time it's actually Spotify
+getting in the way, so make sure to close that before you start the Manager.
+
+If that doesn't help, you'll have to tell the Worker where it can find the
+Manager. This can be done on the commandline, by running it like
+`flamenco-worker -manager http://192.168.0.1:8080/` (adjust the address to your
+situation) or more permanently by [editing the worker configuration
+file][workercfg].
+
+[workercfg]: {{< ref "usage/worker-configuration" >}}
+
+### My Worker cannot find Blender, what do I do?
+
+When installing and starting the Flamenco Worker you may see a warning in the logs that says
+the Worker cannot find Blender.
+
+```
+WRN Blender could not be found. Flamenco Manager will have to supply the full path to Blender when Tasks are sent to this Worker. For more help see https://flamenco.blender.org/usage/variables/blender/
+```
+
+If Flamenco cannot locate Blender on the system it is possible to use a [two-way variable named `blender`][blendervar] for each platform (eg: Windows, Linux, or MacOS). This path to Blender is then sent to the Worker for each render task. Note that the Worker will still show the warning at startup, as it cannot find Blender by itself; this is fine, because you now have configured the Manager to provide this path.
+
+[blendervar]: {{< ref "usage/variables/blender" >}}
+
+### What do "Error: Cached job type is old" or "job type etag does not match" mean?
 
 This means that you have to click on the little "Refresh" icon next to the job type:
 
 <img src="job-types-refresh.webp" width="396" height="41">
 
 
-## Render jobs hang after the first chunk of frames, what's wrong?
+### Render jobs hang after the first chunk of frames, what's wrong?
 
 When rendering a chunk of frames, Flamenco waits until Blender quits. This
 signals Flamenco that it finished rendering. Sometimes an add-on prevents
@@ -182,17 +179,8 @@ Blender from quitting, and thus Flamenco will think it is still doing something.
 Disable add-ons one-by-one to see which one is causing this issue.
 
 
-## What does "command exited abnormally with code 1" mean?
+### What does "command exited abnormally with code 1" mean?
 
 It means that the program (probably Blender) exited with an error status. Take a
 look at the task log, which you can access by going to the task in Flamenco's
 web interface.
-
-
-## ​What's the difference with OpenCue?
-
-OpenCue is aimed at a different audience than Flamenco. OpenCue is a large and
-complex project, and relies on a lot of components
-([source](https://www.opencue.io/docs/getting-started/)), whereas Flamenco is
-made for simplicity and use in small studios or at home, running on your own
-hardware.
