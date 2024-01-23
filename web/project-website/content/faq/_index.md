@@ -116,23 +116,11 @@ If you wish to contribute to the project, you're invited to
 
 ### Can I use SyncThing, Dropbox, Google Drive, or other file syncing software?
 
-Flamenco assumes that once a file has been written by one worker, it is
-immediately available to any other worker, like what you'd get with a NAS.
-Similarly, it assumes that when a job has been submitted, it can be worked on
-immediately.
+In short: No. Sharing files using Syncthing, OwnCloud, Dropbox, Google Drive,
+Onedrive, etc. is not supported by Flamenco. For more information, see [Cloud
+Storage Services][cloud-storage].
 
-Such assumptions no longer hold true when using an asynchronous service like
-SyncThing, Dropbox, etc.
-
-Note that this is not just about the initally submitted files. Also the
-rendering of a preview video from individual images assumes that those images
-are immediately accessible after they've been rendered.
-
-It might be possible to create a complex [custom job type][jobtypes] for this,
-but that's all untested. The hardest part is to know when all necessary files
-have arrived on a specific worker, without waiting for *all* syncing to be
-completed (as someone may have just submitted another job).
-
+[cloud-storage]: {{< ref "/usage/shared-storage" >}}#cloud-storage-services
 
 
 ## Troubleshooting

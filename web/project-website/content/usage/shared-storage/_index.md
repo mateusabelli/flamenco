@@ -67,3 +67,28 @@ file you're submitting.
 This requires a bit more to explain. See [Shaman Storage System][shaman].
 
 [shaman]: {{< relref "shaman" >}}
+
+
+## Cloud Storage Services
+
+Sharing files using Syncthing, OwnCloud, Dropbox, Google Drive, Onedrive, etc.
+is **not supported by Flamenco**.
+
+Flamenco assumes that once a file has been written by one worker, it is
+immediately available to any other worker, like what you'd get with a NAS.
+Similarly, it assumes that when a job has been submitted, it can be worked on
+immediately.
+
+Such assumptions no longer hold true when using an asynchronous service like
+SyncThing, Dropbox, etc.
+
+Note that this is not just about the initally submitted files. Flamenco creates
+a video from the rendered images; this also assumes that those images are
+accessible after they've been rendered and saved to the storage.
+
+It might be possible to create a complex [custom job type][jobtypes] for this,
+but that's all untested. The hardest part is to know when all necessary files
+have arrived on a specific worker, without waiting for *all* syncing to be
+completed (as someone may have just submitted another job).
+
+[jobtypes]: {{< ref "/usage/job-types" >}}
