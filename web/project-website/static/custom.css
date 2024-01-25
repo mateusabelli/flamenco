@@ -129,7 +129,6 @@ body {
 }
 
 h3 {
-  padding-top: 1rem;
   margin-bottom: 0.5rem;
 }
 
@@ -180,6 +179,21 @@ h3 {
 
 .gdoc-menu-header__items>span {
   padding-left: 1rem;
+}
+
+.gdoc-nav nav section {
+  /* Make the font slightly smaller. */
+  font-size: 0.9rem;
+}
+
+.gdoc-nav__list li {
+  /* Squeeze the navigation items a little closer together. */
+  margin: 0.6rem 0;
+}
+.gdoc-nav__entry.is-active {
+  /* Make the current page in the documentation navigation tree more visible. */
+  text-decoration: none;
+  border-bottom: thin dashed var(--link-color-visited);
 }
 
 .flamenco-download-link {
