@@ -6,6 +6,13 @@ geekdocHidden: true
 ---
 {{< toc format=html >}}
 
+<style>
+h3 {
+  /* Extra spacing between answers. */
+  margin-top: 2rem;
+}
+</style>
+
 ## Features
 
 ### What is new in Flamenco 3?
