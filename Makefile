@@ -40,7 +40,7 @@ JS_API_PKG_NAME=manager
 WEB_STATIC=web/static
 
 # The Hugo package + its version.
-HUGO_PKG := github.com/gohugoio/hugo@v0.101.0
+HUGO_PKG := github.com/gohugoio/hugo@v0.121.2
 
 # Prevent any dependency that requires a C compiler, i.e. only work with pure-Go libraries.
 export CGO_ENABLED=0
