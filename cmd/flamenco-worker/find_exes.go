@@ -11,6 +11,7 @@ import (
 
 	"projects.blender.org/studio/flamenco/internal/find_blender"
 	"projects.blender.org/studio/flamenco/internal/find_ffmpeg"
+	"projects.blender.org/studio/flamenco/pkg/website"
 )
 
 // findFFmpeg tries to find FFmpeg, in order to show its version (if found) or a warning (if not).
@@ -32,7 +33,7 @@ func findBlender() {
 	defer cancel()
 
 	helpMsg := "Flamenco Manager will have to supply the full path to Blender when tasks are sent " +
-		"to this Worker. For more info see https://flamenco.blender.org/usage/variables/blender/"
+		"to this Worker. For more info see " + website.DocVariablesURL
 
 	result, err := find_blender.Find(ctx)
 	switch {

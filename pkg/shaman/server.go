@@ -36,6 +36,7 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/shaman/filestore"
 	"projects.blender.org/studio/flamenco/pkg/shaman/jwtauth"
 	"projects.blender.org/studio/flamenco/pkg/sysinfo"
+	"projects.blender.org/studio/flamenco/pkg/website"
 )
 
 var ErrDoesNotExist = checkout.ErrDoesNotExist
@@ -90,8 +91,8 @@ func checkPlatformSymlinkSupport() {
 	switch {
 	case err != nil:
 		log.Warn().AnErr("cause", err).
-			Msg("unable to determine whether this platform can use symlinks. " +
-				"Please report a bug about this: https://flamenco.blender.org/development/get-involved/")
+			Msgf("unable to determine whether this platform can use symlinks. "+
+				"Please report a bug about this: %s", website.BugReportURL)
 		return
 	case canSymlink:
 		return
@@ -100,8 +101,8 @@ func checkPlatformSymlinkSupport() {
 	osDetail, err := sysinfo.Description()
 	if err != nil {
 		log.Warn().AnErr("cause", err).
-			Msg("unable to find details of your operating system. " +
-				"Please report a bug about this: https://flamenco.blender.org/development/get-involved/")
+			Msgf("unable to find details of your operating system. "+
+				"Please report a bug about this: %s", website.BugReportURL)
 		return
 	}
 
@@ -109,8 +110,8 @@ func checkPlatformSymlinkSupport() {
 		Str("os", runtime.GOOS).
 		Str("arch", runtime.GOARCH).
 		Str("osDetail", osDetail).
-		Msg("this platform does not reliably support symbolic links, " +
-			"see https://flamenco.blender.org/usage/shared-storage/shaman/#requirements")
+		Msgf("this platform does not reliably support symbolic links, "+
+			"see %s", website.ShamanRequirementsURL)
 }
 
 // Go starts goroutines for background operations.

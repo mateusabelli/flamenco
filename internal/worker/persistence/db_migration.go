@@ -10,6 +10,7 @@ import (
 
 	goose "github.com/pressly/goose/v3"
 	"github.com/rs/zerolog/log"
+	"projects.blender.org/studio/flamenco/pkg/website"
 )
 
 //go:embed migrations/*.sql
@@ -41,7 +42,7 @@ func (db *DB) migrate(ctx context.Context) error {
 	// files, so that it can't be forgotten.
 
 	if err := db.pragmaForeignKeys(false); err != nil {
-		log.Fatal().AnErr("cause", err).Msg("could not disable foreign key constraints before performing database migrations, please report a bug at https://flamenco.blender.org/get-involved")
+		log.Fatal().AnErr("cause", err).Msgf("could not disable foreign key constraints before performing database migrations, please report a bug at %s", website.BugReportURL)
 	}
 
 	// Run Goose.
@@ -52,7 +53,7 @@ func (db *DB) migrate(ctx context.Context) error {
 
 	// Re-enable foreign key checks.
 	if err := db.pragmaForeignKeys(true); err != nil {
-		log.Fatal().AnErr("cause", err).Msg("could not re-enable foreign key constraints after performing database migrations, please report a bug at https://flamenco.blender.org/get-involved")
+		log.Fatal().AnErr("cause", err).Msgf("could not re-enable foreign key constraints after performing database migrations, please report a bug at %s", website.BugReportURL)
 	}
 
 	return nil
