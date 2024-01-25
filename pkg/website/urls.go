@@ -3,7 +3,8 @@
 package website
 
 const (
-	DocVariablesURL       = "https://flamenco.blender.org/usage/variables/blender/"
-	BugReportURL          = "https://flamenco.blender.org/get-involved"
-	ShamanRequirementsURL = "https://flamenco.blender.org/usage/shared-storage/shaman/#requirements"
+	DocVariablesURL           = "https://flamenco.blender.org/usage/variables/blender/"
+	WorkerCredsUnknownHelpURL = "https://flamenco.blender.org/faq/#what-does-unknown-worker-is-trying-to-communicate-mean"
+	BugReportURL              = "https://flamenco.blender.org/get-involved"
+	ShamanRequirementsURL     = "https://flamenco.blender.org/usage/shared-storage/shaman/#requirements"
 )

@@ -14,6 +14,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
+	"projects.blender.org/studio/flamenco/pkg/website"
 )
 
 type workerContextKey string
@@ -89,7 +90,7 @@ func WorkerAuth(ctx context.Context, authInfo *openapi3filter.AuthenticationInpu
 	// Check the password.
 	err = passwordHasher.CompareHashAndPassword([]byte(hashedSecret), []byte(p))
 	if err != nil {
-		logger.Warn().Str("username", u).Msg("authentication error")
+		logger.Warn().Str("worker", u).Msgf("unknown worker is trying to communicate, see %s", website.WorkerCredsUnknownHelpURL)
 		return authInfo.NewError(errAuthBad)
 	}
 

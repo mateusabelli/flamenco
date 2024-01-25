@@ -179,3 +179,33 @@ Disable add-ons one-by-one to see which one is causing this issue.
 It means that the program (probably Blender) exited with an error status. Take a
 look at the task log, which you can access by going to the task in Flamenco's
 web interface.
+
+### What does "unknown worker is trying to communicate" mean?
+
+When a Worker connects to its Manager for the first time, it registers itself.
+This makes the Manager aware that the Worker exists. The Worker can now be seen
+in the web interface for configuration of [tags][worker-tags] and its [sleep
+schedule][sleep-schedule].
+
+If for some reason the Manager forgets about this Worker, the Manager will show
+this message. There are a few reasons this can happen:
+
+After downloading a new version of Flamenco, you started the Manager from a different folder than before.
+: Stop the Manager (Ctrl+C) and follow the [upgrade guide][upgrade].
+
+The `flamenco-manager.sqlite` file was deleted / moved.
+: Stop the Manager (Ctrl+C). Restore the file from the wastebin, or move it back. Then start the Manager again.
+
+The Worker was deleted via the Flamenco Manager web interface.
+: This means the Worker info (its tags, sleep schedule, etc.) has been deleted. Stop the Worker (Ctrl+C) and restart it again. It will automatically re-register as a new Worker.
+
+
+[upgrade]: {{< ref "usage/upgrading" >}}
+[worker-tags]: {{< ref "usage/worker-configuration/tags" >}}
+[sleep-schedule]: {{< ref "usage/worker-configuration/sleep-schedule" >}}
+
+### What does "Security requirements failed" mean?
+
+This is shown on the Manager after an "unknown worker is trying to communicate"
+message. It is also shown on the Worker for the same reason. See
+[What does "unknown worker is trying to communicate" mean?](#what-does-unknown-worker-is-trying-to-communicate-mean)
