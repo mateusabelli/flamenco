@@ -75,9 +75,13 @@ func (db *DB) FetchWorker(ctx context.Context, uuid string) (*Worker, error) {
 	w := Worker{}
 	tx := db.gormDB.WithContext(ctx).
 		Preload("Tags").
-		First(&w, "uuid = ?", uuid)
+		Find(&w, "uuid = ?", uuid).
+		Limit(1)
 	if tx.Error != nil {
 		return nil, workerError(tx.Error, "fetching worker")
+	}
+	if w.ID == 0 {
+		return nil, ErrWorkerNotFound
 	}
 	return &w, nil
 }
