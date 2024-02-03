@@ -1,5 +1,7 @@
 package eventbus
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import (
 	"github.com/rs/zerolog/log"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
