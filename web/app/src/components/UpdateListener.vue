@@ -86,7 +86,7 @@ export default {
   methods: {
     connectToWebsocket() {
       // The SocketIO client API docs are available at:
-      // https://github.com/socketio/socket.io-client/blob/2.4.x/docs/API.md
+      // https://github.com/socketio/socket.io-client/blob/2.x/docs/API.md
       // console.log("connecting JobsListener to WS", websocketURL);
       const ws = io(websocketURL, {
         transports: ['websocket'],
