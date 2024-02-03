@@ -16,9 +16,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog"
 
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
-	"projects.blender.org/studio/flamenco/internal/manager/webupdates"
 	"projects.blender.org/studio/flamenco/internal/uuid"
 	"projects.blender.org/studio/flamenco/pkg/api"
 	"projects.blender.org/studio/flamenco/pkg/crosspath"
@@ -105,7 +105,7 @@ func (f *Flamenco) SubmitJob(e echo.Context) error {
 		return sendAPIError(e, http.StatusInternalServerError, "error retrieving job from database")
 	}
 
-	jobUpdate := webupdates.NewJobUpdate(dbJob)
+	jobUpdate := eventbus.NewJobUpdate(dbJob)
 	f.broadcaster.BroadcastNewJob(jobUpdate)
 
 	apiJob := jobDBtoAPI(dbJob)
@@ -365,7 +365,7 @@ func (f *Flamenco) SetJobPriority(e echo.Context, jobID string) error {
 	}
 
 	// Broadcast this change to the SocketIO clients.
-	jobUpdate := webupdates.NewJobUpdate(dbJob)
+	jobUpdate := eventbus.NewJobUpdate(dbJob)
 	f.broadcaster.BroadcastJobUpdate(jobUpdate)
 
 	return e.NoContent(http.StatusNoContent)

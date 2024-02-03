@@ -18,8 +18,8 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
-	"projects.blender.org/studio/flamenco/internal/manager/webupdates"
 	"projects.blender.org/studio/flamenco/pkg/api"
 	"projects.blender.org/studio/flamenco/pkg/shaman"
 )
@@ -76,7 +76,7 @@ func (s *Service) QueueJobDeletion(ctx context.Context, job *persistence.Job) er
 	}
 
 	// Broadcast that this job was queued for deleted.
-	jobUpdate := webupdates.NewJobUpdate(job)
+	jobUpdate := eventbus.NewJobUpdate(job)
 	s.changeBroadcaster.BroadcastJobUpdate(jobUpdate)
 
 	// Let the Run() goroutine know this job is ready for deletion.
@@ -128,7 +128,7 @@ func (s *Service) broadcastAndQueueMassJobDeletion(ctx context.Context, jobUUIDs
 				Msg("job deleter: unable to fetch job to send updates")
 			continue
 		}
-		jobUpdate := webupdates.NewJobUpdate(job)
+		jobUpdate := eventbus.NewJobUpdate(job)
 		s.changeBroadcaster.BroadcastJobUpdate(jobUpdate)
 	}
 }

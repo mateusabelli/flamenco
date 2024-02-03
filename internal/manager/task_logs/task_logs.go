@@ -13,7 +13,7 @@ import (
 
 	"github.com/benbjohnson/clock"
 	"github.com/rs/zerolog"
-	"projects.blender.org/studio/flamenco/internal/manager/webupdates"
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -47,8 +47,8 @@ type ChangeBroadcaster interface {
 	BroadcastTaskLogUpdate(taskLogUpdate api.SocketIOTaskLogUpdate)
 }
 
-// ChangeBroadcaster should be a subset of webupdates.BiDirComms
-var _ ChangeBroadcaster = (*webupdates.BiDirComms)(nil)
+// ChangeBroadcaster should be a subset of eventbus.Broker
+var _ ChangeBroadcaster = (*eventbus.Broker)(nil)
 
 // NewStorage creates a new log storage rooted at `basePath`.
 func NewStorage(
@@ -72,7 +72,7 @@ func (s *Storage) Write(logger zerolog.Logger, jobID, taskID string, logText str
 	}
 
 	// Broadcast the task log to SocketIO clients.
-	taskUpdate := webupdates.NewTaskLogUpdate(taskID, logText)
+	taskUpdate := eventbus.NewTaskLogUpdate(taskID, logText)
 	s.broadcaster.BroadcastTaskLogUpdate(taskUpdate)
 	return nil
 }

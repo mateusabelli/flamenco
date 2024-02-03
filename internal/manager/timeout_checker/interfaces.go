@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/internal/manager/task_state_machine"
-	"projects.blender.org/studio/flamenco/internal/manager/webupdates"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -43,5 +43,5 @@ type ChangeBroadcaster interface {
 	BroadcastWorkerUpdate(workerUpdate api.SocketIOWorkerUpdate)
 }
 
-// ChangeBroadcaster should be a subset of webupdates.BiDirComms.
-var _ ChangeBroadcaster = (*webupdates.BiDirComms)(nil)
+// ChangeBroadcaster should be a subset of eventbus.Broker.
+var _ ChangeBroadcaster = (*eventbus.Broker)(nil)

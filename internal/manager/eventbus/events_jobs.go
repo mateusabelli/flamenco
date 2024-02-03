@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-package webupdates
+package eventbus
 
 import (
 	"github.com/rs/zerolog/log"
@@ -64,49 +64,45 @@ func NewTaskLogUpdate(taskUUID string, logchunk string) api.SocketIOTaskLogUpdat
 	}
 }
 
-// BroadcastJobUpdate sends the job update to clients.
-func (b *BiDirComms) BroadcastJobUpdate(jobUpdate api.SocketIOJobUpdate) {
-	log.Debug().Interface("jobUpdate", jobUpdate).Msg("socketIO: broadcasting job update")
-	b.BroadcastTo(SocketIORoomJobs, SIOEventJobUpdate, jobUpdate)
-}
-
 // BroadcastNewJob sends a "new job" notification to clients.
 // This function should be called when the job has been completely created, so
 // including its tasks.
-func (b *BiDirComms) BroadcastNewJob(jobUpdate api.SocketIOJobUpdate) {
+func (b *Broker) BroadcastNewJob(jobUpdate api.SocketIOJobUpdate) {
 	if jobUpdate.PreviousStatus != nil {
 		log.Warn().Interface("jobUpdate", jobUpdate).Msg("socketIO: new jobs should not have a previous state")
 		jobUpdate.PreviousStatus = nil
 	}
 
 	log.Debug().Interface("jobUpdate", jobUpdate).Msg("socketIO: broadcasting new job")
-	b.BroadcastTo(SocketIORoomJobs, SIOEventJobUpdate, jobUpdate)
+	b.broadcast(TopicJobUpdate, jobUpdate)
 }
 
-// BroadcastTaskUpdate sends the task update to clients.
-func (b *BiDirComms) BroadcastTaskUpdate(taskUpdate api.SocketIOTaskUpdate) {
-	log.Debug().Interface("taskUpdate", taskUpdate).Msg("socketIO: broadcasting task update")
-	room := roomForJob(taskUpdate.JobId)
-	b.BroadcastTo(room, SIOEventTaskUpdate, taskUpdate)
+func (b *Broker) BroadcastJobUpdate(jobUpdate api.SocketIOJobUpdate) {
+	log.Debug().Interface("jobUpdate", jobUpdate).Msg("socketIO: broadcasting job update")
+	b.broadcast(TopicJobUpdate, jobUpdate)
 }
 
-// BroadcastLastRenderedImage sends the 'last-rendered' update to clients.
-func (b *BiDirComms) BroadcastLastRenderedImage(update api.SocketIOLastRenderedUpdate) {
+func (b *Broker) BroadcastLastRenderedImage(update api.SocketIOLastRenderedUpdate) {
 	log.Debug().Interface("lastRenderedUpdate", update).Msg("socketIO: broadcasting last-rendered image update")
-	room := roomForJob(update.JobId)
-	b.BroadcastTo(room, SIOEventLastRenderedUpdate, update)
+	topic := topicForJobLastRendered(update.JobId)
+	b.broadcast(topic, update)
 
 	// TODO: throttle these via a last-in-one-out queue (see `pkg/last_in_one_out_queue`).
-	b.BroadcastTo(SocketIORoomLastRendered, SIOEventLastRenderedUpdate, update)
+	b.broadcast(TopicLastRenderedImage, update)
 }
 
-// BroadcastTaskLogUpdate sends the task log chunk to clients.
-func (b *BiDirComms) BroadcastTaskLogUpdate(taskLogUpdate api.SocketIOTaskLogUpdate) {
+func (b *Broker) BroadcastTaskUpdate(taskUpdate api.SocketIOTaskUpdate) {
+	log.Debug().Interface("taskUpdate", taskUpdate).Msg("socketIO: broadcasting task update")
+	topic := topicForJob(taskUpdate.JobId)
+	b.broadcast(topic, taskUpdate)
+}
+
+func (b *Broker) BroadcastTaskLogUpdate(taskLogUpdate api.SocketIOTaskLogUpdate) {
 	// Don't log the contents here; logs can get big.
-	room := roomForTaskLog(taskLogUpdate.TaskId)
+	topic := topicForTaskLog(taskLogUpdate.TaskId)
 	log.Debug().
 		Str("task", taskLogUpdate.TaskId).
-		Str("room", string(room)).
+		Str("topic", string(topic)).
 		Msg("socketIO: broadcasting task log")
-	b.BroadcastTo(room, SIOEventTaskLogUpdate, taskLogUpdate)
+	b.broadcast(topic, taskLogUpdate)
 }

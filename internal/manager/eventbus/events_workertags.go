@@ -1,6 +1,4 @@
-package webupdates
-
-// SPDX-License-Identifier: GPL-3.0-or-later
+package eventbus
 
 import (
 	"github.com/rs/zerolog/log"
@@ -35,14 +33,12 @@ func NewWorkerTagDeletedUpdate(tagUUID string) api.SocketIOWorkerTagUpdate {
 	return tagUpdate
 }
 
-// BroadcastWorkerTagUpdate sends the worker tag update to clients.
-func (b *BiDirComms) BroadcastWorkerTagUpdate(WorkerTagUpdate api.SocketIOWorkerTagUpdate) {
-	log.Debug().Interface("WorkerTagUpdate", WorkerTagUpdate).Msg("socketIO: broadcasting worker tag update")
-	b.BroadcastTo(SocketIORoomWorkerTags, SIOEventWorkerTagUpdate, WorkerTagUpdate)
+func (b *Broker) BroadcastWorkerTagUpdate(workerTagUpdate api.SocketIOWorkerTagUpdate) {
+	log.Debug().Interface("WorkerTagUpdate", workerTagUpdate).Msg("eventbus: broadcasting worker tag update")
+	b.broadcast(TopicWorkerTagUpdate, workerTagUpdate)
 }
 
-// BroadcastNewWorkerTag sends a "new worker tag" notification to clients.
-func (b *BiDirComms) BroadcastNewWorkerTag(WorkerTagUpdate api.SocketIOWorkerTagUpdate) {
-	log.Debug().Interface("WorkerTagUpdate", WorkerTagUpdate).Msg("socketIO: broadcasting new worker tag")
-	b.BroadcastTo(SocketIORoomWorkerTags, SIOEventWorkerTagUpdate, WorkerTagUpdate)
+func (b *Broker) BroadcastNewWorkerTag(workerTagUpdate api.SocketIOWorkerTagUpdate) {
+	log.Debug().Interface("WorkerTagUpdate", workerTagUpdate).Msg("eventbus: broadcasting new worker tag")
+	b.broadcast(TopicWorkerTagUpdate, workerTagUpdate)
 }

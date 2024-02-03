@@ -6,9 +6,9 @@ import (
 	"context"
 	"time"
 
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/local_storage"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
-	"projects.blender.org/studio/flamenco/internal/manager/webupdates"
 	"projects.blender.org/studio/flamenco/pkg/api"
 	"projects.blender.org/studio/flamenco/pkg/shaman"
 )
@@ -44,8 +44,8 @@ type ChangeBroadcaster interface {
 	BroadcastJobUpdate(jobUpdate api.SocketIOJobUpdate)
 }
 
-// ChangeBroadcaster should be a subset of webupdates.BiDirComms
-var _ ChangeBroadcaster = (*webupdates.BiDirComms)(nil)
+// ChangeBroadcaster should be a subset of eventbus.Broker
+var _ ChangeBroadcaster = (*eventbus.Broker)(nil)
 
 type Shaman interface {
 	// IsEnabled returns whether this Shaman service is enabled or not.

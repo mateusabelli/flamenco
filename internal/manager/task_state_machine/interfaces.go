@@ -6,9 +6,9 @@ import (
 	"context"
 
 	"github.com/rs/zerolog"
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/internal/manager/task_logs"
-	"projects.blender.org/studio/flamenco/internal/manager/webupdates"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -49,8 +49,8 @@ type ChangeBroadcaster interface {
 	BroadcastTaskUpdate(jobUpdate api.SocketIOTaskUpdate)
 }
 
-// ChangeBroadcaster should be a subset of webupdates.BiDirComms
-var _ ChangeBroadcaster = (*webupdates.BiDirComms)(nil)
+// ChangeBroadcaster should be a subset of eventbus.Broker
+var _ ChangeBroadcaster = (*eventbus.Broker)(nil)
 
 // LogStorage writes to task logs.
 type LogStorage interface {

@@ -14,13 +14,13 @@ import (
 	"github.com/rs/zerolog"
 
 	"projects.blender.org/studio/flamenco/internal/manager/config"
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
 	"projects.blender.org/studio/flamenco/internal/manager/job_deleter"
 	"projects.blender.org/studio/flamenco/internal/manager/last_rendered"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/internal/manager/sleep_scheduler"
 	"projects.blender.org/studio/flamenco/internal/manager/task_state_machine"
-	"projects.blender.org/studio/flamenco/internal/manager/webupdates"
 	"projects.blender.org/studio/flamenco/pkg/api"
 	"projects.blender.org/studio/flamenco/pkg/shaman"
 )
@@ -125,8 +125,8 @@ type ChangeBroadcaster interface {
 	BroadcastNewWorkerTag(workerTagUpdate api.SocketIOWorkerTagUpdate)
 }
 
-// ChangeBroadcaster should be a subset of webupdates.BiDirComms.
-var _ ChangeBroadcaster = (*webupdates.BiDirComms)(nil)
+// ChangeBroadcaster should be a subset of eventbus.Broker.
+var _ ChangeBroadcaster = (*eventbus.Broker)(nil)
 
 type JobCompiler interface {
 	ListJobTypes() api.AvailableJobTypes

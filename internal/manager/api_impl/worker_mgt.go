@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
-	"projects.blender.org/studio/flamenco/internal/manager/webupdates"
 	"projects.blender.org/studio/flamenco/internal/uuid"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
@@ -121,7 +121,7 @@ func (f *Flamenco) DeleteWorker(e echo.Context, workerUUID string) error {
 	now := f.clock.Now()
 
 	// Broadcast the fact that this worker was just deleted.
-	update := webupdates.NewWorkerUpdate(worker)
+	update := eventbus.NewWorkerUpdate(worker)
 	update.DeletedAt = &now
 	f.broadcaster.BroadcastWorkerUpdate(update)
 
@@ -183,7 +183,7 @@ func (f *Flamenco) RequestWorkerStatusChange(e echo.Context, workerUUID string) 
 	}
 
 	// Broadcast the change.
-	update := webupdates.NewWorkerUpdate(dbWorker)
+	update := eventbus.NewWorkerUpdate(dbWorker)
 	f.broadcaster.BroadcastWorkerUpdate(update)
 
 	return e.NoContent(http.StatusNoContent)
@@ -228,7 +228,7 @@ func (f *Flamenco) SetWorkerTags(e echo.Context, workerUUID string) error {
 	}
 
 	// Broadcast the change.
-	update := webupdates.NewWorkerUpdate(dbWorker)
+	update := eventbus.NewWorkerUpdate(dbWorker)
 	f.broadcaster.BroadcastWorkerUpdate(update)
 
 	return e.NoContent(http.StatusNoContent)
@@ -267,7 +267,7 @@ func (f *Flamenco) DeleteWorkerTag(e echo.Context, tagUUID string) error {
 	}
 
 	// SocketIO broadcast of tag deletion.
-	update := webupdates.NewWorkerTagDeletedUpdate(tagUUID)
+	update := eventbus.NewWorkerTagDeletedUpdate(tagUUID)
 	f.broadcaster.BroadcastWorkerTagUpdate(update)
 
 	logger.Info().Msg("worker tag deleted")
@@ -347,7 +347,7 @@ func (f *Flamenco) UpdateWorkerTag(e echo.Context, tagUUID string) error {
 	}
 
 	// SocketIO broadcast of tag update.
-	sioUpdate := webupdates.NewWorkerTagUpdate(dbTag)
+	sioUpdate := eventbus.NewWorkerTagUpdate(dbTag)
 	f.broadcaster.BroadcastWorkerTagUpdate(sioUpdate)
 
 	logger.Info().Msg("worker tag updated")
@@ -419,7 +419,7 @@ func (f *Flamenco) CreateWorkerTag(e echo.Context) error {
 	logger.Info().Msg("created new worker tag")
 
 	// SocketIO broadcast of tag creation.
-	sioUpdate := webupdates.NewWorkerTagUpdate(&dbTag)
+	sioUpdate := eventbus.NewWorkerTagUpdate(&dbTag)
 	f.broadcaster.BroadcastNewWorkerTag(sioUpdate)
 
 	return e.JSON(http.StatusOK, workerTagDBtoAPI(dbTag))

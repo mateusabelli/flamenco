@@ -9,8 +9,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
-	"projects.blender.org/studio/flamenco/internal/manager/webupdates"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -88,7 +88,7 @@ func (sm *StateMachine) taskStatusChangeOnly(
 	}
 
 	// Broadcast this change to the SocketIO clients.
-	taskUpdate := webupdates.NewTaskUpdate(task)
+	taskUpdate := eventbus.NewTaskUpdate(task)
 	taskUpdate.PreviousStatus = &oldTaskStatus
 	sm.broadcaster.BroadcastTaskUpdate(taskUpdate)
 
@@ -331,7 +331,7 @@ func (sm *StateMachine) jobStatusSet(ctx context.Context,
 	}
 
 	// Broadcast this change to the SocketIO clients.
-	jobUpdate := webupdates.NewJobUpdate(job)
+	jobUpdate := eventbus.NewJobUpdate(job)
 	jobUpdate.PreviousStatus = &oldJobStatus
 	jobUpdate.RefreshTasks = result.massTaskUpdate
 	sm.broadcaster.BroadcastJobUpdate(jobUpdate)

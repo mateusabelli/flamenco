@@ -13,10 +13,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog"
 
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/last_rendered"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/internal/manager/task_state_machine"
-	"projects.blender.org/studio/flamenco/internal/manager/webupdates"
 	"projects.blender.org/studio/flamenco/internal/uuid"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
@@ -105,7 +105,7 @@ func (f *Flamenco) SignOn(e echo.Context) error {
 	}
 
 	// Broadcast the status change to 'starting'.
-	update := webupdates.NewWorkerUpdate(w)
+	update := eventbus.NewWorkerUpdate(w)
 	if prevStatus != "" {
 		update.PreviousStatus = &prevStatus
 	}
@@ -208,7 +208,7 @@ func (f *Flamenco) SignOff(e echo.Context) error {
 		return sendAPIError(e, http.StatusInternalServerError, "error re-queueing your tasks")
 	}
 
-	update := webupdates.NewWorkerUpdate(w)
+	update := eventbus.NewWorkerUpdate(w)
 	update.PreviousStatus = &prevStatus
 	f.broadcaster.BroadcastWorkerUpdate(update)
 
@@ -285,7 +285,7 @@ func (f *Flamenco) WorkerStateChanged(e echo.Context) error {
 		}
 	}
 
-	update := webupdates.NewWorkerUpdate(w)
+	update := eventbus.NewWorkerUpdate(w)
 	update.PreviousStatus = &prevStatus
 	f.broadcaster.BroadcastWorkerUpdate(update)
 
@@ -367,7 +367,7 @@ func (f *Flamenco) ScheduleTask(e echo.Context) error {
 	}
 
 	// Broadcast a worker update so that the web frontend will show the newly assigned task.
-	update := webupdates.NewWorkerUpdate(worker)
+	update := eventbus.NewWorkerUpdate(worker)
 	f.broadcaster.BroadcastWorkerUpdate(update)
 
 	// Convert database objects to API objects:
@@ -465,7 +465,7 @@ func (f *Flamenco) TaskOutputProduced(e echo.Context, taskID string) error {
 			}
 
 			// Broadcast when the processing is done.
-			update := webupdates.NewLastRenderedUpdate(jobUUID)
+			update := eventbus.NewLastRenderedUpdate(jobUUID)
 			update.Thumbnail = *thumbnailInfo
 			f.broadcaster.BroadcastLastRenderedImage(update)
 		},

@@ -20,9 +20,9 @@ import (
 	"github.com/ziflex/lecho/v3"
 
 	"projects.blender.org/studio/flamenco/internal/manager/api_impl"
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/local_storage"
 	"projects.blender.org/studio/flamenco/internal/manager/swagger_ui"
-	"projects.blender.org/studio/flamenco/internal/manager/webupdates"
 	"projects.blender.org/studio/flamenco/internal/upnp_ssdp"
 	"projects.blender.org/studio/flamenco/pkg/api"
 	"projects.blender.org/studio/flamenco/web"
@@ -32,7 +32,7 @@ func buildWebService(
 	flamenco api.ServerInterface,
 	persist api_impl.PersistenceService,
 	ssdp *upnp_ssdp.Server,
-	webUpdater *webupdates.BiDirComms,
+	socketio *eventbus.SocketIOForwarder,
 	ownURLs []url.URL,
 	localStorage local_storage.StorageInfo,
 ) *echo.Echo {
@@ -112,7 +112,7 @@ func buildWebService(
 
 	// Register routes.
 	api.RegisterHandlers(e, flamenco)
-	webUpdater.RegisterHandlers(e)
+	socketio.RegisterHandlers(e)
 	swagger_ui.RegisterSwaggerUIStaticFiles(e)
 	e.GET("/api/v3/openapi3.json", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, swagger)

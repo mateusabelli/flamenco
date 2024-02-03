@@ -1,9 +1,7 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
-package webupdates
+package eventbus
 
 import (
 	"github.com/rs/zerolog/log"
-
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
@@ -38,19 +36,17 @@ func NewWorkerUpdate(worker *persistence.Worker) api.SocketIOWorkerUpdate {
 	return workerUpdate
 }
 
-// BroadcastWorkerUpdate sends the worker update to clients.
-func (b *BiDirComms) BroadcastWorkerUpdate(workerUpdate api.SocketIOWorkerUpdate) {
-	log.Debug().Interface("workerUpdate", workerUpdate).Msg("socketIO: broadcasting worker update")
-	b.BroadcastTo(SocketIORoomWorkers, SIOEventWorkerUpdate, workerUpdate)
-}
-
-// BroadcastNewWorker sends a "new worker" notification to clients.
-func (b *BiDirComms) BroadcastNewWorker(workerUpdate api.SocketIOWorkerUpdate) {
+func (b *Broker) BroadcastNewWorker(workerUpdate api.SocketIOWorkerUpdate) {
 	if workerUpdate.PreviousStatus != nil {
-		log.Warn().Interface("workerUpdate", workerUpdate).Msg("socketIO: new workers should not have a previous state")
+		log.Warn().Interface("workerUpdate", workerUpdate).Msg("eventbus: new workers should not have a previous state")
 		workerUpdate.PreviousStatus = nil
 	}
 
-	log.Debug().Interface("workerUpdate", workerUpdate).Msg("socketIO: broadcasting new worker")
-	b.BroadcastTo(SocketIORoomWorkers, SIOEventWorkerUpdate, workerUpdate)
+	log.Debug().Interface("workerUpdate", workerUpdate).Msg("eventbus: broadcasting new worker")
+	b.broadcast(TopicWorkerUpdate, workerUpdate)
+}
+
+func (b *Broker) BroadcastWorkerUpdate(workerUpdate api.SocketIOWorkerUpdate) {
+	log.Debug().Interface("workerUpdate", workerUpdate).Msg("eventbus: broadcasting worker update")
+	b.broadcast(TopicWorkerUpdate, workerUpdate)
 }

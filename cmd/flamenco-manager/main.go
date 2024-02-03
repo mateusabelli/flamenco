@@ -26,6 +26,7 @@ import (
 	"projects.blender.org/studio/flamenco/internal/manager/api_impl"
 	"projects.blender.org/studio/flamenco/internal/manager/api_impl/dummy"
 	"projects.blender.org/studio/flamenco/internal/manager/config"
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
 	"projects.blender.org/studio/flamenco/internal/manager/job_deleter"
 	"projects.blender.org/studio/flamenco/internal/manager/last_rendered"
@@ -35,7 +36,6 @@ import (
 	"projects.blender.org/studio/flamenco/internal/manager/task_logs"
 	"projects.blender.org/studio/flamenco/internal/manager/task_state_machine"
 	"projects.blender.org/studio/flamenco/internal/manager/timeout_checker"
-	"projects.blender.org/studio/flamenco/internal/manager/webupdates"
 	"projects.blender.org/studio/flamenco/internal/own_url"
 	"projects.blender.org/studio/flamenco/internal/upnp_ssdp"
 	"projects.blender.org/studio/flamenco/pkg/shaman"
@@ -152,29 +152,32 @@ func runFlamencoManager() bool {
 		log.Fatal().Err(err).Msg("error loading job compilers")
 	}
 
-	webUpdater := webupdates.New()
+	// Set up the event system.
+	eventBroker := eventbus.NewBroker()
+	socketio := eventbus.NewSocketIOForwarder()
+	eventBroker.AddForwarder(socketio)
 
 	localStorage := local_storage.NewNextToExe(configService.Get().LocalManagerStoragePath)
-	logStorage := task_logs.NewStorage(localStorage, timeService, webUpdater)
+	logStorage := task_logs.NewStorage(localStorage, timeService, eventBroker)
 
-	taskStateMachine := task_state_machine.NewStateMachine(persist, webUpdater, logStorage)
-	sleepScheduler := sleep_scheduler.New(timeService, persist, webUpdater)
+	taskStateMachine := task_state_machine.NewStateMachine(persist, eventBroker, logStorage)
+	sleepScheduler := sleep_scheduler.New(timeService, persist, eventBroker)
 	lastRender := last_rendered.New(localStorage)
 
 	shamanServer := buildShamanServer(configService, isFirstRun)
-	jobDeleter := job_deleter.NewService(persist, localStorage, webUpdater, shamanServer)
+	jobDeleter := job_deleter.NewService(persist, localStorage, eventBroker, shamanServer)
 
 	flamenco := api_impl.NewFlamenco(
-		compiler, persist, webUpdater, logStorage, configService,
+		compiler, persist, eventBroker, logStorage, configService,
 		taskStateMachine, shamanServer, timeService, lastRender,
 		localStorage, sleepScheduler, jobDeleter)
 
-	e := buildWebService(flamenco, persist, ssdp, webUpdater, urls, localStorage)
+	e := buildWebService(flamenco, persist, ssdp, socketio, urls, localStorage)
 
 	timeoutChecker := timeout_checker.New(
 		configService.Get().TaskTimeout,
 		configService.Get().WorkerTimeout,
-		timeService, persist, taskStateMachine, logStorage, webUpdater)
+		timeService, persist, taskStateMachine, logStorage, eventBroker)
 
 	// The main context determines the lifetime of the application. All
 	// long-running goroutines need to keep an eye on this, and stop their work
