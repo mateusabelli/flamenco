@@ -156,6 +156,10 @@ func runFlamencoManager() bool {
 	eventBroker := eventbus.NewBroker()
 	socketio := eventbus.NewSocketIOForwarder()
 	eventBroker.AddForwarder(socketio)
+	mqttClient := eventbus.NewMQTTForwarder(configService.Get().MQTT.Client)
+	if mqttClient != nil {
+		eventBroker.AddForwarder(mqttClient)
+	}
 
 	localStorage := local_storage.NewNextToExe(configService.Get().LocalManagerStoragePath)
 	logStorage := task_logs.NewStorage(localStorage, timeService, eventBroker)
@@ -185,6 +189,10 @@ func runFlamencoManager() bool {
 	mainCtx, mainCtxCancel := context.WithCancel(context.Background())
 
 	installSignalHandler(mainCtxCancel)
+
+	if mqttClient != nil {
+		mqttClient.Connect(mainCtx)
+	}
 
 	// Before doing anything new, clean up in case we made a mess in an earlier run.
 	taskStateMachine.CheckStuck(mainCtx)

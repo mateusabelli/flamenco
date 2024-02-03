@@ -21,6 +21,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"projects.blender.org/studio/flamenco/internal/appinfo"
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/pkg/crosspath"
 	shaman_config "projects.blender.org/studio/flamenco/pkg/shaman/config"
 )
@@ -101,6 +102,8 @@ type Base struct {
 	// When this many workers have tried the task and failed, it will be hard-failed
 	// (even when there are workers left that could technically retry the task).
 	TaskFailAfterSoftFailCount int `yaml:"task_fail_after_softfail_count"`
+
+	MQTT MQTTConfig `yaml:"mqtt"`
 }
 
 // GarbageCollect contains the config options for the GC.
@@ -115,6 +118,11 @@ type ShamanGarbageCollect struct {
 	// Used by the -gc CLI arg to silently disable the garbage collector
 	// while we're performing a manual sweep.
 	SilentlyDisable bool `yaml:"-"`
+}
+
+// MQTTConfig contains the configuration options for MQTT broker (idea for the future) and client.
+type MQTTConfig struct {
+	Client eventbus.MQTTClientConfig `yaml:"client"`
 }
 
 // Conf is the latest version of the configuration.

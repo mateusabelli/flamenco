@@ -4,6 +4,10 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
+## 3.5 - in development
+
+- Add MQTT support. Flamenco Manager can now send internal events to an MQTT broker.
+
 ## 3.4 - released 2024-01-12
 
 - Fix [#104263: Error performing BAT pack in Windows with shared storage](https://projects.blender.org/studio/flamenco/issues/104263).
