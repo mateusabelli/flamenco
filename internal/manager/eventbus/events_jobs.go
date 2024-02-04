@@ -70,21 +70,21 @@ func NewTaskLogUpdate(taskUUID string, logchunk string) api.SocketIOTaskLogUpdat
 // including its tasks.
 func (b *Broker) BroadcastNewJob(jobUpdate api.SocketIOJobUpdate) {
 	if jobUpdate.PreviousStatus != nil {
-		log.Warn().Interface("jobUpdate", jobUpdate).Msg("socketIO: new jobs should not have a previous state")
+		log.Warn().Interface("jobUpdate", jobUpdate).Msg("eventbus: new jobs should not have a previous state")
 		jobUpdate.PreviousStatus = nil
 	}
 
-	log.Debug().Interface("jobUpdate", jobUpdate).Msg("socketIO: broadcasting new job")
+	log.Debug().Interface("jobUpdate", jobUpdate).Msg("eventbus: broadcasting new job")
 	b.broadcast(TopicJobUpdate, jobUpdate)
 }
 
 func (b *Broker) BroadcastJobUpdate(jobUpdate api.SocketIOJobUpdate) {
-	log.Debug().Interface("jobUpdate", jobUpdate).Msg("socketIO: broadcasting job update")
+	log.Debug().Interface("jobUpdate", jobUpdate).Msg("eventbus: broadcasting job update")
 	b.broadcast(TopicJobUpdate, jobUpdate)
 }
 
 func (b *Broker) BroadcastLastRenderedImage(update api.SocketIOLastRenderedUpdate) {
-	log.Debug().Interface("lastRenderedUpdate", update).Msg("socketIO: broadcasting last-rendered image update")
+	log.Debug().Interface("lastRenderedUpdate", update).Msg("eventbus: broadcasting last-rendered image update")
 	topic := topicForJobLastRendered(update.JobId)
 	b.broadcast(topic, update)
 
@@ -93,7 +93,7 @@ func (b *Broker) BroadcastLastRenderedImage(update api.SocketIOLastRenderedUpdat
 }
 
 func (b *Broker) BroadcastTaskUpdate(taskUpdate api.SocketIOTaskUpdate) {
-	log.Debug().Interface("taskUpdate", taskUpdate).Msg("socketIO: broadcasting task update")
+	log.Debug().Interface("taskUpdate", taskUpdate).Msg("eventbus: broadcasting task update")
 	topic := topicForJob(taskUpdate.JobId)
 	b.broadcast(topic, taskUpdate)
 }
@@ -104,6 +104,6 @@ func (b *Broker) BroadcastTaskLogUpdate(taskLogUpdate api.SocketIOTaskLogUpdate)
 	log.Debug().
 		Str("task", taskLogUpdate.TaskId).
 		Str("topic", string(topic)).
-		Msg("socketIO: broadcasting task log")
+		Msg("eventbus: broadcasting task log")
 	b.broadcast(topic, taskLogUpdate)
 }
