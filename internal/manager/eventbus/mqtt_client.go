@@ -99,7 +99,7 @@ func (m *MQTTForwarder) onConnectionUp(connMgr *autopaho.ConnectionManager, conn
 }
 
 func (m *MQTTForwarder) onConnectionError(err error) {
-	log.Warn().AnErr("cause", err).Msg("mqtt client: connection error")
+	log.Warn().AnErr("cause", err).Msg("mqtt client: could not connect to MQTT server")
 }
 
 func (m *MQTTForwarder) onClientError(err error) {
