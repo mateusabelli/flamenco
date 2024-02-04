@@ -121,7 +121,7 @@ func (c *MQTTForwarder) Broadcast(topic EventTopic, payload interface{}) {
 
 	logger := log.With().
 		Str("topic", fullTopic).
-		Interface("event", payload).
+		// Interface("event", payload).
 		Logger()
 
 	asJSON, err := json.Marshal(payload)

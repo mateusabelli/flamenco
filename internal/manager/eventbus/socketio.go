@@ -62,7 +62,7 @@ func (s *SocketIOForwarder) Broadcast(topic EventTopic, payload interface{}) {
 	log.Debug().
 		Str("topic", string(topic)).
 		Str("eventType", eventType).
-		Interface("payload", payload).
+		// Interface("event", payload).
 		Msg("socketIO: broadcasting message")
 	s.sockserv.BroadcastTo(string(topic), eventType, payload)
 }
