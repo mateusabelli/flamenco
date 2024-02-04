@@ -116,8 +116,8 @@ func (m *MQTTForwarder) onServerDisconnect(d *paho.Disconnect) {
 	logEntry.Msg("mqtt client: server requested disconnect")
 }
 
-func (c *MQTTForwarder) Broadcast(topic EventTopic, payload interface{}) {
-	fullTopic := c.topicPrefix + string(topic)
+func (m *MQTTForwarder) Broadcast(topic EventTopic, payload interface{}) {
+	fullTopic := m.topicPrefix + string(topic)
 
 	logger := log.With().
 		Str("topic", fullTopic).
@@ -134,7 +134,7 @@ func (c *MQTTForwarder) Broadcast(topic EventTopic, payload interface{}) {
 	// Publish will block so we run it in a GoRoutine.
 	// TODO: might be a good idea todo this at the event broker level, rather than in this function.
 	go func(topic string, msg []byte) {
-		pr, err := c.conn.Publish(c.ctx, &paho.Publish{
+		pr, err := m.conn.Publish(m.ctx, &paho.Publish{
 			QoS:     mqttQoS,
 			Topic:   topic,
 			Payload: msg,
