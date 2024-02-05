@@ -8,12 +8,12 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
-// NewWorkerUpdate returns a partial SocketIOWorkerUpdate struct for the given worker.
+// NewWorkerUpdate returns a partial EventWorkerUpdate struct for the given worker.
 // It only fills in the fields that represent the current state of the worker. For
 // example, it omits `PreviousStatus`. The ommitted fields can be filled in by
 // the caller.
-func NewWorkerUpdate(worker *persistence.Worker) api.SocketIOWorkerUpdate {
-	workerUpdate := api.SocketIOWorkerUpdate{
+func NewWorkerUpdate(worker *persistence.Worker) api.EventWorkerUpdate {
+	workerUpdate := api.EventWorkerUpdate{
 		Id:         worker.UUID,
 		Name:       worker.Name,
 		Status:     worker.Status,
@@ -38,7 +38,7 @@ func NewWorkerUpdate(worker *persistence.Worker) api.SocketIOWorkerUpdate {
 	return workerUpdate
 }
 
-func (b *Broker) BroadcastNewWorker(workerUpdate api.SocketIOWorkerUpdate) {
+func (b *Broker) BroadcastNewWorker(workerUpdate api.EventWorkerUpdate) {
 	if workerUpdate.PreviousStatus != nil {
 		log.Warn().Interface("workerUpdate", workerUpdate).Msg("eventbus: new workers should not have a previous state")
 		workerUpdate.PreviousStatus = nil
@@ -48,7 +48,7 @@ func (b *Broker) BroadcastNewWorker(workerUpdate api.SocketIOWorkerUpdate) {
 	b.broadcast(TopicWorkerUpdate, workerUpdate)
 }
 
-func (b *Broker) BroadcastWorkerUpdate(workerUpdate api.SocketIOWorkerUpdate) {
+func (b *Broker) BroadcastWorkerUpdate(workerUpdate api.EventWorkerUpdate) {
 	log.Debug().Interface("workerUpdate", workerUpdate).Msg("eventbus: broadcasting worker update")
 	b.broadcast(TopicWorkerUpdate, workerUpdate)
 }

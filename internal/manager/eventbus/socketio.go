@@ -23,12 +23,12 @@ const (
 )
 
 var socketIOEventTypes = map[string]string{
-	reflect.TypeOf(api.SocketIOJobUpdate{}).Name():          "/jobs",
-	reflect.TypeOf(api.SocketIOTaskUpdate{}).Name():         "/task",
-	reflect.TypeOf(api.SocketIOLastRenderedUpdate{}).Name(): "/last-rendered",
-	reflect.TypeOf(api.SocketIOTaskLogUpdate{}).Name():      "/tasklog",
-	reflect.TypeOf(api.SocketIOWorkerTagUpdate{}).Name():    "/workertags",
-	reflect.TypeOf(api.SocketIOWorkerUpdate{}).Name():       "/workers",
+	reflect.TypeOf(api.EventJobUpdate{}).Name():          "/jobs",
+	reflect.TypeOf(api.EventTaskUpdate{}).Name():         "/task",
+	reflect.TypeOf(api.EventLastRenderedUpdate{}).Name(): "/last-rendered",
+	reflect.TypeOf(api.EventTaskLogUpdate{}).Name():      "/tasklog",
+	reflect.TypeOf(api.EventWorkerTagUpdate{}).Name():    "/workertags",
+	reflect.TypeOf(api.EventWorkerUpdate{}).Name():       "/workers",
 }
 
 // SocketIOForwarder is an event forwarder via SocketIO.

@@ -45,7 +45,7 @@ func TestRequeueActiveTasksOfWorker(t *testing.T) {
 	mocks.logStorage.EXPECT().WriteTimestamped(gomock.Any(), task1.Job.UUID, task1.UUID, logMsg2)
 	mocks.logStorage.EXPECT().WriteTimestamped(gomock.Any(), task2.Job.UUID, task2.UUID, logMsg2)
 
-	mocks.broadcaster.EXPECT().BroadcastTaskUpdate(api.SocketIOTaskUpdate{
+	mocks.broadcaster.EXPECT().BroadcastTaskUpdate(api.EventTaskUpdate{
 		Activity:       logMsg2,
 		Id:             task1.UUID,
 		JobId:          task1.Job.UUID,
@@ -55,7 +55,7 @@ func TestRequeueActiveTasksOfWorker(t *testing.T) {
 		Updated:        task1.UpdatedAt,
 	})
 
-	mocks.broadcaster.EXPECT().BroadcastTaskUpdate(api.SocketIOTaskUpdate{
+	mocks.broadcaster.EXPECT().BroadcastTaskUpdate(api.EventTaskUpdate{
 		Activity:       logMsg2,
 		Id:             task2.UUID,
 		JobId:          task2.Job.UUID,

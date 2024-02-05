@@ -143,42 +143,42 @@ export default {
       this.socket.on('/jobs', (jobUpdate) => {
         // Convert to API object, in order to have the same parsing of data as
         // when we'd do an API call.
-        const apiJobUpdate = API.SocketIOJobUpdate.constructFromObject(jobUpdate);
+        const apiJobUpdate = API.EventJobUpdate.constructFromObject(jobUpdate);
         this.$emit('jobUpdate', apiJobUpdate);
       });
 
       this.socket.on('/last-rendered', (update) => {
         // Convert to API object, in order to have the same parsing of data as
         // when we'd do an API call.
-        const apiUpdate = API.SocketIOLastRenderedUpdate.constructFromObject(update);
+        const apiUpdate = API.EventLastRenderedUpdate.constructFromObject(update);
         this.$emit('lastRenderedUpdate', apiUpdate);
       });
 
       this.socket.on('/task', (taskUpdate) => {
         // Convert to API object, in order to have the same parsing of data as
         // when we'd do an API call.
-        const apiTaskUpdate = API.SocketIOTaskUpdate.constructFromObject(taskUpdate);
+        const apiTaskUpdate = API.EventTaskUpdate.constructFromObject(taskUpdate);
         this.$emit('taskUpdate', apiTaskUpdate);
       });
 
       this.socket.on('/tasklog', (taskLogUpdate) => {
         // Convert to API object, in order to have the same parsing of data as
         // when we'd do an API call.
-        const apiTaskLogUpdate = API.SocketIOTaskLogUpdate.constructFromObject(taskLogUpdate);
+        const apiTaskLogUpdate = API.EventTaskLogUpdate.constructFromObject(taskLogUpdate);
         this.$emit('taskLogUpdate', apiTaskLogUpdate);
       });
 
       this.socket.on('/workers', (workerUpdate) => {
         // Convert to API object, in order to have the same parsing of data as
         // when we'd do an API call.
-        const apiWorkerUpdate = API.SocketIOWorkerUpdate.constructFromObject(workerUpdate);
+        const apiWorkerUpdate = API.EventWorkerUpdate.constructFromObject(workerUpdate);
         this.$emit('workerUpdate', apiWorkerUpdate);
       });
 
       this.socket.on('/workertags', (workerTagUpdate) => {
         // Convert to API object, in order to have the same parsing of data as
         // when we'd do an API call.
-        const apiWorkerTagUpdate = API.SocketIOWorkerTagUpdate.constructFromObject(workerTagUpdate);
+        const apiWorkerTagUpdate = API.EventWorkerTagUpdate.constructFromObject(workerTagUpdate);
         this.$emit('workerTagUpdate', apiWorkerTagUpdate);
       });
 

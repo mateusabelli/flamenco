@@ -586,7 +586,7 @@ func (m *MockChangeBroadcaster) EXPECT() *MockChangeBroadcasterMockRecorder {
 }
 
 // BroadcastJobUpdate mocks base method.
-func (m *MockChangeBroadcaster) BroadcastJobUpdate(arg0 api.SocketIOJobUpdate) {
+func (m *MockChangeBroadcaster) BroadcastJobUpdate(arg0 api.EventJobUpdate) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "BroadcastJobUpdate", arg0)
 }
@@ -598,7 +598,7 @@ func (mr *MockChangeBroadcasterMockRecorder) BroadcastJobUpdate(arg0 interface{}
 }
 
 // BroadcastLastRenderedImage mocks base method.
-func (m *MockChangeBroadcaster) BroadcastLastRenderedImage(arg0 api.SocketIOLastRenderedUpdate) {
+func (m *MockChangeBroadcaster) BroadcastLastRenderedImage(arg0 api.EventLastRenderedUpdate) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "BroadcastLastRenderedImage", arg0)
 }
@@ -610,7 +610,7 @@ func (mr *MockChangeBroadcasterMockRecorder) BroadcastLastRenderedImage(arg0 int
 }
 
 // BroadcastNewJob mocks base method.
-func (m *MockChangeBroadcaster) BroadcastNewJob(arg0 api.SocketIOJobUpdate) {
+func (m *MockChangeBroadcaster) BroadcastNewJob(arg0 api.EventJobUpdate) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "BroadcastNewJob", arg0)
 }
@@ -622,7 +622,7 @@ func (mr *MockChangeBroadcasterMockRecorder) BroadcastNewJob(arg0 interface{}) *
 }
 
 // BroadcastNewWorker mocks base method.
-func (m *MockChangeBroadcaster) BroadcastNewWorker(arg0 api.SocketIOWorkerUpdate) {
+func (m *MockChangeBroadcaster) BroadcastNewWorker(arg0 api.EventWorkerUpdate) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "BroadcastNewWorker", arg0)
 }
@@ -634,7 +634,7 @@ func (mr *MockChangeBroadcasterMockRecorder) BroadcastNewWorker(arg0 interface{}
 }
 
 // BroadcastNewWorkerTag mocks base method.
-func (m *MockChangeBroadcaster) BroadcastNewWorkerTag(arg0 api.SocketIOWorkerTagUpdate) {
+func (m *MockChangeBroadcaster) BroadcastNewWorkerTag(arg0 api.EventWorkerTagUpdate) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "BroadcastNewWorkerTag", arg0)
 }
@@ -646,7 +646,7 @@ func (mr *MockChangeBroadcasterMockRecorder) BroadcastNewWorkerTag(arg0 interfac
 }
 
 // BroadcastWorkerTagUpdate mocks base method.
-func (m *MockChangeBroadcaster) BroadcastWorkerTagUpdate(arg0 api.SocketIOWorkerTagUpdate) {
+func (m *MockChangeBroadcaster) BroadcastWorkerTagUpdate(arg0 api.EventWorkerTagUpdate) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "BroadcastWorkerTagUpdate", arg0)
 }
@@ -658,7 +658,7 @@ func (mr *MockChangeBroadcasterMockRecorder) BroadcastWorkerTagUpdate(arg0 inter
 }
 
 // BroadcastWorkerUpdate mocks base method.
-func (m *MockChangeBroadcaster) BroadcastWorkerUpdate(arg0 api.SocketIOWorkerUpdate) {
+func (m *MockChangeBroadcaster) BroadcastWorkerUpdate(arg0 api.EventWorkerUpdate) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "BroadcastWorkerUpdate", arg0)
 }

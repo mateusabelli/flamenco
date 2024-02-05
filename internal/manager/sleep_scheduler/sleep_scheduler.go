@@ -170,7 +170,7 @@ func (ss *SleepScheduler) updateWorkerStatus(
 	}
 
 	// Broadcast worker change via SocketIO
-	ss.broadcaster.BroadcastWorkerUpdate(api.SocketIOWorkerUpdate{
+	ss.broadcaster.BroadcastWorkerUpdate(api.EventWorkerUpdate{
 		Id:     worker.UUID,
 		Name:   worker.Name,
 		Status: worker.Status,

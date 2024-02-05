@@ -6,12 +6,12 @@ import "fmt"
 
 const (
 	// Topics on which events are published.
-	TopicJobUpdate         EventTopic = "/jobs"          // sends api.SocketIOJobUpdate
-	TopicLastRenderedImage EventTopic = "/last-rendered" // sends api.SocketIOLastRenderedUpdate
-	TopicTaskUpdate        EventTopic = "/task"          // sends api.SocketIOTaskUpdate
-	TopicWorkerUpdate      EventTopic = "/workers"       // sends api.SocketIOWorkerUpdate
-	TopicWorkerTagUpdate   EventTopic = "/workertags"    // sends api.SocketIOWorkerTagUpdate
-	TopicSubscription      EventTopic = "/subscription"  // clients send api.SocketIOSubscription
+	TopicJobUpdate         EventTopic = "/jobs"          // sends api.EventJobUpdate
+	TopicLastRenderedImage EventTopic = "/last-rendered" // sends api.EventLastRenderedUpdate
+	TopicTaskUpdate        EventTopic = "/task"          // sends api.EventTaskUpdate
+	TopicWorkerUpdate      EventTopic = "/workers"       // sends api.EventWorkerUpdate
+	TopicWorkerTagUpdate   EventTopic = "/workertags"    // sends api.EventWorkerTagUpdate
+	TopicSubscription      EventTopic = "/subscription"  // clients send api.EventSubscription
 
 	// Parameterised topics.
 	TopicJobSpecific     EventTopic = "/jobs/%s"               // %s = job UUID

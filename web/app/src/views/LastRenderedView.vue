@@ -32,7 +32,7 @@ export default {
   methods: {
     /**
      * Event handler for SocketIO "last-rendered" updates.
-     * @param {API.SocketIOLastRenderedUpdate} lastRenderedUpdate
+     * @param {API.EventLastRenderedUpdate} lastRenderedUpdate
      */
     onSioLastRenderedUpdate(lastRenderedUpdate) {
       this.$refs.lastRenderedImage.refreshLastRenderedImage(lastRenderedUpdate);

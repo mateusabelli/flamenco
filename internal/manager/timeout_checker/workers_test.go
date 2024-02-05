@@ -53,7 +53,7 @@ func TestWorkerTimeout(t *testing.T) {
 	mocks.persist.EXPECT().SaveWorker(mocks.ctx, &persistedWorker).Return(nil)
 
 	prevStatus := worker.Status
-	mocks.broadcaster.EXPECT().BroadcastWorkerUpdate(api.SocketIOWorkerUpdate{
+	mocks.broadcaster.EXPECT().BroadcastWorkerUpdate(api.EventWorkerUpdate{
 		Id:             worker.UUID,
 		Name:           worker.Name,
 		PreviousStatus: &prevStatus,

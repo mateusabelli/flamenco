@@ -39,7 +39,7 @@ export const useNotifs = defineStore('notifications', {
     },
 
     /**
-     * @param {API.SocketIOJobUpdate} jobUpdate Job update received via SocketIO.
+     * @param {API.EventJobUpdate} jobUpdate Job update received via SocketIO.
      */
     addJobUpdate(jobUpdate) {
       let msg = 'Job';
@@ -56,7 +56,7 @@ export const useNotifs = defineStore('notifications', {
     },
 
     /**
-     * @param {API.SocketIOTaskUpdate} taskUpdate Task update received via SocketIO.
+     * @param {API.EventTaskUpdate} taskUpdate Task update received via SocketIO.
      */
     addTaskUpdate(taskUpdate) {
       let msg = `Task ${taskUpdate.name}`;
@@ -70,7 +70,7 @@ export const useNotifs = defineStore('notifications', {
     },
 
     /**
-     * @param {API.SocketIOWorkerUpdate} workerUpdate Worker update received via SocketIO.
+     * @param {API.EventWorkerUpdate} workerUpdate Worker update received via SocketIO.
      */
     addWorkerUpdate(workerUpdate) {
       let msg = `Worker ${workerUpdate.name}`;

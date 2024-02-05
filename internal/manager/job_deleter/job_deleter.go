@@ -218,7 +218,7 @@ func (s *Service) deleteJob(ctx context.Context, jobUUID string) error {
 	// "was deleted" flag, because there's nothing else left. And I don't want to
 	// do a full database query for something we'll delete anyway.
 	wasDeleted := true
-	jobUpdate := api.SocketIOJobUpdate{
+	jobUpdate := api.EventJobUpdate{
 		Id:         jobUUID,
 		WasDeleted: &wasDeleted,
 	}

@@ -41,7 +41,7 @@ var _ Storage = (*local_storage.StorageInfo)(nil)
 
 type ChangeBroadcaster interface {
 	// BroadcastJobUpdate sends the job update to SocketIO clients.
-	BroadcastJobUpdate(jobUpdate api.SocketIOJobUpdate)
+	BroadcastJobUpdate(jobUpdate api.EventJobUpdate)
 }
 
 // ChangeBroadcaster should be a subset of eventbus.Broker

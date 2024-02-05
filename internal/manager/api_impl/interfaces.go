@@ -106,9 +106,9 @@ var _ TaskStateMachine = (*task_state_machine.StateMachine)(nil)
 
 type ChangeBroadcaster interface {
 	// BroadcastNewJob sends a 'new job' notification to all SocketIO clients.
-	BroadcastNewJob(jobUpdate api.SocketIOJobUpdate)
-	BroadcastJobUpdate(jobUpdate api.SocketIOJobUpdate)
-	BroadcastLastRenderedImage(update api.SocketIOLastRenderedUpdate)
+	BroadcastNewJob(jobUpdate api.EventJobUpdate)
+	BroadcastJobUpdate(jobUpdate api.EventJobUpdate)
+	BroadcastLastRenderedImage(update api.EventLastRenderedUpdate)
 
 	// Note that there is no BroadcastNewTask. The 'new job' broadcast is sent
 	// after the job's tasks have been created, and thus there is no need for a
@@ -118,11 +118,11 @@ type ChangeBroadcaster interface {
 	// responsibility of `LogStorage.Write` to broadcast the changes to SocketIO
 	// clients.
 
-	BroadcastWorkerUpdate(workerUpdate api.SocketIOWorkerUpdate)
-	BroadcastNewWorker(workerUpdate api.SocketIOWorkerUpdate)
+	BroadcastWorkerUpdate(workerUpdate api.EventWorkerUpdate)
+	BroadcastNewWorker(workerUpdate api.EventWorkerUpdate)
 
-	BroadcastWorkerTagUpdate(workerTagUpdate api.SocketIOWorkerTagUpdate)
-	BroadcastNewWorkerTag(workerTagUpdate api.SocketIOWorkerTagUpdate)
+	BroadcastWorkerTagUpdate(workerTagUpdate api.EventWorkerTagUpdate)
+	BroadcastNewWorkerTag(workerTagUpdate api.EventWorkerTagUpdate)
 }
 
 // ChangeBroadcaster should be a subset of eventbus.Broker.

@@ -43,10 +43,10 @@ var _ PersistenceService = (*persistence.DB)(nil)
 
 type ChangeBroadcaster interface {
 	// BroadcastJobUpdate sends the job update to SocketIO clients.
-	BroadcastJobUpdate(jobUpdate api.SocketIOJobUpdate)
+	BroadcastJobUpdate(jobUpdate api.EventJobUpdate)
 
 	// BroadcastTaskUpdate sends the task update to SocketIO clients.
-	BroadcastTaskUpdate(jobUpdate api.SocketIOTaskUpdate)
+	BroadcastTaskUpdate(jobUpdate api.EventTaskUpdate)
 }
 
 // ChangeBroadcaster should be a subset of eventbus.Broker

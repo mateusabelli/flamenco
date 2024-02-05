@@ -30,7 +30,7 @@ var _ PersistenceService = (*persistence.DB)(nil)
 // TODO: Refactor the way worker status changes are handled, so that this
 // service doens't need to broadcast its own worker updates.
 type ChangeBroadcaster interface {
-	BroadcastWorkerUpdate(workerUpdate api.SocketIOWorkerUpdate)
+	BroadcastWorkerUpdate(workerUpdate api.EventWorkerUpdate)
 }
 
 // ChangeBroadcaster should be a subset of eventbus.Broker.

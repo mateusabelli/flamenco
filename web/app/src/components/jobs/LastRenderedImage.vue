@@ -7,7 +7,7 @@
 <script setup>
 import { reactive, ref, watch } from 'vue';
 import { api } from '@/urls';
-import { JobsApi, JobLastRenderedImageInfo, SocketIOLastRenderedUpdate } from '@/manager-api';
+import { JobsApi, JobLastRenderedImageInfo, EventLastRenderedUpdate } from '@/manager-api';
 import { getAPIClient } from '@/api-client';
 
 const props = defineProps([
@@ -79,7 +79,7 @@ function setImageURL(thumbnailInfo) {
 }
 
 /**
- * @param {SocketIOLastRenderedUpdate} lastRenderedUpdate
+ * @param {EventLastRenderedUpdate} lastRenderedUpdate
  */
 function refreshLastRenderedImage(lastRenderedUpdate) {
   // Only filter out other job IDs if this component has actually a non-empty job ID.

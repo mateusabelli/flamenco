@@ -72,7 +72,7 @@ func (m *MockChangeBroadcaster) EXPECT() *MockChangeBroadcasterMockRecorder {
 }
 
 // BroadcastTaskLogUpdate mocks base method.
-func (m *MockChangeBroadcaster) BroadcastTaskLogUpdate(arg0 api.SocketIOTaskLogUpdate) {
+func (m *MockChangeBroadcaster) BroadcastTaskLogUpdate(arg0 api.EventTaskLogUpdate) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "BroadcastTaskLogUpdate", arg0)
 }

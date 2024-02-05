@@ -49,7 +49,7 @@ export default {
 
     const vueComponent = this;
     const options = {
-      // See pkg/api/flamenco-openapi.yaml, schemas WorkerSummary and SocketIOWorkerUpdate.
+      // See pkg/api/flamenco-openapi.yaml, schemas WorkerSummary and EventWorkerUpdate.
       columns: [
         // Useful for debugging when there are many similar workers:
         // { title: "ID", field: "id", headerSort: false, formatter: (cell) => cell.getData().id.substr(0, 8), },

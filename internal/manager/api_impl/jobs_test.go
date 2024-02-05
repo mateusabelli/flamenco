@@ -74,7 +74,7 @@ func TestSubmitJobWithoutSettings(t *testing.T) {
 	mf.persistence.EXPECT().FetchJob(gomock.Any(), queuedJob.JobID).Return(&dbJob, nil)
 
 	// Expect the new job to be broadcast.
-	jobUpdate := api.SocketIOJobUpdate{
+	jobUpdate := api.EventJobUpdate{
 		Id:       dbJob.UUID,
 		Name:     &dbJob.Name,
 		Priority: dbJob.Priority,
@@ -163,7 +163,7 @@ func TestSubmitJobWithSettings(t *testing.T) {
 	mf.persistence.EXPECT().FetchJob(gomock.Any(), queuedJob.JobID).Return(&dbJob, nil)
 
 	// Expect the new job to be broadcast.
-	jobUpdate := api.SocketIOJobUpdate{
+	jobUpdate := api.EventJobUpdate{
 		Id:       dbJob.UUID,
 		Name:     &dbJob.Name,
 		Priority: dbJob.Priority,
@@ -304,7 +304,7 @@ func TestSubmitJobWithShamanCheckoutID(t *testing.T) {
 	mf.persistence.EXPECT().FetchJob(gomock.Any(), queuedJob.JobID).Return(&dbJob, nil)
 
 	// Expect the new job to be broadcast.
-	jobUpdate := api.SocketIOJobUpdate{
+	jobUpdate := api.EventJobUpdate{
 		Id:       dbJob.UUID,
 		Name:     &dbJob.Name,
 		Priority: dbJob.Priority,
@@ -389,7 +389,7 @@ func TestSubmitJobWithWorkerTag(t *testing.T) {
 	mf.persistence.EXPECT().FetchJob(gomock.Any(), queuedJob.JobID).Return(&dbJob, nil)
 
 	// Expect the new job to be broadcast.
-	jobUpdate := api.SocketIOJobUpdate{
+	jobUpdate := api.EventJobUpdate{
 		Id:       dbJob.UUID,
 		Name:     &dbJob.Name,
 		Priority: dbJob.Priority,
@@ -623,7 +623,7 @@ func TestSetJobPrio(t *testing.T) {
 	mf.persistence.EXPECT().SaveJobPriority(gomock.Not(ctx), &jobWithNewPrio)
 
 	// Expect the change to be broadcast over SocketIO.
-	expectUpdate := api.SocketIOJobUpdate{
+	expectUpdate := api.EventJobUpdate{
 		Id:           dbJob.UUID,
 		Name:         &dbJob.Name,
 		RefreshTasks: false,

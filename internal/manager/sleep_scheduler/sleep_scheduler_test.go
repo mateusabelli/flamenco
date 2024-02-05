@@ -149,9 +149,9 @@ func TestApplySleepSchedule(t *testing.T) {
 		mocks.persist.EXPECT().SaveWorkerStatus(ctx, &savedWorker)
 
 		// Expect SocketIO broadcast.
-		var sioUpdate api.SocketIOWorkerUpdate
+		var sioUpdate api.EventWorkerUpdate
 		mocks.broadcaster.EXPECT().BroadcastWorkerUpdate(gomock.Any()).DoAndReturn(
-			func(workerUpdate api.SocketIOWorkerUpdate) {
+			func(workerUpdate api.EventWorkerUpdate) {
 				sioUpdate = workerUpdate
 			})
 

@@ -165,7 +165,7 @@ func TestDeleteWorker(t *testing.T) {
 	mf.persistence.EXPECT().DeleteWorker(gomock.Any(), workerUUID).Return(nil)
 
 	mockedNow := mf.clock.Now()
-	mf.broadcaster.EXPECT().BroadcastWorkerUpdate(api.SocketIOWorkerUpdate{
+	mf.broadcaster.EXPECT().BroadcastWorkerUpdate(api.EventWorkerUpdate{
 		DeletedAt: &mockedNow,
 		Id:        worker.UUID,
 		Name:      worker.Name,
@@ -197,7 +197,7 @@ func TestRequestWorkerStatusChange(t *testing.T) {
 	mf.persistence.EXPECT().SaveWorker(gomock.Any(), &savedWorker).Return(nil)
 
 	// Expect a broadcast of the change
-	mf.broadcaster.EXPECT().BroadcastWorkerUpdate(api.SocketIOWorkerUpdate{
+	mf.broadcaster.EXPECT().BroadcastWorkerUpdate(api.EventWorkerUpdate{
 		Id:      worker.UUID,
 		Name:    worker.Name,
 		Status:  prevStatus,
@@ -241,7 +241,7 @@ func TestRequestWorkerStatusChangeRevert(t *testing.T) {
 	mf.persistence.EXPECT().SaveWorker(gomock.Any(), &savedWorker).Return(nil)
 
 	// Expect a broadcast of the change
-	mf.broadcaster.EXPECT().BroadcastWorkerUpdate(api.SocketIOWorkerUpdate{
+	mf.broadcaster.EXPECT().BroadcastWorkerUpdate(api.EventWorkerUpdate{
 		Id:           worker.UUID,
 		Name:         worker.Name,
 		Status:       currentStatus,
@@ -281,7 +281,7 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 		Description: *apiTag.Description,
 	}
 	mf.persistence.EXPECT().CreateWorkerTag(gomock.Any(), &expectDBTag)
-	mf.broadcaster.EXPECT().BroadcastNewWorkerTag(api.SocketIOWorkerTagUpdate{
+	mf.broadcaster.EXPECT().BroadcastNewWorkerTag(api.EventWorkerTagUpdate{
 		Tag: apiTag,
 	})
 	echo := mf.prepareMockedJSONRequest(apiTag)
@@ -305,7 +305,7 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 		Name:        newAPITag.Name,
 		Description: *apiTag.Description, // Not mentioning new description should keep old one.
 	}
-	mf.broadcaster.EXPECT().BroadcastWorkerTagUpdate(api.SocketIOWorkerTagUpdate{
+	mf.broadcaster.EXPECT().BroadcastWorkerTagUpdate(api.EventWorkerTagUpdate{
 		Tag: api.WorkerTag{
 			Id:          &UUID,
 			Name:        newAPITag.Name,
@@ -328,7 +328,7 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 		Name:        newAPITag.Name,
 		Description: "",
 	}
-	mf.broadcaster.EXPECT().BroadcastWorkerTagUpdate(api.SocketIOWorkerTagUpdate{
+	mf.broadcaster.EXPECT().BroadcastWorkerTagUpdate(api.EventWorkerTagUpdate{
 		Tag: api.WorkerTag{
 			Id:          &UUID,
 			Name:        newAPITag.Name,
@@ -351,7 +351,7 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 		Name:        newAPITag.Name,
 		Description: *newAPITag.Description,
 	}
-	mf.broadcaster.EXPECT().BroadcastWorkerTagUpdate(api.SocketIOWorkerTagUpdate{
+	mf.broadcaster.EXPECT().BroadcastWorkerTagUpdate(api.EventWorkerTagUpdate{
 		Tag: api.WorkerTag{
 			Id:          &UUID,
 			Name:        newAPITag.Name,
@@ -367,7 +367,7 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 	// Delete.
 	mf.persistence.EXPECT().FetchWorkerTag(gomock.Any(), UUID).Return(&expectDBTag, nil)
 	mf.persistence.EXPECT().DeleteWorkerTag(gomock.Any(), UUID)
-	mf.broadcaster.EXPECT().BroadcastWorkerTagUpdate(api.SocketIOWorkerTagUpdate{
+	mf.broadcaster.EXPECT().BroadcastWorkerTagUpdate(api.EventWorkerTagUpdate{
 		Tag:        api.WorkerTag{Id: &UUID},
 		WasDeleted: ptr(true),
 	})

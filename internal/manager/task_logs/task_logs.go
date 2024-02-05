@@ -44,7 +44,7 @@ type LocalStorage interface {
 
 type ChangeBroadcaster interface {
 	// BroadcastTaskLogUpdate sends the task log update to SocketIO clients.
-	BroadcastTaskLogUpdate(taskLogUpdate api.SocketIOTaskLogUpdate)
+	BroadcastTaskLogUpdate(taskLogUpdate api.EventTaskLogUpdate)
 }
 
 // ChangeBroadcaster should be a subset of eventbus.Broker

@@ -8,11 +8,11 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
-// NewWorkerTagUpdate returns a partial SocketIOWorkerTagUpdate struct for the
+// NewWorkerTagUpdate returns a partial EventWorkerTagUpdate struct for the
 // given worker tag. It only fills in the fields that represent the current
 // state of the tag.
-func NewWorkerTagUpdate(tag *persistence.WorkerTag) api.SocketIOWorkerTagUpdate {
-	tagUpdate := api.SocketIOWorkerTagUpdate{
+func NewWorkerTagUpdate(tag *persistence.WorkerTag) api.EventWorkerTagUpdate {
+	tagUpdate := api.EventWorkerTagUpdate{
 		Tag: api.WorkerTag{
 			Id:          &tag.UUID,
 			Name:        tag.Name,
@@ -22,11 +22,11 @@ func NewWorkerTagUpdate(tag *persistence.WorkerTag) api.SocketIOWorkerTagUpdate 
 	return tagUpdate
 }
 
-// NewWorkerTagDeletedUpdate returns a SocketIOWorkerTagUpdate struct that indicates
+// NewWorkerTagDeletedUpdate returns a EventWorkerTagUpdate struct that indicates
 // the worker tag has been deleted.
-func NewWorkerTagDeletedUpdate(tagUUID string) api.SocketIOWorkerTagUpdate {
+func NewWorkerTagDeletedUpdate(tagUUID string) api.EventWorkerTagUpdate {
 	wasDeleted := true
-	tagUpdate := api.SocketIOWorkerTagUpdate{
+	tagUpdate := api.EventWorkerTagUpdate{
 		Tag: api.WorkerTag{
 			Id: &tagUUID,
 		},
@@ -35,12 +35,12 @@ func NewWorkerTagDeletedUpdate(tagUUID string) api.SocketIOWorkerTagUpdate {
 	return tagUpdate
 }
 
-func (b *Broker) BroadcastWorkerTagUpdate(workerTagUpdate api.SocketIOWorkerTagUpdate) {
+func (b *Broker) BroadcastWorkerTagUpdate(workerTagUpdate api.EventWorkerTagUpdate) {
 	log.Debug().Interface("WorkerTagUpdate", workerTagUpdate).Msg("eventbus: broadcasting worker tag update")
 	b.broadcast(TopicWorkerTagUpdate, workerTagUpdate)
 }
 
-func (b *Broker) BroadcastNewWorkerTag(workerTagUpdate api.SocketIOWorkerTagUpdate) {
+func (b *Broker) BroadcastNewWorkerTag(workerTagUpdate api.EventWorkerTagUpdate) {
 	log.Debug().Interface("WorkerTagUpdate", workerTagUpdate).Msg("eventbus: broadcasting new worker tag")
 	b.broadcast(TopicWorkerTagUpdate, workerTagUpdate)
 }

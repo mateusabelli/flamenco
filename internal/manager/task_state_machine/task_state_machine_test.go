@@ -419,7 +419,7 @@ func (m *StateMachineMocks) expectBroadcastJobChange(
 	job *persistence.Job,
 	fromStatus, toStatus api.JobStatus,
 ) *gomock.Call {
-	expectUpdate := api.SocketIOJobUpdate{
+	expectUpdate := api.EventJobUpdate{
 		Id:             job.UUID,
 		Name:           &job.Name,
 		PreviousStatus: &fromStatus,
@@ -434,7 +434,7 @@ func (m *StateMachineMocks) expectBroadcastJobChangeWithTaskRefresh(
 	job *persistence.Job,
 	fromStatus, toStatus api.JobStatus,
 ) *gomock.Call {
-	expectUpdate := api.SocketIOJobUpdate{
+	expectUpdate := api.EventJobUpdate{
 		Id:             job.UUID,
 		Name:           &job.Name,
 		PreviousStatus: &fromStatus,
@@ -449,7 +449,7 @@ func (m *StateMachineMocks) expectBroadcastTaskChange(
 	task *persistence.Task,
 	fromStatus, toStatus api.TaskStatus,
 ) *gomock.Call {
-	expectUpdate := api.SocketIOTaskUpdate{
+	expectUpdate := api.EventTaskUpdate{
 		Id:             task.UUID,
 		JobId:          task.Job.UUID,
 		Name:           task.Name,

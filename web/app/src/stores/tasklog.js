@@ -26,7 +26,7 @@ export const useTaskLog = defineStore('taskLog', {
   },
   actions: {
     /**
-     * @param {API.SocketIOTaskLogUpdate} taskLogUpdate
+     * @param {API.EventTaskLogUpdate} taskLogUpdate
      */
     addTaskLogUpdate(taskLogUpdate) {
       this.addChunk(taskLogUpdate.log);

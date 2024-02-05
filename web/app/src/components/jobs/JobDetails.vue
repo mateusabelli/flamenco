@@ -182,7 +182,7 @@ export default {
   },
   methods: {
     /**
-     * @param {API.SocketIOLastRenderedUpdate} lastRenderedUpdate
+     * @param {API.EventLastRenderedUpdate} lastRenderedUpdate
      */
     refreshLastRenderedImage(lastRenderedUpdate) {
       this.$refs.lastRenderedImage.refreshLastRenderedImage(lastRenderedUpdate);

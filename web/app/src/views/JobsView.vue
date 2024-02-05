@@ -192,7 +192,7 @@ export default {
 
     /**
      * Event handler for SocketIO task updates.
-     * @param {API.SocketIOTaskUpdate} taskUpdate
+     * @param {API.EventTaskUpdate} taskUpdate
      */
     onSioTaskUpdate(taskUpdate) {
       if (this.$refs.tasksTable) this.$refs.tasksTable.processTaskUpdate(taskUpdate);
@@ -202,7 +202,7 @@ export default {
 
     /**
      * Event handler for SocketIO task log updates.
-     * @param {API.SocketIOTaskLogUpdate} taskLogUpdate
+     * @param {API.EventTaskLogUpdate} taskLogUpdate
      */
     onSioTaskLogUpdate(taskLogUpdate) {
       this.taskLog.addTaskLogUpdate(taskLogUpdate);
@@ -210,7 +210,7 @@ export default {
 
     /**
      * Event handler for SocketIO "last-rendered" updates.
-     * @param {API.SocketIOLastRenderedUpdate} lastRenderedUpdate
+     * @param {API.EventLastRenderedUpdate} lastRenderedUpdate
      */
     onSioLastRenderedUpdate(lastRenderedUpdate) {
       this.$refs.jobDetails.refreshLastRenderedImage(lastRenderedUpdate);
