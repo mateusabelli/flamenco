@@ -1,6 +1,6 @@
 # SocketIOSubscription
 
-Send by SocketIO clients as `/subscription` event type, to manage their subscription to job updates. Clients always get job updates, but for task updates or task logs they need to explicitly subscribe. For simplicity, clients can only subscribe to one job (to get task updates for that job) and one task's log at a time. 
+Send by SocketIO clients as `/subscription` event type, to manage their subscription to job updates. Clients always get job updates, but for task updates or task logs they need to explicitly subscribe. For simplicity, clients can only subscribe to one job (to get task updates for that job) and one task's log at a time. This is not used by MQTT, as with that protocol the subscriptions are managed by the MQTT broker, not Flamenco. 
 
 ## Properties
 Name | Type | Description | Notes

@@ -23,7 +23,7 @@ import SocketIOSubscriptionType from './SocketIOSubscriptionType';
 class SocketIOSubscription {
     /**
      * Constructs a new <code>SocketIOSubscription</code>.
-     * Send by SocketIO clients as &#x60;/subscription&#x60; event type, to manage their subscription to job updates. Clients always get job updates, but for task updates or task logs they need to explicitly subscribe. For simplicity, clients can only subscribe to one job (to get task updates for that job) and one task&#39;s log at a time. 
+     * Send by SocketIO clients as &#x60;/subscription&#x60; event type, to manage their subscription to job updates. Clients always get job updates, but for task updates or task logs they need to explicitly subscribe. For simplicity, clients can only subscribe to one job (to get task updates for that job) and one task&#39;s log at a time. This is not used by MQTT, as with that protocol the subscriptions are managed by the MQTT broker, not Flamenco. 
      * @alias module:model/SocketIOSubscription
      * @param op {module:model/SocketIOSubscriptionOperation} 
      * @param type {module:model/SocketIOSubscriptionType} 

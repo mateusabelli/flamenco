@@ -14,21 +14,21 @@
 import ApiClient from '../ApiClient';
 
 /**
- * The SocketIOTaskLogUpdate model module.
- * @module model/SocketIOTaskLogUpdate
+ * The EventTaskLogUpdate model module.
+ * @module model/EventTaskLogUpdate
  * @version 0.0.0
  */
-class SocketIOTaskLogUpdate {
+class EventTaskLogUpdate {
     /**
-     * Constructs a new <code>SocketIOTaskLogUpdate</code>.
-     * Task log chunk, sent to a SocketIO room dedicated to a single task, to avoid sending too many updates. 
-     * @alias module:model/SocketIOTaskLogUpdate
+     * Constructs a new <code>EventTaskLogUpdate</code>.
+     * Task log chunk, sent to a MQTT topic/SocketIO room dedicated to a single task, to avoid sending too many updates. 
+     * @alias module:model/EventTaskLogUpdate
      * @param taskId {String} UUID of the Task
      * @param log {String} Chunk of the task log. May contain multiple lines of text.
      */
     constructor(taskId, log) { 
         
-        SocketIOTaskLogUpdate.initialize(this, taskId, log);
+        EventTaskLogUpdate.initialize(this, taskId, log);
     }
 
     /**
@@ -42,15 +42,15 @@ class SocketIOTaskLogUpdate {
     }
 
     /**
-     * Constructs a <code>SocketIOTaskLogUpdate</code> from a plain JavaScript object, optionally creating a new instance.
+     * Constructs a <code>EventTaskLogUpdate</code> from a plain JavaScript object, optionally creating a new instance.
      * Copies all relevant properties from <code>data</code> to <code>obj</code> if supplied or a new instance if not.
      * @param {Object} data The plain JavaScript object bearing properties of interest.
-     * @param {module:model/SocketIOTaskLogUpdate} obj Optional instance to populate.
-     * @return {module:model/SocketIOTaskLogUpdate} The populated <code>SocketIOTaskLogUpdate</code> instance.
+     * @param {module:model/EventTaskLogUpdate} obj Optional instance to populate.
+     * @return {module:model/EventTaskLogUpdate} The populated <code>EventTaskLogUpdate</code> instance.
      */
     static constructFromObject(data, obj) {
         if (data) {
-            obj = obj || new SocketIOTaskLogUpdate();
+            obj = obj || new EventTaskLogUpdate();
 
             if (data.hasOwnProperty('task_id')) {
                 obj['task_id'] = ApiClient.convertToType(data['task_id'], 'String');
@@ -69,18 +69,18 @@ class SocketIOTaskLogUpdate {
  * UUID of the Task
  * @member {String} task_id
  */
-SocketIOTaskLogUpdate.prototype['task_id'] = undefined;
+EventTaskLogUpdate.prototype['task_id'] = undefined;
 
 /**
  * Chunk of the task log. May contain multiple lines of text.
  * @member {String} log
  */
-SocketIOTaskLogUpdate.prototype['log'] = undefined;
+EventTaskLogUpdate.prototype['log'] = undefined;
 
 
 
 
 
 
-export default SocketIOTaskLogUpdate;
+export default EventTaskLogUpdate;
 

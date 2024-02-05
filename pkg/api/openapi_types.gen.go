@@ -266,6 +266,101 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// Subset of a Job, sent over SocketIO/MQTT when a job changes. For new jobs, `previous_status` will be excluded.
+type EventJobUpdate struct {
+	// If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager.
+	DeleteRequestedAt *time.Time `json:"delete_requested_at,omitempty"`
+
+	// UUID of the Job
+	Id string `json:"id"`
+
+	// Name of the job
+	Name           *string    `json:"name,omitempty"`
+	PreviousStatus *JobStatus `json:"previous_status,omitempty"`
+	Priority       int        `json:"priority"`
+
+	// Indicates that the client should refresh all the job's tasks. This is sent for mass updates, where updating each individual task would generate too many updates to be practical.
+	RefreshTasks bool      `json:"refresh_tasks"`
+	Status       JobStatus `json:"status"`
+	Type         string    `json:"type"`
+
+	// Timestamp of last update
+	Updated time.Time `json:"updated"`
+
+	// When a job was just deleted, this is set to `true`. If this is specified, only the 'id' field is set, the rest will be empty.
+	WasDeleted *bool `json:"was_deleted,omitempty"`
+}
+
+// Indicator that the last-rendered image of this job was updated.
+type EventLastRenderedUpdate struct {
+	JobId string `json:"job_id"`
+
+	// Enough information for a client to piece together different strings to form a host-relative URL to the last-rendered image. To construct the URL, concatenate "{base}/{one of the suffixes}".
+	Thumbnail JobLastRenderedImageInfo `json:"thumbnail"`
+}
+
+// Task log chunk, sent to a MQTT topic/SocketIO room dedicated to a single task, to avoid sending too many updates.
+type EventTaskLogUpdate struct {
+	// Chunk of the task log. May contain multiple lines of text.
+	Log string `json:"log"`
+
+	// UUID of the Task
+	TaskId string `json:"task_id"`
+}
+
+// Subset of a Task, sent over SocketIO/MQTT when a task changes. For new tasks, `previous_status` will be excluded.
+type EventTaskUpdate struct {
+	Activity string `json:"activity"`
+
+	// UUID of the Task
+	Id    string `json:"id"`
+	JobId string `json:"job_id"`
+
+	// Name of the task
+	Name           string      `json:"name"`
+	PreviousStatus *TaskStatus `json:"previous_status,omitempty"`
+	Status         TaskStatus  `json:"status"`
+
+	// Timestamp of last update
+	Updated time.Time `json:"updated"`
+}
+
+// Worker Tag, sent over SocketIO/MQTT when it changes.
+type EventWorkerTagUpdate struct {
+	// Tag of workers. A job can optionally specify which tag it should be limited to. Workers can be part of multiple tags simultaneously.
+	Tag WorkerTag `json:"tag"`
+
+	// When a tag was just deleted, this is set to `true`.
+	WasDeleted *bool `json:"was_deleted,omitempty"`
+}
+
+// Subset of a Worker, sent over SocketIO/MQTT when a worker changes.
+type EventWorkerUpdate struct {
+	// Whether this Worker can auto-restart.
+	CanRestart bool `json:"can_restart"`
+
+	// This is only set when the worker was deleted.
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+
+	// UUID of the Worker
+	Id string `json:"id"`
+
+	// Last time this worker was seen by the Manager.
+	LastSeen *time.Time `json:"last_seen,omitempty"`
+
+	// Name of the worker
+	Name           string        `json:"name"`
+	PreviousStatus *WorkerStatus `json:"previous_status,omitempty"`
+	Status         WorkerStatus  `json:"status"`
+
+	// Request for a Worker to change its status to `status`.
+	StatusChange *WorkerStatusChangeRequest `json:"status_change,omitempty"`
+
+	// Timestamp of last update
+	Updated time.Time `json:"updated"`
+	Version string    `json:"version"`
+}
+
 // FlamencoVersion defines model for FlamencoVersion.
 type FlamencoVersion struct {
 	Git          string `json:"git"`
@@ -536,40 +631,8 @@ type SharedStorageLocation struct {
 	ShamanEnabled bool `json:"shamanEnabled"`
 }
 
-// Subset of a Job, sent over SocketIO when a job changes. For new jobs, `previous_status` will be excluded.
-type SocketIOJobUpdate struct {
-	// If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager.
-	DeleteRequestedAt *time.Time `json:"delete_requested_at,omitempty"`
-
-	// UUID of the Job
-	Id string `json:"id"`
-
-	// Name of the job
-	Name           *string    `json:"name,omitempty"`
-	PreviousStatus *JobStatus `json:"previous_status,omitempty"`
-	Priority       int        `json:"priority"`
-
-	// Indicates that the client should refresh all the job's tasks. This is sent for mass updates, where updating each individual task would generate too many updates to be practical.
-	RefreshTasks bool      `json:"refresh_tasks"`
-	Status       JobStatus `json:"status"`
-	Type         string    `json:"type"`
-
-	// Timestamp of last update
-	Updated time.Time `json:"updated"`
-
-	// When a job was just deleted, this is set to `true`. If this is specified, only the 'id' field is set, the rest will be empty.
-	WasDeleted *bool `json:"was_deleted,omitempty"`
-}
-
-// Indicator that the last-rendered image of this job was updated.
-type SocketIOLastRenderedUpdate struct {
-	JobId string `json:"job_id"`
-
-	// Enough information for a client to piece together different strings to form a host-relative URL to the last-rendered image. To construct the URL, concatenate "{base}/{one of the suffixes}".
-	Thumbnail JobLastRenderedImageInfo `json:"thumbnail"`
-}
-
 // Send by SocketIO clients as `/subscription` event type, to manage their subscription to job updates. Clients always get job updates, but for task updates or task logs they need to explicitly subscribe. For simplicity, clients can only subscribe to one job (to get task updates for that job) and one task's log at a time.
+// This is not used by MQTT, as with that protocol the subscriptions are managed by the MQTT broker, not Flamenco.
 type SocketIOSubscription struct {
 	Op SocketIOSubscriptionOperation `json:"op"`
 
@@ -585,68 +648,6 @@ type SocketIOSubscriptionOperation string
 
 // What kind of thing to subscribe to / unsubscribe from.
 type SocketIOSubscriptionType string
-
-// Task log chunk, sent to a SocketIO room dedicated to a single task, to avoid sending too many updates.
-type SocketIOTaskLogUpdate struct {
-	// Chunk of the task log. May contain multiple lines of text.
-	Log string `json:"log"`
-
-	// UUID of the Task
-	TaskId string `json:"task_id"`
-}
-
-// Subset of a Task, sent over SocketIO when a task changes. For new tasks, `previous_status` will be excluded.
-type SocketIOTaskUpdate struct {
-	Activity string `json:"activity"`
-
-	// UUID of the Task
-	Id    string `json:"id"`
-	JobId string `json:"job_id"`
-
-	// Name of the task
-	Name           string      `json:"name"`
-	PreviousStatus *TaskStatus `json:"previous_status,omitempty"`
-	Status         TaskStatus  `json:"status"`
-
-	// Timestamp of last update
-	Updated time.Time `json:"updated"`
-}
-
-// Worker Tag, sent over SocketIO when it changes.
-type SocketIOWorkerTagUpdate struct {
-	// Tag of workers. A job can optionally specify which tag it should be limited to. Workers can be part of multiple tags simultaneously.
-	Tag WorkerTag `json:"tag"`
-
-	// When a tag was just deleted, this is set to `true`.
-	WasDeleted *bool `json:"was_deleted,omitempty"`
-}
-
-// Subset of a Worker, sent over SocketIO when a worker changes.
-type SocketIOWorkerUpdate struct {
-	// Whether this Worker can auto-restart.
-	CanRestart bool `json:"can_restart"`
-
-	// This is only set when the worker was deleted.
-	DeletedAt *time.Time `json:"deleted_at,omitempty"`
-
-	// UUID of the Worker
-	Id string `json:"id"`
-
-	// Last time this worker was seen by the Manager.
-	LastSeen *time.Time `json:"last_seen,omitempty"`
-
-	// Name of the worker
-	Name           string        `json:"name"`
-	PreviousStatus *WorkerStatus `json:"previous_status,omitempty"`
-	Status         WorkerStatus  `json:"status"`
-
-	// Request for a Worker to change its status to `status`.
-	StatusChange *WorkerStatusChangeRequest `json:"status_change,omitempty"`
-
-	// Timestamp of last update
-	Updated time.Time `json:"updated"`
-	Version string    `json:"version"`
-}
 
 // Job definition submitted to Flamenco.
 type SubmittedJob struct {

@@ -16,15 +16,15 @@ import WorkerStatus from './WorkerStatus';
 import WorkerStatusChangeRequest from './WorkerStatusChangeRequest';
 
 /**
- * The SocketIOWorkerUpdate model module.
- * @module model/SocketIOWorkerUpdate
+ * The EventWorkerUpdate model module.
+ * @module model/EventWorkerUpdate
  * @version 0.0.0
  */
-class SocketIOWorkerUpdate {
+class EventWorkerUpdate {
     /**
-     * Constructs a new <code>SocketIOWorkerUpdate</code>.
-     * Subset of a Worker, sent over SocketIO when a worker changes. 
-     * @alias module:model/SocketIOWorkerUpdate
+     * Constructs a new <code>EventWorkerUpdate</code>.
+     * Subset of a Worker, sent over SocketIO/MQTT when a worker changes. 
+     * @alias module:model/EventWorkerUpdate
      * @param id {String} UUID of the Worker
      * @param name {String} Name of the worker
      * @param updated {Date} Timestamp of last update
@@ -34,7 +34,7 @@ class SocketIOWorkerUpdate {
      */
     constructor(id, name, updated, status, version, canRestart) { 
         
-        SocketIOWorkerUpdate.initialize(this, id, name, updated, status, version, canRestart);
+        EventWorkerUpdate.initialize(this, id, name, updated, status, version, canRestart);
     }
 
     /**
@@ -52,15 +52,15 @@ class SocketIOWorkerUpdate {
     }
 
     /**
-     * Constructs a <code>SocketIOWorkerUpdate</code> from a plain JavaScript object, optionally creating a new instance.
+     * Constructs a <code>EventWorkerUpdate</code> from a plain JavaScript object, optionally creating a new instance.
      * Copies all relevant properties from <code>data</code> to <code>obj</code> if supplied or a new instance if not.
      * @param {Object} data The plain JavaScript object bearing properties of interest.
-     * @param {module:model/SocketIOWorkerUpdate} obj Optional instance to populate.
-     * @return {module:model/SocketIOWorkerUpdate} The populated <code>SocketIOWorkerUpdate</code> instance.
+     * @param {module:model/EventWorkerUpdate} obj Optional instance to populate.
+     * @return {module:model/EventWorkerUpdate} The populated <code>EventWorkerUpdate</code> instance.
      */
     static constructFromObject(data, obj) {
         if (data) {
-            obj = obj || new SocketIOWorkerUpdate();
+            obj = obj || new EventWorkerUpdate();
 
             if (data.hasOwnProperty('id')) {
                 obj['id'] = ApiClient.convertToType(data['id'], 'String');
@@ -103,62 +103,62 @@ class SocketIOWorkerUpdate {
  * UUID of the Worker
  * @member {String} id
  */
-SocketIOWorkerUpdate.prototype['id'] = undefined;
+EventWorkerUpdate.prototype['id'] = undefined;
 
 /**
  * Name of the worker
  * @member {String} name
  */
-SocketIOWorkerUpdate.prototype['name'] = undefined;
+EventWorkerUpdate.prototype['name'] = undefined;
 
 /**
  * Timestamp of last update
  * @member {Date} updated
  */
-SocketIOWorkerUpdate.prototype['updated'] = undefined;
+EventWorkerUpdate.prototype['updated'] = undefined;
 
 /**
  * Last time this worker was seen by the Manager.
  * @member {Date} last_seen
  */
-SocketIOWorkerUpdate.prototype['last_seen'] = undefined;
+EventWorkerUpdate.prototype['last_seen'] = undefined;
 
 /**
  * @member {module:model/WorkerStatus} status
  */
-SocketIOWorkerUpdate.prototype['status'] = undefined;
+EventWorkerUpdate.prototype['status'] = undefined;
 
 /**
  * @member {module:model/WorkerStatus} previous_status
  */
-SocketIOWorkerUpdate.prototype['previous_status'] = undefined;
+EventWorkerUpdate.prototype['previous_status'] = undefined;
 
 /**
  * @member {module:model/WorkerStatusChangeRequest} status_change
  */
-SocketIOWorkerUpdate.prototype['status_change'] = undefined;
+EventWorkerUpdate.prototype['status_change'] = undefined;
 
 /**
  * @member {String} version
  */
-SocketIOWorkerUpdate.prototype['version'] = undefined;
+EventWorkerUpdate.prototype['version'] = undefined;
 
 /**
  * This is only set when the worker was deleted.
  * @member {Date} deleted_at
  */
-SocketIOWorkerUpdate.prototype['deleted_at'] = undefined;
+EventWorkerUpdate.prototype['deleted_at'] = undefined;
 
 /**
  * Whether this Worker can auto-restart.
  * @member {Boolean} can_restart
  */
-SocketIOWorkerUpdate.prototype['can_restart'] = undefined;
+EventWorkerUpdate.prototype['can_restart'] = undefined;
 
 
 
 
 
 
-export default SocketIOWorkerUpdate;
+export default EventWorkerUpdate;
 

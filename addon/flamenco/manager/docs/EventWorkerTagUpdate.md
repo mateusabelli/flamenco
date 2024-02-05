@@ -1,6 +1,6 @@
-# SocketIOWorkerTagUpdate
+# EventWorkerTagUpdate
 
-Worker Tag, sent over SocketIO when it changes. 
+Worker Tag, sent over SocketIO/MQTT when it changes. 
 
 ## Properties
 Name | Type | Description | Notes

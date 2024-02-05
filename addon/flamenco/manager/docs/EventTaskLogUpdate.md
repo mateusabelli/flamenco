@@ -1,6 +1,6 @@
-# SocketIOTaskLogUpdate
+# EventTaskLogUpdate
 
-Task log chunk, sent to a SocketIO room dedicated to a single task, to avoid sending too many updates. 
+Task log chunk, sent to a MQTT topic/SocketIO room dedicated to a single task, to avoid sending too many updates. 
 
 ## Properties
 Name | Type | Description | Notes

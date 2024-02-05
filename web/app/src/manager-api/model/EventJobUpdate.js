@@ -15,15 +15,15 @@ import ApiClient from '../ApiClient';
 import JobStatus from './JobStatus';
 
 /**
- * The SocketIOJobUpdate model module.
- * @module model/SocketIOJobUpdate
+ * The EventJobUpdate model module.
+ * @module model/EventJobUpdate
  * @version 0.0.0
  */
-class SocketIOJobUpdate {
+class EventJobUpdate {
     /**
-     * Constructs a new <code>SocketIOJobUpdate</code>.
-     * Subset of a Job, sent over SocketIO when a job changes. For new jobs, &#x60;previous_status&#x60; will be excluded. 
-     * @alias module:model/SocketIOJobUpdate
+     * Constructs a new <code>EventJobUpdate</code>.
+     * Subset of a Job, sent over SocketIO/MQTT when a job changes. For new jobs, &#x60;previous_status&#x60; will be excluded. 
+     * @alias module:model/EventJobUpdate
      * @param id {String} UUID of the Job
      * @param updated {Date} Timestamp of last update
      * @param status {module:model/JobStatus} 
@@ -33,7 +33,7 @@ class SocketIOJobUpdate {
      */
     constructor(id, updated, status, type, priority, refreshTasks) { 
         
-        SocketIOJobUpdate.initialize(this, id, updated, status, type, priority, refreshTasks);
+        EventJobUpdate.initialize(this, id, updated, status, type, priority, refreshTasks);
     }
 
     /**
@@ -51,15 +51,15 @@ class SocketIOJobUpdate {
     }
 
     /**
-     * Constructs a <code>SocketIOJobUpdate</code> from a plain JavaScript object, optionally creating a new instance.
+     * Constructs a <code>EventJobUpdate</code> from a plain JavaScript object, optionally creating a new instance.
      * Copies all relevant properties from <code>data</code> to <code>obj</code> if supplied or a new instance if not.
      * @param {Object} data The plain JavaScript object bearing properties of interest.
-     * @param {module:model/SocketIOJobUpdate} obj Optional instance to populate.
-     * @return {module:model/SocketIOJobUpdate} The populated <code>SocketIOJobUpdate</code> instance.
+     * @param {module:model/EventJobUpdate} obj Optional instance to populate.
+     * @return {module:model/EventJobUpdate} The populated <code>EventJobUpdate</code> instance.
      */
     static constructFromObject(data, obj) {
         if (data) {
-            obj = obj || new SocketIOJobUpdate();
+            obj = obj || new EventJobUpdate();
 
             if (data.hasOwnProperty('id')) {
                 obj['id'] = ApiClient.convertToType(data['id'], 'String');
@@ -102,63 +102,63 @@ class SocketIOJobUpdate {
  * UUID of the Job
  * @member {String} id
  */
-SocketIOJobUpdate.prototype['id'] = undefined;
+EventJobUpdate.prototype['id'] = undefined;
 
 /**
  * Name of the job
  * @member {String} name
  */
-SocketIOJobUpdate.prototype['name'] = undefined;
+EventJobUpdate.prototype['name'] = undefined;
 
 /**
  * Timestamp of last update
  * @member {Date} updated
  */
-SocketIOJobUpdate.prototype['updated'] = undefined;
+EventJobUpdate.prototype['updated'] = undefined;
 
 /**
  * @member {module:model/JobStatus} status
  */
-SocketIOJobUpdate.prototype['status'] = undefined;
+EventJobUpdate.prototype['status'] = undefined;
 
 /**
  * @member {module:model/JobStatus} previous_status
  */
-SocketIOJobUpdate.prototype['previous_status'] = undefined;
+EventJobUpdate.prototype['previous_status'] = undefined;
 
 /**
  * @member {String} type
  */
-SocketIOJobUpdate.prototype['type'] = undefined;
+EventJobUpdate.prototype['type'] = undefined;
 
 /**
  * @member {Number} priority
  * @default 50
  */
-SocketIOJobUpdate.prototype['priority'] = 50;
+EventJobUpdate.prototype['priority'] = 50;
 
 /**
  * Indicates that the client should refresh all the job's tasks. This is sent for mass updates, where updating each individual task would generate too many updates to be practical. 
  * @member {Boolean} refresh_tasks
  */
-SocketIOJobUpdate.prototype['refresh_tasks'] = undefined;
+EventJobUpdate.prototype['refresh_tasks'] = undefined;
 
 /**
  * If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager. 
  * @member {Date} delete_requested_at
  */
-SocketIOJobUpdate.prototype['delete_requested_at'] = undefined;
+EventJobUpdate.prototype['delete_requested_at'] = undefined;
 
 /**
  * When a job was just deleted, this is set to `true`. If this is specified, only the 'id' field is set, the rest will be empty. 
  * @member {Boolean} was_deleted
  */
-SocketIOJobUpdate.prototype['was_deleted'] = undefined;
+EventJobUpdate.prototype['was_deleted'] = undefined;
 
 
 
 
 
 
-export default SocketIOJobUpdate;
+export default EventJobUpdate;
 

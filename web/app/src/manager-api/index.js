@@ -25,6 +25,12 @@ import BlenderPathCheckResult from './model/BlenderPathCheckResult';
 import BlenderPathSource from './model/BlenderPathSource';
 import Command from './model/Command';
 import Error from './model/Error';
+import EventJobUpdate from './model/EventJobUpdate';
+import EventLastRenderedUpdate from './model/EventLastRenderedUpdate';
+import EventTaskLogUpdate from './model/EventTaskLogUpdate';
+import EventTaskUpdate from './model/EventTaskUpdate';
+import EventWorkerTagUpdate from './model/EventWorkerTagUpdate';
+import EventWorkerUpdate from './model/EventWorkerUpdate';
 import FlamencoVersion from './model/FlamencoVersion';
 import Job from './model/Job';
 import JobAllOf from './model/JobAllOf';
@@ -57,15 +63,9 @@ import ShamanRequirementsRequest from './model/ShamanRequirementsRequest';
 import ShamanRequirementsResponse from './model/ShamanRequirementsResponse';
 import ShamanSingleFileStatus from './model/ShamanSingleFileStatus';
 import SharedStorageLocation from './model/SharedStorageLocation';
-import SocketIOJobUpdate from './model/SocketIOJobUpdate';
-import SocketIOLastRenderedUpdate from './model/SocketIOLastRenderedUpdate';
 import SocketIOSubscription from './model/SocketIOSubscription';
 import SocketIOSubscriptionOperation from './model/SocketIOSubscriptionOperation';
 import SocketIOSubscriptionType from './model/SocketIOSubscriptionType';
-import SocketIOTaskLogUpdate from './model/SocketIOTaskLogUpdate';
-import SocketIOTaskUpdate from './model/SocketIOTaskUpdate';
-import SocketIOWorkerTagUpdate from './model/SocketIOWorkerTagUpdate';
-import SocketIOWorkerUpdate from './model/SocketIOWorkerUpdate';
 import SubmittedJob from './model/SubmittedJob';
 import Task from './model/Task';
 import TaskLogInfo from './model/TaskLogInfo';
@@ -206,6 +206,42 @@ export {
      * @property {module:model/Error}
      */
     Error,
+
+    /**
+     * The EventJobUpdate model constructor.
+     * @property {module:model/EventJobUpdate}
+     */
+    EventJobUpdate,
+
+    /**
+     * The EventLastRenderedUpdate model constructor.
+     * @property {module:model/EventLastRenderedUpdate}
+     */
+    EventLastRenderedUpdate,
+
+    /**
+     * The EventTaskLogUpdate model constructor.
+     * @property {module:model/EventTaskLogUpdate}
+     */
+    EventTaskLogUpdate,
+
+    /**
+     * The EventTaskUpdate model constructor.
+     * @property {module:model/EventTaskUpdate}
+     */
+    EventTaskUpdate,
+
+    /**
+     * The EventWorkerTagUpdate model constructor.
+     * @property {module:model/EventWorkerTagUpdate}
+     */
+    EventWorkerTagUpdate,
+
+    /**
+     * The EventWorkerUpdate model constructor.
+     * @property {module:model/EventWorkerUpdate}
+     */
+    EventWorkerUpdate,
 
     /**
      * The FlamencoVersion model constructor.
@@ -400,18 +436,6 @@ export {
     SharedStorageLocation,
 
     /**
-     * The SocketIOJobUpdate model constructor.
-     * @property {module:model/SocketIOJobUpdate}
-     */
-    SocketIOJobUpdate,
-
-    /**
-     * The SocketIOLastRenderedUpdate model constructor.
-     * @property {module:model/SocketIOLastRenderedUpdate}
-     */
-    SocketIOLastRenderedUpdate,
-
-    /**
      * The SocketIOSubscription model constructor.
      * @property {module:model/SocketIOSubscription}
      */
@@ -428,30 +452,6 @@ export {
      * @property {module:model/SocketIOSubscriptionType}
      */
     SocketIOSubscriptionType,
-
-    /**
-     * The SocketIOTaskLogUpdate model constructor.
-     * @property {module:model/SocketIOTaskLogUpdate}
-     */
-    SocketIOTaskLogUpdate,
-
-    /**
-     * The SocketIOTaskUpdate model constructor.
-     * @property {module:model/SocketIOTaskUpdate}
-     */
-    SocketIOTaskUpdate,
-
-    /**
-     * The SocketIOWorkerTagUpdate model constructor.
-     * @property {module:model/SocketIOWorkerTagUpdate}
-     */
-    SocketIOWorkerTagUpdate,
-
-    /**
-     * The SocketIOWorkerUpdate model constructor.
-     * @property {module:model/SocketIOWorkerUpdate}
-     */
-    SocketIOWorkerUpdate,
 
     /**
      * The SubmittedJob model constructor.

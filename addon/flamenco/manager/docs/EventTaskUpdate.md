@@ -1,6 +1,6 @@
-# SocketIOTaskUpdate
+# EventTaskUpdate
 
-Subset of a Task, sent over SocketIO when a task changes. For new tasks, `previous_status` will be excluded. 
+Subset of a Task, sent over SocketIO/MQTT when a task changes. For new tasks, `previous_status` will be excluded. 
 
 ## Properties
 Name | Type | Description | Notes

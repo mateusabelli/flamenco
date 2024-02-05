@@ -1,6 +1,6 @@
-# SocketIOJobUpdate
+# EventJobUpdate
 
-Subset of a Job, sent over SocketIO when a job changes. For new jobs, `previous_status` will be excluded. 
+Subset of a Job, sent over SocketIO/MQTT when a job changes. For new jobs, `previous_status` will be excluded. 
 
 ## Properties
 Name | Type | Description | Notes

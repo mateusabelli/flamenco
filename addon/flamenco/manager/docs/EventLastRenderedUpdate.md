@@ -1,4 +1,4 @@
-# SocketIOLastRenderedUpdate
+# EventLastRenderedUpdate
 
 Indicator that the last-rendered image of this job was updated.
 

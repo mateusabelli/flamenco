@@ -15,21 +15,21 @@ import ApiClient from '../ApiClient';
 import JobLastRenderedImageInfo from './JobLastRenderedImageInfo';
 
 /**
- * The SocketIOLastRenderedUpdate model module.
- * @module model/SocketIOLastRenderedUpdate
+ * The EventLastRenderedUpdate model module.
+ * @module model/EventLastRenderedUpdate
  * @version 0.0.0
  */
-class SocketIOLastRenderedUpdate {
+class EventLastRenderedUpdate {
     /**
-     * Constructs a new <code>SocketIOLastRenderedUpdate</code>.
+     * Constructs a new <code>EventLastRenderedUpdate</code>.
      * Indicator that the last-rendered image of this job was updated.
-     * @alias module:model/SocketIOLastRenderedUpdate
+     * @alias module:model/EventLastRenderedUpdate
      * @param jobId {String} 
      * @param thumbnail {module:model/JobLastRenderedImageInfo} 
      */
     constructor(jobId, thumbnail) { 
         
-        SocketIOLastRenderedUpdate.initialize(this, jobId, thumbnail);
+        EventLastRenderedUpdate.initialize(this, jobId, thumbnail);
     }
 
     /**
@@ -43,15 +43,15 @@ class SocketIOLastRenderedUpdate {
     }
 
     /**
-     * Constructs a <code>SocketIOLastRenderedUpdate</code> from a plain JavaScript object, optionally creating a new instance.
+     * Constructs a <code>EventLastRenderedUpdate</code> from a plain JavaScript object, optionally creating a new instance.
      * Copies all relevant properties from <code>data</code> to <code>obj</code> if supplied or a new instance if not.
      * @param {Object} data The plain JavaScript object bearing properties of interest.
-     * @param {module:model/SocketIOLastRenderedUpdate} obj Optional instance to populate.
-     * @return {module:model/SocketIOLastRenderedUpdate} The populated <code>SocketIOLastRenderedUpdate</code> instance.
+     * @param {module:model/EventLastRenderedUpdate} obj Optional instance to populate.
+     * @return {module:model/EventLastRenderedUpdate} The populated <code>EventLastRenderedUpdate</code> instance.
      */
     static constructFromObject(data, obj) {
         if (data) {
-            obj = obj || new SocketIOLastRenderedUpdate();
+            obj = obj || new EventLastRenderedUpdate();
 
             if (data.hasOwnProperty('job_id')) {
                 obj['job_id'] = ApiClient.convertToType(data['job_id'], 'String');
@@ -69,17 +69,17 @@ class SocketIOLastRenderedUpdate {
 /**
  * @member {String} job_id
  */
-SocketIOLastRenderedUpdate.prototype['job_id'] = undefined;
+EventLastRenderedUpdate.prototype['job_id'] = undefined;
 
 /**
  * @member {module:model/JobLastRenderedImageInfo} thumbnail
  */
-SocketIOLastRenderedUpdate.prototype['thumbnail'] = undefined;
+EventLastRenderedUpdate.prototype['thumbnail'] = undefined;
 
 
 
 
 
 
-export default SocketIOLastRenderedUpdate;
+export default EventLastRenderedUpdate;
 

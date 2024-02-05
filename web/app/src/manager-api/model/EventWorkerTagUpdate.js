@@ -15,20 +15,20 @@ import ApiClient from '../ApiClient';
 import WorkerTag from './WorkerTag';
 
 /**
- * The SocketIOWorkerTagUpdate model module.
- * @module model/SocketIOWorkerTagUpdate
+ * The EventWorkerTagUpdate model module.
+ * @module model/EventWorkerTagUpdate
  * @version 0.0.0
  */
-class SocketIOWorkerTagUpdate {
+class EventWorkerTagUpdate {
     /**
-     * Constructs a new <code>SocketIOWorkerTagUpdate</code>.
-     * Worker Tag, sent over SocketIO when it changes. 
-     * @alias module:model/SocketIOWorkerTagUpdate
+     * Constructs a new <code>EventWorkerTagUpdate</code>.
+     * Worker Tag, sent over SocketIO/MQTT when it changes. 
+     * @alias module:model/EventWorkerTagUpdate
      * @param tag {module:model/WorkerTag} 
      */
     constructor(tag) { 
         
-        SocketIOWorkerTagUpdate.initialize(this, tag);
+        EventWorkerTagUpdate.initialize(this, tag);
     }
 
     /**
@@ -41,15 +41,15 @@ class SocketIOWorkerTagUpdate {
     }
 
     /**
-     * Constructs a <code>SocketIOWorkerTagUpdate</code> from a plain JavaScript object, optionally creating a new instance.
+     * Constructs a <code>EventWorkerTagUpdate</code> from a plain JavaScript object, optionally creating a new instance.
      * Copies all relevant properties from <code>data</code> to <code>obj</code> if supplied or a new instance if not.
      * @param {Object} data The plain JavaScript object bearing properties of interest.
-     * @param {module:model/SocketIOWorkerTagUpdate} obj Optional instance to populate.
-     * @return {module:model/SocketIOWorkerTagUpdate} The populated <code>SocketIOWorkerTagUpdate</code> instance.
+     * @param {module:model/EventWorkerTagUpdate} obj Optional instance to populate.
+     * @return {module:model/EventWorkerTagUpdate} The populated <code>EventWorkerTagUpdate</code> instance.
      */
     static constructFromObject(data, obj) {
         if (data) {
-            obj = obj || new SocketIOWorkerTagUpdate();
+            obj = obj || new EventWorkerTagUpdate();
 
             if (data.hasOwnProperty('tag')) {
                 obj['tag'] = WorkerTag.constructFromObject(data['tag']);
@@ -67,18 +67,18 @@ class SocketIOWorkerTagUpdate {
 /**
  * @member {module:model/WorkerTag} tag
  */
-SocketIOWorkerTagUpdate.prototype['tag'] = undefined;
+EventWorkerTagUpdate.prototype['tag'] = undefined;
 
 /**
  * When a tag was just deleted, this is set to `true`.
  * @member {Boolean} was_deleted
  */
-SocketIOWorkerTagUpdate.prototype['was_deleted'] = undefined;
+EventWorkerTagUpdate.prototype['was_deleted'] = undefined;
 
 
 
 
 
 
-export default SocketIOWorkerTagUpdate;
+export default EventWorkerTagUpdate;
 

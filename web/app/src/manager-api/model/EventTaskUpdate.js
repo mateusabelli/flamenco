@@ -15,15 +15,15 @@ import ApiClient from '../ApiClient';
 import TaskStatus from './TaskStatus';
 
 /**
- * The SocketIOTaskUpdate model module.
- * @module model/SocketIOTaskUpdate
+ * The EventTaskUpdate model module.
+ * @module model/EventTaskUpdate
  * @version 0.0.0
  */
-class SocketIOTaskUpdate {
+class EventTaskUpdate {
     /**
-     * Constructs a new <code>SocketIOTaskUpdate</code>.
-     * Subset of a Task, sent over SocketIO when a task changes. For new tasks, &#x60;previous_status&#x60; will be excluded. 
-     * @alias module:model/SocketIOTaskUpdate
+     * Constructs a new <code>EventTaskUpdate</code>.
+     * Subset of a Task, sent over SocketIO/MQTT when a task changes. For new tasks, &#x60;previous_status&#x60; will be excluded. 
+     * @alias module:model/EventTaskUpdate
      * @param id {String} UUID of the Task
      * @param jobId {String} 
      * @param name {String} Name of the task
@@ -33,7 +33,7 @@ class SocketIOTaskUpdate {
      */
     constructor(id, jobId, name, updated, status, activity) { 
         
-        SocketIOTaskUpdate.initialize(this, id, jobId, name, updated, status, activity);
+        EventTaskUpdate.initialize(this, id, jobId, name, updated, status, activity);
     }
 
     /**
@@ -51,15 +51,15 @@ class SocketIOTaskUpdate {
     }
 
     /**
-     * Constructs a <code>SocketIOTaskUpdate</code> from a plain JavaScript object, optionally creating a new instance.
+     * Constructs a <code>EventTaskUpdate</code> from a plain JavaScript object, optionally creating a new instance.
      * Copies all relevant properties from <code>data</code> to <code>obj</code> if supplied or a new instance if not.
      * @param {Object} data The plain JavaScript object bearing properties of interest.
-     * @param {module:model/SocketIOTaskUpdate} obj Optional instance to populate.
-     * @return {module:model/SocketIOTaskUpdate} The populated <code>SocketIOTaskUpdate</code> instance.
+     * @param {module:model/EventTaskUpdate} obj Optional instance to populate.
+     * @return {module:model/EventTaskUpdate} The populated <code>EventTaskUpdate</code> instance.
      */
     static constructFromObject(data, obj) {
         if (data) {
-            obj = obj || new SocketIOTaskUpdate();
+            obj = obj || new EventTaskUpdate();
 
             if (data.hasOwnProperty('id')) {
                 obj['id'] = ApiClient.convertToType(data['id'], 'String');
@@ -93,44 +93,44 @@ class SocketIOTaskUpdate {
  * UUID of the Task
  * @member {String} id
  */
-SocketIOTaskUpdate.prototype['id'] = undefined;
+EventTaskUpdate.prototype['id'] = undefined;
 
 /**
  * @member {String} job_id
  */
-SocketIOTaskUpdate.prototype['job_id'] = undefined;
+EventTaskUpdate.prototype['job_id'] = undefined;
 
 /**
  * Name of the task
  * @member {String} name
  */
-SocketIOTaskUpdate.prototype['name'] = undefined;
+EventTaskUpdate.prototype['name'] = undefined;
 
 /**
  * Timestamp of last update
  * @member {Date} updated
  */
-SocketIOTaskUpdate.prototype['updated'] = undefined;
+EventTaskUpdate.prototype['updated'] = undefined;
 
 /**
  * @member {module:model/TaskStatus} status
  */
-SocketIOTaskUpdate.prototype['status'] = undefined;
+EventTaskUpdate.prototype['status'] = undefined;
 
 /**
  * @member {module:model/TaskStatus} previous_status
  */
-SocketIOTaskUpdate.prototype['previous_status'] = undefined;
+EventTaskUpdate.prototype['previous_status'] = undefined;
 
 /**
  * @member {String} activity
  */
-SocketIOTaskUpdate.prototype['activity'] = undefined;
+EventTaskUpdate.prototype['activity'] = undefined;
 
 
 
 
 
 
-export default SocketIOTaskUpdate;
+export default EventTaskUpdate;
 

@@ -1,6 +1,6 @@
-# SocketIOWorkerUpdate
+# EventWorkerUpdate
 
-Subset of a Worker, sent over SocketIO when a worker changes. 
+Subset of a Worker, sent over SocketIO/MQTT when a worker changes. 
 
 ## Properties
 Name | Type | Description | Notes
