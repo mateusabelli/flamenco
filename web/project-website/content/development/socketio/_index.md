@@ -24,27 +24,16 @@ SocketIO messages have an *event name* and *room name*.
 
 ## Technical Details
 
-The following files & directories are relevant to the SocketIO broadcasting
+The following files & directories are relevant to the SocketIO/MQTT broadcasting
 system on the Manager/backend side:
 
-`internal/manager/webupdates`
-: package for the SocketIO broadcasting system
-
-`internal/manager/webupdates/sio_rooms.go`
-: contains the list of predefined SocketIO *rooms* and *event types*. Note that
- there are more rooms than listed in that file; there are  dynamic room name
- like `job-fa48930a-105c-4125-a7f7-0aa1651dcd57` that cannot be listed there as
- constants.
-
-`internal/manager/webupdates/job_updates.go`
-: sending job-related updates.
-
-`internal/manager/webupdates/worker_updates.go`
-: sending worker-related updates.
+`internal/manager/eventbus`
+: package for the event broadcasting system, including implementations for
+SocketIO and MQTT.
 
 `pkg/api/flamenco-openapi.yaml`
-: the OpenAPI specification also includes the structures sent over SocketIO.
-Search for `SocketIOJobUpdate`; the rest is defined in its vicinity.
+: the OpenAPI specification also includes the structures sent over SocketIO and MQTT.
+Search for `EventJobUpdate`; the rest is defined in its vicinity.
 
 For a relatively simple example of a job update broadcast, see
 `func (f *Flamenco) SetJobPriority(...)` in `internal/manager/api_impl/jobs.go`.
