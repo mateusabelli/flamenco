@@ -2244,14 +2244,14 @@ components:
         "status": { $ref: "#/components/schemas/ShamanFileStatus" }
       required: [status]
 
-    # SocketIO API. These types are not used in any HTTP operation defined in
+    # Events API. These types are not used in any HTTP operation defined in
     # the 'paths' section of this document, so some code generators may choose
     # to skip these.
 
-    SocketIOJobUpdate:
+    EventJobUpdate:
       type: object
       description: >
-        Subset of a Job, sent over SocketIO when a job changes.
+        Subset of a Job, sent over SocketIO/MQTT when a job changes.
         For new jobs, `previous_status` will be excluded.
       properties:
         "id":
@@ -2288,10 +2288,10 @@ components:
             If this is specified, only the 'id' field is set, the rest will be empty.
       required: [id, updated, status, type, priority, refresh_tasks]
 
-    SocketIOTaskUpdate:
+    EventTaskUpdate:
       type: object
       description: >
-        Subset of a Task, sent over SocketIO when a task changes.
+        Subset of a Task, sent over SocketIO/MQTT when a task changes.
         For new tasks, `previous_status` will be excluded.
       properties:
         "id":
@@ -2309,11 +2309,11 @@ components:
         "activity": { type: string }
       required: [id, job_id, name, updated, status, activity]
 
-    SocketIOTaskLogUpdate:
+    EventTaskLogUpdate:
       type: object
       description: >
-        Task log chunk, sent to a SocketIO room dedicated to a single task, to
-        avoid sending too many updates.
+        Task log chunk, sent to a MQTT topic/SocketIO room dedicated to a single
+        task, to avoid sending too many updates.
       properties:
         "task_id":
           type: string
@@ -2324,7 +2324,7 @@ components:
           description: Chunk of the task log. May contain multiple lines of text.
       required: [task_id, log]
 
-    SocketIOLastRenderedUpdate:
+    EventLastRenderedUpdate:
       type: object
       description: Indicator that the last-rendered image of this job was updated.
       properties:
@@ -2332,10 +2332,10 @@ components:
         "thumbnail": { $ref: "#/components/schemas/JobLastRenderedImageInfo" }
       required: [job_id, task_id, thumbnail]
 
-    SocketIOWorkerUpdate:
+    EventWorkerUpdate:
       type: object
       description: >
-        Subset of a Worker, sent over SocketIO when a worker changes.
+        Subset of a Worker, sent over SocketIO/MQTT when a worker changes.
       properties:
         "id":
           type: string
@@ -2364,10 +2364,10 @@ components:
           description: Whether this Worker can auto-restart.
       required: [id, name, updated, status, version, can_restart]
 
-    SocketIOWorkerTagUpdate:
+    EventWorkerTagUpdate:
       type: object
       description: >
-        Worker Tag, sent over SocketIO when it changes.
+        Worker Tag, sent over SocketIO/MQTT when it changes.
       properties:
         "tag": { $ref: "#/components/schemas/WorkerTag" }
         "was_deleted":
@@ -2383,6 +2383,9 @@ components:
         task updates or task logs they need to explicitly subscribe. For
         simplicity, clients can only subscribe to one job (to get task updates
         for that job) and one task's log at a time.
+
+        This is not used by MQTT, as with that protocol the subscriptions are
+        managed by the MQTT broker, not Flamenco.
       properties:
         "op": { $ref: "#/components/schemas/SocketIOSubscriptionOperation" }
         "type": { $ref: "#/components/schemas/SocketIOSubscriptionType" }
