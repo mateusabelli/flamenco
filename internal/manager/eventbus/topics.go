@@ -6,6 +6,7 @@ import "fmt"
 
 const (
 	// Topics on which events are published.
+	TopicLifeCycle         EventTopic = "/lifecycle"     // sends api.EventLifeCycle
 	TopicJobUpdate         EventTopic = "/jobs"          // sends api.EventJobUpdate
 	TopicLastRenderedImage EventTopic = "/last-rendered" // sends api.EventLastRenderedUpdate
 	TopicTaskUpdate        EventTopic = "/task"          // sends api.EventTaskUpdate

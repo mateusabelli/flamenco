@@ -20,7 +20,8 @@ const (
 	keepAlive         = 30 // seconds
 	connectRetryDelay = 10 * time.Second
 
-	mqttQoS = 1
+	mqttQoS       = 1  // QoS field for MQTT events.
+	mqttQueueSize = 10 // How many events are queued when there is no connection to an MQTT broker.
 )
 
 type MQTTForwarder struct {
@@ -30,6 +31,9 @@ type MQTTForwarder struct {
 
 	// Context to use when publishing messages.
 	ctx context.Context
+
+	queue       chan mqttQueuedMessage
+	queueCancel context.CancelFunc
 }
 
 var _ Forwarder = (*MQTTForwarder)(nil)
@@ -42,6 +46,11 @@ type MQTTClientConfig struct {
 
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
+}
+
+type mqttQueuedMessage struct {
+	topic   string
+	payload []byte
 }
 
 func NewMQTTForwarder(config MQTTClientConfig) *MQTTForwarder {
@@ -66,6 +75,7 @@ func NewMQTTForwarder(config MQTTClientConfig) *MQTTForwarder {
 
 	client := MQTTForwarder{
 		topicPrefix: config.TopicPrefix,
+		queue:       make(chan mqttQueuedMessage, mqttQueueSize),
 	}
 	client.config = autopaho.ClientConfig{
 		BrokerUrls:        []*url.URL{brokerURL},
@@ -93,11 +103,14 @@ func (m *MQTTForwarder) Connect(ctx context.Context) {
 
 	m.conn = conn
 	m.ctx = ctx
-
 }
 
 func (m *MQTTForwarder) onConnectionUp(connMgr *autopaho.ConnectionManager, connAck *paho.Connack) {
 	m.logger().Info().Msg("mqtt client: connection established")
+
+	queueCtx, queueCtxCancel := context.WithCancel(m.ctx)
+	m.queueCancel = queueCtxCancel
+	go m.queueRunner(queueCtx)
 }
 
 func (m *MQTTForwarder) onConnectionError(err error) {
@@ -109,6 +122,10 @@ func (m *MQTTForwarder) onClientError(err error) {
 }
 
 func (m *MQTTForwarder) onServerDisconnect(d *paho.Disconnect) {
+	if m.queueCancel != nil {
+		m.queueCancel()
+	}
+
 	logEntry := m.logger().Warn()
 	if d.Properties != nil {
 		logEntry = logEntry.Str("reason", d.Properties.ReasonString)
@@ -118,42 +135,70 @@ func (m *MQTTForwarder) onServerDisconnect(d *paho.Disconnect) {
 	logEntry.Msg("mqtt client: broker requested disconnect")
 }
 
+func (m *MQTTForwarder) queueRunner(queueRunnerCtx context.Context) {
+	m.logger().Debug().Msg("mqtt client: starting queue runner")
+	defer m.logger().Debug().Msg("mqtt client: stopping queue runner")
+
+	for {
+		select {
+		case <-queueRunnerCtx.Done():
+			return
+		case message := <-m.queue:
+			m.sendEvent(message)
+		}
+	}
+}
+
 func (m *MQTTForwarder) Broadcast(topic EventTopic, payload interface{}) {
 	fullTopic := m.topicPrefix + string(topic)
 
-	logger := m.logger().With().
-		Str("topic", fullTopic).
-		// Interface("event", payload).
-		Logger()
-
 	asJSON, err := json.Marshal(payload)
 	if err != nil {
-		logger.Error().AnErr("cause", err).Interface("event", payload).
+		m.logger().Error().
+			Str("topic", fullTopic).
+			AnErr("cause", err).
+			Interface("event", payload).
 			Msg("mqtt client: could not convert event to JSON")
 		return
 	}
 
-	// Publish will block so we run it in a GoRoutine.
-	// TODO: might be a good idea todo this at the event broker level, rather than in this function.
-	go func(topic string, msg []byte) {
-		pr, err := m.conn.Publish(m.ctx, &paho.Publish{
-			QoS:     mqttQoS,
-			Topic:   topic,
-			Payload: msg,
-		})
-		switch {
-		case err != nil:
-			logger.Error().AnErr("cause", err).Msg("mqtt client: error publishing event")
-			return
-		case pr.ReasonCode == 16:
-			logger.Debug().Msg("mqtt client: event sent to broker, but there were no subscribers")
-			return
-		case pr.ReasonCode != 0:
-			logger.Warn().Int("reasonCode", int(pr.ReasonCode)).Msg("mqtt client: event rejected by mqtt broker")
-		default:
-			logger.Debug().Msg("mqtt client: event sent to broker")
-		}
-	}(fullTopic, asJSON)
+	// Queue the message, if we can.
+	message := mqttQueuedMessage{
+		topic:   fullTopic,
+		payload: asJSON,
+	}
+	select {
+	case m.queue <- message:
+		// All good, message is queued.
+	default:
+		m.logger().Error().
+			Str("topic", fullTopic).
+			Msg("mqtt client: could not send event, queue is full")
+	}
+}
+
+func (m *MQTTForwarder) sendEvent(message mqttQueuedMessage) {
+	logger := m.logger().With().
+		Str("topic", message.topic).
+		Logger()
+
+	pr, err := m.conn.Publish(m.ctx, &paho.Publish{
+		QoS:     mqttQoS,
+		Topic:   message.topic,
+		Payload: message.payload,
+	})
+	switch {
+	case err != nil:
+		logger.Error().AnErr("cause", err).Msg("mqtt client: error publishing event")
+		return
+	case pr.ReasonCode == 16:
+		logger.Debug().Msg("mqtt client: event sent to broker, but there were no subscribers")
+		return
+	case pr.ReasonCode != 0:
+		logger.Warn().Int("reasonCode", int(pr.ReasonCode)).Msg("mqtt client: event rejected by mqtt broker")
+	default:
+		logger.Debug().Msg("mqtt client: event sent to broker")
+	}
 }
 
 func (m *MQTTForwarder) logger() *zerolog.Logger {

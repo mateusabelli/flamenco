@@ -38,6 +38,7 @@ import (
 	"projects.blender.org/studio/flamenco/internal/manager/timeout_checker"
 	"projects.blender.org/studio/flamenco/internal/own_url"
 	"projects.blender.org/studio/flamenco/internal/upnp_ssdp"
+	"projects.blender.org/studio/flamenco/pkg/api"
 	"projects.blender.org/studio/flamenco/pkg/shaman"
 	"projects.blender.org/studio/flamenco/pkg/sysinfo"
 )
@@ -55,6 +56,8 @@ const (
 
 	webappEntryPoint = "index.html"
 )
+
+type shutdownFunc func()
 
 func main() {
 	output := zerolog.ConsoleWriter{Out: colorable.NewColorableStdout(), TimeFormat: time.RFC3339}
@@ -188,7 +191,19 @@ func runFlamencoManager() bool {
 	// once it closes.
 	mainCtx, mainCtxCancel := context.WithCancel(context.Background())
 
-	installSignalHandler(mainCtxCancel)
+	triggerShutdown := func() {
+		// Notify that Flamenco is shutting down.
+		event := eventbus.NewLifeCycleEvent(api.LifeCycleEventTypeManagerShutdown)
+		eventBroker.BroadcastLifeCycleEvent(event)
+
+		// Give event bus some time to process the shutdown event.
+		time.Sleep(500 * time.Millisecond)
+
+		// Cancel the main context, triggering an application-wide shutdown.
+		mainCtxCancel()
+	}
+
+	installSignalHandler(triggerShutdown)
 
 	if mqttClient != nil {
 		mqttClient.Connect(mainCtx)
@@ -274,11 +289,17 @@ func runFlamencoManager() bool {
 		go openWebbrowser(mainCtx, urls[0])
 	}
 
+	// Notify that Flamenco has started.
+	{
+		event := eventbus.NewLifeCycleEvent(api.LifeCycleEventTypeManagerStartup)
+		eventBroker.BroadcastLifeCycleEvent(event)
+	}
+
 	// Allow the Flamenco API itself trigger a shutdown as well.
 	log.Debug().Msg("waiting for a shutdown request from Flamenco")
 	doRestart := flamenco.WaitForShutdown(mainCtx)
 	log.Info().Bool("willRestart", doRestart).Msg("going to shut down the service")
-	mainCtxCancel()
+	triggerShutdown()
 
 	wg.Wait()
 	log.Info().Bool("willRestart", doRestart).Msg("Flamenco Manager service shut down")
@@ -362,14 +383,14 @@ func openDB(configService config.Service) *persistence.DB {
 }
 
 // installSignalHandler spawns a goroutine that handles incoming POSIX signals.
-func installSignalHandler(cancelFunc context.CancelFunc) {
+func installSignalHandler(shutdownFunc shutdownFunc) {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 	signal.Notify(signals, syscall.SIGTERM)
 	go func() {
 		for signum := range signals {
 			log.Info().Str("signal", signum.String()).Msg("signal received, shutting down")
-			cancelFunc()
+			shutdownFunc()
 		}
 	}()
 }
