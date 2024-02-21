@@ -2375,6 +2375,18 @@ components:
           description: When a tag was just deleted, this is set to `true`.
       required: [tag]
 
+    EventLifeCycle:
+      type: object
+      description: >
+        Flamenco life-cycle event, for things like shutting down, starting up, etc.
+      properties:
+        "type": { $ref: "#/components/schemas/LifeCycleEventType" }
+      required: [type]
+
+    LifeCycleEventType:
+      type: string
+      enum: [manager-startup, manager-shutdown]
+
     SocketIOSubscription:
       type: object
       description: >
