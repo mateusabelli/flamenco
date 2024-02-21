@@ -24,6 +24,7 @@ from flamenco.manager.model.command import Command
 from flamenco.manager.model.error import Error
 from flamenco.manager.model.event_job_update import EventJobUpdate
 from flamenco.manager.model.event_last_rendered_update import EventLastRenderedUpdate
+from flamenco.manager.model.event_life_cycle import EventLifeCycle
 from flamenco.manager.model.event_task_log_update import EventTaskLogUpdate
 from flamenco.manager.model.event_task_update import EventTaskUpdate
 from flamenco.manager.model.event_worker_tag_update import EventWorkerTagUpdate
@@ -45,6 +46,7 @@ from flamenco.manager.model.job_storage_info import JobStorageInfo
 from flamenco.manager.model.job_tasks_summary import JobTasksSummary
 from flamenco.manager.model.jobs_query import JobsQuery
 from flamenco.manager.model.jobs_query_result import JobsQueryResult
+from flamenco.manager.model.life_cycle_event_type import LifeCycleEventType
 from flamenco.manager.model.manager_configuration import ManagerConfiguration
 from flamenco.manager.model.manager_variable import ManagerVariable
 from flamenco.manager.model.manager_variable_audience import ManagerVariableAudience

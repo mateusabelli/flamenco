@@ -27,6 +27,7 @@ import Command from './model/Command';
 import Error from './model/Error';
 import EventJobUpdate from './model/EventJobUpdate';
 import EventLastRenderedUpdate from './model/EventLastRenderedUpdate';
+import EventLifeCycle from './model/EventLifeCycle';
 import EventTaskLogUpdate from './model/EventTaskLogUpdate';
 import EventTaskUpdate from './model/EventTaskUpdate';
 import EventWorkerTagUpdate from './model/EventWorkerTagUpdate';
@@ -45,6 +46,7 @@ import JobStorageInfo from './model/JobStorageInfo';
 import JobTasksSummary from './model/JobTasksSummary';
 import JobsQuery from './model/JobsQuery';
 import JobsQueryResult from './model/JobsQueryResult';
+import LifeCycleEventType from './model/LifeCycleEventType';
 import ManagerConfiguration from './model/ManagerConfiguration';
 import ManagerVariable from './model/ManagerVariable';
 import ManagerVariableAudience from './model/ManagerVariableAudience';
@@ -220,6 +222,12 @@ export {
     EventLastRenderedUpdate,
 
     /**
+     * The EventLifeCycle model constructor.
+     * @property {module:model/EventLifeCycle}
+     */
+    EventLifeCycle,
+
+    /**
      * The EventTaskLogUpdate model constructor.
      * @property {module:model/EventTaskLogUpdate}
      */
@@ -326,6 +334,12 @@ export {
      * @property {module:model/JobsQueryResult}
      */
     JobsQueryResult,
+
+    /**
+     * The LifeCycleEventType model constructor.
+     * @property {module:model/LifeCycleEventType}
+     */
+    LifeCycleEventType,
 
     /**
      * The ManagerConfiguration model constructor.

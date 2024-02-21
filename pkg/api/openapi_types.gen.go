@@ -76,6 +76,13 @@ const (
 	JobStatusUnderConstruction JobStatus = "under-construction"
 )
 
+// Defines values for LifeCycleEventType.
+const (
+	LifeCycleEventTypeManagerShutdown LifeCycleEventType = "manager-shutdown"
+
+	LifeCycleEventTypeManagerStartup LifeCycleEventType = "manager-startup"
+)
+
 // Defines values for ManagerVariableAudience.
 const (
 	ManagerVariableAudienceUsers ManagerVariableAudience = "users"
@@ -299,6 +306,11 @@ type EventLastRenderedUpdate struct {
 	Thumbnail JobLastRenderedImageInfo `json:"thumbnail"`
 }
 
+// Flamenco life-cycle event, for things like shutting down, starting up, etc.
+type EventLifeCycle struct {
+	Type LifeCycleEventType `json:"type"`
+}
+
 // Task log chunk, sent to a MQTT topic/SocketIO room dedicated to a single task, to avoid sending too many updates.
 type EventTaskLogUpdate struct {
 	// Chunk of the task log. May contain multiple lines of text.
@@ -487,6 +499,9 @@ type JobsQuery_Settings struct {
 type JobsQueryResult struct {
 	Jobs []Job `json:"jobs"`
 }
+
+// LifeCycleEventType defines model for LifeCycleEventType.
+type LifeCycleEventType string
 
 // ManagerConfiguration defines model for ManagerConfiguration.
 type ManagerConfiguration struct {
