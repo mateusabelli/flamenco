@@ -3,8 +3,15 @@ title: Worker Configuration
 weight: 3
 ---
 
+Flamenco Worker uses two different configuration files. One can be shared
+between all your Workers, if you so incline. The other should be strictly
+separate for each Worker.
+
+## Main Configuration File
+
 Flamenco Worker will read its configuration from `flamenco-worker.yaml` in the
-worker's *current working directory*.
+worker's *current working directory*. This file can be shared between all
+Workers, if you want.
 
 This is an example of such a configuration file:
 
@@ -29,7 +36,7 @@ restart_exit_code: 47
 [task-types]: {{< ref "usage/job-types" >}}#task-types
 [restarting]: {{< ref "usage/worker-actions" >}}#shut-down--restart-actions
 
-## Worker Local Files
+## Worker-Specific Files
 
 Apart from the above configuration file, which can be shared between Workers,
 each Worker has a set of files that are specific to that Worker. These contain
@@ -45,6 +52,11 @@ These files are stored in a platform-specific location:
 | Linux    | `$HOME/.local/share/flamenco`                                 |
 | Windows  | `C:\Users\UserName\AppData\Local\Blender Foundation\Flamenco` |
 | macOS    | `$HOME/Library/Application Support/Flamenco`                  |
+
+These files are not intended to be manually edited. If you want to reset your
+Worker and make it act like it's brand new, shut down the worker, delete these
+files, and restart the Worker again. Be sure to delete the old Worker from the
+Flamenco Manager web interface as well.
 
 ## Configuration from Environment Variables
 
