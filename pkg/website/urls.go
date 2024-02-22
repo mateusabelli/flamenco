@@ -7,4 +7,5 @@ const (
 	WorkerCredsUnknownHelpURL = "https://flamenco.blender.org/faq/#what-does-unknown-worker-is-trying-to-communicate-mean"
 	BugReportURL              = "https://flamenco.blender.org/get-involved"
 	ShamanRequirementsURL     = "https://flamenco.blender.org/usage/shared-storage/shaman/#requirements"
+	WorkerConfigURL           = "https://flamenco.blender.org/usage/worker-configuration/"
 )

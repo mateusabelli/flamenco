@@ -16,6 +16,7 @@ import (
 	"github.com/rs/zerolog/log"
 	yaml "gopkg.in/yaml.v2"
 	"projects.blender.org/studio/flamenco/internal/appinfo"
+	"projects.blender.org/studio/flamenco/pkg/website"
 )
 
 var (
@@ -177,9 +178,18 @@ func (fcw FileConfigWrangler) writeConfig(filename string, filetype configFileTy
 		return err
 	}
 	fmt.Fprintf(f, "# %s file for Flamenco Worker.\n", filetype)
-	fmt.Fprintln(f, "# For an explanation of the fields, refer to flamenco-worker-example.yaml")
 	fmt.Fprintln(f, "#")
-	fmt.Fprintln(f, "# NOTE: this file can be overwritten by Flamenco Worker.")
+	switch filetype {
+	case configFileTypeConfiguration:
+		fmt.Fprintf(f, "# For an explanation of the fields, refer to %s\n", website.WorkerConfigURL)
+	case configFileTypeCredentials:
+		fmt.Fprintln(f, "# This file is not meant to be manually edited. Removing this file is fine, and")
+		fmt.Fprintln(f, "# will cause the Worker to re-register as a new Worker.")
+		fmt.Fprintln(f, "#")
+		fmt.Fprintf(f, "# For more information, refer to %s\n", website.WorkerConfigURL)
+	}
+	fmt.Fprintln(f, "#")
+	fmt.Fprintln(f, "# NOTE: this file may be overwritten by Flamenco Worker.")
 	fmt.Fprintln(f, "#")
 	now := time.Now()
 	fmt.Fprintf(f, "# This file was written on %s\n\n", now.Format("2006-01-02 15:04:05 -07:00"))
