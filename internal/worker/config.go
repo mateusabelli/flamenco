@@ -31,6 +31,13 @@ var (
 	configFilename      = "flamenco-worker.yaml"
 )
 
+type configFileType string
+
+var (
+	configFileTypeConfiguration configFileType = "Configuration"
+	configFileTypeCredentials   configFileType = "Credentials"
+)
+
 var defaultConfig = WorkerConfig{
 	ConfiguredManager: "", // Auto-detect by default.
 	TaskTypes:         []string{"blender", "ffmpeg", "file-management", "misc"},
@@ -102,7 +109,7 @@ func (fcw *FileConfigWrangler) WorkerConfig() (WorkerConfig, error) {
 }
 
 func (fcw *FileConfigWrangler) SaveConfig() error {
-	err := fcw.writeConfig(configFilename, "Configuration", fcw.wc)
+	err := fcw.writeConfig(configFilename, configFileTypeConfiguration, fcw.wc)
 	if err != nil {
 		return fmt.Errorf("writing to %s: %w", configFilename, err)
 	}
@@ -135,7 +142,7 @@ func (fcw *FileConfigWrangler) SaveCredentials(creds WorkerCredentials) error {
 		return err
 	}
 
-	err = fcw.writeConfig(filepath, "Credentials", creds)
+	err = fcw.writeConfig(filepath, configFileTypeCredentials, creds)
 	if err != nil {
 		return fmt.Errorf("writing to %s: %w", filepath, err)
 	}
@@ -158,7 +165,7 @@ func (fcw FileConfigWrangler) DefaultConfig() WorkerConfig {
 }
 
 // WriteConfig stores a struct as YAML file.
-func (fcw FileConfigWrangler) writeConfig(filename string, filetype string, config interface{}) error {
+func (fcw FileConfigWrangler) writeConfig(filename string, filetype configFileType, config interface{}) error {
 	data, err := yaml.Marshal(config)
 	if err != nil {
 		return err
