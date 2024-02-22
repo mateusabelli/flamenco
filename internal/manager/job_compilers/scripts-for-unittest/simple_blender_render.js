@@ -148,8 +148,17 @@ function authorCreateVideoTask(settings, renderDir) {
         return;
     }
 
+    var frames = `${settings.frames}`;
+    if (frames.search(',') != -1) {
+        // Get the first and last frame from the list
+        const chunks = frameChunker(settings.frames, 1);
+        const firstFrame = chunks[0];
+        const lastFrame = chunks.slice(-1)[0];
+        frames = `${firstFrame}-${lastFrame}`;
+    }
+
     const stem = path.stem(settings.blendfile).replace('.flamenco', '');
-    const outfile = path.join(renderDir, `${stem}-${settings.frames}.mp4`);
+    const outfile = path.join(renderDir, `${stem}-${frames}.mp4`);
     const outfileExt = guessOutputFileExtension(settings);
 
     const task = author.Task('preview-video', 'ffmpeg');
