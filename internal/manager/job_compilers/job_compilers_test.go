@@ -376,6 +376,14 @@ func TestComplexFrameRange(t *testing.T) {
 		},
 		frameRangesFromCLI,
 	)
+
+	// Check the FFmpeg output. The frame range should have been simplified to
+	// `first-last` due to the comma in the input range.
+	videoTask := aj.Tasks[3]
+	require.Equal(t, "ffmpeg", videoTask.Type)
+	assert.Equal(t,
+		"/render/sprites/farm_output/promo/square_ellie/square_ellie.lighting_light_breakdown2/scene123-0-90.mp4",
+		videoTask.Commands[0].Parameters["outputFile"])
 }
 
 func ptr[T any](value T) *T {
