@@ -101,7 +101,12 @@ func (ce *CommandExecutor) cmdBlenderRenderCommand(
 
 	cliArgs := make([]string, 0)
 	cliArgs = append(cliArgs, parameters.argsBefore...)
-	cliArgs = append(cliArgs, parameters.blendfile)
+	if parameters.blendfile != "" {
+		// Only include the blendfile if the parameter is not empty. This makes it
+		// possible to pass a Python script that loads/constructs the blend file,
+		// instead of loading one explicitly here.
+		cliArgs = append(cliArgs, parameters.blendfile)
+	}
 	cliArgs = append(cliArgs, parameters.args...)
 	execCmd := ce.cli.CommandContext(ctx, parameters.exe, cliArgs...)
 	if execCmd == nil {
@@ -132,9 +137,9 @@ func cmdBlenderRenderParams(logger zerolog.Logger, cmd api.Command) (BlenderPara
 		logger.Warn().Interface("command", cmd).Msg("invalid 'argsBefore' parameter")
 		return parameters, NewParameterInvalidError("argsBefore", cmd, "cannot convert to list of strings")
 	}
-	if parameters.blendfile, ok = cmdParameter[string](cmd, "blendfile"); !ok || parameters.blendfile == "" {
-		logger.Warn().Interface("command", cmd).Msg("missing 'blendfile' parameter")
-		return parameters, NewParameterMissingError("blendfile", cmd)
+	if parameters.blendfile, ok = cmdParameter[string](cmd, "blendfile"); !ok {
+		logger.Warn().Interface("command", cmd).Msg("invalid 'blendfile' parameter")
+		return parameters, NewParameterInvalidError("blendfile", cmd, "cannot convert to string")
 	}
 	if parameters.args, ok = cmdParameterAsStrings(cmd, "args"); !ok {
 		logger.Warn().Interface("command", cmd).Msg("invalid 'args' parameter")

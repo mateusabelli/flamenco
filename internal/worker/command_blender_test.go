@@ -79,6 +79,30 @@ func TestCmdBlenderCliArgsInExeParameter(t *testing.T) {
 	assert.Equal(t, ErrNoExecCmd, err, "nil *exec.Cmd should result in ErrNoExecCmd")
 }
 
+func TestCmdBlenderNoBlendfile(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	ce, mocks := testCommandExecutor(t, mockCtrl)
+
+	taskID := "1d54c6fe-1242-4c8f-bd63-5a09e358d7b6"
+	cmd := api.Command{
+		Name: "blender",
+		Parameters: map[string]interface{}{
+			"exe":        "/path/to/blender",
+			"argsBefore": []string{"--background"},
+			"blendfile":  "", // Empty blendfile should be skipped.
+			"args":       []string{"--render-output", "/frames"},
+		},
+	}
+
+	cliArgs := []string{"--background", "--render-output", "/frames"}
+	mocks.cli.EXPECT().CommandContext(gomock.Any(), "/path/to/blender", cliArgs).Return(nil)
+
+	err := ce.cmdBlenderRender(context.Background(), zerolog.Nop(), taskID, cmd)
+	assert.Equal(t, ErrNoExecCmd, err, "nil *exec.Cmd should result in ErrNoExecCmd")
+}
+
 func TestProcessLineBlender(t *testing.T) {
 	ctx := context.Background()
 	mockCtrl := gomock.NewController(t)
