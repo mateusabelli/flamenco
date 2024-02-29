@@ -191,6 +191,20 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/SharedStorageLocation" }
 
+  /api/v3/status:
+    summary: Report the status of the Flamenco farm.
+    get:
+      summary: Get the status of this Flamenco farm.
+      operationId: getFarmStatus
+      tags: [meta]
+      responses:
+        "200":
+          description: normal response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FarmStatusReport"
+
   ## Worker
 
   /api/v3/worker/register-worker:
@@ -1383,6 +1397,26 @@ components:
         shortversion: 3.3-alpha0
         name: Your Manager
         git: v3.2-76-gdd34d538
+
+    FarmStatusReport:
+      type: object
+      properties:
+        "status":
+          $ref: "#/components/schemas/FarmStatus"
+      required: [status]
+      example:
+        status: idle
+
+    FarmStatus:
+      type: string
+      enum:
+        - "active" # Actively working on jobs.
+        - "idle" # Farm could be active, but has no work to do.
+        - "waiting" # Work has been queued, but all workers are asleep.
+        - "asleep" # Farm is idle, and all workers are asleep.
+        - "inoperative" # Cannot work: no workers, or all are offline/error.
+        - "unknown" # Unexpected configuration of worker and job statuses.
+        - "starting" # Farm is starting up.
 
     ManagerConfiguration:
       type: object
