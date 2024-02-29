@@ -15,6 +15,7 @@
 import ApiClient from "../ApiClient";
 import BlenderPathCheckResult from '../model/BlenderPathCheckResult';
 import Error from '../model/Error';
+import FarmStatusReport from '../model/FarmStatusReport';
 import FlamencoVersion from '../model/FlamencoVersion';
 import ManagerConfiguration from '../model/ManagerConfiguration';
 import ManagerVariable from '../model/ManagerVariable';
@@ -243,6 +244,45 @@ export default class MetaApi {
      */
     getConfigurationFile() {
       return this.getConfigurationFileWithHttpInfo()
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * Get the status of this Flamenco farm.
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/FarmStatusReport} and HTTP response
+     */
+    getFarmStatusWithHttpInfo() {
+      let postBody = null;
+
+      let pathParams = {
+      };
+      let queryParams = {
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = [];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = FarmStatusReport;
+      return this.apiClient.callApi(
+        '/api/v3/status', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * Get the status of this Flamenco farm.
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/FarmStatusReport}
+     */
+    getFarmStatus() {
+      return this.getFarmStatusWithHttpInfo()
         .then(function(response_and_data) {
           return response_and_data.data;
         });

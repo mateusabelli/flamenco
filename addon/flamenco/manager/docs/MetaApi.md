@@ -9,6 +9,7 @@ Method | HTTP request | Description
 [**find_blender_exe_path**](MetaApi.md#find_blender_exe_path) | **GET** /api/v3/configuration/check/blender | Find one or more CLI commands for use as way to start Blender
 [**get_configuration**](MetaApi.md#get_configuration) | **GET** /api/v3/configuration | Get the configuration of this Manager.
 [**get_configuration_file**](MetaApi.md#get_configuration_file) | **GET** /api/v3/configuration/file | Retrieve the configuration of Flamenco Manager.
+[**get_farm_status**](MetaApi.md#get_farm_status) | **GET** /api/v3/status | Get the status of this Flamenco farm.
 [**get_shared_storage**](MetaApi.md#get_shared_storage) | **GET** /api/v3/configuration/shared-storage/{audience}/{platform} | Get the shared storage location of this Manager, adjusted for the given audience and platform. 
 [**get_variables**](MetaApi.md#get_variables) | **GET** /api/v3/configuration/variables/{audience}/{platform} | Get the variables of this Manager. Used by the Blender add-on to recognise two-way variables, and for the web interface to do variable replacement based on the browser&#39;s platform. 
 [**get_version**](MetaApi.md#get_version) | **GET** /api/v3/version | Get the Flamenco version of this Manager
@@ -338,6 +339,67 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Normal response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **get_farm_status**
+> FarmStatusReport get_farm_status()
+
+Get the status of this Flamenco farm.
+
+### Example
+
+
+```python
+import time
+import flamenco.manager
+from flamenco.manager.api import meta_api
+from flamenco.manager.model.farm_status_report import FarmStatusReport
+from pprint import pprint
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = flamenco.manager.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with flamenco.manager.ApiClient() as api_client:
+    # Create an instance of the API class
+    api_instance = meta_api.MetaApi(api_client)
+
+    # example, this endpoint has no required or optional parameters
+    try:
+        # Get the status of this Flamenco farm.
+        api_response = api_instance.get_farm_status()
+        pprint(api_response)
+    except flamenco.manager.ApiException as e:
+        print("Exception when calling MetaApi->get_farm_status: %s\n" % e)
+```
+
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**FarmStatusReport**](FarmStatusReport.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | normal response |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

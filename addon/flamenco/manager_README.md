@@ -76,148 +76,151 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*JobsApi* | [**delete_job**](flamenco/manager/docs/JobsApi.md#delete_job) | **DELETE** /api/v3/jobs/{job_id} | Request deletion this job, including its tasks and any log files. The actual deletion may happen in the background. No job files will be deleted (yet). 
-*JobsApi* | [**delete_job_mass**](flamenco/manager/docs/JobsApi.md#delete_job_mass) | **DELETE** /api/v3/jobs/mass-delete | Mark jobs for deletion, based on certain criteria.
-*JobsApi* | [**delete_job_what_would_it_do**](flamenco/manager/docs/JobsApi.md#delete_job_what_would_it_do) | **GET** /api/v3/jobs/{job_id}/what-would-delete-do | Get info about what would be deleted when deleting this job. The job itself, its logs, and the last-rendered images will always be deleted. The job files are only deleted conditionally, and this operation can be used to figure that out. 
-*JobsApi* | [**fetch_global_last_rendered_info**](flamenco/manager/docs/JobsApi.md#fetch_global_last_rendered_info) | **GET** /api/v3/jobs/last-rendered | Get the URL that serves the last-rendered images.
-*JobsApi* | [**fetch_job**](flamenco/manager/docs/JobsApi.md#fetch_job) | **GET** /api/v3/jobs/{job_id} | Fetch info about the job.
-*JobsApi* | [**fetch_job_blocklist**](flamenco/manager/docs/JobsApi.md#fetch_job_blocklist) | **GET** /api/v3/jobs/{job_id}/blocklist | Fetch the list of workers that are blocked from doing certain task types on this job.
-*JobsApi* | [**fetch_job_last_rendered_info**](flamenco/manager/docs/JobsApi.md#fetch_job_last_rendered_info) | **GET** /api/v3/jobs/{job_id}/last-rendered | Get the URL that serves the last-rendered images of this job.
-*JobsApi* | [**fetch_job_tasks**](flamenco/manager/docs/JobsApi.md#fetch_job_tasks) | **GET** /api/v3/jobs/{job_id}/tasks | Fetch a summary of all tasks of the given job.
-*JobsApi* | [**fetch_task**](flamenco/manager/docs/JobsApi.md#fetch_task) | **GET** /api/v3/tasks/{task_id} | Fetch a single task.
-*JobsApi* | [**fetch_task_log_info**](flamenco/manager/docs/JobsApi.md#fetch_task_log_info) | **GET** /api/v3/tasks/{task_id}/log | Get the URL of the task log, and some more info.
-*JobsApi* | [**fetch_task_log_tail**](flamenco/manager/docs/JobsApi.md#fetch_task_log_tail) | **GET** /api/v3/tasks/{task_id}/logtail | Fetch the last few lines of the task&#39;s log.
-*JobsApi* | [**get_job_type**](flamenco/manager/docs/JobsApi.md#get_job_type) | **GET** /api/v3/jobs/type/{typeName} | Get single job type and its parameters.
-*JobsApi* | [**get_job_types**](flamenco/manager/docs/JobsApi.md#get_job_types) | **GET** /api/v3/jobs/types | Get list of job types and their parameters.
-*JobsApi* | [**query_jobs**](flamenco/manager/docs/JobsApi.md#query_jobs) | **POST** /api/v3/jobs/query | Fetch list of jobs.
-*JobsApi* | [**remove_job_blocklist**](flamenco/manager/docs/JobsApi.md#remove_job_blocklist) | **DELETE** /api/v3/jobs/{job_id}/blocklist | Remove entries from a job blocklist.
-*JobsApi* | [**set_job_priority**](flamenco/manager/docs/JobsApi.md#set_job_priority) | **POST** /api/v3/jobs/{job_id}/setpriority | 
-*JobsApi* | [**set_job_status**](flamenco/manager/docs/JobsApi.md#set_job_status) | **POST** /api/v3/jobs/{job_id}/setstatus | 
-*JobsApi* | [**set_task_status**](flamenco/manager/docs/JobsApi.md#set_task_status) | **POST** /api/v3/tasks/{task_id}/setstatus | 
-*JobsApi* | [**submit_job**](flamenco/manager/docs/JobsApi.md#submit_job) | **POST** /api/v3/jobs | Submit a new job for Flamenco Manager to execute.
-*JobsApi* | [**submit_job_check**](flamenco/manager/docs/JobsApi.md#submit_job_check) | **POST** /api/v3/jobs/check | Submit a new job for Flamenco Manager to check.
-*MetaApi* | [**check_blender_exe_path**](flamenco/manager/docs/MetaApi.md#check_blender_exe_path) | **POST** /api/v3/configuration/check/blender | Validate a CLI command for use as way to start Blender
-*MetaApi* | [**check_shared_storage_path**](flamenco/manager/docs/MetaApi.md#check_shared_storage_path) | **POST** /api/v3/configuration/check/shared-storage | Validate a path for use as shared storage.
-*MetaApi* | [**find_blender_exe_path**](flamenco/manager/docs/MetaApi.md#find_blender_exe_path) | **GET** /api/v3/configuration/check/blender | Find one or more CLI commands for use as way to start Blender
-*MetaApi* | [**get_configuration**](flamenco/manager/docs/MetaApi.md#get_configuration) | **GET** /api/v3/configuration | Get the configuration of this Manager.
-*MetaApi* | [**get_configuration_file**](flamenco/manager/docs/MetaApi.md#get_configuration_file) | **GET** /api/v3/configuration/file | Retrieve the configuration of Flamenco Manager.
-*MetaApi* | [**get_shared_storage**](flamenco/manager/docs/MetaApi.md#get_shared_storage) | **GET** /api/v3/configuration/shared-storage/{audience}/{platform} | Get the shared storage location of this Manager, adjusted for the given audience and platform. 
-*MetaApi* | [**get_variables**](flamenco/manager/docs/MetaApi.md#get_variables) | **GET** /api/v3/configuration/variables/{audience}/{platform} | Get the variables of this Manager. Used by the Blender add-on to recognise two-way variables, and for the web interface to do variable replacement based on the browser&#39;s platform. 
-*MetaApi* | [**get_version**](flamenco/manager/docs/MetaApi.md#get_version) | **GET** /api/v3/version | Get the Flamenco version of this Manager
-*MetaApi* | [**save_setup_assistant_config**](flamenco/manager/docs/MetaApi.md#save_setup_assistant_config) | **POST** /api/v3/configuration/setup-assistant | Update the Manager&#39;s configuration, and restart it in fully functional mode.
-*ShamanApi* | [**shaman_checkout**](flamenco/manager/docs/ShamanApi.md#shaman_checkout) | **POST** /api/v3/shaman/checkout/create | Create a directory, and symlink the required files into it. The files must all have been uploaded to Shaman before calling this endpoint.
-*ShamanApi* | [**shaman_checkout_requirements**](flamenco/manager/docs/ShamanApi.md#shaman_checkout_requirements) | **POST** /api/v3/shaman/checkout/requirements | Checks a Shaman Requirements file, and reports which files are unknown.
-*ShamanApi* | [**shaman_file_store**](flamenco/manager/docs/ShamanApi.md#shaman_file_store) | **POST** /api/v3/shaman/files/{checksum}/{filesize} | Store a new file on the Shaman server. Note that the Shaman server can forcibly close the HTTP connection when another client finishes uploading the exact same file, to prevent double uploads. The file&#39;s contents should be sent in the request body. 
-*ShamanApi* | [**shaman_file_store_check**](flamenco/manager/docs/ShamanApi.md#shaman_file_store_check) | **GET** /api/v3/shaman/files/{checksum}/{filesize} | Check the status of a file on the Shaman server. 
-*WorkerApi* | [**may_worker_run**](flamenco/manager/docs/WorkerApi.md#may_worker_run) | **GET** /api/v3/worker/task/{task_id}/may-i-run | The response indicates whether the worker is allowed to run / keep running the task. Optionally contains a queued worker status change. 
-*WorkerApi* | [**register_worker**](flamenco/manager/docs/WorkerApi.md#register_worker) | **POST** /api/v3/worker/register-worker | Register a new worker
-*WorkerApi* | [**schedule_task**](flamenco/manager/docs/WorkerApi.md#schedule_task) | **POST** /api/v3/worker/task | Obtain a new task to execute
-*WorkerApi* | [**sign_off**](flamenco/manager/docs/WorkerApi.md#sign_off) | **POST** /api/v3/worker/sign-off | Mark the worker as offline
-*WorkerApi* | [**sign_on**](flamenco/manager/docs/WorkerApi.md#sign_on) | **POST** /api/v3/worker/sign-on | Authenticate &amp; sign in the worker.
-*WorkerApi* | [**task_output_produced**](flamenco/manager/docs/WorkerApi.md#task_output_produced) | **POST** /api/v3/worker/task/{task_id}/output-produced | Store the most recently rendered frame here. Note that it is up to the Worker to ensure this is in a format that&#39;s digestable by the Manager. Currently only PNG and JPEG support is planned. 
-*WorkerApi* | [**task_update**](flamenco/manager/docs/WorkerApi.md#task_update) | **POST** /api/v3/worker/task/{task_id} | Update the task, typically to indicate progress, completion, or failure.
-*WorkerApi* | [**worker_state**](flamenco/manager/docs/WorkerApi.md#worker_state) | **GET** /api/v3/worker/state | 
-*WorkerApi* | [**worker_state_changed**](flamenco/manager/docs/WorkerApi.md#worker_state_changed) | **POST** /api/v3/worker/state-changed | Worker changed state. This could be as acknowledgement of a Manager-requested state change, or in response to worker-local signals.
-*WorkerMgtApi* | [**create_worker_tag**](flamenco/manager/docs/WorkerMgtApi.md#create_worker_tag) | **POST** /api/v3/worker-mgt/tags | Create a new worker tag.
-*WorkerMgtApi* | [**delete_worker**](flamenco/manager/docs/WorkerMgtApi.md#delete_worker) | **DELETE** /api/v3/worker-mgt/workers/{worker_id} | Remove the given worker. It is recommended to only call this function when the worker is in &#x60;offline&#x60; state. If the worker is still running, stop it first. Any task still assigned to the worker will be requeued. 
-*WorkerMgtApi* | [**delete_worker_tag**](flamenco/manager/docs/WorkerMgtApi.md#delete_worker_tag) | **DELETE** /api/v3/worker-mgt/tag/{tag_id} | Remove this worker tag. This unassigns all workers from the tag and removes it.
-*WorkerMgtApi* | [**fetch_worker**](flamenco/manager/docs/WorkerMgtApi.md#fetch_worker) | **GET** /api/v3/worker-mgt/workers/{worker_id} | Fetch info about the worker.
-*WorkerMgtApi* | [**fetch_worker_sleep_schedule**](flamenco/manager/docs/WorkerMgtApi.md#fetch_worker_sleep_schedule) | **GET** /api/v3/worker-mgt/workers/{worker_id}/sleep-schedule | 
-*WorkerMgtApi* | [**fetch_worker_tag**](flamenco/manager/docs/WorkerMgtApi.md#fetch_worker_tag) | **GET** /api/v3/worker-mgt/tag/{tag_id} | Get a single worker tag.
-*WorkerMgtApi* | [**fetch_worker_tags**](flamenco/manager/docs/WorkerMgtApi.md#fetch_worker_tags) | **GET** /api/v3/worker-mgt/tags | Get list of worker tags.
-*WorkerMgtApi* | [**fetch_workers**](flamenco/manager/docs/WorkerMgtApi.md#fetch_workers) | **GET** /api/v3/worker-mgt/workers | Get list of workers.
-*WorkerMgtApi* | [**request_worker_status_change**](flamenco/manager/docs/WorkerMgtApi.md#request_worker_status_change) | **POST** /api/v3/worker-mgt/workers/{worker_id}/setstatus | 
-*WorkerMgtApi* | [**set_worker_sleep_schedule**](flamenco/manager/docs/WorkerMgtApi.md#set_worker_sleep_schedule) | **POST** /api/v3/worker-mgt/workers/{worker_id}/sleep-schedule | 
-*WorkerMgtApi* | [**set_worker_tags**](flamenco/manager/docs/WorkerMgtApi.md#set_worker_tags) | **POST** /api/v3/worker-mgt/workers/{worker_id}/settags | 
-*WorkerMgtApi* | [**update_worker_tag**](flamenco/manager/docs/WorkerMgtApi.md#update_worker_tag) | **PUT** /api/v3/worker-mgt/tag/{tag_id} | Update an existing worker tag.
+*JobsApi* | [**delete_job**](flamenco\manager\docs/JobsApi.md#delete_job) | **DELETE** /api/v3/jobs/{job_id} | Request deletion this job, including its tasks and any log files. The actual deletion may happen in the background. No job files will be deleted (yet). 
+*JobsApi* | [**delete_job_mass**](flamenco\manager\docs/JobsApi.md#delete_job_mass) | **DELETE** /api/v3/jobs/mass-delete | Mark jobs for deletion, based on certain criteria.
+*JobsApi* | [**delete_job_what_would_it_do**](flamenco\manager\docs/JobsApi.md#delete_job_what_would_it_do) | **GET** /api/v3/jobs/{job_id}/what-would-delete-do | Get info about what would be deleted when deleting this job. The job itself, its logs, and the last-rendered images will always be deleted. The job files are only deleted conditionally, and this operation can be used to figure that out. 
+*JobsApi* | [**fetch_global_last_rendered_info**](flamenco\manager\docs/JobsApi.md#fetch_global_last_rendered_info) | **GET** /api/v3/jobs/last-rendered | Get the URL that serves the last-rendered images.
+*JobsApi* | [**fetch_job**](flamenco\manager\docs/JobsApi.md#fetch_job) | **GET** /api/v3/jobs/{job_id} | Fetch info about the job.
+*JobsApi* | [**fetch_job_blocklist**](flamenco\manager\docs/JobsApi.md#fetch_job_blocklist) | **GET** /api/v3/jobs/{job_id}/blocklist | Fetch the list of workers that are blocked from doing certain task types on this job.
+*JobsApi* | [**fetch_job_last_rendered_info**](flamenco\manager\docs/JobsApi.md#fetch_job_last_rendered_info) | **GET** /api/v3/jobs/{job_id}/last-rendered | Get the URL that serves the last-rendered images of this job.
+*JobsApi* | [**fetch_job_tasks**](flamenco\manager\docs/JobsApi.md#fetch_job_tasks) | **GET** /api/v3/jobs/{job_id}/tasks | Fetch a summary of all tasks of the given job.
+*JobsApi* | [**fetch_task**](flamenco\manager\docs/JobsApi.md#fetch_task) | **GET** /api/v3/tasks/{task_id} | Fetch a single task.
+*JobsApi* | [**fetch_task_log_info**](flamenco\manager\docs/JobsApi.md#fetch_task_log_info) | **GET** /api/v3/tasks/{task_id}/log | Get the URL of the task log, and some more info.
+*JobsApi* | [**fetch_task_log_tail**](flamenco\manager\docs/JobsApi.md#fetch_task_log_tail) | **GET** /api/v3/tasks/{task_id}/logtail | Fetch the last few lines of the task&#39;s log.
+*JobsApi* | [**get_job_type**](flamenco\manager\docs/JobsApi.md#get_job_type) | **GET** /api/v3/jobs/type/{typeName} | Get single job type and its parameters.
+*JobsApi* | [**get_job_types**](flamenco\manager\docs/JobsApi.md#get_job_types) | **GET** /api/v3/jobs/types | Get list of job types and their parameters.
+*JobsApi* | [**query_jobs**](flamenco\manager\docs/JobsApi.md#query_jobs) | **POST** /api/v3/jobs/query | Fetch list of jobs.
+*JobsApi* | [**remove_job_blocklist**](flamenco\manager\docs/JobsApi.md#remove_job_blocklist) | **DELETE** /api/v3/jobs/{job_id}/blocklist | Remove entries from a job blocklist.
+*JobsApi* | [**set_job_priority**](flamenco\manager\docs/JobsApi.md#set_job_priority) | **POST** /api/v3/jobs/{job_id}/setpriority | 
+*JobsApi* | [**set_job_status**](flamenco\manager\docs/JobsApi.md#set_job_status) | **POST** /api/v3/jobs/{job_id}/setstatus | 
+*JobsApi* | [**set_task_status**](flamenco\manager\docs/JobsApi.md#set_task_status) | **POST** /api/v3/tasks/{task_id}/setstatus | 
+*JobsApi* | [**submit_job**](flamenco\manager\docs/JobsApi.md#submit_job) | **POST** /api/v3/jobs | Submit a new job for Flamenco Manager to execute.
+*JobsApi* | [**submit_job_check**](flamenco\manager\docs/JobsApi.md#submit_job_check) | **POST** /api/v3/jobs/check | Submit a new job for Flamenco Manager to check.
+*MetaApi* | [**check_blender_exe_path**](flamenco\manager\docs/MetaApi.md#check_blender_exe_path) | **POST** /api/v3/configuration/check/blender | Validate a CLI command for use as way to start Blender
+*MetaApi* | [**check_shared_storage_path**](flamenco\manager\docs/MetaApi.md#check_shared_storage_path) | **POST** /api/v3/configuration/check/shared-storage | Validate a path for use as shared storage.
+*MetaApi* | [**find_blender_exe_path**](flamenco\manager\docs/MetaApi.md#find_blender_exe_path) | **GET** /api/v3/configuration/check/blender | Find one or more CLI commands for use as way to start Blender
+*MetaApi* | [**get_configuration**](flamenco\manager\docs/MetaApi.md#get_configuration) | **GET** /api/v3/configuration | Get the configuration of this Manager.
+*MetaApi* | [**get_configuration_file**](flamenco\manager\docs/MetaApi.md#get_configuration_file) | **GET** /api/v3/configuration/file | Retrieve the configuration of Flamenco Manager.
+*MetaApi* | [**get_farm_status**](flamenco\manager\docs/MetaApi.md#get_farm_status) | **GET** /api/v3/status | Get the status of this Flamenco farm.
+*MetaApi* | [**get_shared_storage**](flamenco\manager\docs/MetaApi.md#get_shared_storage) | **GET** /api/v3/configuration/shared-storage/{audience}/{platform} | Get the shared storage location of this Manager, adjusted for the given audience and platform. 
+*MetaApi* | [**get_variables**](flamenco\manager\docs/MetaApi.md#get_variables) | **GET** /api/v3/configuration/variables/{audience}/{platform} | Get the variables of this Manager. Used by the Blender add-on to recognise two-way variables, and for the web interface to do variable replacement based on the browser&#39;s platform. 
+*MetaApi* | [**get_version**](flamenco\manager\docs/MetaApi.md#get_version) | **GET** /api/v3/version | Get the Flamenco version of this Manager
+*MetaApi* | [**save_setup_assistant_config**](flamenco\manager\docs/MetaApi.md#save_setup_assistant_config) | **POST** /api/v3/configuration/setup-assistant | Update the Manager&#39;s configuration, and restart it in fully functional mode.
+*ShamanApi* | [**shaman_checkout**](flamenco\manager\docs/ShamanApi.md#shaman_checkout) | **POST** /api/v3/shaman/checkout/create | Create a directory, and symlink the required files into it. The files must all have been uploaded to Shaman before calling this endpoint.
+*ShamanApi* | [**shaman_checkout_requirements**](flamenco\manager\docs/ShamanApi.md#shaman_checkout_requirements) | **POST** /api/v3/shaman/checkout/requirements | Checks a Shaman Requirements file, and reports which files are unknown.
+*ShamanApi* | [**shaman_file_store**](flamenco\manager\docs/ShamanApi.md#shaman_file_store) | **POST** /api/v3/shaman/files/{checksum}/{filesize} | Store a new file on the Shaman server. Note that the Shaman server can forcibly close the HTTP connection when another client finishes uploading the exact same file, to prevent double uploads. The file&#39;s contents should be sent in the request body. 
+*ShamanApi* | [**shaman_file_store_check**](flamenco\manager\docs/ShamanApi.md#shaman_file_store_check) | **GET** /api/v3/shaman/files/{checksum}/{filesize} | Check the status of a file on the Shaman server. 
+*WorkerApi* | [**may_worker_run**](flamenco\manager\docs/WorkerApi.md#may_worker_run) | **GET** /api/v3/worker/task/{task_id}/may-i-run | The response indicates whether the worker is allowed to run / keep running the task. Optionally contains a queued worker status change. 
+*WorkerApi* | [**register_worker**](flamenco\manager\docs/WorkerApi.md#register_worker) | **POST** /api/v3/worker/register-worker | Register a new worker
+*WorkerApi* | [**schedule_task**](flamenco\manager\docs/WorkerApi.md#schedule_task) | **POST** /api/v3/worker/task | Obtain a new task to execute
+*WorkerApi* | [**sign_off**](flamenco\manager\docs/WorkerApi.md#sign_off) | **POST** /api/v3/worker/sign-off | Mark the worker as offline
+*WorkerApi* | [**sign_on**](flamenco\manager\docs/WorkerApi.md#sign_on) | **POST** /api/v3/worker/sign-on | Authenticate &amp; sign in the worker.
+*WorkerApi* | [**task_output_produced**](flamenco\manager\docs/WorkerApi.md#task_output_produced) | **POST** /api/v3/worker/task/{task_id}/output-produced | Store the most recently rendered frame here. Note that it is up to the Worker to ensure this is in a format that&#39;s digestable by the Manager. Currently only PNG and JPEG support is planned. 
+*WorkerApi* | [**task_update**](flamenco\manager\docs/WorkerApi.md#task_update) | **POST** /api/v3/worker/task/{task_id} | Update the task, typically to indicate progress, completion, or failure.
+*WorkerApi* | [**worker_state**](flamenco\manager\docs/WorkerApi.md#worker_state) | **GET** /api/v3/worker/state | 
+*WorkerApi* | [**worker_state_changed**](flamenco\manager\docs/WorkerApi.md#worker_state_changed) | **POST** /api/v3/worker/state-changed | Worker changed state. This could be as acknowledgement of a Manager-requested state change, or in response to worker-local signals.
+*WorkerMgtApi* | [**create_worker_tag**](flamenco\manager\docs/WorkerMgtApi.md#create_worker_tag) | **POST** /api/v3/worker-mgt/tags | Create a new worker tag.
+*WorkerMgtApi* | [**delete_worker**](flamenco\manager\docs/WorkerMgtApi.md#delete_worker) | **DELETE** /api/v3/worker-mgt/workers/{worker_id} | Remove the given worker. It is recommended to only call this function when the worker is in &#x60;offline&#x60; state. If the worker is still running, stop it first. Any task still assigned to the worker will be requeued. 
+*WorkerMgtApi* | [**delete_worker_tag**](flamenco\manager\docs/WorkerMgtApi.md#delete_worker_tag) | **DELETE** /api/v3/worker-mgt/tag/{tag_id} | Remove this worker tag. This unassigns all workers from the tag and removes it.
+*WorkerMgtApi* | [**fetch_worker**](flamenco\manager\docs/WorkerMgtApi.md#fetch_worker) | **GET** /api/v3/worker-mgt/workers/{worker_id} | Fetch info about the worker.
+*WorkerMgtApi* | [**fetch_worker_sleep_schedule**](flamenco\manager\docs/WorkerMgtApi.md#fetch_worker_sleep_schedule) | **GET** /api/v3/worker-mgt/workers/{worker_id}/sleep-schedule | 
+*WorkerMgtApi* | [**fetch_worker_tag**](flamenco\manager\docs/WorkerMgtApi.md#fetch_worker_tag) | **GET** /api/v3/worker-mgt/tag/{tag_id} | Get a single worker tag.
+*WorkerMgtApi* | [**fetch_worker_tags**](flamenco\manager\docs/WorkerMgtApi.md#fetch_worker_tags) | **GET** /api/v3/worker-mgt/tags | Get list of worker tags.
+*WorkerMgtApi* | [**fetch_workers**](flamenco\manager\docs/WorkerMgtApi.md#fetch_workers) | **GET** /api/v3/worker-mgt/workers | Get list of workers.
+*WorkerMgtApi* | [**request_worker_status_change**](flamenco\manager\docs/WorkerMgtApi.md#request_worker_status_change) | **POST** /api/v3/worker-mgt/workers/{worker_id}/setstatus | 
+*WorkerMgtApi* | [**set_worker_sleep_schedule**](flamenco\manager\docs/WorkerMgtApi.md#set_worker_sleep_schedule) | **POST** /api/v3/worker-mgt/workers/{worker_id}/sleep-schedule | 
+*WorkerMgtApi* | [**set_worker_tags**](flamenco\manager\docs/WorkerMgtApi.md#set_worker_tags) | **POST** /api/v3/worker-mgt/workers/{worker_id}/settags | 
+*WorkerMgtApi* | [**update_worker_tag**](flamenco\manager\docs/WorkerMgtApi.md#update_worker_tag) | **PUT** /api/v3/worker-mgt/tag/{tag_id} | Update an existing worker tag.
 
 
 ## Documentation For Models
 
- - [AssignedTask](flamenco/manager/docs/AssignedTask.md)
- - [AvailableJobSetting](flamenco/manager/docs/AvailableJobSetting.md)
- - [AvailableJobSettingEvalInfo](flamenco/manager/docs/AvailableJobSettingEvalInfo.md)
- - [AvailableJobSettingSubtype](flamenco/manager/docs/AvailableJobSettingSubtype.md)
- - [AvailableJobSettingType](flamenco/manager/docs/AvailableJobSettingType.md)
- - [AvailableJobSettingVisibility](flamenco/manager/docs/AvailableJobSettingVisibility.md)
- - [AvailableJobType](flamenco/manager/docs/AvailableJobType.md)
- - [AvailableJobTypes](flamenco/manager/docs/AvailableJobTypes.md)
- - [BlenderPathCheckResult](flamenco/manager/docs/BlenderPathCheckResult.md)
- - [BlenderPathFindResult](flamenco/manager/docs/BlenderPathFindResult.md)
- - [BlenderPathSource](flamenco/manager/docs/BlenderPathSource.md)
- - [Command](flamenco/manager/docs/Command.md)
- - [Error](flamenco/manager/docs/Error.md)
- - [EventJobUpdate](flamenco/manager/docs/EventJobUpdate.md)
- - [EventLastRenderedUpdate](flamenco/manager/docs/EventLastRenderedUpdate.md)
- - [EventLifeCycle](flamenco/manager/docs/EventLifeCycle.md)
- - [EventTaskLogUpdate](flamenco/manager/docs/EventTaskLogUpdate.md)
- - [EventTaskUpdate](flamenco/manager/docs/EventTaskUpdate.md)
- - [EventWorkerTagUpdate](flamenco/manager/docs/EventWorkerTagUpdate.md)
- - [EventWorkerUpdate](flamenco/manager/docs/EventWorkerUpdate.md)
- - [FlamencoVersion](flamenco/manager/docs/FlamencoVersion.md)
- - [Job](flamenco/manager/docs/Job.md)
- - [JobAllOf](flamenco/manager/docs/JobAllOf.md)
- - [JobBlocklist](flamenco/manager/docs/JobBlocklist.md)
- - [JobBlocklistEntry](flamenco/manager/docs/JobBlocklistEntry.md)
- - [JobDeletionInfo](flamenco/manager/docs/JobDeletionInfo.md)
- - [JobLastRenderedImageInfo](flamenco/manager/docs/JobLastRenderedImageInfo.md)
- - [JobMassDeletionSelection](flamenco/manager/docs/JobMassDeletionSelection.md)
- - [JobMetadata](flamenco/manager/docs/JobMetadata.md)
- - [JobPriorityChange](flamenco/manager/docs/JobPriorityChange.md)
- - [JobSettings](flamenco/manager/docs/JobSettings.md)
- - [JobStatus](flamenco/manager/docs/JobStatus.md)
- - [JobStatusChange](flamenco/manager/docs/JobStatusChange.md)
- - [JobStorageInfo](flamenco/manager/docs/JobStorageInfo.md)
- - [JobTasksSummary](flamenco/manager/docs/JobTasksSummary.md)
- - [JobsQuery](flamenco/manager/docs/JobsQuery.md)
- - [JobsQueryResult](flamenco/manager/docs/JobsQueryResult.md)
- - [LifeCycleEventType](flamenco/manager/docs/LifeCycleEventType.md)
- - [ManagerConfiguration](flamenco/manager/docs/ManagerConfiguration.md)
- - [ManagerVariable](flamenco/manager/docs/ManagerVariable.md)
- - [ManagerVariableAudience](flamenco/manager/docs/ManagerVariableAudience.md)
- - [ManagerVariables](flamenco/manager/docs/ManagerVariables.md)
- - [MayKeepRunning](flamenco/manager/docs/MayKeepRunning.md)
- - [PathCheckInput](flamenco/manager/docs/PathCheckInput.md)
- - [PathCheckResult](flamenco/manager/docs/PathCheckResult.md)
- - [RegisteredWorker](flamenco/manager/docs/RegisteredWorker.md)
- - [SecurityError](flamenco/manager/docs/SecurityError.md)
- - [SetupAssistantConfig](flamenco/manager/docs/SetupAssistantConfig.md)
- - [ShamanCheckout](flamenco/manager/docs/ShamanCheckout.md)
- - [ShamanCheckoutResult](flamenco/manager/docs/ShamanCheckoutResult.md)
- - [ShamanFileSpec](flamenco/manager/docs/ShamanFileSpec.md)
- - [ShamanFileSpecWithStatus](flamenco/manager/docs/ShamanFileSpecWithStatus.md)
- - [ShamanFileStatus](flamenco/manager/docs/ShamanFileStatus.md)
- - [ShamanRequirementsRequest](flamenco/manager/docs/ShamanRequirementsRequest.md)
- - [ShamanRequirementsResponse](flamenco/manager/docs/ShamanRequirementsResponse.md)
- - [ShamanSingleFileStatus](flamenco/manager/docs/ShamanSingleFileStatus.md)
- - [SharedStorageLocation](flamenco/manager/docs/SharedStorageLocation.md)
- - [SocketIOSubscription](flamenco/manager/docs/SocketIOSubscription.md)
- - [SocketIOSubscriptionOperation](flamenco/manager/docs/SocketIOSubscriptionOperation.md)
- - [SocketIOSubscriptionType](flamenco/manager/docs/SocketIOSubscriptionType.md)
- - [SubmittedJob](flamenco/manager/docs/SubmittedJob.md)
- - [Task](flamenco/manager/docs/Task.md)
- - [TaskLogInfo](flamenco/manager/docs/TaskLogInfo.md)
- - [TaskStatus](flamenco/manager/docs/TaskStatus.md)
- - [TaskStatusChange](flamenco/manager/docs/TaskStatusChange.md)
- - [TaskSummary](flamenco/manager/docs/TaskSummary.md)
- - [TaskUpdate](flamenco/manager/docs/TaskUpdate.md)
- - [TaskWorker](flamenco/manager/docs/TaskWorker.md)
- - [Worker](flamenco/manager/docs/Worker.md)
- - [WorkerAllOf](flamenco/manager/docs/WorkerAllOf.md)
- - [WorkerList](flamenco/manager/docs/WorkerList.md)
- - [WorkerRegistration](flamenco/manager/docs/WorkerRegistration.md)
- - [WorkerSignOn](flamenco/manager/docs/WorkerSignOn.md)
- - [WorkerSleepSchedule](flamenco/manager/docs/WorkerSleepSchedule.md)
- - [WorkerStateChange](flamenco/manager/docs/WorkerStateChange.md)
- - [WorkerStateChanged](flamenco/manager/docs/WorkerStateChanged.md)
- - [WorkerStatus](flamenco/manager/docs/WorkerStatus.md)
- - [WorkerStatusChangeRequest](flamenco/manager/docs/WorkerStatusChangeRequest.md)
- - [WorkerSummary](flamenco/manager/docs/WorkerSummary.md)
- - [WorkerTag](flamenco/manager/docs/WorkerTag.md)
- - [WorkerTagChangeRequest](flamenco/manager/docs/WorkerTagChangeRequest.md)
- - [WorkerTagList](flamenco/manager/docs/WorkerTagList.md)
- - [WorkerTask](flamenco/manager/docs/WorkerTask.md)
- - [WorkerTaskAllOf](flamenco/manager/docs/WorkerTaskAllOf.md)
+ - [AssignedTask](flamenco\manager\docs/AssignedTask.md)
+ - [AvailableJobSetting](flamenco\manager\docs/AvailableJobSetting.md)
+ - [AvailableJobSettingEvalInfo](flamenco\manager\docs/AvailableJobSettingEvalInfo.md)
+ - [AvailableJobSettingSubtype](flamenco\manager\docs/AvailableJobSettingSubtype.md)
+ - [AvailableJobSettingType](flamenco\manager\docs/AvailableJobSettingType.md)
+ - [AvailableJobSettingVisibility](flamenco\manager\docs/AvailableJobSettingVisibility.md)
+ - [AvailableJobType](flamenco\manager\docs/AvailableJobType.md)
+ - [AvailableJobTypes](flamenco\manager\docs/AvailableJobTypes.md)
+ - [BlenderPathCheckResult](flamenco\manager\docs/BlenderPathCheckResult.md)
+ - [BlenderPathFindResult](flamenco\manager\docs/BlenderPathFindResult.md)
+ - [BlenderPathSource](flamenco\manager\docs/BlenderPathSource.md)
+ - [Command](flamenco\manager\docs/Command.md)
+ - [Error](flamenco\manager\docs/Error.md)
+ - [EventJobUpdate](flamenco\manager\docs/EventJobUpdate.md)
+ - [EventLastRenderedUpdate](flamenco\manager\docs/EventLastRenderedUpdate.md)
+ - [EventLifeCycle](flamenco\manager\docs/EventLifeCycle.md)
+ - [EventTaskLogUpdate](flamenco\manager\docs/EventTaskLogUpdate.md)
+ - [EventTaskUpdate](flamenco\manager\docs/EventTaskUpdate.md)
+ - [EventWorkerTagUpdate](flamenco\manager\docs/EventWorkerTagUpdate.md)
+ - [EventWorkerUpdate](flamenco\manager\docs/EventWorkerUpdate.md)
+ - [FarmStatus](flamenco\manager\docs/FarmStatus.md)
+ - [FarmStatusReport](flamenco\manager\docs/FarmStatusReport.md)
+ - [FlamencoVersion](flamenco\manager\docs/FlamencoVersion.md)
+ - [Job](flamenco\manager\docs/Job.md)
+ - [JobAllOf](flamenco\manager\docs/JobAllOf.md)
+ - [JobBlocklist](flamenco\manager\docs/JobBlocklist.md)
+ - [JobBlocklistEntry](flamenco\manager\docs/JobBlocklistEntry.md)
+ - [JobDeletionInfo](flamenco\manager\docs/JobDeletionInfo.md)
+ - [JobLastRenderedImageInfo](flamenco\manager\docs/JobLastRenderedImageInfo.md)
+ - [JobMassDeletionSelection](flamenco\manager\docs/JobMassDeletionSelection.md)
+ - [JobMetadata](flamenco\manager\docs/JobMetadata.md)
+ - [JobPriorityChange](flamenco\manager\docs/JobPriorityChange.md)
+ - [JobSettings](flamenco\manager\docs/JobSettings.md)
+ - [JobStatus](flamenco\manager\docs/JobStatus.md)
+ - [JobStatusChange](flamenco\manager\docs/JobStatusChange.md)
+ - [JobStorageInfo](flamenco\manager\docs/JobStorageInfo.md)
+ - [JobTasksSummary](flamenco\manager\docs/JobTasksSummary.md)
+ - [JobsQuery](flamenco\manager\docs/JobsQuery.md)
+ - [JobsQueryResult](flamenco\manager\docs/JobsQueryResult.md)
+ - [LifeCycleEventType](flamenco\manager\docs/LifeCycleEventType.md)
+ - [ManagerConfiguration](flamenco\manager\docs/ManagerConfiguration.md)
+ - [ManagerVariable](flamenco\manager\docs/ManagerVariable.md)
+ - [ManagerVariableAudience](flamenco\manager\docs/ManagerVariableAudience.md)
+ - [ManagerVariables](flamenco\manager\docs/ManagerVariables.md)
+ - [MayKeepRunning](flamenco\manager\docs/MayKeepRunning.md)
+ - [PathCheckInput](flamenco\manager\docs/PathCheckInput.md)
+ - [PathCheckResult](flamenco\manager\docs/PathCheckResult.md)
+ - [RegisteredWorker](flamenco\manager\docs/RegisteredWorker.md)
+ - [SecurityError](flamenco\manager\docs/SecurityError.md)
+ - [SetupAssistantConfig](flamenco\manager\docs/SetupAssistantConfig.md)
+ - [ShamanCheckout](flamenco\manager\docs/ShamanCheckout.md)
+ - [ShamanCheckoutResult](flamenco\manager\docs/ShamanCheckoutResult.md)
+ - [ShamanFileSpec](flamenco\manager\docs/ShamanFileSpec.md)
+ - [ShamanFileSpecWithStatus](flamenco\manager\docs/ShamanFileSpecWithStatus.md)
+ - [ShamanFileStatus](flamenco\manager\docs/ShamanFileStatus.md)
+ - [ShamanRequirementsRequest](flamenco\manager\docs/ShamanRequirementsRequest.md)
+ - [ShamanRequirementsResponse](flamenco\manager\docs/ShamanRequirementsResponse.md)
+ - [ShamanSingleFileStatus](flamenco\manager\docs/ShamanSingleFileStatus.md)
+ - [SharedStorageLocation](flamenco\manager\docs/SharedStorageLocation.md)
+ - [SocketIOSubscription](flamenco\manager\docs/SocketIOSubscription.md)
+ - [SocketIOSubscriptionOperation](flamenco\manager\docs/SocketIOSubscriptionOperation.md)
+ - [SocketIOSubscriptionType](flamenco\manager\docs/SocketIOSubscriptionType.md)
+ - [SubmittedJob](flamenco\manager\docs/SubmittedJob.md)
+ - [Task](flamenco\manager\docs/Task.md)
+ - [TaskLogInfo](flamenco\manager\docs/TaskLogInfo.md)
+ - [TaskStatus](flamenco\manager\docs/TaskStatus.md)
+ - [TaskStatusChange](flamenco\manager\docs/TaskStatusChange.md)
+ - [TaskSummary](flamenco\manager\docs/TaskSummary.md)
+ - [TaskUpdate](flamenco\manager\docs/TaskUpdate.md)
+ - [TaskWorker](flamenco\manager\docs/TaskWorker.md)
+ - [Worker](flamenco\manager\docs/Worker.md)
+ - [WorkerAllOf](flamenco\manager\docs/WorkerAllOf.md)
+ - [WorkerList](flamenco\manager\docs/WorkerList.md)
+ - [WorkerRegistration](flamenco\manager\docs/WorkerRegistration.md)
+ - [WorkerSignOn](flamenco\manager\docs/WorkerSignOn.md)
+ - [WorkerSleepSchedule](flamenco\manager\docs/WorkerSleepSchedule.md)
+ - [WorkerStateChange](flamenco\manager\docs/WorkerStateChange.md)
+ - [WorkerStateChanged](flamenco\manager\docs/WorkerStateChanged.md)
+ - [WorkerStatus](flamenco\manager\docs/WorkerStatus.md)
+ - [WorkerStatusChangeRequest](flamenco\manager\docs/WorkerStatusChangeRequest.md)
+ - [WorkerSummary](flamenco\manager\docs/WorkerSummary.md)
+ - [WorkerTag](flamenco\manager\docs/WorkerTag.md)
+ - [WorkerTagChangeRequest](flamenco\manager\docs/WorkerTagChangeRequest.md)
+ - [WorkerTagList](flamenco\manager\docs/WorkerTagList.md)
+ - [WorkerTask](flamenco\manager\docs/WorkerTask.md)
+ - [WorkerTaskAllOf](flamenco\manager\docs/WorkerTaskAllOf.md)
 
 
 ## Documentation For Authorization

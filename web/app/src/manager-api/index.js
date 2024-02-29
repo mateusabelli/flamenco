@@ -32,6 +32,8 @@ import EventTaskLogUpdate from './model/EventTaskLogUpdate';
 import EventTaskUpdate from './model/EventTaskUpdate';
 import EventWorkerTagUpdate from './model/EventWorkerTagUpdate';
 import EventWorkerUpdate from './model/EventWorkerUpdate';
+import FarmStatus from './model/FarmStatus';
+import FarmStatusReport from './model/FarmStatusReport';
 import FlamencoVersion from './model/FlamencoVersion';
 import Job from './model/Job';
 import JobAllOf from './model/JobAllOf';
@@ -250,6 +252,18 @@ export {
      * @property {module:model/EventWorkerUpdate}
      */
     EventWorkerUpdate,
+
+    /**
+     * The FarmStatus model constructor.
+     * @property {module:model/FarmStatus}
+     */
+    FarmStatus,
+
+    /**
+     * The FarmStatusReport model constructor.
+     * @property {module:model/FarmStatusReport}
+     */
+    FarmStatusReport,
 
     /**
      * The FlamencoVersion model constructor.

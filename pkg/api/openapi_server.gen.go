@@ -98,6 +98,9 @@ type ServerInterface interface {
 	// The file's contents should be sent in the request body.
 	// (POST /api/v3/shaman/files/{checksum}/{filesize})
 	ShamanFileStore(ctx echo.Context, checksum string, filesize int, params ShamanFileStoreParams) error
+	// Get the status of this Flamenco farm.
+	// (GET /api/v3/status)
+	GetFarmStatus(ctx echo.Context) error
 	// Fetch a single task.
 	// (GET /api/v3/tasks/{task_id})
 	FetchTask(ctx echo.Context, taskId string) error
@@ -600,6 +603,15 @@ func (w *ServerInterfaceWrapper) ShamanFileStore(ctx echo.Context) error {
 	return err
 }
 
+// GetFarmStatus converts echo context to params.
+func (w *ServerInterfaceWrapper) GetFarmStatus(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetFarmStatus(ctx)
+	return err
+}
+
 // FetchTask converts echo context to params.
 func (w *ServerInterfaceWrapper) FetchTask(ctx echo.Context) error {
 	var err error
@@ -1018,6 +1030,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/api/v3/shaman/checkout/requirements", wrapper.ShamanCheckoutRequirements)
 	router.GET(baseURL+"/api/v3/shaman/files/:checksum/:filesize", wrapper.ShamanFileStoreCheck)
 	router.POST(baseURL+"/api/v3/shaman/files/:checksum/:filesize", wrapper.ShamanFileStore)
+	router.GET(baseURL+"/api/v3/status", wrapper.GetFarmStatus)
 	router.GET(baseURL+"/api/v3/tasks/:task_id", wrapper.FetchTask)
 	router.GET(baseURL+"/api/v3/tasks/:task_id/log", wrapper.FetchTaskLogInfo)
 	router.GET(baseURL+"/api/v3/tasks/:task_id/logtail", wrapper.FetchTaskLogTail)

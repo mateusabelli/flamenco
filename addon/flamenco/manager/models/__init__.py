@@ -29,6 +29,8 @@ from flamenco.manager.model.event_task_log_update import EventTaskLogUpdate
 from flamenco.manager.model.event_task_update import EventTaskUpdate
 from flamenco.manager.model.event_worker_tag_update import EventWorkerTagUpdate
 from flamenco.manager.model.event_worker_update import EventWorkerUpdate
+from flamenco.manager.model.farm_status import FarmStatus
+from flamenco.manager.model.farm_status_report import FarmStatusReport
 from flamenco.manager.model.flamenco_version import FlamencoVersion
 from flamenco.manager.model.job import Job
 from flamenco.manager.model.job_all_of import JobAllOf

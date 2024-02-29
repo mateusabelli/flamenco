@@ -55,6 +55,23 @@ const (
 	BlenderPathSourcePathEnvvar BlenderPathSource = "path_envvar"
 )
 
+// Defines values for FarmStatus.
+const (
+	FarmStatusActive FarmStatus = "active"
+
+	FarmStatusAsleep FarmStatus = "asleep"
+
+	FarmStatusIdle FarmStatus = "idle"
+
+	FarmStatusInoperative FarmStatus = "inoperative"
+
+	FarmStatusStarting FarmStatus = "starting"
+
+	FarmStatusUnknown FarmStatus = "unknown"
+
+	FarmStatusWaiting FarmStatus = "waiting"
+)
+
 // Defines values for JobStatus.
 const (
 	JobStatusActive JobStatus = "active"
@@ -371,6 +388,14 @@ type EventWorkerUpdate struct {
 	// Timestamp of last update
 	Updated time.Time `json:"updated"`
 	Version string    `json:"version"`
+}
+
+// FarmStatus defines model for FarmStatus.
+type FarmStatus string
+
+// FarmStatusReport defines model for FarmStatusReport.
+type FarmStatusReport struct {
+	Status FarmStatus `json:"status"`
 }
 
 // FlamencoVersion defines model for FlamencoVersion.
