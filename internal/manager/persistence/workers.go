@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
@@ -175,4 +176,34 @@ func (db *DB) WorkerSeen(ctx context.Context, w *Worker) error {
 		return workerError(err, "saving worker 'last seen at'")
 	}
 	return nil
+}
+
+// WorkerStatusCount is a mapping from job status to the number of jobs in that status.
+type WorkerStatusCount map[api.WorkerStatus]int
+
+func (db *DB) SummarizeWorkerStatuses(ctx context.Context) (WorkerStatusCount, error) {
+	logger := log.Ctx(ctx)
+	logger.Debug().Msg("database: summarizing worker statuses")
+
+	// Query the database using a data structure that's easy to handle in GORM.
+	type queryResult struct {
+		Status      api.WorkerStatus
+		StatusCount int
+	}
+	result := []*queryResult{}
+	tx := db.gormDB.WithContext(ctx).Model(&Worker{}).
+		Select("status as Status", "count(id) as StatusCount").
+		Group("status").
+		Scan(&result)
+	if tx.Error != nil {
+		return nil, workerError(tx.Error, "summarizing worker statuses")
+	}
+
+	// Convert the array-of-structs to a map that's easier to handle by the caller.
+	statusCounts := make(WorkerStatusCount)
+	for _, singleStatusCount := range result {
+		statusCounts[singleStatusCount.Status] = singleStatusCount.StatusCount
+	}
+
+	return statusCounts, nil
 }

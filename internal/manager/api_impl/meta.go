@@ -321,6 +321,10 @@ func (f *Flamenco) SaveSetupAssistantConfig(e echo.Context) error {
 	return e.NoContent(http.StatusNoContent)
 }
 
+func (f *Flamenco) GetFarmStatus(e echo.Context) error {
+	return e.JSON(http.StatusOK, f.farmstatus.Report())
+}
+
 func flamencoManagerDir() (string, error) {
 	exename, err := os.Executable()
 	if err != nil {

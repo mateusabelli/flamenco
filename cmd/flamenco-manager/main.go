@@ -27,6 +27,7 @@ import (
 	"projects.blender.org/studio/flamenco/internal/manager/api_impl/dummy"
 	"projects.blender.org/studio/flamenco/internal/manager/config"
 	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
+	"projects.blender.org/studio/flamenco/internal/manager/farmstatus"
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
 	"projects.blender.org/studio/flamenco/internal/manager/job_deleter"
 	"projects.blender.org/studio/flamenco/internal/manager/last_rendered"
@@ -174,10 +175,12 @@ func runFlamencoManager() bool {
 	shamanServer := buildShamanServer(configService, isFirstRun)
 	jobDeleter := job_deleter.NewService(persist, localStorage, eventBroker, shamanServer)
 
+	farmStatus := farmstatus.NewService(persist)
+
 	flamenco := api_impl.NewFlamenco(
 		compiler, persist, eventBroker, logStorage, configService,
 		taskStateMachine, shamanServer, timeService, lastRender,
-		localStorage, sleepScheduler, jobDeleter)
+		localStorage, sleepScheduler, jobDeleter, farmStatus)
 
 	e := buildWebService(flamenco, persist, ssdp, socketio, urls, localStorage)
 
@@ -276,6 +279,13 @@ func runFlamencoManager() bool {
 	go func() {
 		defer wg.Done()
 		jobDeleter.Run(mainCtx)
+	}()
+
+	// Run the Farm Status service.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		farmStatus.Run(mainCtx)
 	}()
 
 	// Log the URLs last, hopefully that makes them more visible / encouraging to go to for users.

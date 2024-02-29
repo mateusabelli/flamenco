@@ -4,9 +4,12 @@ package persistence
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
 	"projects.blender.org/studio/flamenco/internal/uuid"
@@ -140,4 +143,59 @@ func TestQueryJobTaskSummaries(t *testing.T) {
 	for _, summary := range summaries {
 		assert.True(t, expectTaskUUIDs[summary.UUID], "%q should be in %v", summary.UUID, expectTaskUUIDs)
 	}
+}
+
+func TestSummarizeJobStatuses(t *testing.T) {
+	ctx, close, db, job1, authoredJob1 := jobTasksTestFixtures(t)
+	defer close()
+
+	// Create another job
+	authoredJob2 := duplicateJobAndTasks(authoredJob1)
+	job2 := persistAuthoredJob(t, ctx, db, authoredJob2)
+
+	// Test the summary.
+	summary, err := db.SummarizeJobStatuses(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, JobStatusCount{api.JobStatusUnderConstruction: 2}, summary)
+
+	// Change the jobs so that each has a unique status.
+	job1.Status = api.JobStatusQueued
+	require.NoError(t, db.SaveJobStatus(ctx, job1))
+	job2.Status = api.JobStatusFailed
+	require.NoError(t, db.SaveJobStatus(ctx, job2))
+
+	// Test the summary.
+	summary, err = db.SummarizeJobStatuses(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, JobStatusCount{
+		api.JobStatusQueued: 1,
+		api.JobStatusFailed: 1,
+	}, summary)
+
+	// Delete all jobs.
+	require.NoError(t, db.DeleteJob(ctx, job1.UUID))
+	require.NoError(t, db.DeleteJob(ctx, job2.UUID))
+
+	// Test the summary.
+	summary, err = db.SummarizeJobStatuses(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, JobStatusCount{}, summary)
+}
+
+// Check that a context timeout can be detected by inspecting the
+// returned error.
+func TestSummarizeJobStatusesTimeout(t *testing.T) {
+	ctx, close, db, _, _ := jobTasksTestFixtures(t)
+	defer close()
+
+	subCtx, subCtxCancel := context.WithTimeout(ctx, 1*time.Nanosecond)
+	defer subCtxCancel()
+
+	// Force a timeout of the context. And yes, even when a nanosecond is quite
+	// short, it is still necessary to wait.
+	time.Sleep(2 * time.Nanosecond)
+
+	summary, err := db.SummarizeJobStatuses(subCtx)
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.Nil(t, summary)
 }

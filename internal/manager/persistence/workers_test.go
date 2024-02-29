@@ -4,6 +4,7 @@ package persistence
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -333,4 +334,66 @@ func TestDeleteWorkerWithTagAssigned(t *testing.T) {
 	tag, err := f.db.FetchWorkerTag(f.ctx, f.tag.UUID)
 	require.NoError(t, err)
 	assert.Empty(t, tag.Workers)
+}
+
+func TestSummarizeWorkerStatuses(t *testing.T) {
+	f := workerTestFixtures(t, 1*time.Second)
+	defer f.done()
+
+	// Test the summary.
+	summary, err := f.db.SummarizeWorkerStatuses(f.ctx)
+	require.NoError(t, err)
+	assert.Equal(t, WorkerStatusCount{api.WorkerStatusAwake: 1}, summary)
+
+	// Create more workers.
+	w1 := Worker{
+		UUID:   "fd97a35b-a5bd-44b4-ac2b-64c193ca877d",
+		Name:   "Worker 1",
+		Status: api.WorkerStatusAwake,
+	}
+	w2 := Worker{
+		UUID:   "82b2d176-cb8c-4bfa-8300-41c216d766df",
+		Name:   "Worker  2",
+		Status: api.WorkerStatusOffline,
+	}
+
+	require.NoError(t, f.db.CreateWorker(f.ctx, &w1))
+	require.NoError(t, f.db.CreateWorker(f.ctx, &w2))
+
+	// Test the summary.
+	summary, err = f.db.SummarizeWorkerStatuses(f.ctx)
+	require.NoError(t, err)
+	assert.Equal(t, WorkerStatusCount{
+		api.WorkerStatusAwake:   2,
+		api.WorkerStatusOffline: 1,
+	}, summary)
+
+	// Delete all workers.
+	require.NoError(t, f.db.DeleteWorker(f.ctx, f.worker.UUID))
+	require.NoError(t, f.db.DeleteWorker(f.ctx, w1.UUID))
+	require.NoError(t, f.db.DeleteWorker(f.ctx, w2.UUID))
+
+	// Test the summary.
+	summary, err = f.db.SummarizeWorkerStatuses(f.ctx)
+	require.NoError(t, err)
+	assert.Equal(t, WorkerStatusCount{}, summary)
+}
+
+// Check that a context timeout can be detected by inspecting the
+// returned error.
+func TestSummarizeWorkerStatusesTimeout(t *testing.T) {
+	f := workerTestFixtures(t, 1*time.Second)
+	defer f.done()
+
+	subCtx, subCtxCancel := context.WithTimeout(f.ctx, 1*time.Nanosecond)
+	defer subCtxCancel()
+
+	// Force a timeout of the context. And yes, even when a nanosecond is quite
+	// short, it is still necessary to wait.
+	time.Sleep(2 * time.Nanosecond)
+
+	// Test the summary.
+	summary, err := f.db.SummarizeWorkerStatuses(subCtx)
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.Nil(t, summary)
 }

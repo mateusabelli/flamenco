@@ -15,6 +15,7 @@ import (
 
 	"projects.blender.org/studio/flamenco/internal/manager/config"
 	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
+	"projects.blender.org/studio/flamenco/internal/manager/farmstatus"
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
 	"projects.blender.org/studio/flamenco/internal/manager/job_deleter"
 	"projects.blender.org/studio/flamenco/internal/manager/last_rendered"
@@ -26,7 +27,7 @@ import (
 )
 
 // Generate mock implementations of these interfaces.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/api_impl_mock.gen.go -package mocks projects.blender.org/studio/flamenco/internal/manager/api_impl PersistenceService,ChangeBroadcaster,JobCompiler,LogStorage,ConfigService,TaskStateMachine,Shaman,LastRendered,LocalStorage,WorkerSleepScheduler,JobDeleter
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/api_impl_mock.gen.go -package mocks projects.blender.org/studio/flamenco/internal/manager/api_impl PersistenceService,ChangeBroadcaster,JobCompiler,LogStorage,ConfigService,TaskStateMachine,Shaman,LastRendered,LocalStorage,WorkerSleepScheduler,JobDeleter,FarmStatusService
 
 type PersistenceService interface {
 	StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.AuthoredJob) error
@@ -239,3 +240,9 @@ type JobDeleter interface {
 }
 
 var _ JobDeleter = (*job_deleter.Service)(nil)
+
+type FarmStatusService interface {
+	Report() api.FarmStatusReport
+}
+
+var _ FarmStatusService = (*farmstatus.Service)(nil)
