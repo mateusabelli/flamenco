@@ -6,6 +6,7 @@ import "fmt"
 
 const (
 	// Topics on which events are published.
+	// NOTE: when adding here, also add to socketIOEventTypes in socketio.go.
 	TopicLifeCycle         EventTopic = "/lifecycle"     // sends api.EventLifeCycle
 	TopicFarmStatus        EventTopic = "/status"        // sends api.EventFarmStatus
 	TopicJobUpdate         EventTopic = "/jobs"          // sends api.EventJobUpdate

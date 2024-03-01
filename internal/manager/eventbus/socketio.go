@@ -14,6 +14,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"projects.blender.org/studio/flamenco/internal/uuid"
 	"projects.blender.org/studio/flamenco/pkg/api"
+	"projects.blender.org/studio/flamenco/pkg/website"
 )
 
 type SocketIOEventType string
@@ -59,7 +60,17 @@ func (s *SocketIOForwarder) Broadcast(topic EventTopic, payload interface{}) {
 	// SocketIO has a concept of 'event types'. MQTT doesn't have this, and thus the Flamenco event
 	// system doesn't rely on it. We use the payload type name as event type.
 	payloadType := reflect.TypeOf(payload).Name()
-	eventType := socketIOEventTypes[payloadType]
+
+	eventType, ok := socketIOEventTypes[payloadType]
+	if !ok {
+		log.Error().
+			Str("topic", string(topic)).
+			Str("payloadType", payloadType).
+			Interface("event", payload).
+			Msgf("socketIO: payload type does not have an event type, please copy-paste this message into a bug report at %s", website.BugReportURL)
+		return
+	}
+
 	log.Debug().
 		Str("topic", string(topic)).
 		Str("eventType", eventType).
