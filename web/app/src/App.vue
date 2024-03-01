@@ -17,6 +17,7 @@
         </li>
       </ul>
     </nav>
+    <farm-status :status="farmStatus.status()" />
     <api-spinner />
     <span class="app-version">
       <a :href="backendURL('/flamenco-addon.zip')">add-on</a>
@@ -31,8 +32,10 @@ import * as API from '@/manager-api';
 import { getAPIClient } from '@/api-client';
 import { backendURL } from '@/urls';
 import { useSocketStatus } from '@/stores/socket-status';
+import { useFarmStatus } from '@/stores/farmstatus';
 
 import ApiSpinner from '@/components/ApiSpinner.vue';
+import FarmStatus from '@/components/FarmStatus.vue';
 
 const DEFAULT_FLAMENCO_NAME = 'Flamenco';
 const DEFAULT_FLAMENCO_VERSION = 'unknown';
@@ -41,15 +44,18 @@ export default {
   name: 'App',
   components: {
     ApiSpinner,
+    FarmStatus,
   },
   data: () => ({
     flamencoName: DEFAULT_FLAMENCO_NAME,
     flamencoVersion: DEFAULT_FLAMENCO_VERSION,
     backendURL: backendURL,
+    farmStatus: useFarmStatus(),
   }),
   mounted() {
     window.app = this;
     this.fetchManagerInfo();
+    this.fetchFarmStatus();
 
     const sockStatus = useSocketStatus();
     this.$watch(
@@ -68,6 +74,14 @@ export default {
         this.flamencoName = version.name;
         this.flamencoVersion = version.version;
         document.title = version.name;
+      });
+    },
+
+    fetchFarmStatus() {
+      const metaAPI = new API.MetaApi(getAPIClient());
+      metaAPI.getFarmStatus().then((statusReport) => {
+        const apiStatusReport = API.FarmStatusReport.constructFromObject(statusReport);
+        this.farmStatus.lastStatusReport = apiStatusReport;
       });
     },
 

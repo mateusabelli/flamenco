@@ -7,6 +7,7 @@ import io from 'socket.io-client';
 import { ws } from '@/urls';
 import * as API from '@/manager-api';
 import { useSocketStatus } from '@/stores/socket-status';
+import { useFarmStatus } from '@/stores/farmstatus';
 
 const websocketURL = ws();
 
@@ -34,6 +35,7 @@ export default {
     return {
       socket: null,
       sockStatus: useSocketStatus(),
+      farmStatus: useFarmStatus(),
     };
   },
   mounted: function () {
@@ -180,6 +182,13 @@ export default {
         // when we'd do an API call.
         const apiWorkerTagUpdate = API.EventWorkerTagUpdate.constructFromObject(workerTagUpdate);
         this.$emit('workerTagUpdate', apiWorkerTagUpdate);
+      });
+
+      this.socket.on('/status', (farmStatusReport) => {
+        // Convert to API object, in order to have the same parsing of data as
+        // when we'd do an API call.
+        const apiFarmStatusReport = API.FarmStatusReport.constructFromObject(farmStatusReport);
+        this.farmStatus.lastStatusReport = apiFarmStatusReport;
       });
 
       // Chat system, useful for debugging.
