@@ -225,6 +225,8 @@ func fixtures(t *testing.T) *Fixtures {
 		ctx:      context.Background(),
 	}
 
+	// calling NewService() immediate registers as a listener with the event bus.
+	f.eventbus.EXPECT().AddListener(gomock.Any())
 	f.service = NewService(f.persist, f.eventbus)
 
 	return &f

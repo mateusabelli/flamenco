@@ -24,6 +24,8 @@ const (
 )
 
 var socketIOEventTypes = map[string]string{
+	reflect.TypeOf(api.EventLifeCycle{}).Name():          "/lifecycle",
+	reflect.TypeOf(api.EventFarmStatus{}).Name():         "/status",
 	reflect.TypeOf(api.EventJobUpdate{}).Name():          "/jobs",
 	reflect.TypeOf(api.EventTaskUpdate{}).Name():         "/task",
 	reflect.TypeOf(api.EventLastRenderedUpdate{}).Name(): "/last-rendered",
@@ -91,6 +93,10 @@ func (s *SocketIOForwarder) registerSIOEventHandlers() {
 	_ = sio.On(gosocketio.OnConnection, func(c *gosocketio.Channel) {
 		logger := sioLogger(c)
 		logger.Debug().Msg("socketIO: connected")
+
+		// All SocketIO connections get these events, regardless of their subscription.
+		_ = c.Join(string(TopicLifeCycle))
+		_ = c.Join(string(TopicFarmStatus))
 	})
 
 	// socket disconnection

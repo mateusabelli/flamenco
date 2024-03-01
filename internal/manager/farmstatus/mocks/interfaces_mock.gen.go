@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	eventbus "projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	persistence "projects.blender.org/studio/flamenco/internal/manager/persistence"
 	api "projects.blender.org/studio/flamenco/pkg/api"
 )
@@ -87,6 +88,18 @@ func NewMockEventBus(ctrl *gomock.Controller) *MockEventBus {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEventBus) EXPECT() *MockEventBusMockRecorder {
 	return m.recorder
+}
+
+// AddListener mocks base method.
+func (m *MockEventBus) AddListener(arg0 eventbus.Listener) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddListener", arg0)
+}
+
+// AddListener indicates an expected call of AddListener.
+func (mr *MockEventBusMockRecorder) AddListener(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddListener", reflect.TypeOf((*MockEventBus)(nil).AddListener), arg0)
 }
 
 // BroadcastFarmStatusEvent mocks base method.

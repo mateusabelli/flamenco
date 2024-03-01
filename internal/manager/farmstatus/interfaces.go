@@ -19,6 +19,7 @@ type PersistenceService interface {
 var _ PersistenceService = (*persistence.DB)(nil)
 
 type EventBus interface {
+	AddListener(listener eventbus.Listener)
 	BroadcastFarmStatusEvent(event api.EventFarmStatus)
 }
 

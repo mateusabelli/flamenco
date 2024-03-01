@@ -20,7 +20,7 @@ const (
 	//
 	// Note that this indicates the time between polls, so between a poll
 	// operation being done, and the next one starting.
-	pollWait = 5 * time.Second
+	pollWait = 30 * time.Second
 )
 
 // Service keeps track of the overall farm status.
@@ -30,17 +30,24 @@ type Service struct {
 
 	mutex      sync.Mutex
 	lastReport api.FarmStatusReport
+	forcePoll  chan struct{} // Send anything here to force a poll, if none is running yet.
 }
 
+// NewService returns a 'farm status' service. Run its Run() function in a
+// goroutine to make it actually do something.
 func NewService(persist PersistenceService, eventbus EventBus) *Service {
-	return &Service{
-		persist:  persist,
-		eventbus: eventbus,
-		mutex:    sync.Mutex{},
+	service := Service{
+		persist:   persist,
+		eventbus:  eventbus,
+		mutex:     sync.Mutex{},
+		forcePoll: make(chan struct{}, 1),
 		lastReport: api.FarmStatusReport{
 			Status: api.FarmStatusStarting,
 		},
 	}
+
+	eventbus.AddListener(&service)
+	return &service
 }
 
 // Run the farm status polling loop.
@@ -54,7 +61,40 @@ func (s *Service) Run(ctx context.Context) {
 			return
 		case <-time.After(pollWait):
 			s.poll(ctx)
+		case <-s.forcePoll:
+			s.poll(ctx)
 		}
+	}
+}
+
+func (s *Service) OnEvent(topic eventbus.EventTopic, payload interface{}) {
+	forcePoll := false
+	eventSubject := ""
+
+	switch event := payload.(type) {
+	case api.EventJobUpdate:
+		forcePoll = event.PreviousStatus != nil && *event.PreviousStatus != event.Status
+		eventSubject = "job"
+	case api.EventWorkerUpdate:
+		forcePoll = event.PreviousStatus != nil && *event.PreviousStatus != event.Status
+		eventSubject = "worker"
+	}
+
+	if !forcePoll {
+		return
+	}
+
+	log.Debug().
+		Str("event", string(topic)).
+		Msgf("farm status: investigating after %s status change", eventSubject)
+
+		// Polling queries the database, and thus can have a non-trivial duration.
+	// Better to run in the Run() goroutine.
+	select {
+	case s.forcePoll <- struct{}{}:
+	default:
+		// If sending to the channel fails, there is already a struct{}{} in
+		// there, and thus a poll will be triggered ASAP anyway.
 	}
 }
 
