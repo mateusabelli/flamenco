@@ -290,6 +290,9 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// EventFarmStatus defines model for EventFarmStatus.
+type EventFarmStatus FarmStatusReport
+
 // Subset of a Job, sent over SocketIO/MQTT when a job changes. For new jobs, `previous_status` will be excluded.
 type EventJobUpdate struct {
 	// If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager.

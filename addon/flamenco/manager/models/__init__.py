@@ -22,6 +22,7 @@ from flamenco.manager.model.blender_path_find_result import BlenderPathFindResul
 from flamenco.manager.model.blender_path_source import BlenderPathSource
 from flamenco.manager.model.command import Command
 from flamenco.manager.model.error import Error
+from flamenco.manager.model.event_farm_status import EventFarmStatus
 from flamenco.manager.model.event_job_update import EventJobUpdate
 from flamenco.manager.model.event_last_rendered_update import EventLastRenderedUpdate
 from flamenco.manager.model.event_life_cycle import EventLifeCycle

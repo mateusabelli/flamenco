@@ -148,6 +148,7 @@ Class | Method | HTTP request | Description
  - [BlenderPathSource](flamenco\manager\docs/BlenderPathSource.md)
  - [Command](flamenco\manager\docs/Command.md)
  - [Error](flamenco\manager\docs/Error.md)
+ - [EventFarmStatus](flamenco\manager\docs/EventFarmStatus.md)
  - [EventJobUpdate](flamenco\manager\docs/EventJobUpdate.md)
  - [EventLastRenderedUpdate](flamenco\manager\docs/EventLastRenderedUpdate.md)
  - [EventLifeCycle](flamenco\manager\docs/EventLifeCycle.md)
