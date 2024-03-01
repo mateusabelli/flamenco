@@ -20,7 +20,7 @@ var defaultConfig = Conf{
 		Listen:      ":8080",
 		// ListenHTTPS:   ":8433",
 		DatabaseDSN:             "flamenco-manager.sqlite",
-		DBIntegrityCheck:        1 * time.Hour,
+		DBIntegrityCheck:        10 * time.Minute,
 		SSDPDiscovery:           true,
 		LocalManagerStoragePath: "./flamenco-manager-storage",
 		SharedStoragePath:       "", // Empty string means "first run", and should trigger the config setup assistant.
