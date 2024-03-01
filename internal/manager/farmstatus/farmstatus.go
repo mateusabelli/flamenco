@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/pkg/api"
 	"projects.blender.org/studio/flamenco/pkg/website"
 )
@@ -24,16 +25,18 @@ const (
 
 // Service keeps track of the overall farm status.
 type Service struct {
-	persist PersistenceService
+	persist  PersistenceService
+	eventbus EventBus
 
 	mutex      sync.Mutex
 	lastReport api.FarmStatusReport
 }
 
-func NewService(persist PersistenceService) *Service {
+func NewService(persist PersistenceService, eventbus EventBus) *Service {
 	return &Service{
-		persist: persist,
-		mutex:   sync.Mutex{},
+		persist:  persist,
+		eventbus: eventbus,
+		mutex:    sync.Mutex{},
 		lastReport: api.FarmStatusReport{
 			Status: api.FarmStatusStarting,
 		},
@@ -64,6 +67,18 @@ func (s *Service) Report() api.FarmStatusReport {
 	return s.lastReport
 }
 
+// updateStatusReport updates the last status report in a thread-safe way.
+// It returns whether the report changed.
+func (s *Service) updateStatusReport(report api.FarmStatusReport) bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	reportChanged := s.lastReport != report
+	s.lastReport = report
+
+	return reportChanged
+}
+
 func (s *Service) poll(ctx context.Context) {
 	report := s.checkFarmStatus(ctx)
 	if report == nil {
@@ -71,9 +86,11 @@ func (s *Service) poll(ctx context.Context) {
 		return
 	}
 
-	s.mutex.Lock()
-	s.lastReport = *report
-	s.mutex.Unlock()
+	reportChanged := s.updateStatusReport(*report)
+	if reportChanged {
+		event := eventbus.NewFarmStatusEvent(s.lastReport)
+		s.eventbus.BroadcastFarmStatusEvent(event)
+	}
 }
 
 // checkFarmStatus checks the farm status by querying the peristence layer.

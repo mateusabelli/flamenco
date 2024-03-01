@@ -175,7 +175,7 @@ func runFlamencoManager() bool {
 	shamanServer := buildShamanServer(configService, isFirstRun)
 	jobDeleter := job_deleter.NewService(persist, localStorage, eventBroker, shamanServer)
 
-	farmStatus := farmstatus.NewService(persist)
+	farmStatus := farmstatus.NewService(persist, eventBroker)
 
 	flamenco := api_impl.NewFlamenco(
 		compiler, persist, eventBroker, logStorage, configService,

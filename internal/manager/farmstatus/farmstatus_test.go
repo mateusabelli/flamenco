@@ -14,9 +14,10 @@ import (
 )
 
 type Fixtures struct {
-	service *Service
-	persist *mocks.MockPersistenceService
-	ctx     context.Context
+	service  *Service
+	persist  *mocks.MockPersistenceService
+	eventbus *mocks.MockEventBus
+	ctx      context.Context
 }
 
 func TestFarmStatusStarting(t *testing.T) {
@@ -158,6 +159,29 @@ func TestCheckFarmStatusAsleep(t *testing.T) {
 	assert.Equal(t, api.FarmStatusAsleep, report.Status)
 }
 
+func TestFarmStatusEvent(t *testing.T) {
+	f := fixtures(t)
+
+	// "inoperative": no workers.
+	f.mockWorkerStatuses(persistence.WorkerStatusCount{})
+	f.eventbus.EXPECT().BroadcastFarmStatusEvent(api.EventFarmStatus{
+		Status: api.FarmStatusInoperative,
+	})
+	f.service.poll(f.ctx)
+
+	// Re-polling should not trigger any event, as the status doesn't change.
+	f.mockWorkerStatuses(persistence.WorkerStatusCount{})
+	f.service.poll(f.ctx)
+
+	// "active": Actively working on jobs.
+	f.mockWorkerStatuses(persistence.WorkerStatusCount{api.WorkerStatusAwake: 3})
+	f.mockJobStatuses(persistence.JobStatusCount{api.JobStatusActive: 1})
+	f.eventbus.EXPECT().BroadcastFarmStatusEvent(api.EventFarmStatus{
+		Status: api.FarmStatusActive,
+	})
+	f.service.poll(f.ctx)
+}
+
 func Test_allIn(t *testing.T) {
 	type args struct {
 		statuses   map[api.WorkerStatus]int
@@ -195,11 +219,12 @@ func fixtures(t *testing.T) *Fixtures {
 	mockCtrl := gomock.NewController(t)
 
 	f := Fixtures{
-		persist: mocks.NewMockPersistenceService(mockCtrl),
-		ctx:     context.Background(),
+		persist:  mocks.NewMockPersistenceService(mockCtrl),
+		eventbus: mocks.NewMockEventBus(mockCtrl),
+		ctx:      context.Background(),
 	}
 
-	f.service = NewService(f.persist)
+	f.service = NewService(f.persist, f.eventbus)
 
 	return &f
 }
