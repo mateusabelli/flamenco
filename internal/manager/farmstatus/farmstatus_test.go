@@ -45,6 +45,7 @@ func TestFarmStatusLoop(t *testing.T) {
 	assert.Equal(t, api.FarmStatusStarting, report.Status)
 
 	// After a single poll, the report should have been updated.
+	f.eventbus.EXPECT().BroadcastFarmStatusEvent(api.EventFarmStatus{Status: api.FarmStatusActive})
 	f.service.poll(f.ctx)
 	report = f.service.Report()
 	assert.Equal(t, api.FarmStatusActive, report.Status)
