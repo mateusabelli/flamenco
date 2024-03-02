@@ -55,15 +55,22 @@ func (s *Service) Run(ctx context.Context) {
 	log.Debug().Msg("farm status: polling service running")
 	defer log.Debug().Msg("farm status: polling service stopped")
 
+	// At startup the first poll should happen quickly.
+	waitTime := 1 * time.Second
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(pollWait):
+		case <-time.After(waitTime):
 			s.poll(ctx)
 		case <-s.forcePoll:
 			s.poll(ctx)
 		}
+
+		// After the first poll we can go to a slower pace, as mostly the event bus
+		// is the main source of poll triggers.
+		waitTime = pollWait
 	}
 }
 
