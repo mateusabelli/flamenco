@@ -92,6 +92,9 @@ export default {
       // console.log("connecting JobsListener to WS", websocketURL);
       const ws = io(websocketURL, {
         transports: ['websocket'],
+        reconnectionDelay: 250, // milliseconds
+        reconnectionDelayMax: 3000, // milliseconds
+        timeout: 1000, // milliseconds
       });
       this.socket = ws;
 
