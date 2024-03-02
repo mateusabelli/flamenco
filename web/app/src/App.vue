@@ -17,7 +17,7 @@
         </li>
       </ul>
     </nav>
-    <farm-status :status="farmStatus.status()" />
+    <farm-status v-if="socketIOConnected" :status="farmStatus.status()" />
     <api-spinner />
     <span class="app-version">
       <a :href="backendURL('/flamenco-addon.zip')">add-on</a>
@@ -51,6 +51,7 @@ export default {
     flamencoVersion: DEFAULT_FLAMENCO_VERSION,
     backendURL: backendURL,
     farmStatus: useFarmStatus(),
+    socketIOConnected: false,
   }),
   mounted() {
     window.app = this;
@@ -61,6 +62,7 @@ export default {
     this.$watch(
       () => sockStatus.isConnected,
       (isConnected) => {
+        this.socketIOConnected = isConnected;
         if (!isConnected) return;
         if (!sockStatus.wasEverDisconnected) return;
         this.socketIOReconnect();
