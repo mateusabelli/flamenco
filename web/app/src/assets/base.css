@@ -111,7 +111,7 @@ body {
   display: grid;
   grid-gap: var(--grid-gap);
   grid-template-areas:
-    "header header header"
+    "header-L header-M header-R"
     "col-1 col-2 col-3"
     "footer footer footer";
   grid-template-columns: 1fr 1fr 1fr;
@@ -124,7 +124,7 @@ body {
 
 body.is-two-columns #app {
   grid-template-areas:
-    "header header"
+    "header-L header-R"
     "col-1 col-2"
     "footer footer";
   grid-template-columns: 1fr 1fr;
@@ -134,7 +134,7 @@ body.is-two-columns #app {
 @media (max-width: 1280px) {
   #app {
     grid-template-areas:
-    "header header"
+    "header-L header-R"
     "col-1 col-2"
     "col-3 col-3"
     "footer footer";
@@ -206,8 +206,35 @@ header {
   align-items: center;
   color: var(--color-text-muted);
   display: flex;
-  grid-area: header;
   padding: 0 var(--spacer-sm);
+}
+
+header.mainmenu {
+  grid-area: header-L;
+}
+header.farmstatus {
+  grid-area: header-M;
+  margin-left: auto;
+  margin-right: auto;
+}
+@media (max-width: 1280px) {
+  header.farmstatus {
+    grid-area: header-L;
+    margin-right: 0;
+  }
+}
+@media (max-width: 1070px) {
+  header.farmstatus {
+    /* No more space to show it in the header. */
+    display: none;
+  }
+}
+body.is-two-columns header.farmstatus {
+  grid-area: header-L;
+  margin-right: 0;
+}
+header.links {
+  grid-area: header-R;
 }
 
 header nav {

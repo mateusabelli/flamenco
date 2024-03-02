@@ -1,5 +1,5 @@
 <template>
-  <header>
+  <header class="mainmenu">
     <router-link :to="{ name: 'index' }" class="navbar-brand">{{ flamencoName }}</router-link>
     <nav>
       <ul>
@@ -17,7 +17,11 @@
         </li>
       </ul>
     </nav>
-    <farm-status v-if="socketIOConnected" :status="farmStatus.status()" />
+  </header>
+  <header class="farmstatus">
+    <farm-status :status="farmStatus.status()" />
+  </header>
+  <header class="links">
     <api-spinner />
     <span class="app-version">
       <a :href="backendURL('/flamenco-addon.zip')">add-on</a>
@@ -51,7 +55,6 @@ export default {
     flamencoVersion: DEFAULT_FLAMENCO_VERSION,
     backendURL: backendURL,
     farmStatus: useFarmStatus(),
-    socketIOConnected: false,
   }),
   mounted() {
     window.app = this;
@@ -62,7 +65,6 @@ export default {
     this.$watch(
       () => sockStatus.isConnected,
       (isConnected) => {
-        this.socketIOConnected = isConnected;
         if (!isConnected) return;
         if (!sockStatus.wasEverDisconnected) return;
         this.socketIOReconnect();

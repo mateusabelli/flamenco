@@ -23,7 +23,7 @@ span {
   transition-delay: 250ms;
   transition-duration: 500ms;
   font-weight: bold;
-  margin-right: 2rem;
+  margin-right: auto;
   position: relative;
 }
 

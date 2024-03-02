@@ -26,7 +26,6 @@ const explanation = computed(() => {
 
 <style>
 span#farmstatus {
-  margin: 0 auto;
   cursor: default;
 }
 span#farmstatus span {
