@@ -95,32 +95,6 @@ func (q *Queries) FetchJob(ctx context.Context, uuid string) (Job, error) {
 	return i, err
 }
 
-const fetchTask = `-- name: FetchTask :one
-SELECT id, created_at, updated_at, uuid, name, type, job_id, priority, status, worker_id, last_touched_at, commands, activity FROM tasks
-WHERE uuid = ? LIMIT 1
-`
-
-func (q *Queries) FetchTask(ctx context.Context, uuid string) (Task, error) {
-	row := q.db.QueryRowContext(ctx, fetchTask, uuid)
-	var i Task
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.UUID,
-		&i.Name,
-		&i.Type,
-		&i.JobID,
-		&i.Priority,
-		&i.Status,
-		&i.WorkerID,
-		&i.LastTouchedAt,
-		&i.Commands,
-		&i.Activity,
-	)
-	return i, err
-}
-
 const requestJobDeletion = `-- name: RequestJobDeletion :exec
 UPDATE jobs SET
   updated_at = ?1,

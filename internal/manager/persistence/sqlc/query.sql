@@ -17,6 +17,10 @@ INSERT INTO jobs (
 )
 VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? );
 
+-- name: FetchJob :one
+SELECT * FROM jobs
+WHERE uuid = ? LIMIT 1;
+
 -- name: DeleteJob :exec
 DELETE FROM jobs WHERE uuid = ?;
 
@@ -26,10 +30,3 @@ UPDATE jobs SET
   delete_requested_at = @now
 WHERE id = sqlc.arg('job_id');
 
--- name: FetchTask :one
-SELECT * FROM tasks
-WHERE uuid = ? LIMIT 1;
-
--- name: FetchJob :one
-SELECT * FROM jobs
-WHERE uuid = ? LIMIT 1;
