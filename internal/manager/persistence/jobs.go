@@ -742,7 +742,7 @@ func convertSqlcJob(job sqlc.Job) (*Job, error) {
 			CreatedAt: job.CreatedAt,
 			UpdatedAt: job.UpdatedAt.Time,
 		},
-		UUID:              job.Uuid,
+		UUID:              job.UUID,
 		Name:              job.Name,
 		JobType:           job.JobType,
 		Priority:          int(job.Priority),
@@ -755,11 +755,11 @@ func convertSqlcJob(job sqlc.Job) (*Job, error) {
 	}
 
 	if err := json.Unmarshal(job.Settings, &dbJob.Settings); err != nil {
-		return nil, jobError(err, fmt.Sprintf("job %s has invalid settings: %v", job.Uuid, err))
+		return nil, jobError(err, fmt.Sprintf("job %s has invalid settings: %v", job.UUID, err))
 	}
 
 	if err := json.Unmarshal(job.Metadata, &dbJob.Metadata); err != nil {
-		return nil, jobError(err, fmt.Sprintf("job %s has invalid metadata: %v", job.Uuid, err))
+		return nil, jobError(err, fmt.Sprintf("job %s has invalid metadata: %v", job.UUID, err))
 	}
 
 	if job.WorkerTagID.Valid {

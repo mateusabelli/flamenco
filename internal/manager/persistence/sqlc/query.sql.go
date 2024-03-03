@@ -31,7 +31,7 @@ VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
 
 type CreateJobParams struct {
 	CreatedAt               time.Time
-	Uuid                    string
+	UUID                    string
 	Name                    string
 	JobType                 string
 	Priority                int64
@@ -46,7 +46,7 @@ type CreateJobParams struct {
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 	_, err := q.db.ExecContext(ctx, createJob,
 		arg.CreatedAt,
-		arg.Uuid,
+		arg.UUID,
 		arg.Name,
 		arg.JobType,
 		arg.Priority,
@@ -80,7 +80,7 @@ func (q *Queries) FetchJob(ctx context.Context, uuid string) (Job, error) {
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Uuid,
+		&i.UUID,
 		&i.Name,
 		&i.JobType,
 		&i.Priority,
@@ -107,7 +107,7 @@ func (q *Queries) FetchTask(ctx context.Context, uuid string) (Task, error) {
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Uuid,
+		&i.UUID,
 		&i.Name,
 		&i.Type,
 		&i.JobID,

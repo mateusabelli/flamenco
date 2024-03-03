@@ -11,3 +11,5 @@ sql:
             go_type:
               import: "encoding/json"
               type: "RawMessage"
+        rename:
+          uuid: "UUID"

@@ -14,7 +14,7 @@ type Job struct {
 	ID                      int64
 	CreatedAt               time.Time
 	UpdatedAt               sql.NullTime
-	Uuid                    string
+	UUID                    string
 	Name                    string
 	JobType                 string
 	Priority                int64
@@ -58,7 +58,7 @@ type Task struct {
 	ID            int64
 	CreatedAt     time.Time
 	UpdatedAt     sql.NullTime
-	Uuid          string
+	UUID          string
 	Name          string
 	Type          string
 	JobID         int64
@@ -85,7 +85,7 @@ type Worker struct {
 	ID                 int64
 	CreatedAt          time.Time
 	UpdatedAt          sql.NullTime
-	Uuid               string
+	UUID               string
 	Secret             string
 	Name               string
 	Address            string
@@ -104,7 +104,7 @@ type WorkerTag struct {
 	ID          int64
 	CreatedAt   time.Time
 	UpdatedAt   sql.NullTime
-	Uuid        string
+	UUID        string
 	Name        string
 	Description string
 }
