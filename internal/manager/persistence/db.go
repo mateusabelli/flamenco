@@ -5,6 +5,7 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -180,6 +181,14 @@ func (db *DB) queries() (*sqlc.Queries, error) {
 		return nil, fmt.Errorf("could not get low-level database driver: %w", err)
 	}
 	return sqlc.New(sqldb), nil
+}
+
+// now returns the result of `nowFunc()` wrapped in a sql.NullTime.
+func (db *DB) now() sql.NullTime {
+	return sql.NullTime{
+		Time:  db.gormDB.NowFunc(),
+		Valid: true,
+	}
 }
 
 func (db *DB) pragmaForeignKeys(enabled bool) error {

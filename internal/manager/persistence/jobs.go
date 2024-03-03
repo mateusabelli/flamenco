@@ -300,8 +300,7 @@ func (db *DB) RequestJobDeletion(ctx context.Context, j *Job) error {
 	}
 
 	// Update the given job itself, so we don't have to re-fetch it from the database.
-	j.DeleteRequestedAt.Time = db.gormDB.NowFunc()
-	j.DeleteRequestedAt.Valid = true
+	j.DeleteRequestedAt = db.now()
 
 	params := sqlc.RequestJobDeletionParams{
 		Now:   j.DeleteRequestedAt,
@@ -321,98 +320,114 @@ func (db *DB) RequestJobDeletion(ctx context.Context, j *Job) error {
 // RequestJobMassDeletion sets multiple job's "DeletionRequestedAt" field to "now".
 // The list of affected job UUIDs is returned.
 func (db *DB) RequestJobMassDeletion(ctx context.Context, lastUpdatedMax time.Time) ([]string, error) {
-	// In order to be able to report which jobs were affected, first fetch the
-	// list of jobs, then update them.
-	var jobs []*Job
-	selectResult := db.gormDB.WithContext(ctx).
-		Model(&Job{}).
-		Select("uuid").
-		Where("updated_at <= ?", lastUpdatedMax).
-		Scan(&jobs)
-	if selectResult.Error != nil {
-		return nil, jobError(selectResult.Error, "fetching jobs by last-modified timestamp")
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
 	}
 
-	if len(jobs) == 0 {
+	// In order to be able to report which jobs were affected, first fetch the
+	// list of jobs, then update them.
+	uuids, err := queries.FetchJobUUIDsUpdatedBefore(ctx, sql.NullTime{
+		Time:  lastUpdatedMax,
+		Valid: true,
+	})
+	switch {
+	case err != nil:
+		return nil, jobError(err, "fetching jobs by last-modified timestamp")
+	case len(uuids) == 0:
 		return nil, ErrJobNotFound
 	}
 
-	// Convert array of jobs to array of UUIDs.
-	uuids := make([]string, len(jobs))
-	for index := range jobs {
-		uuids[index] = jobs[index].UUID
-	}
-
 	// Update the selected jobs.
-	deleteRequestedAt := sql.NullTime{
-		Time:  db.gormDB.NowFunc(),
-		Valid: true,
+	params := sqlc.RequestMassJobDeletionParams{
+		Now:   db.now(),
+		UUIDs: uuids,
 	}
-	tx := db.gormDB.WithContext(ctx).
-		Model(Job{}).
-		Where("uuid in ?", uuids).
-		Updates(Job{DeleteRequestedAt: deleteRequestedAt})
-	if tx.Error != nil {
-		return nil, jobError(tx.Error, "queueing jobs for deletion")
+	if err := queries.RequestMassJobDeletion(ctx, params); err != nil {
+		return nil, jobError(err, "marking jobs as deletion-requested")
 	}
 
 	return uuids, nil
 }
 
 func (db *DB) FetchJobsDeletionRequested(ctx context.Context) ([]string, error) {
-	var jobs []*Job
-
-	tx := db.gormDB.WithContext(ctx).
-		Model(&Job{}).
-		Select("UUID").
-		Where("delete_requested_at is not NULL").
-		Order("delete_requested_at").
-		Scan(&jobs)
-
-	if tx.Error != nil {
-		return nil, jobError(tx.Error, "fetching jobs marked for deletion")
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
 	}
 
-	uuids := make([]string, len(jobs))
-	for i := range jobs {
-		uuids[i] = jobs[i].UUID
+	uuids, err := queries.FetchJobsDeletionRequested(ctx)
+	if err != nil {
+		return nil, jobError(err, "fetching jobs marked for deletion")
 	}
-
 	return uuids, nil
 }
 
 func (db *DB) FetchJobsInStatus(ctx context.Context, jobStatuses ...api.JobStatus) ([]*Job, error) {
-	var jobs []*Job
-
-	tx := db.gormDB.WithContext(ctx).
-		Model(&Job{}).
-		Where("status in ?", jobStatuses).
-		Scan(&jobs)
-
-	if tx.Error != nil {
-		return nil, jobError(tx.Error, "fetching jobs in status %q", jobStatuses)
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
 	}
+
+	statuses := []string{}
+	for _, status := range jobStatuses {
+		statuses = append(statuses, string(status))
+	}
+
+	sqlcJobs, err := queries.FetchJobsInStatus(ctx, statuses)
+	if err != nil {
+		return nil, jobError(err, "fetching jobs in status %q", jobStatuses)
+	}
+
+	var jobs []*Job
+	for index := range sqlcJobs {
+		job, err := convertSqlcJob(sqlcJobs[index])
+		if err != nil {
+			return nil, jobError(err, "converting fetched jobs in status %q", jobStatuses)
+		}
+		jobs = append(jobs, job)
+	}
+
 	return jobs, nil
 }
 
 // SaveJobStatus saves the job's Status and Activity fields.
 func (db *DB) SaveJobStatus(ctx context.Context, j *Job) error {
-	tx := db.gormDB.WithContext(ctx).
-		Model(j).
-		Updates(Job{Status: j.Status, Activity: j.Activity})
-	if tx.Error != nil {
-		return jobError(tx.Error, "saving job status")
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	params := sqlc.SaveJobStatusParams{
+		Now:      db.now(),
+		ID:       int64(j.ID),
+		Status:   string(j.Status),
+		Activity: j.Activity,
+	}
+
+	err = queries.SaveJobStatus(ctx, params)
+	if err != nil {
+		return jobError(err, "saving job status")
 	}
 	return nil
 }
 
 // SaveJobPriority saves the job's Priority field.
 func (db *DB) SaveJobPriority(ctx context.Context, j *Job) error {
-	tx := db.gormDB.WithContext(ctx).
-		Model(j).
-		Updates(Job{Priority: j.Priority})
-	if tx.Error != nil {
-		return jobError(tx.Error, "saving job priority")
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	params := sqlc.SaveJobPriorityParams{
+		Now:      db.now(),
+		ID:       int64(j.ID),
+		Priority: int64(j.Priority),
+	}
+
+	err = queries.SaveJobPriority(ctx, params)
+	if err != nil {
+		return jobError(err, "saving job priority")
 	}
 	return nil
 }
@@ -421,12 +436,19 @@ func (db *DB) SaveJobPriority(ctx context.Context, j *Job) error {
 // NOTE: this function does NOT update the job's `UpdatedAt` field. This is
 // necessary for `cmd/shaman-checkout-id-setter` to do its work quietly.
 func (db *DB) SaveJobStorageInfo(ctx context.Context, j *Job) error {
-	tx := db.gormDB.WithContext(ctx).
-		Model(j).
-		Omit("UpdatedAt").
-		Updates(Job{Storage: j.Storage})
-	if tx.Error != nil {
-		return jobError(tx.Error, "saving job storage")
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	params := sqlc.SaveJobStorageInfoParams{
+		ID:                      int64(j.ID),
+		StorageShamanCheckoutID: j.Storage.ShamanCheckoutID,
+	}
+
+	err = queries.SaveJobStorageInfo(ctx, params)
+	if err != nil {
+		return jobError(err, "saving job storage")
 	}
 	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"strings"
 	"time"
 )
 
@@ -95,6 +96,114 @@ func (q *Queries) FetchJob(ctx context.Context, uuid string) (Job, error) {
 	return i, err
 }
 
+const fetchJobUUIDsUpdatedBefore = `-- name: FetchJobUUIDsUpdatedBefore :many
+SELECT uuid FROM jobs WHERE updated_at <= ?1
+`
+
+func (q *Queries) FetchJobUUIDsUpdatedBefore(ctx context.Context, updatedAtMax sql.NullTime) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, fetchJobUUIDsUpdatedBefore, updatedAtMax)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var uuid string
+		if err := rows.Scan(&uuid); err != nil {
+			return nil, err
+		}
+		items = append(items, uuid)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const fetchJobsDeletionRequested = `-- name: FetchJobsDeletionRequested :many
+SELECT uuid FROM jobs
+  WHERE delete_requested_at is not NULL
+  ORDER BY delete_requested_at
+`
+
+func (q *Queries) FetchJobsDeletionRequested(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, fetchJobsDeletionRequested)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var uuid string
+		if err := rows.Scan(&uuid); err != nil {
+			return nil, err
+		}
+		items = append(items, uuid)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const fetchJobsInStatus = `-- name: FetchJobsInStatus :many
+SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activity, settings, metadata, delete_requested_at, storage_shaman_checkout_id, worker_tag_id FROM jobs WHERE status IN (/*SLICE:statuses*/?)
+`
+
+func (q *Queries) FetchJobsInStatus(ctx context.Context, statuses []string) ([]Job, error) {
+	query := fetchJobsInStatus
+	var queryParams []interface{}
+	if len(statuses) > 0 {
+		for _, v := range statuses {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:statuses*/?", strings.Repeat(",?", len(statuses))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:statuses*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Job
+	for rows.Next() {
+		var i Job
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UUID,
+			&i.Name,
+			&i.JobType,
+			&i.Priority,
+			&i.Status,
+			&i.Activity,
+			&i.Settings,
+			&i.Metadata,
+			&i.DeleteRequestedAt,
+			&i.StorageShamanCheckoutID,
+			&i.WorkerTagID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const requestJobDeletion = `-- name: RequestJobDeletion :exec
 UPDATE jobs SET
   updated_at = ?1,
@@ -109,5 +218,83 @@ type RequestJobDeletionParams struct {
 
 func (q *Queries) RequestJobDeletion(ctx context.Context, arg RequestJobDeletionParams) error {
 	_, err := q.db.ExecContext(ctx, requestJobDeletion, arg.Now, arg.JobID)
+	return err
+}
+
+const requestMassJobDeletion = `-- name: RequestMassJobDeletion :exec
+UPDATE jobs SET
+  updated_at = ?1,
+  delete_requested_at = ?1
+WHERE uuid in (/*SLICE:uuids*/?)
+`
+
+type RequestMassJobDeletionParams struct {
+	Now   sql.NullTime
+	UUIDs []string
+}
+
+func (q *Queries) RequestMassJobDeletion(ctx context.Context, arg RequestMassJobDeletionParams) error {
+	query := requestMassJobDeletion
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.Now)
+	if len(arg.UUIDs) > 0 {
+		for _, v := range arg.UUIDs {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:uuids*/?", strings.Repeat(",?", len(arg.UUIDs))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:uuids*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
+}
+
+const saveJobPriority = `-- name: SaveJobPriority :exec
+UPDATE jobs SET updated_at=?1, priority=?2 WHERE id=?3
+`
+
+type SaveJobPriorityParams struct {
+	Now      sql.NullTime
+	Priority int64
+	ID       int64
+}
+
+func (q *Queries) SaveJobPriority(ctx context.Context, arg SaveJobPriorityParams) error {
+	_, err := q.db.ExecContext(ctx, saveJobPriority, arg.Now, arg.Priority, arg.ID)
+	return err
+}
+
+const saveJobStatus = `-- name: SaveJobStatus :exec
+UPDATE jobs SET updated_at=?1, status=?2, activity=?3 WHERE id=?4
+`
+
+type SaveJobStatusParams struct {
+	Now      sql.NullTime
+	Status   string
+	Activity string
+	ID       int64
+}
+
+func (q *Queries) SaveJobStatus(ctx context.Context, arg SaveJobStatusParams) error {
+	_, err := q.db.ExecContext(ctx, saveJobStatus,
+		arg.Now,
+		arg.Status,
+		arg.Activity,
+		arg.ID,
+	)
+	return err
+}
+
+const saveJobStorageInfo = `-- name: SaveJobStorageInfo :exec
+UPDATE jobs SET storage_shaman_checkout_id=?1 WHERE id=?2
+`
+
+type SaveJobStorageInfoParams struct {
+	StorageShamanCheckoutID string
+	ID                      int64
+}
+
+func (q *Queries) SaveJobStorageInfo(ctx context.Context, arg SaveJobStorageInfoParams) error {
+	_, err := q.db.ExecContext(ctx, saveJobStorageInfo, arg.StorageShamanCheckoutID, arg.ID)
 	return err
 }

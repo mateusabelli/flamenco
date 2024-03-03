@@ -13,3 +13,4 @@ sql:
               type: "RawMessage"
         rename:
           uuid: "UUID"
+          uuids: "UUIDs"
