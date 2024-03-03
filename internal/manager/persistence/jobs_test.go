@@ -288,10 +288,10 @@ func TestFetchJobsDeletionRequested(t *testing.T) {
 	// Ensure different requests get different timestamps,
 	// out of chronological order.
 	timestamps := []time.Time{
-		// timestamps for 'delete requested at' and 'updated at'
-		now.Add(-3 * time.Second), now.Add(-3 * time.Second),
-		now.Add(-1 * time.Second), now.Add(-1 * time.Second),
-		now.Add(-5 * time.Second), now.Add(-5 * time.Second),
+		// timestamps for 'delete requested at'.
+		now.Add(-3 * time.Second),
+		now.Add(-1 * time.Second),
+		now.Add(-5 * time.Second),
 	}
 	currentTimestampIndex := 0
 	db.gormDB.NowFunc = func() time.Time {

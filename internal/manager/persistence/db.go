@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/glebarez/sqlite"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 
-	// sqlite "projects.blender.org/studio/flamenco/pkg/gorm-modernc-sqlite"
-	"github.com/glebarez/sqlite"
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 )
 
 // DB provides the database interface.
@@ -169,6 +169,17 @@ func (db *DB) Close() error {
 		return err
 	}
 	return sqldb.Close()
+}
+
+// queries returns the SQLC Queries struct, connected to this database.
+// It is intended that all GORM queries will be migrated to use this interface
+// instead.
+func (db *DB) queries() (*sqlc.Queries, error) {
+	sqldb, err := db.gormDB.DB()
+	if err != nil {
+		return nil, fmt.Errorf("could not get low-level database driver: %w", err)
+	}
+	return sqlc.New(sqldb), nil
 }
 
 func (db *DB) pragmaForeignKeys(enabled bool) error {

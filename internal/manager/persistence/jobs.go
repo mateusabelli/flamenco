@@ -17,6 +17,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -252,19 +253,20 @@ func (db *DB) storeAuthoredJobTaks(
 
 // FetchJob fetches a single job, without fetching its tasks.
 func (db *DB) FetchJob(ctx context.Context, jobUUID string) (*Job, error) {
-	dbJob := Job{}
-	findResult := db.gormDB.WithContext(ctx).
-		Limit(1).
-		Preload("WorkerTag").
-		Find(&dbJob, "uuid = ?", jobUUID)
-	if findResult.Error != nil {
-		return nil, jobError(findResult.Error, "fetching job")
-	}
-	if dbJob.ID == 0 {
-		return nil, ErrJobNotFound
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
 	}
 
-	return &dbJob, nil
+	sqlcJob, err := queries.FetchJob(ctx, jobUUID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, ErrJobNotFound
+	case err != nil:
+		return nil, jobError(err, "fetching job")
+	}
+
+	return convertSqlcJob(sqlcJob)
 }
 
 // DeleteJob deletes a job from the database.
@@ -279,24 +281,39 @@ func (db *DB) DeleteJob(ctx context.Context, jobUUID string) error {
 		return ErrDeletingWithoutFK
 	}
 
-	tx := db.gormDB.WithContext(ctx).
-		Where("uuid = ?", jobUUID).
-		Delete(&Job{})
-	if tx.Error != nil {
-		return jobError(tx.Error, "deleting job")
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	if err := queries.DeleteJob(ctx, jobUUID); err != nil {
+		return jobError(err, "deleting job")
 	}
 	return nil
 }
 
 // RequestJobDeletion sets the job's "DeletionRequestedAt" field to "now".
 func (db *DB) RequestJobDeletion(ctx context.Context, j *Job) error {
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	// Update the given job itself, so we don't have to re-fetch it from the database.
 	j.DeleteRequestedAt.Time = db.gormDB.NowFunc()
 	j.DeleteRequestedAt.Valid = true
-	tx := db.gormDB.WithContext(ctx).
-		Model(j).
-		Updates(Job{DeleteRequestedAt: j.DeleteRequestedAt})
-	if tx.Error != nil {
-		return jobError(tx.Error, "queueing job for deletion")
+
+	params := sqlc.RequestJobDeletionParams{
+		Now:   j.DeleteRequestedAt,
+		JobID: int64(j.ID),
+	}
+
+	log.Trace().
+		Str("job", j.UUID).
+		Time("deletedAt", params.Now.Time).
+		Msg("database: marking job as deletion-requested")
+	if err := queries.RequestJobDeletion(ctx, params); err != nil {
+		return jobError(err, "queueing job for deletion")
 	}
 	return nil
 }
@@ -712,4 +729,43 @@ func (db *DB) FetchTaskFailureList(ctx context.Context, t *Task) ([]*Worker, err
 		Scan(&workers)
 
 	return workers, tx.Error
+}
+
+// convertSqlcJob converts a job from the SQLC-generated model to the model
+// expected by the rest of the code. This is mostly in place to aid in the GORM
+// to SQLC migration. It is intended that eventually the rest of the code will
+// use the same SQLC-generated model.
+func convertSqlcJob(job sqlc.Job) (*Job, error) {
+	dbJob := Job{
+		Model: Model{
+			ID:        uint(job.ID),
+			CreatedAt: job.CreatedAt,
+			UpdatedAt: job.UpdatedAt.Time,
+		},
+		UUID:              job.Uuid,
+		Name:              job.Name,
+		JobType:           job.JobType,
+		Priority:          int(job.Priority),
+		Status:            api.JobStatus(job.Status),
+		Activity:          job.Activity,
+		DeleteRequestedAt: job.DeleteRequestedAt,
+		Storage: JobStorageInfo{
+			ShamanCheckoutID: job.StorageShamanCheckoutID,
+		},
+	}
+
+	if err := json.Unmarshal(job.Settings, &dbJob.Settings); err != nil {
+		return nil, jobError(err, fmt.Sprintf("job %s has invalid settings: %v", job.Uuid, err))
+	}
+
+	if err := json.Unmarshal(job.Metadata, &dbJob.Metadata); err != nil {
+		return nil, jobError(err, fmt.Sprintf("job %s has invalid metadata: %v", job.Uuid, err))
+	}
+
+	if job.WorkerTagID.Valid {
+		workerTagID := uint(job.WorkerTagID.Int64)
+		dbJob.WorkerTagID = &workerTagID
+	}
+
+	return &dbJob, nil
 }

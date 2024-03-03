@@ -1,0 +1,13 @@
+version: "2"
+sql:
+  - engine: "sqlite"
+    schema: "internal/manager/persistence/sqlc/schema.sql"
+    queries: "internal/manager/persistence/sqlc/query.sql"
+    gen:
+      go:
+        out: "internal/manager/persistence/sqlc"
+        overrides:
+          - db_type: "jsonb"
+            go_type:
+              import: "encoding/json"
+              type: "RawMessage"
