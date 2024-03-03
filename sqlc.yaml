@@ -2,7 +2,7 @@ version: "2"
 sql:
   - engine: "sqlite"
     schema: "internal/manager/persistence/sqlc/schema.sql"
-    queries: "internal/manager/persistence/sqlc/query.sql"
+    queries: "internal/manager/persistence/sqlc/query_jobs.sql"
     gen:
       go:
         out: "internal/manager/persistence/sqlc"
