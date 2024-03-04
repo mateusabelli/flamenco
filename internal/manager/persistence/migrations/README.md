@@ -15,7 +15,11 @@ itself. This means you can replace a table like this, without `ON DELETE`
 effects running.
 
 ```sql
-INSERT INTO `temp_table` SELECT * FROM `actual_table`;
+INSERT INTO `temp_table` SELECT field1, field2, etc FROM `actual_table`;
 DROP TABLE `actual_table`;
 ALTER TABLE `temp_table` RENAME TO `actual_table`;
 ```
+
+Note that the `SELECT` clause lists each field specifically. This is to ensure
+that they are selected in the expected order. Without this, data can get
+mangled.

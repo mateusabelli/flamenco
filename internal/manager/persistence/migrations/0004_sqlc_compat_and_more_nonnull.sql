@@ -16,7 +16,8 @@ CREATE TABLE temp_last_rendereds (
   PRIMARY KEY (id),
   CONSTRAINT fk_last_rendereds_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
 );
-INSERT INTO temp_last_rendereds SELECT * FROM last_rendereds;
+INSERT INTO temp_last_rendereds
+  SELECT id, created_at, updated_at, job_id FROM last_rendereds;
 DROP TABLE last_rendereds;
 ALTER TABLE temp_last_rendereds RENAME TO last_rendereds;
 
@@ -27,7 +28,7 @@ CREATE TABLE temp_task_dependencies (
   CONSTRAINT fk_task_dependencies_task FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
   CONSTRAINT fk_task_dependencies_dependencies FOREIGN KEY (dependency_id) REFERENCES tasks(id) ON DELETE CASCADE
 );
-INSERT INTO temp_task_dependencies SELECT * FROM task_dependencies;
+INSERT INTO temp_task_dependencies SELECT task_id, dependency_id FROM task_dependencies;
 DROP TABLE task_dependencies;
 ALTER TABLE temp_task_dependencies RENAME TO task_dependencies;
 
@@ -39,7 +40,7 @@ CREATE TABLE temp_task_failures (
   CONSTRAINT fk_task_failures_task FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
   CONSTRAINT fk_task_failures_worker FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
 );
-INSERT INTO temp_task_failures SELECT * FROM task_failures;
+INSERT INTO temp_task_failures SELECT created_at, task_id, worker_id FROM task_failures;
 DROP TABLE task_failures;
 ALTER TABLE temp_task_failures RENAME TO task_failures;
 
@@ -50,7 +51,7 @@ CREATE TABLE temp_worker_tag_membership (
   CONSTRAINT fk_worker_tag_membership_worker_tag FOREIGN KEY (worker_tag_id) REFERENCES worker_tags(id) ON DELETE CASCADE,
   CONSTRAINT fk_worker_tag_membership_worker FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
 );
-INSERT INTO temp_worker_tag_membership SELECT * FROM worker_tag_membership;
+INSERT INTO temp_worker_tag_membership SELECT worker_tag_id, worker_id FROM worker_tag_membership;
 DROP TABLE worker_tag_membership;
 ALTER TABLE temp_worker_tag_membership RENAME TO worker_tag_membership;
 
@@ -63,7 +64,14 @@ CREATE TABLE temp_worker_tags (
   description varchar(255) DEFAULT '' NOT NULL,
   PRIMARY KEY (id)
 );
-INSERT INTO temp_worker_tags SELECT * FROM worker_tags;
+INSERT INTO temp_worker_tags SELECT
+  id,
+  created_at,
+  updated_at,
+  uuid,
+  name,
+  description
+FROM worker_tags;
 DROP TABLE worker_tags;
 ALTER TABLE temp_worker_tags RENAME TO worker_tags;
 
@@ -85,10 +93,6 @@ CREATE TABLE temp_jobs (
   PRIMARY KEY (id),
   CONSTRAINT fk_jobs_worker_tag FOREIGN KEY (worker_tag_id) REFERENCES worker_tags(id) ON DELETE SET NULL
 );
--- This is using an explicit set of columns, as my development machine had an
--- extra column in there that caused errors. If anybody ever ran a beta where
--- the `worker_tag_id` was called `worker_cluster_id`, they'd have that extra
--- column too.
 INSERT INTO temp_jobs SELECT
   id,
   created_at,
@@ -128,7 +132,24 @@ CREATE TABLE temp_workers (
   PRIMARY KEY (id)
 );
 UPDATE workers SET supported_task_types = '' where supported_task_types is NULL;
-INSERT INTO temp_workers SELECT * FROM workers;
+INSERT INTO temp_workers SELECT
+  id,
+  created_at,
+  updated_at,
+  uuid,
+  secret,
+  name,
+  address,
+  platform,
+  software,
+  status,
+  last_seen_at,
+  status_requested,
+  lazy_status_request,
+  supported_task_types,
+  deleted_at,
+  can_restart
+FROM workers;
 DROP TABLE workers;
 ALTER TABLE temp_workers RENAME TO workers;
 
@@ -142,7 +163,13 @@ CREATE TABLE temp_job_blocks (
   CONSTRAINT fk_job_blocks_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
   CONSTRAINT fk_job_blocks_worker FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
 );
-INSERT INTO temp_job_blocks SELECT * FROM job_blocks;
+INSERT INTO temp_job_blocks SELECT
+  id,
+  created_at,
+  job_id,
+  worker_id,
+  task_type
+FROM job_blocks;
 DROP TABLE job_blocks;
 ALTER TABLE temp_job_blocks RENAME TO job_blocks;
 
@@ -159,7 +186,17 @@ CREATE TABLE temp_sleep_schedules (
   PRIMARY KEY (id),
   CONSTRAINT fk_sleep_schedules_worker FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
 );
-INSERT INTO temp_sleep_schedules SELECT * FROM sleep_schedules;
+INSERT INTO temp_sleep_schedules SELECT
+  id,
+  created_at,
+  updated_at,
+  worker_id,
+  is_active,
+  days_of_week,
+  start_time,
+  end_time,
+  next_check
+FROM sleep_schedules;
 DROP TABLE sleep_schedules;
 ALTER TABLE temp_sleep_schedules RENAME TO sleep_schedules;
 
@@ -181,7 +218,21 @@ CREATE TABLE temp_tasks (
   CONSTRAINT fk_tasks_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
   CONSTRAINT fk_tasks_worker FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE SET NULL
 );
-INSERT INTO temp_tasks SELECT * FROM tasks;
+INSERT INTO temp_tasks SELECT
+  id,
+  created_at,
+  updated_at,
+  uuid,
+  name,
+  type,
+  job_id,
+  priority,
+  status,
+  worker_id,
+  last_touched_at,
+  commands,
+  activity
+FROM tasks;
 DROP TABLE tasks;
 ALTER TABLE temp_tasks RENAME TO tasks;
 
@@ -208,7 +259,12 @@ CREATE TABLE `temp_last_rendereds` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_last_rendereds_job` FOREIGN KEY (`job_id`) REFERENCES `jobs`(`id`) ON DELETE CASCADE
 );
-INSERT INTO temp_last_rendereds SELECT * FROM last_rendereds;
+INSERT INTO temp_last_rendereds SELECT
+  id,
+  created_at,
+  updated_at,
+  job_id
+FROM last_rendereds;
 DROP TABLE last_rendereds;
 ALTER TABLE temp_last_rendereds RENAME TO `last_rendereds`;
 
@@ -219,7 +275,7 @@ CREATE TABLE `temp_task_dependencies` (
   CONSTRAINT `fk_task_dependencies_task` FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_task_dependencies_dependencies` FOREIGN KEY (`dependency_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE
 );
-INSERT INTO temp_task_dependencies SELECT * FROM task_dependencies;
+INSERT INTO temp_task_dependencies SELECT task_id, dependency_id FROM task_dependencies;
 DROP TABLE task_dependencies;
 ALTER TABLE temp_task_dependencies RENAME TO `task_dependencies`;
 
@@ -231,7 +287,7 @@ CREATE TABLE `temp_task_failures` (
   CONSTRAINT `fk_task_failures_task` FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_task_failures_worker` FOREIGN KEY (`worker_id`) REFERENCES `workers`(`id`) ON DELETE CASCADE
 );
-INSERT INTO temp_task_failures SELECT * FROM task_failures;
+INSERT INTO temp_task_failures SELECT created_at, task_id, worker_id FROM task_failures;
 DROP TABLE task_failures;
 ALTER TABLE temp_task_failures RENAME TO `task_failures`;
 
@@ -242,7 +298,7 @@ CREATE TABLE `temp_worker_tag_membership` (
   CONSTRAINT `fk_worker_tag_membership_worker_tag` FOREIGN KEY (`worker_tag_id`) REFERENCES `worker_tags`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_worker_tag_membership_worker` FOREIGN KEY (`worker_id`) REFERENCES `workers`(`id`) ON DELETE CASCADE
 );
-INSERT INTO temp_worker_tag_membership SELECT * FROM worker_tag_membership;
+INSERT INTO temp_worker_tag_membership SELECT worker_tag_id, worker_id FROM worker_tag_membership;
 DROP TABLE worker_tag_membership;
 ALTER TABLE temp_worker_tag_membership RENAME TO `worker_tag_membership`;
 
@@ -255,7 +311,14 @@ CREATE TABLE "temp_worker_tags" (
   `description` varchar(255) DEFAULT "",
   PRIMARY KEY (`id`)
 );
-INSERT INTO temp_worker_tags SELECT * FROM worker_tags;
+INSERT INTO temp_worker_tags SELECT
+  id,
+  created_at,
+  updated_at,
+  uuid,
+  name,
+  description
+FROM worker_tags;
 DROP TABLE worker_tags;
 ALTER TABLE temp_worker_tags RENAME TO `worker_tags`;
 
@@ -277,7 +340,22 @@ CREATE TABLE "temp_jobs" (
   PRIMARY KEY(`id`),
   CONSTRAINT `fk_jobs_worker_tag` FOREIGN KEY(`worker_tag_id`) REFERENCES `worker_tags`(`id`) ON DELETE SET NULL
 );
-INSERT INTO temp_jobs SELECT * FROM jobs;
+INSERT INTO temp_jobs SELECT
+  id,
+  created_at,
+  updated_at,
+  uuid,
+  name,
+  job_type,
+  priority,
+  status,
+  activity,
+  settings,
+  metadata,
+  delete_requested_at,
+  storage_shaman_checkout_id,
+  worker_tag_id
+FROM jobs;
 DROP TABLE jobs;
 ALTER TABLE temp_jobs RENAME TO `jobs`;
 
@@ -300,7 +378,24 @@ CREATE TABLE "temp_workers" (
   `can_restart` smallint DEFAULT false,
   PRIMARY KEY (`id`)
 );
-INSERT INTO temp_workers SELECT * FROM workers;
+INSERT INTO temp_workers SELECT
+  id,
+  created_at,
+  updated_at,
+  deleted_at,
+  uuid,
+  secret,
+  name,
+  address,
+  platform,
+  software,
+  status,
+  last_seen_at,
+  status_requested,
+  lazy_status_request,
+  supported_task_types,
+  can_restart
+FROM workers;
 DROP TABLE workers;
 ALTER TABLE temp_workers RENAME TO `workers`;
 
@@ -314,7 +409,13 @@ CREATE TABLE "temp_job_blocks" (
   CONSTRAINT `fk_job_blocks_job` FOREIGN KEY (`job_id`) REFERENCES `jobs`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_job_blocks_worker` FOREIGN KEY (`worker_id`) REFERENCES `workers`(`id`) ON DELETE CASCADE
 );
-INSERT INTO temp_job_blocks SELECT * FROM job_blocks;
+INSERT INTO temp_job_blocks SELECT
+  id,
+  created_at,
+  job_id,
+  worker_id,
+  task_type
+FROM job_blocks;
 DROP TABLE job_blocks;
 ALTER TABLE temp_job_blocks RENAME TO `job_blocks`;
 
@@ -331,7 +432,17 @@ CREATE TABLE "temp_sleep_schedules" (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_sleep_schedules_worker` FOREIGN KEY (`worker_id`) REFERENCES `workers`(`id`) ON DELETE CASCADE
 );
-INSERT INTO temp_sleep_schedules SELECT * FROM sleep_schedules;
+INSERT INTO temp_sleep_schedules SELECT
+  id,
+  created_at,
+  updated_at,
+  worker_id,
+  is_active,
+  days_of_week,
+  start_time,
+  end_time,
+  next_check
+FROM sleep_schedules;
 DROP TABLE sleep_schedules;
 ALTER TABLE temp_sleep_schedules RENAME TO `sleep_schedules`;
 
@@ -354,7 +465,21 @@ CREATE TABLE "temp_tasks" (
   CONSTRAINT `fk_tasks_worker` FOREIGN KEY (`worker_id`) REFERENCES `workers`(`id`) ON DELETE
   SET NULL
 );
-INSERT INTO temp_tasks SELECT * FROM tasks;
+INSERT INTO temp_tasks SELECT
+  id,
+  created_at,
+  updated_at,
+  uuid,
+  name,
+  type,
+  job_id,
+  priority,
+  status,
+  worker_id,
+  last_touched_at,
+  commands,
+  activity
+FROM tasks;
 DROP TABLE tasks;
 ALTER TABLE temp_tasks RENAME TO `tasks`;
 
