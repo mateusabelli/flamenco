@@ -43,23 +43,19 @@ class FLAMENCO_PT_job_submission(bpy.types.Panel):
         col.prop(context.scene, "flamenco_job_name", text="Job Name")
         col.prop(context.scene, "flamenco_job_priority", text="Priority")
 
-        # Worker tag:
-        row = col.row(align=True)
-        row.prop(context.scene, "flamenco_worker_tag", text="Tag")
-        row.operator("flamenco.fetch_worker_tags", text="", icon="FILE_REFRESH")
-
-        layout.separator()
-
-        col = layout.column()
+        # Refreshables:
+        col = layout.column(align=True)
+        col.operator(
+            "flamenco.ping_manager", text="Refresh from Manager", icon="FILE_REFRESH"
+        )
         if not job_types.are_job_types_available():
-            col.operator("flamenco.fetch_job_types", icon="FILE_REFRESH")
             return
+        col.prop(context.scene, "flamenco_worker_tag", text="Tag")
 
-        row = col.row(align=True)
-        row.prop(context.scene, "flamenco_job_type", text="")
-        row.operator("flamenco.fetch_job_types", text="", icon="FILE_REFRESH")
-
-        self.draw_job_settings(context, layout.column(align=True))
+        # Job properties:
+        job_col = layout.column(align=True)
+        job_col.prop(context.scene, "flamenco_job_type", text="Job Type")
+        self.draw_job_settings(context, job_col)
 
         layout.separator()
 

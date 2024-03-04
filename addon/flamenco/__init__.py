@@ -27,6 +27,7 @@ if __is_first_load:
         preferences,
         projects,
         worker_tags,
+        manager_info,
     )
 else:
     import importlib
@@ -38,6 +39,7 @@ else:
     preferences = importlib.reload(preferences)
     projects = importlib.reload(projects)
     worker_tags = importlib.reload(worker_tags)
+    manager_info = importlib.reload(manager_info)
 
 import bpy
 
@@ -159,6 +161,9 @@ def register() -> None:
     operators.register()
     gui.register()
     job_types.register()
+
+    # Once everything is registered, load the cached manager info from JSON.
+    manager_info.load_into_cache()
 
 
 def unregister() -> None:

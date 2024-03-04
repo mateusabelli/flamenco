@@ -10,7 +10,7 @@ from urllib3.exceptions import HTTPError, MaxRetryError
 
 import bpy
 
-from . import job_types, job_submission, preferences, worker_tags
+from . import job_types, job_submission, preferences, manager_info
 from .job_types_propgroup import JobTypePropertyGroup
 from .bat.submodules import bpathlib
 
@@ -51,80 +51,6 @@ class FlamencoOpMixin:
         return api_client
 
 
-class FLAMENCO_OT_fetch_job_types(FlamencoOpMixin, bpy.types.Operator):
-    bl_idname = "flamenco.fetch_job_types"
-    bl_label = "Fetch Job Types"
-    bl_description = "Query Flamenco Manager to obtain the available job types"
-
-    def execute(self, context: bpy.types.Context) -> set[str]:
-        api_client = self.get_api_client(context)
-
-        from flamenco.manager import ApiException
-
-        scene = context.scene
-        old_job_type_name = getattr(scene, "flamenco_job_type", "")
-
-        try:
-            job_types.fetch_available_job_types(api_client, scene)
-        except ApiException as ex:
-            self.report({"ERROR"}, "Error getting job types: %s" % ex)
-            return {"CANCELLED"}
-        except MaxRetryError as ex:
-            # This is the common error, when for example the port number is
-            # incorrect and nothing is listening.
-            self.report({"ERROR"}, "Unable to reach Manager")
-            return {"CANCELLED"}
-
-        if old_job_type_name:
-            try:
-                scene.flamenco_job_type = old_job_type_name
-            except TypeError:  # Thrown when the old job type no longer exists.
-                # You cannot un-set an enum property, and 'empty string' is not
-                # a valid value either, so better to just remove the underlying
-                # ID property.
-                del scene["flamenco_job_type"]
-
-                self.report(
-                    {"WARNING"},
-                    "Job type %r no longer available, choose another one"
-                    % old_job_type_name,
-                )
-
-        job_types.update_job_type_properties(scene)
-        return {"FINISHED"}
-
-
-class FLAMENCO_OT_fetch_worker_tags(FlamencoOpMixin, bpy.types.Operator):
-    bl_idname = "flamenco.fetch_worker_tags"
-    bl_label = "Fetch Worker Tags"
-    bl_description = "Query Flamenco Manager to obtain the available worker tags"
-
-    def execute(self, context: bpy.types.Context) -> set[str]:
-        api_client = self.get_api_client(context)
-
-        from flamenco.manager import ApiException
-
-        scene = context.scene
-        old_tag = getattr(scene, "flamenco_worker_tag", "")
-
-        try:
-            worker_tags.refresh(context, api_client)
-        except ApiException as ex:
-            self.report({"ERROR"}, "Error getting job types: %s" % ex)
-            return {"CANCELLED"}
-        except MaxRetryError as ex:
-            # This is the common error, when for example the port number is
-            # incorrect and nothing is listening.
-            self.report({"ERROR"}, "Unable to reach Manager")
-            return {"CANCELLED"}
-
-        if old_tag:
-            # TODO: handle cases where the old tag no longer exists.
-            scene.flamenco_worker_tag = old_tag
-
-        return {"FINISHED"}
-
-
 class FLAMENCO_OT_ping_manager(FlamencoOpMixin, bpy.types.Operator):
     bl_idname = "flamenco.ping_manager"
     bl_label = "Flamenco: Ping Manager"
@@ -132,13 +58,13 @@ class FLAMENCO_OT_ping_manager(FlamencoOpMixin, bpy.types.Operator):
     bl_options = {"REGISTER"}  # No UNDO.
 
     def execute(self, context: bpy.types.Context) -> set[str]:
-        from . import comms, preferences
+        from . import comms
 
         api_client = self.get_api_client(context)
-        prefs = preferences.get(context)
-
-        report, level = comms.ping_manager_with_report(
-            context.window_manager, api_client, prefs
+        report, level = comms.ping_manager(
+            context.window_manager,
+            context.scene,
+            api_client,
         )
         self.report({level}, report)
 
@@ -259,29 +185,31 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         :return: an error string when something went wrong.
         """
-        from . import comms, preferences
+        from . import comms
 
-        # Get the manager's info. This is cached in the preferences, so
-        # regardless of whether this function actually responds to version
-        # mismatches, it has to be called to also refresh the shared storage
-        # location.
+        # Get the manager's info. This is cached to disk, so regardless of
+        # whether this function actually responds to version mismatches, it has
+        # to be called to also refresh the shared storage location.
         api_client = self.get_api_client(context)
-        prefs = preferences.get(context)
-        mgrinfo = comms.ping_manager(context.window_manager, api_client, prefs)
-        if mgrinfo.error:
-            return mgrinfo.error
+
+        report, report_level = comms.ping_manager(
+            context.window_manager,
+            context.scene,
+            api_client,
+        )
+        if report_level != "INFO":
+            return report
 
         # Check the Manager's version.
         if not self.ignore_version_mismatch:
-            my_version = comms.flamenco_client_version()
-            assert mgrinfo.version is not None
+            mgrinfo = manager_info.load_cached()
 
-            try:
-                mgrversion = mgrinfo.version.shortversion
-            except AttributeError:
-                # shortversion was introduced in Manager version 3.0-beta2, which
-                # may not be running here yet.
-                mgrversion = mgrinfo.version.version
+            # Safe to assume, as otherwise the ping_manager() call would not have succeeded.
+            assert mgrinfo is not None
+
+            my_version = comms.flamenco_client_version()
+            mgrversion = mgrinfo.flamenco_version.shortversion
+
             if mgrversion != my_version:
                 context.window_manager.flamenco_version_mismatch = True
                 return (
@@ -298,6 +226,23 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         # Empty error message indicates 'ok'.
         return ""
+
+    def _manager_info(
+        self, context: bpy.types.Context
+    ) -> Optional[manager_info.ManagerInfo]:
+        """Load the manager info.
+
+        If it cannot be loaded, returns None after emitting an error message and
+        calling self._quit(context).
+        """
+        manager = manager_info.load_cached()
+        if not manager:
+            self.report(
+                {"ERROR"}, "No information known about Flamenco Manager, refresh first."
+            )
+            self._quit(context)
+            return None
+        return manager
 
     def _save_blendfile(self, context):
         """Save to a different file, specifically for Flamenco.
@@ -368,8 +313,11 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             self._quit(context)
             return {"CANCELLED"}
 
-        prefs = preferences.get(context)
-        if prefs.is_shaman_enabled:
+        manager = self._manager_info(context)
+        if not manager:
+            return {"CANCELLED"}
+
+        if manager.shared_storage.shaman_enabled:
             # self.blendfile_on_farm will be set when BAT created the checkout,
             # see _on_bat_pack_msg() below.
             self.blendfile_on_farm = None
@@ -414,11 +362,14 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             raise FileNotFoundError()
 
         # Determine where the blend file will be stored.
+        manager = self._manager_info(context)
+        if not manager:
+            raise FileNotFoundError("Manager info not known")
         unique_dir = "%s-%s" % (
             datetime.datetime.now().isoformat("-").replace(":", ""),
             self.job_name,
         )
-        pack_target_dir = Path(prefs.job_storage) / unique_dir
+        pack_target_dir = Path(manager.shared_storage.location) / unique_dir
 
         # TODO: this should take the blendfile location relative to the project path into account.
         pack_target_file = pack_target_dir / blendfile.name
@@ -690,8 +641,6 @@ class FLAMENCO3_OT_explore_file_path(bpy.types.Operator):
 
 
 classes = (
-    FLAMENCO_OT_fetch_job_types,
-    FLAMENCO_OT_fetch_worker_tags,
     FLAMENCO_OT_ping_manager,
     FLAMENCO_OT_eval_setting,
     FLAMENCO_OT_submit_job,

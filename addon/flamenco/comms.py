@@ -3,12 +3,11 @@
 # <pep8 compliant>
 
 import logging
-import dataclasses
-import platform
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-from urllib3.exceptions import HTTPError, MaxRetryError
 import bpy
+
+from flamenco import manager_info, job_types
 
 _flamenco_client = None
 _log = logging.getLogger(__name__)
@@ -25,23 +24,6 @@ else:
     _FlamencoPreferences = object
     _FlamencoVersion = object
     _SharedStorageLocation = object
-
-
-@dataclasses.dataclass(frozen=True)
-class ManagerInfo:
-    version: Optional[_FlamencoVersion] = None
-    storage: Optional[_SharedStorageLocation] = None
-    error: str = ""
-
-    @classmethod
-    def with_error(cls, error: str) -> "ManagerInfo":
-        return cls(error=error)
-
-    @classmethod
-    def with_info(
-        cls, version: _FlamencoVersion, storage: _SharedStorageLocation
-    ) -> "ManagerInfo":
-        return cls(version=version, storage=storage)
 
 
 def flamenco_api_client(manager_url: str) -> _ApiClient:
@@ -87,12 +69,12 @@ def discard_flamenco_data():
     _flamenco_client = None
 
 
-def ping_manager_with_report(
+def ping_manager(
     window_manager: bpy.types.WindowManager,
+    scene: bpy.types.Scene,
     api_client: _ApiClient,
-    prefs: _FlamencoPreferences,
 ) -> tuple[str, str]:
-    """Ping the Manager, update preferences, and return a report as string.
+    """Fetch Manager info, and update the scene for it.
 
     :returns: tuple (report, level). The report will be something like "<name>
         version <version> found", or an error message. The level will be
@@ -100,55 +82,49 @@ def ping_manager_with_report(
         `Operator.report()`.
     """
 
-    info = ping_manager(window_manager, api_client, prefs)
-    if info.error:
-        return info.error, "ERROR"
-
-    assert info.version is not None
-    report = "%s version %s found" % (info.version.name, info.version.version)
-    return report, "INFO"
-
-
-def ping_manager(
-    window_manager: bpy.types.WindowManager,
-    api_client: _ApiClient,
-    prefs: _FlamencoPreferences,
-) -> ManagerInfo:
-    """Fetch Manager config & version, and update cached preferences."""
-
     window_manager.flamenco_status_ping = "..."
 
-    # Do a late import, so that the API is only imported when actually used.
-    from flamenco.manager import ApiException
-    from flamenco.manager.apis import MetaApi
-    from flamenco.manager.models import FlamencoVersion, SharedStorageLocation
+    # Remember the old values, as they may have disappeared from the Manager.
+    old_job_type_name = getattr(scene, "flamenco_job_type", "")
+    old_tag_name = getattr(scene, "flamenco_worker_tag", "")
 
-    meta_api = MetaApi(api_client)
-    error = ""
     try:
-        version: FlamencoVersion = meta_api.get_version()
-        storage: SharedStorageLocation = meta_api.get_shared_storage(
-            "users", platform.system().lower()
-        )
-    except ApiException as ex:
-        error = "Manager cannot be reached: %s" % ex
-    except MaxRetryError as ex:
-        # This is the common error, when for example the port number is
-        # incorrect and nothing is listening. The exception text is not included
-        # because it's very long and confusing.
-        error = "Manager cannot be reached"
-    except HTTPError as ex:
-        error = "Manager cannot be reached: %s" % ex
+        info = manager_info.fetch(api_client)
+    except manager_info.FetchError as ex:
+        report = str(ex)
+        window_manager.flamenco_status_ping = report
+        return report, "ERROR"
 
-    if error:
-        window_manager.flamenco_status_ping = error
-        return ManagerInfo.with_error(error)
+    manager_info.save(info)
 
-    # Store whether this Manager supports the Shaman API.
-    prefs.is_shaman_enabled = storage.shaman_enabled
-    prefs.job_storage = storage.location
+    report = "%s version %s found" % (
+        info.flamenco_version.name,
+        info.flamenco_version.version,
+    )
+    report_level = "INFO"
 
-    report = "%s version %s found" % (version.name, version.version)
+    job_types.refresh_scene_properties(scene, info.job_types)
+
+    # Try to restore the old values.
+    #
+    # Since you cannot un-set an enum property, and 'empty string' is not a
+    # valid value either, when the old choice is no longer available we remove
+    # the underlying ID property.
+    if old_job_type_name:
+        try:
+            scene.flamenco_job_type = old_job_type_name
+        except TypeError:  # Thrown when the old enum value no longer exists.
+            del scene["flamenco_job_type"]
+            report = f"Job type {old_job_type_name!r} no longer available, choose another one"
+            report_level = "WARNING"
+
+    if old_tag_name:
+        try:
+            scene.flamenco_worker_tag = old_tag_name
+        except TypeError:  # Thrown when the old enum value no longer exists.
+            del scene["flamenco_worker_tag"]
+            report = f"Tag {old_tag_name!r} no longer available, choose another one"
+            report_level = "WARNING"
+
     window_manager.flamenco_status_ping = report
-
-    return ManagerInfo.with_info(version, storage)
+    return report, report_level

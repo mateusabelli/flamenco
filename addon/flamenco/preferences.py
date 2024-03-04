@@ -5,7 +5,7 @@ from pathlib import Path
 
 import bpy
 
-from . import projects
+from . import projects, manager_info
 
 
 def discard_flamenco_client(context):
@@ -16,9 +16,7 @@ def discard_flamenco_client(context):
     context.window_manager.flamenco_status_ping = ""
 
 
-def _refresh_the_planet(
-    prefs: "FlamencoPreferences", context: bpy.types.Context
-) -> None:
+def _refresh_the_planet(context: bpy.types.Context) -> None:
     """Refresh all GUI areas."""
     for win in context.window_manager.windows:
         for area in win.screen.areas:
@@ -35,7 +33,8 @@ def _manager_url_updated(prefs, context):
 
     # Warning, be careful what of the context to access here. Accessing /
     # changing too much can cause crashes, infinite loops, etc.
-    comms.ping_manager_with_report(context.window_manager, api_client, prefs)
+    comms.ping_manager(context.window_manager, context.scene, api_client)
+    _refresh_the_planet(context)
 
 
 _project_finder_enum_items = [
@@ -66,22 +65,6 @@ class FlamencoPreferences(bpy.types.AddonPreferences):
         items=_project_finder_enum_items,
     )
 
-    is_shaman_enabled: bpy.props.BoolProperty(  # type: ignore
-        name="Shaman Enabled",
-        description="Whether this Manager has the Shaman protocol enabled",
-        default=False,
-        update=_refresh_the_planet,
-    )
-
-    # Property that should be editable from Python. It's not exposed to the GUI.
-    job_storage: bpy.props.StringProperty(  # type: ignore
-        name="Job Storage Directory",
-        subtype="DIR_PATH",
-        default="",
-        options={"HIDDEN"},
-        description="Directory where blend files are stored when submitting them to Flamenco. This value is determined by Flamenco Manager",
-    )
-
     # Property that gets its value from the above _job_storage, and cannot be
     # set. This makes it read-only in the GUI.
     job_storage_for_gui: bpy.props.StringProperty(  # type: ignore
@@ -90,14 +73,7 @@ class FlamencoPreferences(bpy.types.AddonPreferences):
         default="",
         options={"SKIP_SAVE"},
         description="Directory where blend files are stored when submitting them to Flamenco. This value is determined by Flamenco Manager",
-        get=lambda prefs: prefs.job_storage,
-    )
-
-    worker_tags: bpy.props.CollectionProperty(  # type: ignore
-        type=WorkerTag,
-        name="Worker Tags",
-        description="Cache for the worker tags available on the configured Manager",
-        options={"HIDDEN"},
+        get=lambda prefs: prefs._job_storage(),
     )
 
     def draw(self, context: bpy.types.Context) -> None:
@@ -116,7 +92,9 @@ class FlamencoPreferences(bpy.types.AddonPreferences):
             split.label(text="")
             split.label(text=label)
 
-        if not self.job_storage:
+        manager = manager_info.load_cached()
+
+        if not manager:
             text_row(col, "Press the refresh button before using Flamenco")
 
         if context.window_manager.flamenco_status_ping:
@@ -126,7 +104,7 @@ class FlamencoPreferences(bpy.types.AddonPreferences):
             text_row(aligned, "Press the refresh button to check the connection")
             text_row(aligned, "and update the job storage location")
 
-        if self.is_shaman_enabled:
+        if manager and manager.shared_storage.shaman_enabled:
             text_row(col, "Shaman enabled")
         col.prop(self, "job_storage_for_gui", text="Job Storage")
 
@@ -151,6 +129,12 @@ class FlamencoPreferences(bpy.types.AddonPreferences):
         # It is assumed that the blendfile is saved.
         blendfile = Path(bpy.data.filepath)
         return projects.for_blendfile(blendfile, self.project_finder)
+
+    def _job_storage(self) -> str:
+        info = manager_info.load_cached()
+        if not info:
+            return "Unknown, refresh first."
+        return str(info.shared_storage.location)
 
 
 def get(context: bpy.types.Context) -> FlamencoPreferences:

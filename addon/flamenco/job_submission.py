@@ -8,7 +8,7 @@ import bpy
 
 from .job_types_propgroup import JobTypePropertyGroup
 from .bat.submodules import bpathlib
-from . import preferences
+from . import manager_info
 
 if TYPE_CHECKING:
     from .manager import ApiClient as _ApiClient
@@ -133,8 +133,11 @@ def is_file_inside_job_storage(context: bpy.types.Context, blendfile: Path) -> b
 
     blendfile = bpathlib.make_absolute(blendfile)
 
-    prefs = preferences.get(context)
-    job_storage = bpathlib.make_absolute(Path(prefs.job_storage))
+    info = manager_info.load_cached()
+    if not info:
+        raise RuntimeError("Flamenco Manager info unknown, please refresh.")
+
+    job_storage = bpathlib.make_absolute(Path(info.shared_storage.location))
 
     log.info("Checking whether the file is already inside the job storage")
     log.info("    file   : %s", blendfile)

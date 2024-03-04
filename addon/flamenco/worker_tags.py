@@ -1,57 +1,35 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from typing import TYPE_CHECKING, Union
+from typing import Union
 
 import bpy
 
-from . import preferences
-
-if TYPE_CHECKING:
-    from flamenco.manager import ApiClient as _ApiClient
-else:
-    _ApiClient = object
+from . import manager_info
 
 
 _enum_items: list[Union[tuple[str, str, str], tuple[str, str, str, int, int]]] = []
 
 
-def refresh(context: bpy.types.Context, api_client: _ApiClient) -> None:
-    """Fetch the available worker tags from the Manager."""
-    from flamenco.manager import ApiClient
-    from flamenco.manager.api import worker_mgt_api
-    from flamenco.manager.model.worker_tag_list import WorkerTagList
-
-    assert isinstance(api_client, ApiClient)
-
-    api = worker_mgt_api.WorkerMgtApi(api_client)
-    response: WorkerTagList = api.fetch_worker_tags()
-
-    # Store on the preferences, so a cached version persists until the next refresh.
-    prefs = preferences.get(context)
-    prefs.worker_tags.clear()
-
-    for tag in response.tags:
-        rna_tag = prefs.worker_tags.add()
-        rna_tag.id = tag.id
-        rna_tag.name = tag.name
-        rna_tag.description = getattr(tag, "description", "")
-
-    # Preferences have changed, so make sure that Blender saves them (assuming
-    # auto-save here).
-    context.preferences.is_dirty = True
-
-
 def _get_enum_items(self, context):
     global _enum_items
-    prefs = preferences.get(context)
+
+    manager = manager_info.load_cached()
+    if manager is None:
+        _enum_items = [
+            (
+                "-",
+                "-tags unknown-",
+                "Refresh to load the available Worker tags from the Manager",
+            ),
+        ]
+        return _enum_items
 
     _enum_items = [
         ("-", "All", "No specific tag assigned, any worker can handle this job"),
     ]
-    _enum_items.extend(
-        (tag.id, tag.name, tag.description)
-        for tag in prefs.worker_tags
-    )
+    for tag in manager.worker_tags.tags:
+        _enum_items.append((tag.id, tag.name, getattr(tag, "description", "")))
+
     return _enum_items
 
 
@@ -70,9 +48,3 @@ def unregister() -> None:
             delattr(ob, attr)
         except AttributeError:
             pass
-
-
-if __name__ == "__main__":
-    import doctest
-
-    print(doctest.testmod())

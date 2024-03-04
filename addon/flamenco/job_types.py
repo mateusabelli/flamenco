@@ -1,14 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import json
-import logging
 from typing import TYPE_CHECKING, Optional, Union
 
 import bpy
 
-from . import job_types_propgroup
-
-_log = logging.getLogger(__name__)
+from . import job_types_propgroup, manager_info
 
 if TYPE_CHECKING:
     from flamenco.manager import ApiClient as _ApiClient
@@ -39,24 +35,12 @@ _selected_job_type_propgroup: Optional[
 ] = None
 
 
-def fetch_available_job_types(api_client: _ApiClient, scene: bpy.types.Scene) -> None:
-    from flamenco.manager import ApiClient
-    from flamenco.manager.api import jobs_api
-    from flamenco.manager.model.available_job_types import AvailableJobTypes
-
-    assert isinstance(api_client, ApiClient)
-
-    job_api_instance = jobs_api.JobsApi(api_client)
-    response: AvailableJobTypes = job_api_instance.get_job_types()
-
+def refresh_scene_properties(
+    scene: bpy.types.Scene, available_job_types: _AvailableJobTypes
+) -> None:
     _clear_available_job_types(scene)
-
-    # Store the response JSON on the scene. This is used when the blend file is
-    # loaded (and thus the _available_job_types global variable is still empty)
-    # to generate the PropertyGroup of the selected job type.
-    scene.flamenco_available_job_types_json = json.dumps(response.to_dict())
-
-    _store_available_job_types(response)
+    _store_available_job_types(available_job_types)
+    update_job_type_properties(scene)
 
 
 def setting_is_visible(setting: _AvailableJobSetting) -> bool:
@@ -125,33 +109,6 @@ def _store_available_job_types(available_job_types: _AvailableJobTypes) -> None:
     _job_type_enum_items.insert(0, ("", "Select a Job Type", "", 0, 0))
 
 
-def _available_job_types_from_json(job_types_json: str) -> None:
-    """Convert JSON to AvailableJobTypes object, and update global variables for it."""
-    from flamenco.manager.models import AvailableJobTypes
-    from flamenco.manager.configuration import Configuration
-    from flamenco.manager.model_utils import validate_and_convert_types
-
-    json_dict = json.loads(job_types_json)
-
-    dummy_cfg = Configuration()
-
-    try:
-        job_types = validate_and_convert_types(
-            json_dict, (AvailableJobTypes,), ["job_types"], True, True, dummy_cfg
-        )
-    except TypeError:
-        _log.warn(
-            "Flamenco: could not restore cached job types, refresh them from Flamenco Manager"
-        )
-        _store_available_job_types(AvailableJobTypes(job_types=[]))
-        return
-
-    assert isinstance(
-        job_types, AvailableJobTypes
-    ), "expected AvailableJobTypes, got %s" % type(job_types)
-    _store_available_job_types(job_types)
-
-
 def are_job_types_available() -> bool:
     """Returns whether job types have been fetched and are available."""
     return bool(_job_type_enum_items)
@@ -199,7 +156,7 @@ def _clear_available_job_types(scene: bpy.types.Scene) -> None:
     _clear_job_type_propgroup()
 
     _available_job_types = None
-    _job_type_enum_items.clear()
+    _job_type_enum_items = []
     scene.flamenco_available_job_types_json = ""
 
 
@@ -238,21 +195,21 @@ def _get_job_types_enum_items(dummy1, dummy2):
 
 
 @bpy.app.handlers.persistent
-def restore_available_job_types(dummy1, dummy2):
+def restore_available_job_types(_filepath, _none):
     scene = bpy.context.scene
-    job_types_json = getattr(scene, "flamenco_available_job_types_json", "")
-    if not job_types_json:
+    info = manager_info.load_cached()
+    if info is None:
         _clear_available_job_types(scene)
         return
-    _available_job_types_from_json(job_types_json)
-    update_job_type_properties(scene)
+    refresh_scene_properties(scene, info.job_types)
 
 
 def discard_flamenco_data():
-    if _available_job_types:
-        _available_job_types.clear()
-    if _job_type_enum_items:
-        _job_type_enum_items.clear()
+    global _available_job_types
+    global _job_type_enum_items
+
+    _available_job_types = None
+    _job_type_enum_items = []
 
 
 def register() -> None:
