@@ -64,7 +64,7 @@ loop:
 		select {
 		case <-runDone:
 			break loop
-		default:
+		case <-time.After(1 * time.Millisecond):
 			mocks.clock.Add(timeStepSize)
 		}
 	}
