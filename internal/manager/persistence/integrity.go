@@ -13,7 +13,7 @@ import (
 var ErrIntegrity = errors.New("database integrity check failed")
 
 const (
-	integrityCheckTimeout = 2 * time.Second
+	integrityCheckTimeout = 10 * time.Second
 )
 
 type PragmaIntegrityCheckResult struct {
