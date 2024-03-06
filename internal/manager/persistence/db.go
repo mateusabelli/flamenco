@@ -75,6 +75,10 @@ func OpenDB(ctx context.Context, dsn string) (*DB, error) {
 		return nil, ErrIntegrity
 	}
 
+	// Perform another vacuum after database migration, as that may have copied a
+	// lot of data and then dropped another lot of data.
+	db.vacuum()
+
 	closeConnOnReturn = false
 	return db, nil
 }
