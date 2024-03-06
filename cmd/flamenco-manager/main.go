@@ -56,6 +56,10 @@ const (
 	developmentWebInterfacePort = 8081
 
 	webappEntryPoint = "index.html"
+
+	// dbOpenTimeout is the time the persistence layer gets to open the database.
+	// This includes database migrations, which can take some time to perform.
+	dbOpenTimeout = 1 * time.Minute
 )
 
 type shutdownFunc func()
@@ -379,7 +383,7 @@ func openDB(configService config.Service) *persistence.DB {
 		log.Fatal().Msg("configure the database in flamenco-manager.yaml")
 	}
 
-	dbCtx, dbCtxCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	dbCtx, dbCtxCancel := context.WithTimeout(context.Background(), dbOpenTimeout)
 	defer dbCtxCancel()
 	persist, err := persistence.OpenDB(dbCtx, dsn)
 	if err != nil {
