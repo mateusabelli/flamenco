@@ -13,6 +13,8 @@ import (
 	"github.com/eclipse/paho.golang/paho"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
 const (
@@ -150,6 +152,11 @@ func (m *MQTTForwarder) queueRunner(queueRunnerCtx context.Context) {
 }
 
 func (m *MQTTForwarder) Broadcast(topic EventTopic, payload interface{}) {
+	if _, ok := payload.(api.EventTaskLogUpdate); ok {
+		// Task log updates aren't sent through MQTT, as that can generate a lot of traffic.
+		return
+	}
+
 	fullTopic := m.topicPrefix + string(topic)
 
 	asJSON, err := json.Marshal(payload)
