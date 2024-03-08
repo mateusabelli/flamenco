@@ -4,6 +4,7 @@ import (
 	"runtime"
 	"time"
 
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	shaman_config "projects.blender.org/studio/flamenco/pkg/shaman/config"
 )
 
@@ -39,6 +40,13 @@ var defaultConfig = Conf{
 
 		BlocklistThreshold:         3,
 		TaskFailAfterSoftFailCount: 3,
+
+		MQTT: MQTTConfig{
+			Client: eventbus.MQTTClientConfig{
+				ClientID:    eventbus.MQTTDefaultClientID,
+				TopicPrefix: eventbus.MQTTDefaultTopicPrefix,
+			},
+		},
 	},
 
 	Variables: map[string]Variable{

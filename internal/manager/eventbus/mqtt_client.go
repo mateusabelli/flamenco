@@ -18,7 +18,9 @@ import (
 )
 
 const (
-	defaultClientID   = "flamenco"
+	MQTTDefaultTopicPrefix = "flamenco"
+	MQTTDefaultClientID    = "flamenco"
+
 	keepAlive         = 30 // seconds
 	connectRetryDelay = 10 * time.Second
 
@@ -63,7 +65,7 @@ func NewMQTTForwarder(config MQTTClientConfig) *MQTTForwarder {
 		return nil
 	}
 	if config.ClientID == "" {
-		config.ClientID = defaultClientID
+		config.ClientID = MQTTDefaultClientID
 	}
 
 	brokerURL, err := url.Parse(config.BrokerURL)
