@@ -16,9 +16,8 @@ var defaultConfig = Conf{
 	Base: Base{
 		Meta: ConfMeta{Version: latestConfigVersion},
 
-		ManagerName: "Flamenco",
-		Listen:      ":8080",
-		// ListenHTTPS:   ":8433",
+		ManagerName:             "Flamenco",
+		Listen:                  ":8080",
 		DatabaseDSN:             "flamenco-manager.sqlite",
 		DBIntegrityCheck:        10 * time.Minute,
 		SSDPDiscovery:           true,
@@ -38,25 +37,8 @@ var defaultConfig = Conf{
 		TaskTimeout:   10 * time.Minute,
 		WorkerTimeout: 1 * time.Minute,
 
-		// // Days are assumed to be 24 hours long. This is not exactly accurate, but should
-		// // be accurate enough for this type of cleanup.
-		// TaskCleanupMaxAge: 14 * 24 * time.Hour,
-
 		BlocklistThreshold:         3,
 		TaskFailAfterSoftFailCount: 3,
-
-		// WorkerCleanupStatus: []string{string(api.WorkerStatusOffline)},
-
-		// TestTasks: TestTasks{
-		// 	BlenderRender: BlenderRenderConfig{
-		// 		JobStorage:   "{job_storage}/test-jobs",
-		// 		RenderOutput: "{render}/test-renders",
-		// 	},
-		// },
-
-		// JWT: jwtauth.Config{
-		// 	DownloadKeysInterval: 1 * time.Hour,
-		// },
 	},
 
 	Variables: map[string]Variable{
