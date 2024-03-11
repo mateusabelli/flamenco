@@ -25,10 +25,22 @@ else:
 
 _available_job_types: Optional[list[_AvailableJobType]] = None
 
+# Enum property value that indicates 'no job type selected'. This is used
+# because an empty string seems to be handled by Blender as 'nothing', which
+# never seems to match an enum item even when there is one with "" as its 'key'.
+_JOB_TYPE_NOT_SELECTED = "-"
+_JOB_TYPE_NOT_SELECTED_ENUM_ITEM = (
+    _JOB_TYPE_NOT_SELECTED,
+    "Select a Job Type",
+    "",
+    0,
+    0,
+)
+
 # Items for a bpy.props.EnumProperty()
 _job_type_enum_items: list[
     Union[tuple[str, str, str], tuple[str, str, str, int, int]]
-] = []
+] = [_JOB_TYPE_NOT_SELECTED_ENUM_ITEM]
 
 _selected_job_type_propgroup: Optional[
     type[job_types_propgroup.JobTypePropertyGroup]
@@ -106,7 +118,7 @@ def _store_available_job_types(available_job_types: _AvailableJobTypes) -> None:
         _job_type_enum_items = [
             (job_type.name, job_type.label, "") for job_type in job_types
         ]
-    _job_type_enum_items.insert(0, ("", "Select a Job Type", "", 0, 0))
+    _job_type_enum_items.insert(0, _JOB_TYPE_NOT_SELECTED_ENUM_ITEM)
 
 
 def are_job_types_available() -> bool:
@@ -215,6 +227,7 @@ def discard_flamenco_data():
 def register() -> None:
     bpy.types.Scene.flamenco_job_type = bpy.props.EnumProperty(
         name="Job Type",
+        default=0,
         items=_get_job_types_enum_items,
         update=_update_job_type,
     )
