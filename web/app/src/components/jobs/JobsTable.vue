@@ -88,7 +88,7 @@ export default {
         classList.toggle('deletion-requested', !!data.delete_requested_at);
       },
       initialSort: [{ column: 'updated', dir: 'desc' }],
-      layout: 'fitData',
+      layout: 'fitDataFill',
       layoutColumnsOnNewData: true,
       height: '720px', // Must be set in order for the virtual DOM to function correctly.
       data: [], // Will be filled via a Flamenco API request.

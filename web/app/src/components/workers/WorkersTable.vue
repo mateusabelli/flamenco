@@ -73,7 +73,7 @@ export default {
         row.getElement().classList.toggle('active-row', isActive);
       },
       initialSort: [{ column: 'name', dir: 'asc' }],
-      layout: 'fitData',
+      layout: 'fitDataFill',
       layoutColumnsOnNewData: true,
       height: '360px', // Must be set in order for the virtual DOM to function correctly.
       data: [], // Will be filled via a Flamenco API request.
@@ -129,7 +129,6 @@ export default {
     onWorkersFetched(data) {
       this.tabulator.setData(data.workers);
       this._refreshAvailableStatuses();
-
       this.recalcTableHeight();
     },
     processWorkerUpdate(workerUpdate) {

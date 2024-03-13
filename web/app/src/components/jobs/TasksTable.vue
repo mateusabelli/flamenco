@@ -85,7 +85,7 @@ export default {
         row.getElement().classList.toggle('active-row', isActive);
       },
       initialSort: [{ column: 'updated', dir: 'desc' }],
-      layout: 'fitData',
+      layout: 'fitDataFill',
       layoutColumnsOnNewData: true,
       height: '100%', // Must be set in order for the virtual DOM to function correctly.
       maxHeight: '100%',
