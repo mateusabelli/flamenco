@@ -47,18 +47,18 @@ mqtt:
 
 ## MQTT Topics
 
-The following topics will be used by Flamenco:
+The following topics will be used by Flamenco. The `flamenco` prefix for the topics is configurable.
 
-| Description                      | MQTT topic                       | JSON event payload        |
-|----------------------------------|----------------------------------|---------------------------|
-| Manager startup/shutdown         | `/lifecycle`                     | `EventLifeCycle`          |
-| Farm status                      | `/status`                        | `EventFarmStatus`         |
-| Job update                       | `/jobs`                          | `EventJobUpdate`          |
-| Task update                      | `/jobs/{job UUID}`               | `EventTaskUpdate`         |
-| Worker update                    | `/workers`                       | `EventWorkerUpdate`       |
-| Worker Tag update                | `/workertags`                    | `EventWorkerTagUpdate`    |
-| Last rendered image              | `/last-rendered`                 | `EventLastRenderedUpdate` |
-| Job-specific last rendered image | `/jobs/{job UUID}/last-rendered` | `EventLastRenderedUpdate` |
+| Description                      | MQTT topic                               | JSON event payload        |
+|----------------------------------|------------------------------------------|---------------------------|
+| Manager startup/shutdown         | `flamenco/lifecycle`                     | `EventLifeCycle`          |
+| Farm status                      | `flamenco/status`                        | `EventFarmStatus`         |
+| Job update                       | `flamenco/jobs`                          | `EventJobUpdate`          |
+| Task update                      | `flamenco/jobs/{job UUID}`               | `EventTaskUpdate`         |
+| Worker update                    | `flamenco/workers`                       | `EventWorkerUpdate`       |
+| Worker Tag update                | `flamenco/workertags`                    | `EventWorkerTagUpdate`    |
+| Last rendered image              | `flamenco/last-rendered`                 | `EventLastRenderedUpdate` |
+| Job-specific last rendered image | `flamenco/jobs/{job UUID}/last-rendered` | `EventLastRenderedUpdate` |
 
 For the specification of the JSON sent in the MQTT events, use the above table
 and then look up the type description in the [OpenAPI specification][oapi].
