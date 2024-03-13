@@ -10,6 +10,7 @@ bugs in actually-released versions.
 - Simplify the preview video filename when a complex set of frames rendered ([#104285](https://projects.blender.org/studio/flamenco/issues/104285)). Instead of `video-1, 4, 10.mp4` it is now simply `video-1-10.mp4`.
 - Make the `blendfile` parameter of a `blender-render` command optional. This makes it possible to pass, for example, a Python file that loads/constructs the blend file, instead of loading one straight from disk.
 - Show the farm status in the web frontend. This shows whether the farm is actively working on a job, idle, asleep (all workers are sleeping and no work is queued), waiting (all workers are sleeping, and work is queued), or inoperable (no workers, or all workers are offline). This status is also broadcast as event via the event bus, and thus available via SocketIO and MQTT.
+- Fix an issue where the columns in the web interface wouldn't correctly resize when the shown information changed.
 
 ## 3.4 - released 2024-01-12
 
