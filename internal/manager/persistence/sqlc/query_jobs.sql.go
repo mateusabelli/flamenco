@@ -74,8 +74,37 @@ SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activ
 WHERE uuid = ? LIMIT 1
 `
 
+// Fetch a job by its UUID.
 func (q *Queries) FetchJob(ctx context.Context, uuid string) (Job, error) {
 	row := q.db.QueryRowContext(ctx, fetchJob, uuid)
+	var i Job
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UUID,
+		&i.Name,
+		&i.JobType,
+		&i.Priority,
+		&i.Status,
+		&i.Activity,
+		&i.Settings,
+		&i.Metadata,
+		&i.DeleteRequestedAt,
+		&i.StorageShamanCheckoutID,
+		&i.WorkerTagID,
+	)
+	return i, err
+}
+
+const fetchJobByID = `-- name: FetchJobByID :one
+SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activity, settings, metadata, delete_requested_at, storage_shaman_checkout_id, worker_tag_id FROM jobs
+WHERE id = ? LIMIT 1
+`
+
+// Fetch a job by its numerical ID.
+func (q *Queries) FetchJobByID(ctx context.Context, id int64) (Job, error) {
+	row := q.db.QueryRowContext(ctx, fetchJobByID, id)
 	var i Job
 	err := row.Scan(
 		&i.ID,
@@ -202,6 +231,57 @@ func (q *Queries) FetchJobsInStatus(ctx context.Context, statuses []string) ([]J
 		return nil, err
 	}
 	return items, nil
+}
+
+const fetchTask = `-- name: FetchTask :one
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, jobs.UUID as jobUUID, workers.UUID as workerUUID
+FROM tasks
+LEFT JOIN jobs ON (tasks.job_id = jobs.id)
+LEFT JOIN workers ON (tasks.worker_id = workers.id)
+WHERE tasks.uuid = ?1
+`
+
+type FetchTaskRow struct {
+	Task       Task
+	JobUUID    sql.NullString
+	WorkerUUID sql.NullString
+}
+
+func (q *Queries) FetchTask(ctx context.Context, uuid string) (FetchTaskRow, error) {
+	row := q.db.QueryRowContext(ctx, fetchTask, uuid)
+	var i FetchTaskRow
+	err := row.Scan(
+		&i.Task.ID,
+		&i.Task.CreatedAt,
+		&i.Task.UpdatedAt,
+		&i.Task.UUID,
+		&i.Task.Name,
+		&i.Task.Type,
+		&i.Task.JobID,
+		&i.Task.Priority,
+		&i.Task.Status,
+		&i.Task.WorkerID,
+		&i.Task.LastTouchedAt,
+		&i.Task.Commands,
+		&i.Task.Activity,
+		&i.JobUUID,
+		&i.WorkerUUID,
+	)
+	return i, err
+}
+
+const fetchTaskJobUUID = `-- name: FetchTaskJobUUID :one
+SELECT jobs.UUID as jobUUID
+FROM tasks
+LEFT JOIN jobs ON (tasks.job_id = jobs.id)
+WHERE tasks.uuid = ?1
+`
+
+func (q *Queries) FetchTaskJobUUID(ctx context.Context, uuid string) (sql.NullString, error) {
+	row := q.db.QueryRowContext(ctx, fetchTaskJobUUID, uuid)
+	var jobuuid sql.NullString
+	err := row.Scan(&jobuuid)
+	return jobuuid, err
 }
 
 const requestJobDeletion = `-- name: RequestJobDeletion :exec

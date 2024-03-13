@@ -66,12 +66,14 @@ type Task struct {
 	Type     string         `gorm:"type:varchar(32);default:''"`
 	JobID    uint           `gorm:"default:0"`
 	Job      *Job           `gorm:"foreignkey:JobID;references:ID;constraint:OnDelete:CASCADE"`
+	JobUUID  string         `gorm:"-"` // Fetched by SQLC, not GORM.
 	Priority int            `gorm:"type:smallint;default:50"`
 	Status   api.TaskStatus `gorm:"type:varchar(16);default:''"`
 
 	// Which worker is/was working on this.
 	WorkerID      *uint
 	Worker        *Worker   `gorm:"foreignkey:WorkerID;references:ID;constraint:OnDelete:SET NULL"`
+	WorkerUUID    string    `gorm:"-"`     // Fetched by SQLC, not GORM.
 	LastTouchedAt time.Time `gorm:"index"` // Should contain UTC timestamps.
 
 	// Dependencies are tasks that need to be completed before this one can run.
@@ -454,18 +456,66 @@ func (db *DB) SaveJobStorageInfo(ctx context.Context, j *Job) error {
 }
 
 func (db *DB) FetchTask(ctx context.Context, taskUUID string) (*Task, error) {
-	dbTask := Task{}
-	tx := db.gormDB.WithContext(ctx).
-		// Allow finding the Worker, even after it was deleted. Jobs and Tasks
-		// don't have soft-deletion.
-		Unscoped().
-		Joins("Job").
-		Joins("Worker").
-		First(&dbTask, "tasks.uuid = ?", taskUUID)
-	if tx.Error != nil {
-		return nil, taskError(tx.Error, "fetching task")
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
 	}
-	return &dbTask, nil
+
+	taskRow, err := queries.FetchTask(ctx, taskUUID)
+	if err != nil {
+		return nil, taskError(err, "fetching task %s", taskUUID)
+	}
+
+	convertedTask, err := convertSqlcTask(taskRow)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: remove this code, and let the caller fetch the job explicitly when needed.
+	if taskRow.Task.JobID > 0 {
+		dbJob, err := queries.FetchJobByID(ctx, taskRow.Task.JobID)
+		if err != nil {
+			return nil, jobError(err, "fetching job of task %s", taskUUID)
+		}
+
+		convertedJob, err := convertSqlcJob(dbJob)
+		if err != nil {
+			return nil, jobError(err, "converting job of task %s", taskUUID)
+		}
+		convertedTask.Job = convertedJob
+		if convertedTask.JobUUID != convertedJob.UUID {
+			panic("Conversion to SQLC is incomplete")
+		}
+	}
+
+	// TODO: remove this code, and let the caller fetch the Worker explicitly when needed.
+	if taskRow.WorkerUUID.Valid {
+		worker, err := queries.FetchWorkerUnconditional(ctx, taskRow.WorkerUUID.String)
+		if err != nil {
+			return nil, taskError(err, "fetching worker assigned to task %s", taskUUID)
+		}
+		convertedWorker := convertSqlcWorker(worker)
+		convertedTask.Worker = &convertedWorker
+	}
+
+	return convertedTask, nil
+}
+
+// FetchTaskJobUUID fetches the job UUID of the given task.
+func (db *DB) FetchTaskJobUUID(ctx context.Context, taskUUID string) (string, error) {
+	queries, err := db.queries()
+	if err != nil {
+		return "", err
+	}
+
+	jobUUID, err := queries.FetchTaskJobUUID(ctx, taskUUID)
+	if err != nil {
+		return "", taskError(err, "fetching job UUID of task %s", taskUUID)
+	}
+	if !jobUUID.Valid {
+		return "", PersistenceError{Message: fmt.Sprintf("unable to find job of task %s", taskUUID)}
+	}
+	return jobUUID.String, nil
 }
 
 func (db *DB) SaveTask(ctx context.Context, t *Task) error {
@@ -790,4 +840,44 @@ func convertSqlcJob(job sqlc.Job) (*Job, error) {
 	}
 
 	return &dbJob, nil
+}
+
+// convertSqlcTask converts a FetchTaskRow from the SQLC-generated model to the
+// model expected by the rest of the code. This is mostly in place to aid in the
+// GORM to SQLC migration. It is intended that eventually the rest of the code
+// will use the same SQLC-generated model.
+func convertSqlcTask(taskRow sqlc.FetchTaskRow) (*Task, error) {
+	dbTask := Task{
+		Model: Model{
+			ID:        uint(taskRow.Task.ID),
+			CreatedAt: taskRow.Task.CreatedAt,
+			UpdatedAt: taskRow.Task.UpdatedAt.Time,
+		},
+
+		UUID:          taskRow.Task.UUID,
+		Name:          taskRow.Task.Name,
+		Type:          taskRow.Task.Type,
+		Priority:      int(taskRow.Task.Priority),
+		Status:        api.TaskStatus(taskRow.Task.Status),
+		LastTouchedAt: taskRow.Task.LastTouchedAt.Time,
+		Activity:      taskRow.Task.Activity,
+
+		JobID:      uint(taskRow.Task.JobID),
+		JobUUID:    taskRow.JobUUID.String,
+		WorkerUUID: taskRow.WorkerUUID.String,
+	}
+
+	// TODO: convert dependencies?
+
+	if taskRow.Task.WorkerID.Valid {
+		workerID := uint(taskRow.Task.WorkerID.Int64)
+		dbTask.WorkerID = &workerID
+	}
+
+	if err := json.Unmarshal(taskRow.Task.Commands, &dbTask.Commands); err != nil {
+		return nil, taskError(err, fmt.Sprintf("task %s of job %s has invalid commands: %v",
+			taskRow.Task.UUID, taskRow.JobUUID.String, err))
+	}
+
+	return &dbTask, nil
 }

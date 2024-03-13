@@ -36,6 +36,8 @@ type PersistenceService interface {
 	SaveJobPriority(ctx context.Context, job *persistence.Job) error
 	// FetchTask fetches the given task and the accompanying job.
 	FetchTask(ctx context.Context, taskID string) (*persistence.Task, error)
+	// FetchTaskJobUUID fetches the UUID of the job this task belongs to.
+	FetchTaskJobUUID(ctx context.Context, taskID string) (string, error)
 	FetchTaskFailureList(context.Context, *persistence.Task) ([]*persistence.Worker, error)
 	SaveTaskActivity(ctx context.Context, t *persistence.Task) error
 	// TaskTouchedByWorker marks the task as 'touched' by a worker. This is used for timeout detection.

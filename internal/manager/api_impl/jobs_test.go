@@ -753,22 +753,10 @@ func TestFetchTaskLogTail(t *testing.T) {
 
 	jobID := "18a9b096-d77e-438c-9be2-74397038298b"
 	taskID := "2e020eee-20f8-4e95-8dcf-65f7dfc3ebab"
-	dbJob := persistence.Job{
-		UUID:     jobID,
-		Name:     "test job",
-		Status:   api.JobStatusActive,
-		Settings: persistence.StringInterfaceMap{},
-		Metadata: persistence.StringStringMap{},
-	}
-	dbTask := persistence.Task{
-		UUID: taskID,
-		Job:  &dbJob,
-		Name: "test task",
-	}
 
 	// The task can be found, but has no on-disk task log.
 	// This should not cause any error, but instead be returned as "no content".
-	mf.persistence.EXPECT().FetchTask(gomock.Any(), taskID).Return(&dbTask, nil)
+	mf.persistence.EXPECT().FetchTaskJobUUID(gomock.Any(), taskID).Return(jobID, nil)
 	mf.logStorage.EXPECT().Tail(jobID, taskID).
 		Return("", fmt.Errorf("wrapped error: %w", os.ErrNotExist))
 
@@ -778,7 +766,7 @@ func TestFetchTaskLogTail(t *testing.T) {
 	assertResponseNoContent(t, echoCtx)
 
 	// Check that a 204 No Content is also returned when the task log file on disk exists, but is empty.
-	mf.persistence.EXPECT().FetchTask(gomock.Any(), taskID).Return(&dbTask, nil)
+	mf.persistence.EXPECT().FetchTaskJobUUID(gomock.Any(), taskID).Return(jobID, nil)
 	mf.logStorage.EXPECT().Tail(jobID, taskID).
 		Return("", fmt.Errorf("wrapped error: %w", os.ErrNotExist))
 
@@ -796,21 +784,9 @@ func TestFetchTaskLogInfo(t *testing.T) {
 
 	jobID := "18a9b096-d77e-438c-9be2-74397038298b"
 	taskID := "2e020eee-20f8-4e95-8dcf-65f7dfc3ebab"
-	dbJob := persistence.Job{
-		UUID:     jobID,
-		Name:     "test job",
-		Status:   api.JobStatusActive,
-		Settings: persistence.StringInterfaceMap{},
-		Metadata: persistence.StringStringMap{},
-	}
-	dbTask := persistence.Task{
-		UUID: taskID,
-		Job:  &dbJob,
-		Name: "test task",
-	}
 	mf.persistence.EXPECT().
-		FetchTask(gomock.Any(), taskID).
-		Return(&dbTask, nil).
+		FetchTaskJobUUID(gomock.Any(), taskID).
+		Return(jobID, nil).
 		AnyTimes()
 
 	// The task can be found, but has no on-disk task log.

@@ -75,6 +75,19 @@ func TestStoreAuthoredJobWithShamanCheckoutID(t *testing.T) {
 	assert.Equal(t, job.Storage.ShamanCheckoutID, fetchedJob.Storage.ShamanCheckoutID)
 }
 
+func TestFetchTaskJobUUID(t *testing.T) {
+	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	defer cancel()
+
+	job := createTestAuthoredJobWithTasks()
+	err := db.StoreAuthoredJob(ctx, job)
+	require.NoError(t, err)
+
+	jobUUID, err := db.FetchTaskJobUUID(ctx, job.Tasks[0].UUID)
+	require.NoError(t, err)
+	assert.Equal(t, job.JobID, jobUUID)
+}
+
 func TestSaveJobStorageInfo(t *testing.T) {
 	// Test that saving job storage info doesn't count as "update".
 	// This is necessary for `cmd/shaman-checkout-id-setter` to do its work quietly.

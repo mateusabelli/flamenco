@@ -10,6 +10,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -73,18 +74,30 @@ func (db *DB) CreateWorker(ctx context.Context, w *Worker) error {
 }
 
 func (db *DB) FetchWorker(ctx context.Context, uuid string) (*Worker, error) {
-	w := Worker{}
-	tx := db.gormDB.WithContext(ctx).
-		Preload("Tags").
-		Find(&w, "uuid = ?", uuid).
-		Limit(1)
-	if tx.Error != nil {
-		return nil, workerError(tx.Error, "fetching worker")
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
 	}
-	if w.ID == 0 {
-		return nil, ErrWorkerNotFound
+
+	worker, err := queries.FetchWorker(ctx, uuid)
+	if err != nil {
+		return nil, workerError(err, "fetching worker %s", uuid)
 	}
-	return &w, nil
+
+	// TODO: remove this code, and let the caller fetch the tags when interested in them.
+	workerTags, err := queries.FetchWorkerTags(ctx, uuid)
+	if err != nil {
+		return nil, workerTagError(err, "fetching tags of worker %s", uuid)
+	}
+
+	convertedWorker := convertSqlcWorker(worker)
+	convertedWorker.Tags = make([]*WorkerTag, len(workerTags))
+	for index := range workerTags {
+		convertedTag := convertSqlcWorkerTag(workerTags[index])
+		convertedWorker.Tags[index] = &convertedTag
+	}
+
+	return &convertedWorker, nil
 }
 
 func (db *DB) DeleteWorker(ctx context.Context, uuid string) error {
@@ -215,4 +228,49 @@ func (db *DB) SummarizeWorkerStatuses(ctx context.Context) (WorkerStatusCount, e
 	}
 
 	return statusCounts, nil
+}
+
+// convertSqlcWorker converts a worker from the SQLC-generated model to the model
+// expected by the rest of the code. This is mostly in place to aid in the GORM
+// to SQLC migration. It is intended that eventually the rest of the code will
+// use the same SQLC-generated model.
+func convertSqlcWorker(worker sqlc.Worker) Worker {
+	return Worker{
+		Model: Model{
+			ID:        uint(worker.ID),
+			CreatedAt: worker.CreatedAt,
+			UpdatedAt: worker.UpdatedAt.Time,
+		},
+		DeletedAt: gorm.DeletedAt(worker.DeletedAt),
+
+		UUID:               worker.UUID,
+		Secret:             worker.Secret,
+		Name:               worker.Name,
+		Address:            worker.Address,
+		Platform:           worker.Platform,
+		Software:           worker.Software,
+		Status:             api.WorkerStatus(worker.Status),
+		LastSeenAt:         worker.LastSeenAt.Time,
+		CanRestart:         worker.CanRestart != 0,
+		StatusRequested:    api.WorkerStatus(worker.StatusRequested),
+		LazyStatusRequest:  worker.LazyStatusRequest != 0,
+		SupportedTaskTypes: worker.SupportedTaskTypes,
+	}
+}
+
+// convertSqlcWorkerTag converts a worker tag from the SQLC-generated model to
+// the model expected by the rest of the code. This is mostly in place to aid in
+// the GORM to SQLC migration. It is intended that eventually the rest of the
+// code will use the same SQLC-generated model.
+func convertSqlcWorkerTag(tag sqlc.WorkerTag) WorkerTag {
+	return WorkerTag{
+		Model: Model{
+			ID:        uint(tag.ID),
+			CreatedAt: tag.CreatedAt,
+			UpdatedAt: tag.UpdatedAt.Time,
+		},
+		UUID:        tag.UUID,
+		Name:        tag.Name,
+		Description: tag.Description,
+	}
 }

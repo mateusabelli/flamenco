@@ -184,7 +184,9 @@ func (db *DB) queries() (*sqlc.Queries, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not get low-level database driver: %w", err)
 	}
-	return sqlc.New(sqldb), nil
+
+	loggingWrapper := LoggingDBConn{sqldb}
+	return sqlc.New(&loggingWrapper), nil
 }
 
 // now returns the result of `nowFunc()` wrapped in a sql.NullTime.

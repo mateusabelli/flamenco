@@ -238,9 +238,12 @@ func TestCountTaskFailuresOfWorker(t *testing.T) {
 	ctx, close, db, dbJob, authoredJob := jobTasksTestFixtures(t)
 	defer close()
 
-	task0, _ := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
-	task1, _ := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
-	task2, _ := db.FetchTask(ctx, authoredJob.Tasks[2].UUID)
+	task0, err := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
+	require.NoError(t, err)
+	task1, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
+	require.NoError(t, err)
+	task2, err := db.FetchTask(ctx, authoredJob.Tasks[2].UUID)
+	require.NoError(t, err)
 
 	// Sanity check on the test data.
 	assert.Equal(t, "blender", task0.Type)

@@ -18,8 +18,14 @@ INSERT INTO jobs (
 VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? );
 
 -- name: FetchJob :one
+-- Fetch a job by its UUID.
 SELECT * FROM jobs
 WHERE uuid = ? LIMIT 1;
+
+-- name: FetchJobByID :one
+-- Fetch a job by its numerical ID.
+SELECT * FROM jobs
+WHERE id = ? LIMIT 1;
 
 -- name: DeleteJob :exec
 DELETE FROM jobs WHERE uuid = ?;
@@ -55,3 +61,16 @@ UPDATE jobs SET updated_at=@now, priority=@priority WHERE id=@id;
 
 -- name: SaveJobStorageInfo :exec
 UPDATE jobs SET storage_shaman_checkout_id=@storage_shaman_checkout_id WHERE id=@id;
+
+-- name: FetchTask :one
+SELECT sqlc.embed(tasks), jobs.UUID as jobUUID, workers.UUID as workerUUID
+FROM tasks
+LEFT JOIN jobs ON (tasks.job_id = jobs.id)
+LEFT JOIN workers ON (tasks.worker_id = workers.id)
+WHERE tasks.uuid = @uuid;
+
+-- name: FetchTaskJobUUID :one
+SELECT jobs.UUID as jobUUID
+FROM tasks
+LEFT JOIN jobs ON (tasks.job_id = jobs.id)
+WHERE tasks.uuid = @uuid;

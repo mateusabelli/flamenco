@@ -2,6 +2,7 @@
 package persistence
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -9,6 +10,7 @@ import (
 )
 
 var (
+	// TODO: let these errors wrap database/sql.ErrNoRows.
 	ErrJobNotFound       = PersistenceError{Message: "job not found", Err: gorm.ErrRecordNotFound}
 	ErrTaskNotFound      = PersistenceError{Message: "task not found", Err: gorm.ErrRecordNotFound}
 	ErrWorkerNotFound    = PersistenceError{Message: "worker not found", Err: gorm.ErrRecordNotFound}
@@ -63,36 +65,48 @@ func wrapError(errorToWrap error, message string, format ...interface{}) error {
 
 // translateGormJobError translates a Gorm error to a persistence layer error.
 // This helps to keep Gorm as "implementation detail" of the persistence layer.
-func translateGormJobError(gormError error) error {
-	if errors.Is(gormError, gorm.ErrRecordNotFound) {
+func translateGormJobError(err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrTaskNotFound
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return ErrJobNotFound
 	}
-	return gormError
+	return err
 }
 
 // translateGormTaskError translates a Gorm error to a persistence layer error.
 // This helps to keep Gorm as "implementation detail" of the persistence layer.
-func translateGormTaskError(gormError error) error {
-	if errors.Is(gormError, gorm.ErrRecordNotFound) {
+func translateGormTaskError(err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
 		return ErrTaskNotFound
 	}
-	return gormError
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrTaskNotFound
+	}
+	return err
 }
 
 // translateGormWorkerError translates a Gorm error to a persistence layer error.
 // This helps to keep Gorm as "implementation detail" of the persistence layer.
-func translateGormWorkerError(gormError error) error {
-	if errors.Is(gormError, gorm.ErrRecordNotFound) {
+func translateGormWorkerError(err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
 		return ErrWorkerNotFound
 	}
-	return gormError
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrWorkerNotFound
+	}
+	return err
 }
 
 // translateGormWorkerTagError translates a Gorm error to a persistence layer error.
 // This helps to keep Gorm as "implementation detail" of the persistence layer.
-func translateGormWorkerTagError(gormError error) error {
-	if errors.Is(gormError, gorm.ErrRecordNotFound) {
+func translateGormWorkerTagError(err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
 		return ErrWorkerTagNotFound
 	}
-	return gormError
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrWorkerTagNotFound
+	}
+	return err
 }

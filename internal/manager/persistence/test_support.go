@@ -15,7 +15,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
-	"projects.blender.org/studio/flamenco/internal/uuid"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -106,7 +105,7 @@ func workerTestFixtures(t *testing.T, testContextTimeout time.Duration) WorkerTe
 	ctx, cancel, db := persistenceTestFixtures(t, testContextTimeout)
 
 	w := Worker{
-		UUID:               uuid.New(),
+		UUID:               "557930e7-5b55-469e-a6d7-fc800f3685be",
 		Name:               "дрон",
 		Address:            "fe80::5054:ff:fede:2ad7",
 		Platform:           "linux",
@@ -116,7 +115,7 @@ func workerTestFixtures(t *testing.T, testContextTimeout time.Duration) WorkerTe
 	}
 
 	wc := WorkerTag{
-		UUID:        uuid.New(),
+		UUID:        "e0e05417-9793-4829-b1d0-d446dd819f3d",
 		Name:        "arbejdsklynge",
 		Description: "Worker tag in Danish",
 	}

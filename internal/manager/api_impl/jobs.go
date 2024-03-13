@@ -439,7 +439,7 @@ func (f *Flamenco) FetchTaskLogInfo(e echo.Context, taskID string) error {
 		return sendAPIError(e, http.StatusBadRequest, "bad task ID")
 	}
 
-	dbTask, err := f.persist.FetchTask(ctx, taskID)
+	jobUUID, err := f.persist.FetchTaskJobUUID(ctx, taskID)
 	if err != nil {
 		if errors.Is(err, persistence.ErrTaskNotFound) {
 			return sendAPIError(e, http.StatusNotFound, "no such task")
@@ -447,9 +447,9 @@ func (f *Flamenco) FetchTaskLogInfo(e echo.Context, taskID string) error {
 		logger.Error().Err(err).Msg("error fetching task")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching task: %v", err)
 	}
-	logger = logger.With().Str("job", dbTask.Job.UUID).Logger()
+	logger = logger.With().Str("job", jobUUID).Logger()
 
-	size, err := f.logStorage.TaskLogSize(dbTask.Job.UUID, taskID)
+	size, err := f.logStorage.TaskLogSize(jobUUID, taskID)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			logger.Debug().Msg("task log unavailable, task has no log on disk")
@@ -475,11 +475,11 @@ func (f *Flamenco) FetchTaskLogInfo(e echo.Context, taskID string) error {
 
 	taskLogInfo := api.TaskLogInfo{
 		TaskId: taskID,
-		JobId:  dbTask.Job.UUID,
+		JobId:  jobUUID,
 		Size:   int(size),
 	}
 
-	fullLogPath := f.logStorage.Filepath(dbTask.Job.UUID, taskID)
+	fullLogPath := f.logStorage.Filepath(jobUUID, taskID)
 	relPath, err := f.localStorage.RelPath(fullLogPath)
 	if err != nil {
 		logger.Error().Err(err).Msg("task log is outside the manager storage, cannot construct its URL for download")
@@ -501,7 +501,7 @@ func (f *Flamenco) FetchTaskLogTail(e echo.Context, taskID string) error {
 		return sendAPIError(e, http.StatusBadRequest, "bad task ID")
 	}
 
-	dbTask, err := f.persist.FetchTask(ctx, taskID)
+	jobUUID, err := f.persist.FetchTaskJobUUID(ctx, taskID)
 	if err != nil {
 		if errors.Is(err, persistence.ErrTaskNotFound) {
 			return sendAPIError(e, http.StatusNotFound, "no such task")
@@ -509,9 +509,9 @@ func (f *Flamenco) FetchTaskLogTail(e echo.Context, taskID string) error {
 		logger.Error().Err(err).Msg("error fetching task")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching task: %v", err)
 	}
-	logger = logger.With().Str("job", dbTask.Job.UUID).Logger()
+	logger = logger.With().Str("job", jobUUID).Logger()
 
-	tail, err := f.logStorage.Tail(dbTask.Job.UUID, taskID)
+	tail, err := f.logStorage.Tail(jobUUID, taskID)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			logger.Debug().Msg("task tail unavailable, task has no log on disk")
@@ -700,7 +700,11 @@ func taskDBtoAPI(dbTask *persistence.Task) api.Task {
 		Status:   dbTask.Status,
 		Activity: dbTask.Activity,
 		Commands: make([]api.Command, len(dbTask.Commands)),
-		Worker:   workerToTaskWorker(dbTask.Worker),
+
+		// TODO: convert this to just store dbTask.WorkerUUID.
+		Worker: workerToTaskWorker(dbTask.Worker),
+
+		JobId: dbTask.JobUUID,
 	}
 
 	if dbTask.Job != nil {
