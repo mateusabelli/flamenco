@@ -240,7 +240,7 @@ swagger-ui:
 test:
 # Ensure the web-static directory exists, so that `web/web_app.go` can embed something.
 	mkdir -p ${WEB_STATIC}
-	go test -short ./...
+	go test -short -failfast ./...
 
 clean:
 	@go clean -i -x
