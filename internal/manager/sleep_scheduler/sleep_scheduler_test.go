@@ -10,6 +10,7 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/internal/manager/sleep_scheduler/mocks"
@@ -24,9 +25,8 @@ func TestFetchSchedule(t *testing.T) {
 	mocks.persist.EXPECT().FetchWorkerSleepSchedule(ctx, workerUUID).Return(&dbSched, nil)
 
 	sched, err := ss.FetchSchedule(ctx, workerUUID)
-	if assert.NoError(t, err) {
-		assert.Equal(t, &dbSched, sched)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, &dbSched, sched)
 }
 
 func TestSetSchedule(t *testing.T) {
@@ -59,7 +59,7 @@ func TestSetSchedule(t *testing.T) {
 	mocks.broadcaster.EXPECT().BroadcastWorkerUpdate(gomock.Any())
 
 	err := ss.SetSchedule(ctx, workerUUID, &sched)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestSetScheduleSwappedStartEnd(t *testing.T) {
@@ -92,7 +92,7 @@ func TestSetScheduleSwappedStartEnd(t *testing.T) {
 	mocks.persist.EXPECT().SetWorkerSleepSchedule(ctx, workerUUID, &expectSavedSchedule)
 
 	err := ss.SetSchedule(ctx, workerUUID, &sched)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 // Test that a sleep check that happens at shutdown of the Manager doesn't cause any panics.
@@ -157,9 +157,7 @@ func TestApplySleepSchedule(t *testing.T) {
 
 		// Actually apply the sleep schedule.
 		err := ss.ApplySleepSchedule(ctx, &testSchedule)
-		if !assert.NoError(t, err) {
-			t.FailNow()
-		}
+		require.NoError(t, err)
 
 		// Check the SocketIO broadcast.
 		if sioUpdate.Id != "" {
@@ -220,9 +218,7 @@ func TestApplySleepScheduleNoStatusChange(t *testing.T) {
 
 		// Apply the sleep schedule. This should not trigger any persistence or broadcasts.
 		err := ss.ApplySleepSchedule(ctx, &testSchedule)
-		if !assert.NoError(t, err) {
-			t.FailNow()
-		}
+		require.NoError(t, err)
 	}
 
 	// Move the clock to the middle of the sleep schedule, so the schedule always

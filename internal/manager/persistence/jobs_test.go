@@ -24,10 +24,10 @@ func TestStoreAuthoredJob(t *testing.T) {
 
 	job := createTestAuthoredJobWithTasks()
 	err := db.StoreAuthoredJob(ctx, job)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	fetchedJob, err := db.FetchJob(ctx, job.JobID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, fetchedJob)
 
 	// Test contents of fetched job
@@ -43,10 +43,10 @@ func TestStoreAuthoredJob(t *testing.T) {
 	// Fetch tasks of job.
 	var dbJob Job
 	tx := db.gormDB.Where(&Job{UUID: job.JobID}).Find(&dbJob)
-	assert.NoError(t, tx.Error)
+	require.NoError(t, tx.Error)
 	var tasks []Task
 	tx = db.gormDB.Where("job_id = ?", dbJob.ID).Find(&tasks)
-	assert.NoError(t, tx.Error)
+	require.NoError(t, tx.Error)
 
 	if len(tasks) != 3 {
 		t.Fatalf("expected 3 tasks, got %d", len(tasks))
@@ -170,7 +170,7 @@ func TestDeleteJobWithoutFK(t *testing.T) {
 
 	// Test the deletion did not happen.
 	_, err = db.FetchJob(ctx, authJob.JobID)
-	assert.NoError(t, err, "job should not have been deleted")
+	require.NoError(t, err, "job should not have been deleted")
 }
 
 func TestRequestJobDeletion(t *testing.T) {
@@ -185,20 +185,20 @@ func TestRequestJobDeletion(t *testing.T) {
 	db.gormDB.NowFunc = func() time.Time { return mockNow }
 
 	err := db.RequestJobDeletion(ctx, job1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, job1.DeleteRequested())
 	assert.True(t, job1.DeleteRequestedAt.Valid)
 	assert.Equal(t, job1.DeleteRequestedAt.Time, mockNow)
 
 	dbJob1, err := db.FetchJob(ctx, job1.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, job1.DeleteRequested())
 	assert.True(t, dbJob1.DeleteRequestedAt.Valid)
 	assert.WithinDuration(t, mockNow, dbJob1.DeleteRequestedAt.Time, time.Second)
 
 	// Other jobs shouldn't be touched.
 	dbJob2, err := db.FetchJob(ctx, authoredJob2.JobID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, dbJob2.DeleteRequested())
 	assert.False(t, dbJob2.DeleteRequestedAt.Valid)
 }
@@ -228,7 +228,7 @@ func TestRequestJobMassDeletion(t *testing.T) {
 	timeOfDeleteRequest := origGormNow()
 	db.gormDB.NowFunc = func() time.Time { return timeOfDeleteRequest }
 	uuids, err := db.RequestJobMassDeletion(ctx, job3.UpdatedAt)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	db.gormDB.NowFunc = origGormNow
 
@@ -301,14 +301,14 @@ func TestFetchJobsDeletionRequested(t *testing.T) {
 	}
 
 	err := db.RequestJobDeletion(ctx, job1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	err = db.RequestJobDeletion(ctx, job2)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	err = db.RequestJobDeletion(ctx, job3)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	actualUUIDs, err := db.FetchJobsDeletionRequested(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, actualUUIDs, 3, "3 out of 4 jobs were marked for deletion")
 
 	// Expect UUIDs in chronological order of deletion requests, so that the
@@ -322,11 +322,11 @@ func TestJobHasTasksInStatus(t *testing.T) {
 	defer close()
 
 	hasTasks, err := db.JobHasTasksInStatus(ctx, job, api.TaskStatusQueued)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, hasTasks, "expected freshly-created job to have queued tasks")
 
 	hasTasks, err = db.JobHasTasksInStatus(ctx, job, api.TaskStatusActive)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, hasTasks, "expected freshly-created job to have no active tasks")
 }
 
@@ -335,28 +335,28 @@ func TestCountTasksOfJobInStatus(t *testing.T) {
 	defer close()
 
 	numQueued, numTotal, err := db.CountTasksOfJobInStatus(ctx, job, api.TaskStatusQueued)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 3, numQueued)
 	assert.Equal(t, 3, numTotal)
 
 	// Make one task failed.
 	task, err := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	task.Status = api.TaskStatusFailed
-	assert.NoError(t, db.SaveTask(ctx, task))
+	require.NoError(t, db.SaveTask(ctx, task))
 
 	numQueued, numTotal, err = db.CountTasksOfJobInStatus(ctx, job, api.TaskStatusQueued)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 2, numQueued)
 	assert.Equal(t, 3, numTotal)
 
 	numFailed, numTotal, err := db.CountTasksOfJobInStatus(ctx, job, api.TaskStatusFailed)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 1, numFailed)
 	assert.Equal(t, 3, numTotal)
 
 	numActive, numTotal, err := db.CountTasksOfJobInStatus(ctx, job, api.TaskStatusActive)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 0, numActive)
 	assert.Equal(t, 3, numTotal)
 }
@@ -370,7 +370,7 @@ func TestCheckIfJobsHoldLargeNumOfTasks(t *testing.T) {
 	defer close()
 
 	numQueued, numTotal, err := db.CountTasksOfJobInStatus(ctx, job, api.TaskStatusQueued)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, numtasks, numQueued)
 	assert.Equal(t, numtasks, numTotal)
 
@@ -392,22 +392,22 @@ func TestFetchJobsInStatus(t *testing.T) {
 
 	// Query single status
 	jobs, err := db.FetchJobsInStatus(ctx, api.JobStatusUnderConstruction)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, []*Job{job1, job2, job3}, jobs)
 
 	// Query two statuses, where only one matches all jobs.
 	jobs, err = db.FetchJobsInStatus(ctx, api.JobStatusCanceled, api.JobStatusUnderConstruction)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, []*Job{job1, job2, job3}, jobs)
 
 	// Update a job status, query for two of the three used statuses.
 	job1.Status = api.JobStatusQueued
-	assert.NoError(t, db.SaveJobStatus(ctx, job1))
+	require.NoError(t, db.SaveJobStatus(ctx, job1))
 	job2.Status = api.JobStatusRequeueing
-	assert.NoError(t, db.SaveJobStatus(ctx, job2))
+	require.NoError(t, db.SaveJobStatus(ctx, job2))
 
 	jobs, err = db.FetchJobsInStatus(ctx, api.JobStatusQueued, api.JobStatusUnderConstruction)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if assert.Len(t, jobs, 2) {
 		assert.Equal(t, job1.UUID, jobs[0].UUID)
 		assert.Equal(t, job3.UUID, jobs[1].UUID)
@@ -419,35 +419,33 @@ func TestFetchTasksOfJobInStatus(t *testing.T) {
 	defer close()
 
 	allTasks, err := db.FetchTasksOfJob(ctx, job)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 	assert.Equal(t, job, allTasks[0].Job, "FetchTasksOfJob should set job pointer")
 
 	tasks, err := db.FetchTasksOfJobInStatus(ctx, job, api.TaskStatusQueued)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, allTasks, tasks)
 	assert.Equal(t, job, tasks[0].Job, "FetchTasksOfJobInStatus should set job pointer")
 
 	// Make one task failed.
 	task, err := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	task.Status = api.TaskStatusFailed
-	assert.NoError(t, db.SaveTask(ctx, task))
+	require.NoError(t, db.SaveTask(ctx, task))
 
 	tasks, err = db.FetchTasksOfJobInStatus(ctx, job, api.TaskStatusQueued)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, []*Task{allTasks[1], allTasks[2]}, tasks)
 
 	// Check the failed task. This cannot directly compare to `allTasks[0]`
 	// because saving the task above changed some of its fields.
 	tasks, err = db.FetchTasksOfJobInStatus(ctx, job, api.TaskStatusFailed)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, tasks, 1)
 	assert.Equal(t, allTasks[0].ID, tasks[0].ID)
 
 	tasks, err = db.FetchTasksOfJobInStatus(ctx, job, api.TaskStatusActive)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, tasks)
 }
 
@@ -456,10 +454,10 @@ func TestTaskAssignToWorker(t *testing.T) {
 	defer close()
 
 	task, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	w := createWorker(ctx, t, db)
-	assert.NoError(t, db.TaskAssignToWorker(ctx, task, w))
+	require.NoError(t, db.TaskAssignToWorker(ctx, task, w))
 
 	if task.Worker == nil {
 		t.Error("task.Worker == nil")
@@ -478,20 +476,20 @@ func TestFetchTasksOfWorkerInStatus(t *testing.T) {
 	defer close()
 
 	task, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	w := createWorker(ctx, t, db)
-	assert.NoError(t, db.TaskAssignToWorker(ctx, task, w))
+	require.NoError(t, db.TaskAssignToWorker(ctx, task, w))
 
 	tasks, err := db.FetchTasksOfWorkerInStatus(ctx, w, task.Status)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, tasks, 1, "worker should have one task in status %q", task.Status)
 	assert.Equal(t, task.ID, tasks[0].ID)
 	assert.Equal(t, task.UUID, tasks[0].UUID)
 
 	assert.NotEqual(t, api.TaskStatusCanceled, task.Status)
 	tasks, err = db.FetchTasksOfWorkerInStatus(ctx, w, api.TaskStatusCanceled)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, tasks, "worker should have no task in status %q", w)
 }
 
@@ -500,16 +498,16 @@ func TestTaskTouchedByWorker(t *testing.T) {
 	defer close()
 
 	task, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, task.LastTouchedAt.IsZero())
 
 	now := db.gormDB.NowFunc()
 	err = db.TaskTouchedByWorker(ctx, task)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test the task instance as well as the database entry.
 	dbTask, err := db.FetchTask(ctx, task.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.WithinDuration(t, now, task.LastTouchedAt, time.Second)
 	assert.WithinDuration(t, now, dbTask.LastTouchedAt, time.Second)
 }
@@ -519,7 +517,7 @@ func TestAddWorkerToTaskFailedList(t *testing.T) {
 	defer close()
 
 	task, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	worker1 := createWorker(ctx, t, db)
 
@@ -528,30 +526,30 @@ func TestAddWorkerToTaskFailedList(t *testing.T) {
 	newWorker.ID = 0
 	newWorker.UUID = "89ed2b02-b51b-4cd4-b44a-4a1c8d01db85"
 	newWorker.Name = "Worker 2"
-	assert.NoError(t, db.SaveWorker(ctx, &newWorker))
+	require.NoError(t, db.SaveWorker(ctx, &newWorker))
 	worker2, err := db.FetchWorker(ctx, newWorker.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// First failure should be registered just fine.
 	numFailed, err := db.AddWorkerToTaskFailedList(ctx, task, worker1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 1, numFailed)
 
 	// Calling again should be a no-op and not cause any errors.
 	numFailed, err = db.AddWorkerToTaskFailedList(ctx, task, worker1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 1, numFailed)
 
 	// Another worker should be able to fail this task as well.
 	numFailed, err = db.AddWorkerToTaskFailedList(ctx, task, worker2)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 2, numFailed)
 
 	// Deleting the task should also delete the failures.
-	assert.NoError(t, db.DeleteJob(ctx, authoredJob.JobID))
+	require.NoError(t, db.DeleteJob(ctx, authoredJob.JobID))
 	var num int64
 	tx := db.gormDB.Model(&TaskFailure{}).Count(&num)
-	assert.NoError(t, tx.Error)
+	require.NoError(t, tx.Error)
 	assert.Zero(t, num)
 }
 
@@ -569,9 +567,9 @@ func TestClearFailureListOfTask(t *testing.T) {
 	newWorker.ID = 0
 	newWorker.UUID = "89ed2b02-b51b-4cd4-b44a-4a1c8d01db85"
 	newWorker.Name = "Worker 2"
-	assert.NoError(t, db.SaveWorker(ctx, &newWorker))
+	require.NoError(t, db.SaveWorker(ctx, &newWorker))
 	worker2, err := db.FetchWorker(ctx, newWorker.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Store some failures for different tasks.
 	_, _ = db.AddWorkerToTaskFailedList(ctx, task1, worker1)
@@ -579,10 +577,10 @@ func TestClearFailureListOfTask(t *testing.T) {
 	_, _ = db.AddWorkerToTaskFailedList(ctx, task2, worker1)
 
 	// Clearing should just update this one task.
-	assert.NoError(t, db.ClearFailureListOfTask(ctx, task1))
+	require.NoError(t, db.ClearFailureListOfTask(ctx, task1))
 	var failures = []TaskFailure{}
 	tx := db.gormDB.Model(&TaskFailure{}).Scan(&failures)
-	assert.NoError(t, tx.Error)
+	require.NoError(t, tx.Error)
 	if assert.Len(t, failures, 1) {
 		assert.Equal(t, task2.ID, failures[0].TaskID)
 		assert.Equal(t, worker1.ID, failures[0].WorkerID)
@@ -615,10 +613,10 @@ func TestClearFailureListOfJob(t *testing.T) {
 	assert.Equal(t, 5, countTaskFailures(db))
 
 	// Clearing should be limited to the given job.
-	assert.NoError(t, db.ClearFailureListOfJob(ctx, dbJob1))
+	require.NoError(t, db.ClearFailureListOfJob(ctx, dbJob1))
 	var failures = []TaskFailure{}
 	tx := db.gormDB.Model(&TaskFailure{}).Scan(&failures)
-	assert.NoError(t, tx.Error)
+	require.NoError(t, tx.Error)
 	if assert.Len(t, failures, 2) {
 		assert.Equal(t, task2_1.ID, failures[0].TaskID)
 		assert.Equal(t, worker1.ID, failures[0].WorkerID)
@@ -634,7 +632,7 @@ func TestFetchTaskFailureList(t *testing.T) {
 	// Test with non-existing task.
 	fakeTask := Task{Model: Model{ID: 327}}
 	failures, err := db.FetchTaskFailureList(ctx, &fakeTask)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, failures)
 
 	task1_1, _ := db.FetchTask(ctx, authoredJob1.Tasks[1].UUID)
@@ -642,7 +640,7 @@ func TestFetchTaskFailureList(t *testing.T) {
 
 	// Test without failures.
 	failures, err = db.FetchTaskFailureList(ctx, task1_1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, failures)
 
 	worker1 := createWorker(ctx, t, db)
@@ -655,7 +653,7 @@ func TestFetchTaskFailureList(t *testing.T) {
 
 	// Fetch one task's failure list.
 	failures, err = db.FetchTaskFailureList(ctx, task1_1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	if assert.Len(t, failures, 2) {
 		assert.Equal(t, worker1.UUID, failures[0].UUID)
@@ -854,7 +852,7 @@ func createWorker(ctx context.Context, t *testing.T, db *DB, updaters ...func(*W
 	if err != nil {
 		t.Fatalf("error creating worker: %v", err)
 	}
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	fetchedWorker, err := db.FetchWorker(ctx, w.UUID)
 	if err != nil {
@@ -874,14 +872,10 @@ func createWorkerFrom(ctx context.Context, t *testing.T, db *DB, worker Worker) 
 	worker.Name += " (copy)"
 
 	err := db.SaveWorker(ctx, &worker)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 
 	dbWorker, err := db.FetchWorker(ctx, worker.UUID)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 
 	return dbWorker
 }

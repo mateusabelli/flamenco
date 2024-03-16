@@ -19,6 +19,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"projects.blender.org/studio/flamenco/internal/manager/task_logs/mocks"
 )
 
@@ -36,14 +37,14 @@ func TestLogWriting(t *testing.T) {
 	mocks.localStorage.EXPECT().ForJob(jobUUID).Times(numWriteCalls).Return(jobDir)
 
 	err := s.Write(zerolog.Nop(), jobUUID, taskUUID, "Ovo je priča")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = s.Write(zerolog.Nop(), jobUUID, taskUUID, "Ima dvije linije")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	filename := filepath.Join(jobDir, "task-20ff9d06-53ec-4019-9e2e-1774f05f170a.txt")
 	contents, err := ioutil.ReadFile(filename)
-	assert.NoError(t, err, "the log file should exist")
+	require.NoError(t, err, "the log file should exist")
 	assert.Equal(t, "Ovo je priča\nIma dvije linije\n", string(contents))
 }
 
@@ -59,7 +60,7 @@ func TestLogRotation(t *testing.T) {
 	mocks.localStorage.EXPECT().ForJob(jobUUID).Return(jobDir).AnyTimes()
 
 	err := s.Write(zerolog.Nop(), jobUUID, taskUUID, "Ovo je priča")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	s.RotateFile(zerolog.Nop(), jobUUID, taskUUID)
 
@@ -67,7 +68,7 @@ func TestLogRotation(t *testing.T) {
 	rotatedFilename := filename + ".1"
 
 	contents, err := ioutil.ReadFile(rotatedFilename)
-	assert.NoError(t, err, "the rotated log file should exist")
+	require.NoError(t, err, "the rotated log file should exist")
 	assert.Equal(t, "Ovo je priča\n", string(contents))
 
 	_, err = os.Stat(filename)
@@ -97,16 +98,16 @@ func TestLogTailAndSize(t *testing.T) {
 
 	// Test a single line.
 	err = s.Write(zerolog.Nop(), jobID, taskID, "Just a single line")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	contents, err = s.Tail(jobID, taskID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Just a single line\n", string(contents))
 
 	// A short file shouldn't do any line stripping.
 	err = s.Write(zerolog.Nop(), jobID, taskID, "And another line!")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	contents, err = s.Tail(jobID, taskID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Just a single line\nAnd another line!\n", string(contents))
 
 	bigString := ""
@@ -114,18 +115,17 @@ func TestLogTailAndSize(t *testing.T) {
 		bigString += fmt.Sprintf("This is line #%d\n", lineNum)
 	}
 	err = s.Write(zerolog.Nop(), jobID, taskID, bigString)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Check the log size, it should be the entire bigString plus what was written before that.
 	size, err = s.TaskLogSize(jobID, taskID)
-	if assert.NoError(t, err) {
-		expect := int64(len("Just a single line\nAnd another line!\n" + bigString))
-		assert.Equal(t, expect, size)
-	}
+	require.NoError(t, err)
+	expect := int64(len("Just a single line\nAnd another line!\n" + bigString))
+	assert.Equal(t, expect, size)
 
 	// Check the tail, it should only be the few last lines of bigString.
 	contents, err = s.Tail(jobID, taskID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t,
 		"This is line #887\nThis is line #888\nThis is line #889\nThis is line #890\nThis is line #891\n"+
 			"This is line #892\nThis is line #893\nThis is line #894\nThis is line #895\nThis is line #896\n"+
@@ -183,7 +183,7 @@ func TestLogWritingParallel(t *testing.T) {
 			}
 			logText := strings.Repeat(string(letter), runLength)
 
-			assert.NoError(t, s.Write(logger, jobID, taskID, logText))
+			require.NoError(t, s.Write(logger, jobID, taskID, logText))
 		}(int32(i))
 	}
 	wg.Wait()
@@ -191,7 +191,7 @@ func TestLogWritingParallel(t *testing.T) {
 	// Test that the final log contains 1000 lines of of 100 characters, without
 	// any run getting interrupted by another one.
 	contents, err := os.ReadFile(s.Filepath(jobID, taskID))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	lines := strings.Split(string(contents), "\n")
 	assert.Equal(t, numGoroutines+1, len(lines),
 		"each goroutine should have written a single line, and the file should have a newline at the end")

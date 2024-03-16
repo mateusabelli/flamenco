@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var emptyToD = TimeOfDay{timeOfDayNoValue, timeOfDayNoValue}
@@ -60,53 +61,56 @@ func TestOnDate(t *testing.T) {
 }
 
 func TestValue(t *testing.T) {
-	// Test zero -> "00:00"
-	tod := TimeOfDay{}
-	if value, err := tod.Value(); assert.NoError(t, err) {
+	{ // Test zero -> "00:00"
+		tod := TimeOfDay{}
+		value, err := tod.Value()
+		require.NoError(t, err)
 		assert.Equal(t, "00:00", value)
 	}
 
-	// Test 22:47 -> "22:47"
-	tod = TimeOfDay{22, 47}
-	if value, err := tod.Value(); assert.NoError(t, err) {
+	{ // Test 22:47 -> "22:47"
+		tod := TimeOfDay{22, 47}
+		value, err := tod.Value()
+		require.NoError(t, err)
 		assert.Equal(t, "22:47", value)
 	}
 
-	// Test empty -> ""
-	tod = emptyToD
-	if value, err := tod.Value(); assert.NoError(t, err) {
+	{ // Test empty -> ""
+		tod := emptyToD
+		value, err := tod.Value()
+		require.NoError(t, err)
 		assert.Equal(t, "", value)
 	}
 }
 
 func TestScan(t *testing.T) {
-	// Test zero -> empty
-	tod := TimeOfDay{}
-	if assert.NoError(t, tod.Scan("")) {
+	{ // Test zero -> empty
+		tod := TimeOfDay{}
+		require.NoError(t, tod.Scan(""))
 		assert.Equal(t, emptyToD, tod)
 	}
 
-	// Test 22:47 -> empty
-	tod = TimeOfDay{22, 47}
-	if assert.NoError(t, tod.Scan("")) {
+	{ // Test 22:47 -> empty
+		tod := TimeOfDay{22, 47}
+		require.NoError(t, tod.Scan(""))
 		assert.Equal(t, emptyToD, tod)
 	}
 
-	// Test 22:47 -> 12:34
-	tod = TimeOfDay{22, 47}
-	if assert.NoError(t, tod.Scan("12:34")) {
+	{ // Test 22:47 -> 12:34
+		tod := TimeOfDay{22, 47}
+		require.NoError(t, tod.Scan("12:34"))
 		assert.Equal(t, TimeOfDay{12, 34}, tod)
 	}
 
-	// Test empty -> empty
-	tod = emptyToD
-	if assert.NoError(t, tod.Scan("")) {
+	{ // Test empty -> empty
+		tod := emptyToD
+		require.NoError(t, tod.Scan(""))
 		assert.Equal(t, emptyToD, tod)
 	}
 
-	// Test empty -> 12:34
-	tod = emptyToD
-	if assert.NoError(t, tod.Scan("12:34")) {
+	{ // Test empty -> 12:34
+		tod := emptyToD
+		require.NoError(t, tod.Scan("12:34"))
 		assert.Equal(t, TimeOfDay{12, 34}, tod)
 	}
 }

@@ -24,16 +24,14 @@ func TestNewNextToExe(t *testing.T) {
 
 func TestNewNextToExe_noSubdir(t *testing.T) {
 	exePath, err := os.Executable()
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 	exeName := filepath.Base(exePath)
 
 	// The filesystem in an empty "subdirectory" next to the executable should
 	// contain the executable.
 	si := NewNextToExe("")
 	_, err = os.Stat(filepath.Join(si.rootPath, exeName))
-	assert.NoErrorf(t, err, "should be able to stat this executable %s", exeName)
+	require.NoErrorf(t, err, "should be able to stat this executable %s", exeName)
 }
 
 func TestForJob(t *testing.T) {
@@ -52,10 +50,10 @@ func TestErase(t *testing.T) {
 	jobPath := si.ForJob("08e126ef-d773-468b-8bab-19a8213cf2ff")
 	assert.NoDirExists(t, jobPath, "getting a path should not create it")
 
-	assert.NoError(t, os.MkdirAll(jobPath, os.ModePerm))
+	require.NoError(t, os.MkdirAll(jobPath, os.ModePerm))
 	assert.DirExists(t, jobPath, "os.MkdirAll is borked")
 
-	assert.NoError(t, si.Erase())
+	require.NoError(t, si.Erase())
 	assert.NoDirExists(t, si.rootPath, "Erase() should erase the root path, and everything in it")
 }
 
@@ -66,13 +64,13 @@ func TestRemoveJobStorage(t *testing.T) {
 	jobPath := si.ForJob(jobUUID)
 	assert.NoDirExists(t, jobPath, "getting a path should not create it")
 
-	assert.NoError(t, os.MkdirAll(jobPath, os.ModePerm))
+	require.NoError(t, os.MkdirAll(jobPath, os.ModePerm))
 	assert.DirExists(t, jobPath, "os.MkdirAll is borked")
 
 	taskFile := filepath.Join(jobPath, "task-07c33f32-b345-4da9-8834-9c91532cd97e.txt")
-	assert.NoError(t, os.WriteFile(taskFile, []byte("dummy task log"), 0o777))
+	require.NoError(t, os.WriteFile(taskFile, []byte("dummy task log"), 0o777))
 
-	assert.NoError(t, si.RemoveJobStorage(context.Background(), jobUUID))
+	require.NoError(t, si.RemoveJobStorage(context.Background(), jobUUID))
 	assert.NoDirExists(t, jobPath, "RemoveJobStorage() should erase the entire job-specific storage dir, and everything in it")
 
 	// See if the test assumption (that job dir is in another sub-dir of the root,
@@ -91,13 +89,13 @@ func TestRemoveJobStorageWithoutJobUUID(t *testing.T) {
 	jobPath := si.ForJob("")
 	assert.NoDirExists(t, jobPath, "getting a path should not create it")
 
-	assert.NoError(t, os.MkdirAll(jobPath, os.ModePerm))
+	require.NoError(t, os.MkdirAll(jobPath, os.ModePerm))
 	assert.DirExists(t, jobPath, "os.MkdirAll is borked")
 
 	taskFile := filepath.Join(jobPath, "task-07c33f32-b345-4da9-8834-9c91532cd97e.txt")
-	assert.NoError(t, os.WriteFile(taskFile, []byte("dummy task log"), 0o777))
+	require.NoError(t, os.WriteFile(taskFile, []byte("dummy task log"), 0o777))
 
-	assert.NoError(t, si.RemoveJobStorage(context.Background(), ""))
+	require.NoError(t, si.RemoveJobStorage(context.Background(), ""))
 	assert.NoDirExists(t, jobPath, "RemoveJobStorage() should erase the entire job-specific storage dir, and everything in it")
 
 	// See if the test assumption (that a jobless dir is directly inside the root) still holds.

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
@@ -66,5 +66,5 @@ func TestRequeueActiveTasksOfWorker(t *testing.T) {
 	})
 
 	err := sm.RequeueActiveTasksOfWorker(ctx, &worker, "worker had to test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }

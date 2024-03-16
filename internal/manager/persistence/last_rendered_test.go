@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSetLastRendered(t *testing.T) {
@@ -15,7 +16,7 @@ func TestSetLastRendered(t *testing.T) {
 	authoredJob2 := authorTestJob("1295757b-e668-4c49-8b89-f73db8270e42", "just-a-job")
 	job2 := persistAuthoredJob(t, ctx, db, authoredJob2)
 
-	assert.NoError(t, db.SetLastRendered(ctx, job1))
+	require.NoError(t, db.SetLastRendered(ctx, job1))
 	{
 		entries := []LastRendered{}
 		db.gormDB.Model(&LastRendered{}).Scan(&entries)
@@ -24,7 +25,7 @@ func TestSetLastRendered(t *testing.T) {
 		}
 	}
 
-	assert.NoError(t, db.SetLastRendered(ctx, job2))
+	require.NoError(t, db.SetLastRendered(ctx, job2))
 	{
 		entries := []LastRendered{}
 		db.gormDB.Model(&LastRendered{}).Scan(&entries)
@@ -41,18 +42,16 @@ func TestGetLastRenderedJobUUID(t *testing.T) {
 	{
 		// Test without any renders.
 		lastUUID, err := db.GetLastRenderedJobUUID(ctx)
-		if assert.NoError(t, err, "absence of renders should not cause an error") {
-			assert.Empty(t, lastUUID)
-		}
+		require.NoError(t, err, "absence of renders should not cause an error")
+		assert.Empty(t, lastUUID)
 	}
 
 	{
 		// Test with first render.
-		assert.NoError(t, db.SetLastRendered(ctx, job1))
+		require.NoError(t, db.SetLastRendered(ctx, job1))
 		lastUUID, err := db.GetLastRenderedJobUUID(ctx)
-		if assert.NoError(t, err) {
-			assert.Equal(t, job1.UUID, lastUUID)
-		}
+		require.NoError(t, err)
+		assert.Equal(t, job1.UUID, lastUUID)
 	}
 
 	{
@@ -60,10 +59,9 @@ func TestGetLastRenderedJobUUID(t *testing.T) {
 		authoredJob2 := authorTestJob("1295757b-e668-4c49-8b89-f73db8270e42", "just-a-job")
 		job2 := persistAuthoredJob(t, ctx, db, authoredJob2)
 
-		assert.NoError(t, db.SetLastRendered(ctx, job2))
+		require.NoError(t, db.SetLastRendered(ctx, job2))
 		lastUUID, err := db.GetLastRenderedJobUUID(ctx)
-		if assert.NoError(t, err) {
-			assert.Equal(t, job2.UUID, lastUUID)
-		}
+		require.NoError(t, err)
+		assert.Equal(t, job2.UUID, lastUUID)
 	}
 }

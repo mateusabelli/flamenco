@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/internal/manager/task_state_machine/mocks"
@@ -37,7 +38,7 @@ func TestTaskStatusChangeQueuedToActive(t *testing.T) {
 	mocks.expectBroadcastJobChange(task.Job, api.JobStatusQueued, api.JobStatusActive)
 	mocks.expectBroadcastTaskChange(task, api.TaskStatusQueued, api.TaskStatusActive)
 
-	assert.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatusActive))
+	require.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatusActive))
 }
 
 func TestTaskStatusChangeSaveTaskAfterJobChangeFailure(t *testing.T) {
@@ -75,20 +76,20 @@ func TestTaskStatusChangeActiveToCompleted(t *testing.T) {
 	mocks.expectWriteTaskLogTimestamped(t, task, "task changed status active -> completed")
 	mocks.expectBroadcastTaskChange(task, api.TaskStatusActive, api.TaskStatusCompleted)
 	mocks.persist.EXPECT().CountTasksOfJobInStatus(ctx, task.Job, api.TaskStatusCompleted).Return(1, 3, nil) // 1 of 3 complete.
-	assert.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatusCompleted))
+	require.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatusCompleted))
 
 	// Second task hickup: T: active > soft-failed --> J: active > active
 	mocks.expectSaveTaskWithStatus(t, task2, api.TaskStatusSoftFailed)
 	mocks.expectWriteTaskLogTimestamped(t, task2, "task changed status active -> soft-failed")
 	mocks.expectBroadcastTaskChange(task2, api.TaskStatusActive, api.TaskStatusSoftFailed)
-	assert.NoError(t, sm.TaskStatusChange(ctx, task2, api.TaskStatusSoftFailed))
+	require.NoError(t, sm.TaskStatusChange(ctx, task2, api.TaskStatusSoftFailed))
 
 	// Second task completing: T: soft-failed > completed --> J: active > active
 	mocks.expectSaveTaskWithStatus(t, task2, api.TaskStatusCompleted)
 	mocks.expectWriteTaskLogTimestamped(t, task2, "task changed status soft-failed -> completed")
 	mocks.expectBroadcastTaskChange(task2, api.TaskStatusSoftFailed, api.TaskStatusCompleted)
 	mocks.persist.EXPECT().CountTasksOfJobInStatus(ctx, task.Job, api.TaskStatusCompleted).Return(2, 3, nil) // 2 of 3 complete.
-	assert.NoError(t, sm.TaskStatusChange(ctx, task2, api.TaskStatusCompleted))
+	require.NoError(t, sm.TaskStatusChange(ctx, task2, api.TaskStatusCompleted))
 
 	// Third task completing: T: active > completed --> J: active > completed
 	mocks.expectSaveTaskWithStatus(t, task3, api.TaskStatusCompleted)
@@ -98,7 +99,7 @@ func TestTaskStatusChangeActiveToCompleted(t *testing.T) {
 	mocks.expectSaveJobWithStatus(t, task.Job, api.JobStatusCompleted)
 	mocks.expectBroadcastJobChange(task.Job, api.JobStatusActive, api.JobStatusCompleted)
 
-	assert.NoError(t, sm.TaskStatusChange(ctx, task3, api.TaskStatusCompleted))
+	require.NoError(t, sm.TaskStatusChange(ctx, task3, api.TaskStatusCompleted))
 }
 
 func TestTaskStatusChangeQueuedToFailed(t *testing.T) {
@@ -114,7 +115,7 @@ func TestTaskStatusChangeQueuedToFailed(t *testing.T) {
 	mocks.persist.EXPECT().CountTasksOfJobInStatus(ctx, task.Job, api.TaskStatusFailed).Return(1, 100, nil) // 1 out of 100 failed.
 	mocks.expectBroadcastJobChange(task.Job, api.JobStatusQueued, api.JobStatusActive)
 
-	assert.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatusFailed))
+	require.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatusFailed))
 }
 
 func TestTaskStatusChangeActiveToFailedFailJob(t *testing.T) {
@@ -144,7 +145,7 @@ func TestTaskStatusChangeActiveToFailedFailJob(t *testing.T) {
 		"Manager cancelled this task because the job got status \"failed\".",
 	)
 
-	assert.NoError(t, sm.TaskStatusChange(ctx, task1, api.TaskStatusFailed))
+	require.NoError(t, sm.TaskStatusChange(ctx, task1, api.TaskStatusFailed))
 }
 
 func TestTaskStatusChangeRequeueOnCompletedJob(t *testing.T) {
@@ -168,7 +169,7 @@ func TestTaskStatusChangeRequeueOnCompletedJob(t *testing.T) {
 	)
 	mocks.expectSaveJobWithStatus(t, task.Job, api.JobStatusQueued)
 
-	assert.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatusQueued))
+	require.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatusQueued))
 }
 
 func TestTaskStatusChangeCancelSingleTask(t *testing.T) {
@@ -186,7 +187,7 @@ func TestTaskStatusChangeCancelSingleTask(t *testing.T) {
 	mocks.persist.EXPECT().CountTasksOfJobInStatus(ctx, job,
 		api.TaskStatusActive, api.TaskStatusQueued, api.TaskStatusSoftFailed).
 		Return(1, 2, nil)
-	assert.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatusCanceled))
+	require.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatusCanceled))
 
 	// T2: queued > cancelled --> J: cancel-requested > canceled
 	mocks.expectSaveTaskWithStatus(t, task2, api.TaskStatusCanceled)
@@ -198,7 +199,7 @@ func TestTaskStatusChangeCancelSingleTask(t *testing.T) {
 	mocks.expectSaveJobWithStatus(t, job, api.JobStatusCanceled)
 	mocks.expectBroadcastJobChange(task.Job, api.JobStatusCancelRequested, api.JobStatusCanceled)
 
-	assert.NoError(t, sm.TaskStatusChange(ctx, task2, api.TaskStatusCanceled))
+	require.NoError(t, sm.TaskStatusChange(ctx, task2, api.TaskStatusCanceled))
 }
 
 func TestTaskStatusChangeCancelSingleTaskWithOtherFailed(t *testing.T) {
@@ -222,7 +223,7 @@ func TestTaskStatusChangeCancelSingleTaskWithOtherFailed(t *testing.T) {
 
 	// The paused task just stays paused, so don't expectBroadcastTaskChange(task3).
 
-	assert.NoError(t, sm.TaskStatusChange(ctx, task1, api.TaskStatusCanceled))
+	require.NoError(t, sm.TaskStatusChange(ctx, task1, api.TaskStatusCanceled))
 }
 
 func TestTaskStatusChangeUnknownStatus(t *testing.T) {
@@ -235,7 +236,7 @@ func TestTaskStatusChangeUnknownStatus(t *testing.T) {
 	mocks.expectWriteTaskLogTimestamped(t, task, "task changed status queued -> borked")
 	mocks.expectBroadcastTaskChange(task, api.TaskStatusQueued, api.TaskStatus("borked"))
 
-	assert.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatus("borked")))
+	require.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatus("borked")))
 }
 
 func TestJobRequeueWithSomeCompletedTasks(t *testing.T) {
@@ -269,7 +270,7 @@ func TestJobRequeueWithSomeCompletedTasks(t *testing.T) {
 	mocks.expectBroadcastJobChangeWithTaskRefresh(job, api.JobStatusActive, api.JobStatusRequeueing)
 	mocks.expectBroadcastJobChangeWithTaskRefresh(job, api.JobStatusRequeueing, api.JobStatusQueued)
 
-	assert.NoError(t, sm.JobStatusChange(ctx, job, api.JobStatusRequeueing, "someone wrote a unittest"))
+	require.NoError(t, sm.JobStatusChange(ctx, job, api.JobStatusRequeueing, "someone wrote a unittest"))
 }
 
 func TestJobRequeueWithAllCompletedTasks(t *testing.T) {
@@ -301,7 +302,7 @@ func TestJobRequeueWithAllCompletedTasks(t *testing.T) {
 	mocks.expectBroadcastJobChangeWithTaskRefresh(job, api.JobStatusCompleted, api.JobStatusRequeueing)
 	mocks.expectBroadcastJobChangeWithTaskRefresh(job, api.JobStatusRequeueing, api.JobStatusQueued)
 
-	assert.NoError(t, sm.JobStatusChange(ctx, job, api.JobStatusRequeueing, "someone wrote a unit test"))
+	require.NoError(t, sm.JobStatusChange(ctx, job, api.JobStatusRequeueing, "someone wrote a unit test"))
 }
 
 func TestJobCancelWithSomeCompletedTasks(t *testing.T) {
@@ -332,7 +333,7 @@ func TestJobCancelWithSomeCompletedTasks(t *testing.T) {
 	mocks.expectBroadcastJobChangeWithTaskRefresh(job, api.JobStatusActive, api.JobStatusCancelRequested)
 	mocks.expectBroadcastJobChange(job, api.JobStatusCancelRequested, api.JobStatusCanceled)
 
-	assert.NoError(t, sm.JobStatusChange(ctx, job, api.JobStatusCancelRequested, "someone wrote a unittest"))
+	require.NoError(t, sm.JobStatusChange(ctx, job, api.JobStatusCancelRequested, "someone wrote a unittest"))
 }
 
 func TestCheckStuck(t *testing.T) {

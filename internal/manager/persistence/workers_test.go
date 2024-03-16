@@ -36,10 +36,10 @@ func TestCreateFetchWorker(t *testing.T) {
 	}
 
 	err = db.CreateWorker(ctx, &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	fetchedWorker, err = db.FetchWorker(ctx, w.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, fetchedWorker)
 
 	// Test contents of fetched job
@@ -69,15 +69,12 @@ func TestFetchWorkerTask(t *testing.T) {
 	}
 
 	err := db.CreateWorker(ctx, &w)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 
 	{ // Test without any task assigned.
 		task, err := db.FetchWorkerTask(ctx, &w)
-		if assert.NoError(t, err) {
-			assert.Nil(t, task)
-		}
+		require.NoError(t, err)
+		assert.Nil(t, task)
 	}
 
 	// Create a job with tasks.
@@ -88,52 +85,51 @@ func TestFetchWorkerTask(t *testing.T) {
 	constructTestJob(ctx, t, db, atj)
 
 	assignedTask, err := db.ScheduleTask(ctx, &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	{ // Assigned task should be returned.
 		foundTask, err := db.FetchWorkerTask(ctx, &w)
-		if assert.NoError(t, err) && assert.NotNil(t, foundTask) {
-			assert.Equal(t, assignedTask.UUID, foundTask.UUID)
-			assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
-		}
+		require.NoError(t, err)
+		require.NotNil(t, foundTask)
+		assert.Equal(t, assignedTask.UUID, foundTask.UUID)
+		assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
 	}
 
 	// Set the task to 'completed'.
 	assignedTask.Status = api.TaskStatusCompleted
-	assert.NoError(t, db.SaveTaskStatus(ctx, assignedTask))
+	require.NoError(t, db.SaveTaskStatus(ctx, assignedTask))
 
 	{ // Completed-but-last-assigned task should be returned.
 		foundTask, err := db.FetchWorkerTask(ctx, &w)
-		if assert.NoError(t, err) && assert.NotNil(t, foundTask) {
-			assert.Equal(t, assignedTask.UUID, foundTask.UUID)
-			assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
-		}
+		require.NoError(t, err)
+		require.NotNil(t, foundTask)
+		assert.Equal(t, assignedTask.UUID, foundTask.UUID)
+		assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
 	}
 
 	// Assign another task.
 	newlyAssignedTask, err := db.ScheduleTask(ctx, &w)
-	if !assert.NoError(t, err) || !assert.NotNil(t, newlyAssignedTask) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
+	require.NotNil(t, newlyAssignedTask)
 
 	{ // Newly assigned task should be returned.
 		foundTask, err := db.FetchWorkerTask(ctx, &w)
-		if assert.NoError(t, err) && assert.NotNil(t, foundTask) {
-			assert.Equal(t, newlyAssignedTask.UUID, foundTask.UUID)
-			assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
-		}
+		require.NoError(t, err)
+		require.NotNil(t, foundTask)
+		assert.Equal(t, newlyAssignedTask.UUID, foundTask.UUID)
+		assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
 	}
 
 	// Set the new task to 'completed'.
 	newlyAssignedTask.Status = api.TaskStatusCompleted
-	assert.NoError(t, db.SaveTaskStatus(ctx, newlyAssignedTask))
+	require.NoError(t, db.SaveTaskStatus(ctx, newlyAssignedTask))
 
 	{ // Completed-but-last-assigned task should be returned.
 		foundTask, err := db.FetchWorkerTask(ctx, &w)
-		if assert.NoError(t, err) && assert.NotNil(t, foundTask) {
-			assert.Equal(t, newlyAssignedTask.UUID, foundTask.UUID)
-			assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
-		}
+		require.NoError(t, err)
+		require.NotNil(t, foundTask)
+		assert.Equal(t, newlyAssignedTask.UUID, foundTask.UUID)
+		assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
 	}
 
 }
@@ -153,10 +149,10 @@ func TestSaveWorker(t *testing.T) {
 	}
 
 	err := db.CreateWorker(ctx, &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	fetchedWorker, err := db.FetchWorker(ctx, w.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, fetchedWorker)
 
 	// Update all updatable fields of the Worker
@@ -170,23 +166,23 @@ func TestSaveWorker(t *testing.T) {
 
 	// Saving only the status should just do that.
 	err = db.SaveWorkerStatus(ctx, &updatedWorker)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "7 မှ 9", updatedWorker.Name, "Saving status should not touch the name")
 
 	// Check saved worker
 	fetchedWorker, err = db.FetchWorker(ctx, w.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, fetchedWorker)
 	assert.Equal(t, updatedWorker.Status, fetchedWorker.Status, "new status should have been saved")
 	assert.NotEqual(t, updatedWorker.Name, fetchedWorker.Name, "non-status fields should not have been updated")
 
 	// Saving the entire worker should save everything.
 	err = db.SaveWorker(ctx, &updatedWorker)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Check saved worker
 	fetchedWorker, err = db.FetchWorker(ctx, w.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, fetchedWorker)
 	assert.Equal(t, updatedWorker.Status, fetchedWorker.Status, "new status should have been saved")
 	assert.Equal(t, updatedWorker.Name, fetchedWorker.Name, "non-status fields should also have been updated")
@@ -199,10 +195,8 @@ func TestFetchWorkers(t *testing.T) {
 
 	// No workers
 	workers, err := db.FetchWorkers(ctx)
-	if !assert.NoError(t, err) {
-		t.Fatal("error fetching empty list of workers, no use in continuing the test")
-	}
-	assert.Empty(t, workers)
+	require.NoError(t, err)
+	require.Empty(t, workers)
 
 	linuxWorker := Worker{
 		UUID:               uuid.New(),
@@ -216,12 +210,12 @@ func TestFetchWorkers(t *testing.T) {
 
 	// One worker:
 	err = db.CreateWorker(ctx, &linuxWorker)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, time.Now().UTC().Location(), linuxWorker.CreatedAt.Location(),
 		"Timestamps should be using UTC timezone")
 
 	workers, err = db.FetchWorkers(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if assert.Len(t, workers, 1) {
 		// FIXME: this fails, because the fetched timestamps have nil location instead of UTC.
 		// assert.Equal(t, time.Now().UTC().Location(), workers[0].CreatedAt.Location(),
@@ -245,10 +239,10 @@ func TestFetchWorkers(t *testing.T) {
 		SupportedTaskTypes: "blender,ffmpeg,file-management",
 	}
 	err = db.CreateWorker(ctx, &windowsWorker)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	workers, err = db.FetchWorkers(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if assert.Len(t, workers, 2) {
 		assert.Equal(t, linuxWorker.UUID, workers[0].UUID)
 		assert.Equal(t, windowsWorker.UUID, workers[1].UUID)
@@ -275,11 +269,11 @@ func TestDeleteWorker(t *testing.T) {
 		Status: api.WorkerStatusOffline,
 	}
 
-	assert.NoError(t, db.CreateWorker(ctx, &w1))
-	assert.NoError(t, db.CreateWorker(ctx, &w2))
+	require.NoError(t, db.CreateWorker(ctx, &w1))
+	require.NoError(t, db.CreateWorker(ctx, &w2))
 
 	// Delete the 2nd worker, just to have a test with ID != 1.
-	assert.NoError(t, db.DeleteWorker(ctx, w2.UUID))
+	require.NoError(t, db.DeleteWorker(ctx, w2.UUID))
 
 	// The deleted worker should now no longer be found.
 	{
@@ -291,7 +285,7 @@ func TestDeleteWorker(t *testing.T) {
 	// The other worker should still exist.
 	{
 		fetchedWorker, err := db.FetchWorker(ctx, w1.UUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, w1.UUID, fetchedWorker.UUID)
 	}
 
@@ -301,18 +295,18 @@ func TestDeleteWorker(t *testing.T) {
 	taskUUID := authJob.Tasks[0].UUID
 	{
 		task, err := db.FetchTask(ctx, taskUUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		task.Worker = &w1
-		assert.NoError(t, db.SaveTask(ctx, task))
+		require.NoError(t, db.SaveTask(ctx, task))
 	}
 
 	// Delete the worker.
-	assert.NoError(t, db.DeleteWorker(ctx, w1.UUID))
+	require.NoError(t, db.DeleteWorker(ctx, w1.UUID))
 
 	// Check the task after deletion of the Worker.
 	{
 		fetchedTask, err := db.FetchTask(ctx, taskUUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, taskUUID, fetchedTask.UUID)
 		assert.Equal(t, w1.UUID, fetchedTask.Worker.UUID)
 		assert.NotZero(t, fetchedTask.Worker.DeletedAt.Time)

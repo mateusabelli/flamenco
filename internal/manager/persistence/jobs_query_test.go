@@ -29,14 +29,14 @@ func TestSimpleQuery(t *testing.T) {
 	result, err := db.QueryJobs(ctx, api.JobsQuery{
 		StatusIn: &[]api.JobStatus{api.JobStatusActive, api.JobStatusCanceled},
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, result, 0)
 
 	// Check job was returned properly on correct status.
 	result, err = db.QueryJobs(ctx, api.JobsQuery{
 		StatusIn: &[]api.JobStatus{api.JobStatusUnderConstruction, api.JobStatusCanceled},
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if !assert.Len(t, result, 1) {
 		t.FailNow()
 	}
@@ -68,7 +68,7 @@ func TestQueryMetadata(t *testing.T) {
 			AdditionalProperties: map[string]string{
 				"project": "Secret Future Project",
 			}}})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, result, 0)
 
 	// Check job was returned properly when querying for the right project.
@@ -77,7 +77,7 @@ func TestQueryMetadata(t *testing.T) {
 			AdditionalProperties: map[string]string{
 				"project": testJob.Metadata["project"],
 			}}})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if !assert.Len(t, result, 1) {
 		t.FailNow()
 	}
@@ -89,7 +89,7 @@ func TestQueryMetadata(t *testing.T) {
 			AdditionalProperties: map[string]string{
 				"project": otherJob.Metadata["project"],
 			}}})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if !assert.Len(t, result, 1) {
 		t.FailNow()
 	}
@@ -100,7 +100,7 @@ func TestQueryMetadata(t *testing.T) {
 		OrderBy:  &[]string{"status"},
 		Metadata: &api.JobsQuery_Metadata{AdditionalProperties: map[string]string{}},
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if !assert.Len(t, result, 2) {
 		t.FailNow()
 	}
@@ -132,12 +132,12 @@ func TestQueryJobTaskSummaries(t *testing.T) {
 	// Sanity check for the above code, there should be 6 tasks overall, 3 per job.
 	var numTasks int64
 	tx := db.gormDB.Model(&Task{}).Count(&numTasks)
-	assert.NoError(t, tx.Error)
+	require.NoError(t, tx.Error)
 	assert.Equal(t, int64(6), numTasks)
 
 	// Get the task summaries of a particular job.
 	summaries, err := db.QueryJobTaskSummaries(ctx, job.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Len(t, summaries, len(expectTaskUUIDs))
 	for _, summary := range summaries {

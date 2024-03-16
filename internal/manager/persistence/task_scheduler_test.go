@@ -26,7 +26,7 @@ func TestNoTasks(t *testing.T) {
 
 	task, err := db.ScheduleTask(ctx, &w)
 	assert.Nil(t, task)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestOneJobOneTask(t *testing.T) {
@@ -40,7 +40,7 @@ func TestOneJobOneTask(t *testing.T) {
 	job := constructTestJob(ctx, t, db, atj)
 
 	task, err := db.ScheduleTask(ctx, &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Check the returned task.
 	if task == nil {
@@ -55,7 +55,7 @@ func TestOneJobOneTask(t *testing.T) {
 	// Check the task in the database.
 	now := db.gormDB.NowFunc()
 	dbTask, err := db.FetchTask(context.Background(), authTask.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if dbTask == nil {
 		t.Fatal("task cannot be fetched from database")
 	}
@@ -84,7 +84,7 @@ func TestOneJobThreeTasksByPrio(t *testing.T) {
 	job := constructTestJob(ctx, t, db, atj)
 
 	task, err := db.ScheduleTask(ctx, &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if task == nil {
 		t.Fatal("task is nil")
 	}
@@ -115,7 +115,7 @@ func TestOneJobThreeTasksByDependencies(t *testing.T) {
 	job := constructTestJob(ctx, t, db, atj)
 
 	task, err := db.ScheduleTask(ctx, &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if task == nil {
 		t.Fatal("task is nil")
 	}
@@ -155,7 +155,7 @@ func TestTwoJobsThreeTasks(t *testing.T) {
 	job2 := constructTestJob(ctx, t, db, atj2)
 
 	task, err := db.ScheduleTask(ctx, &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if task == nil {
 		t.Fatal("task is nil")
 	}
@@ -183,7 +183,7 @@ func TestSomeButNotAllDependenciesCompleted(t *testing.T) {
 
 	w := linuxWorker(t, db)
 	task, err := db.ScheduleTask(ctx, &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if task != nil {
 		t.Fatalf("there should not be any task assigned, but received %q", task.Name)
 	}
@@ -210,14 +210,14 @@ func TestAlreadyAssigned(t *testing.T) {
 	// This should make it get returned by the scheduler, even when there is
 	// another, higher-prio task to be done.
 	dbTask3, err := db.FetchTask(ctx, att3.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	dbTask3.WorkerID = &w.ID
 	dbTask3.Status = api.TaskStatusActive
 	err = db.SaveTask(ctx, dbTask3)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	task, err := db.ScheduleTask(ctx, &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if task == nil {
 		t.Fatal("task is nil")
 	}
@@ -245,14 +245,14 @@ func TestAssignedToOtherWorker(t *testing.T) {
 	// Assign the high-prio task to the other worker. Because the task is queued,
 	// it shouldn't matter which worker it's assigned to.
 	dbTask2, err := db.FetchTask(ctx, att2.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	dbTask2.WorkerID = &w2.ID
 	dbTask2.Status = api.TaskStatusQueued
 	err = db.SaveTask(ctx, dbTask2)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	task, err := db.ScheduleTask(ctx, &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if task == nil {
 		t.Fatal("task is nil")
 	}
@@ -277,14 +277,14 @@ func TestPreviouslyFailed(t *testing.T) {
 
 	// Mimick that this worker already failed the first task.
 	tasks, err := db.FetchTasksOfJob(ctx, job)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	numFailed, err := db.AddWorkerToTaskFailedList(ctx, tasks[0], &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 1, numFailed)
 
 	// This should assign the 2nd task.
 	task, err := db.ScheduleTask(ctx, &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if task == nil {
 		t.Fatal("task is nil")
 	}
@@ -391,11 +391,11 @@ func TestBlocklisted(t *testing.T) {
 
 	// Mimick that this worker was already blocked for 'blender' tasks of this job.
 	err := db.AddWorkerToJobBlocklist(ctx, job, &w, "blender")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// This should assign the 2nd task.
 	task, err := db.ScheduleTask(ctx, &w)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if task == nil {
 		t.Fatal("task is nil")
 	}

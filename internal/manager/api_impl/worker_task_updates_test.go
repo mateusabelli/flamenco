@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"projects.blender.org/studio/flamenco/internal/manager/config"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
@@ -77,7 +78,7 @@ func TestTaskUpdate(t *testing.T) {
 	err := mf.flamenco.TaskUpdate(echoCtx, taskID)
 
 	// Check the saved task.
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, mockTask.UUID, statusChangedtask.UUID)
 	assert.Equal(t, mockTask.UUID, actUpdatedTask.UUID)
 	assert.Equal(t, mockTask.UUID, touchedTask.UUID)
@@ -148,7 +149,7 @@ func TestTaskUpdateFailed(t *testing.T) {
 		echoCtx := mf.prepareMockedJSONRequest(taskUpdate)
 		requestWorkerStore(echoCtx, &worker)
 		err := mf.flamenco.TaskUpdate(echoCtx, taskID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseNoContent(t, echoCtx)
 	}
 
@@ -164,7 +165,7 @@ func TestTaskUpdateFailed(t *testing.T) {
 		echoCtx := mf.prepareMockedJSONRequest(taskUpdate)
 		requestWorkerStore(echoCtx, &worker)
 		err := mf.flamenco.TaskUpdate(echoCtx, taskID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseNoContent(t, echoCtx)
 	}
 }
@@ -248,7 +249,7 @@ func TestBlockingAfterFailure(t *testing.T) {
 		echoCtx := mf.prepareMockedJSONRequest(taskUpdate)
 		requestWorkerStore(echoCtx, &worker)
 		err := mf.flamenco.TaskUpdate(echoCtx, taskID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseNoContent(t, echoCtx)
 	}
 
@@ -279,7 +280,7 @@ func TestBlockingAfterFailure(t *testing.T) {
 		echoCtx := mf.prepareMockedJSONRequest(taskUpdate)
 		requestWorkerStore(echoCtx, &worker)
 		err := mf.flamenco.TaskUpdate(echoCtx, taskID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseNoContent(t, echoCtx)
 	}
 
@@ -314,7 +315,7 @@ func TestBlockingAfterFailure(t *testing.T) {
 		echoCtx := mf.prepareMockedJSONRequest(taskUpdate)
 		requestWorkerStore(echoCtx, &worker)
 		err := mf.flamenco.TaskUpdate(echoCtx, taskID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseNoContent(t, echoCtx)
 	}
 }
@@ -381,6 +382,6 @@ func TestJobFailureAfterWorkerTaskFailure(t *testing.T) {
 	echoCtx := mf.prepareMockedJSONRequest(taskUpdate)
 	requestWorkerStore(echoCtx, &worker)
 	err := mf.flamenco.TaskUpdate(echoCtx, taskID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseNoContent(t, echoCtx)
 }

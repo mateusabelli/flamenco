@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"projects.blender.org/studio/flamenco/internal/manager/job_deleter/mocks"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/pkg/shaman"
@@ -32,16 +33,16 @@ func TestQueueJobDeletion(t *testing.T) {
 
 	job1 := &persistence.Job{UUID: "2f7d910f-08a6-4b0f-8ecb-b3946939ed1b"}
 	mocks.persist.EXPECT().RequestJobDeletion(mocks.ctx, job1)
-	assert.NoError(t, s.QueueJobDeletion(mocks.ctx, job1))
+	require.NoError(t, s.QueueJobDeletion(mocks.ctx, job1))
 
 	// Call twice more to overflow the queue.
 	job2 := &persistence.Job{UUID: "e8fbe41c-ed24-46df-ba63-8d4f5524071b"}
 	mocks.persist.EXPECT().RequestJobDeletion(mocks.ctx, job2)
-	assert.NoError(t, s.QueueJobDeletion(mocks.ctx, job2))
+	require.NoError(t, s.QueueJobDeletion(mocks.ctx, job2))
 
 	job3 := &persistence.Job{UUID: "deeab6ba-02cd-42c0-b7bc-2367a2f04c7d"}
 	mocks.persist.EXPECT().RequestJobDeletion(mocks.ctx, job3)
-	assert.NoError(t, s.QueueJobDeletion(mocks.ctx, job3))
+	require.NoError(t, s.QueueJobDeletion(mocks.ctx, job3))
 
 	if assert.Len(t, s.queue, 2, "the first two job UUID should be queued") {
 		assert.Equal(t, job1.UUID, <-s.queue)
@@ -111,7 +112,7 @@ func TestDeleteJobWithoutShaman(t *testing.T) {
 	mocks.persist.EXPECT().DeleteJob(mocks.ctx, jobUUID)
 	mocks.persist.EXPECT().RequestIntegrityCheck()
 	mocks.broadcaster.EXPECT().BroadcastJobUpdate(gomock.Any())
-	assert.NoError(t, s.deleteJob(mocks.ctx, jobUUID))
+	require.NoError(t, s.deleteJob(mocks.ctx, jobUUID))
 }
 
 func TestDeleteJobWithShaman(t *testing.T) {
@@ -163,7 +164,7 @@ func TestDeleteJobWithShaman(t *testing.T) {
 	mocks.persist.EXPECT().DeleteJob(mocks.ctx, jobUUID)
 	mocks.persist.EXPECT().RequestIntegrityCheck()
 	mocks.broadcaster.EXPECT().BroadcastJobUpdate(gomock.Any())
-	assert.NoError(t, s.deleteJob(mocks.ctx, jobUUID))
+	require.NoError(t, s.deleteJob(mocks.ctx, jobUUID))
 }
 
 func jobDeleterTestFixtures(t *testing.T) (*Service, func(), *JobDeleterMocks) {

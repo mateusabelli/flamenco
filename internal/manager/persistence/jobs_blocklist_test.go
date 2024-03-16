@@ -18,11 +18,11 @@ func TestAddWorkerToJobBlocklist(t *testing.T) {
 	{
 		// Add a worker to the block list.
 		err := db.AddWorkerToJobBlocklist(ctx, job, worker, "blender")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		list := []JobBlock{}
 		tx := db.gormDB.Model(&JobBlock{}).Scan(&list)
-		assert.NoError(t, tx.Error)
+		require.NoError(t, tx.Error)
 		if assert.Len(t, list, 1) {
 			entry := list[0]
 			assert.Equal(t, entry.JobID, job.ID)
@@ -34,11 +34,11 @@ func TestAddWorkerToJobBlocklist(t *testing.T) {
 	{
 		// Adding the same worker again should be a no-op.
 		err := db.AddWorkerToJobBlocklist(ctx, job, worker, "blender")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		list := []JobBlock{}
 		tx := db.gormDB.Model(&JobBlock{}).Scan(&list)
-		assert.NoError(t, tx.Error)
+		require.NoError(t, tx.Error)
 		assert.Len(t, list, 1, "No new entry should have been created")
 	}
 }
@@ -50,10 +50,10 @@ func TestFetchJobBlocklist(t *testing.T) {
 	// Add a worker to the block list.
 	worker := createWorker(ctx, t, db)
 	err := db.AddWorkerToJobBlocklist(ctx, job, worker, "blender")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	list, err := db.FetchJobBlocklist(ctx, job.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	if assert.Len(t, list, 1) {
 		entry := list[0]
@@ -73,17 +73,17 @@ func TestClearJobBlocklist(t *testing.T) {
 	// Add a worker and some entries to the block list.
 	worker := createWorker(ctx, t, db)
 	err := db.AddWorkerToJobBlocklist(ctx, job, worker, "blender")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	err = db.AddWorkerToJobBlocklist(ctx, job, worker, "ffmpeg")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Clear the blocklist.
 	err = db.ClearJobBlocklist(ctx, job)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Check that it is indeed empty.
 	list, err := db.FetchJobBlocklist(ctx, job.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, list)
 }
 
@@ -94,17 +94,17 @@ func TestRemoveFromJobBlocklist(t *testing.T) {
 	// Add a worker and some entries to the block list.
 	worker := createWorker(ctx, t, db)
 	err := db.AddWorkerToJobBlocklist(ctx, job, worker, "blender")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	err = db.AddWorkerToJobBlocklist(ctx, job, worker, "ffmpeg")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Remove an entry.
 	err = db.RemoveFromJobBlocklist(ctx, job.UUID, worker.UUID, "ffmpeg")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Check that the other entry is still there.
 	list, err := db.FetchJobBlocklist(ctx, job.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	if assert.Len(t, list, 1) {
 		entry := list[0]
@@ -120,7 +120,7 @@ func TestWorkersLeftToRun(t *testing.T) {
 
 	// No workers.
 	left, err := db.WorkersLeftToRun(ctx, job, "blender")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, left)
 
 	worker1 := createWorker(ctx, t, db)
@@ -146,30 +146,27 @@ func TestWorkersLeftToRun(t *testing.T) {
 
 	// Three workers, no blocklist.
 	left, err = db.WorkersLeftToRun(ctx, job, "blender")
-	if assert.NoError(t, err) {
-		assert.Equal(t, uuidMap(worker1, worker2, workerC1), left)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, uuidMap(worker1, worker2, workerC1), left)
 
 	// Two workers, one blocked.
 	_ = db.AddWorkerToJobBlocklist(ctx, job, worker1, "blender")
 	left, err = db.WorkersLeftToRun(ctx, job, "blender")
-	if assert.NoError(t, err) {
-		assert.Equal(t, uuidMap(worker2, workerC1), left)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, uuidMap(worker2, workerC1), left)
 
 	// All workers blocked.
 	_ = db.AddWorkerToJobBlocklist(ctx, job, worker2, "blender")
 	_ = db.AddWorkerToJobBlocklist(ctx, job, workerC1, "blender")
 	left, err = db.WorkersLeftToRun(ctx, job, "blender")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, left)
 
 	// Two workers, unknown job.
 	fakeJob := Job{Model: Model{ID: 327}}
 	left, err = db.WorkersLeftToRun(ctx, &fakeJob, "blender")
-	if assert.NoError(t, err) {
-		assert.Equal(t, uuidMap(worker1, worker2, workerC1), left)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, uuidMap(worker1, worker2, workerC1), left)
 }
 
 func TestWorkersLeftToRunWithTags(t *testing.T) {
@@ -233,7 +230,7 @@ func TestWorkersLeftToRunWithTags(t *testing.T) {
 	// All taged workers blocked.
 	_ = db.AddWorkerToJobBlocklist(ctx, job, workerC13, "blender")
 	left, err = db.WorkersLeftToRun(ctx, job, "blender")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, left)
 }
 
@@ -261,25 +258,21 @@ func TestCountTaskFailuresOfWorker(t *testing.T) {
 
 	// Multiple failures.
 	numBlender1, err := db.CountTaskFailuresOfWorker(ctx, dbJob, worker1, "blender")
-	if assert.NoError(t, err) {
-		assert.Equal(t, 2, numBlender1)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, 2, numBlender1)
 
 	// Single failure, but multiple tasks exist of this type.
 	numBlender2, err := db.CountTaskFailuresOfWorker(ctx, dbJob, worker2, "blender")
-	if assert.NoError(t, err) {
-		assert.Equal(t, 1, numBlender2)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, 1, numBlender2)
 
 	// Single failure, only one task of this type exists.
 	numFFMpeg1, err := db.CountTaskFailuresOfWorker(ctx, dbJob, worker1, "ffmpeg")
-	if assert.NoError(t, err) {
-		assert.Equal(t, 1, numFFMpeg1)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, 1, numFFMpeg1)
 
 	// No failure.
 	numFFMpeg2, err := db.CountTaskFailuresOfWorker(ctx, dbJob, worker2, "ffmpeg")
-	if assert.NoError(t, err) {
-		assert.Equal(t, 0, numFFMpeg2)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, 0, numFFMpeg2)
 }

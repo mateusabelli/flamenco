@@ -8,12 +8,13 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoadScriptsFrom_skip_nonjs(t *testing.T) {
 	thisDirFS := os.DirFS(".")
 	compilers, err := loadScriptsFrom(thisDirFS)
-	assert.NoError(t, err, "input without JS files should not cause errors")
+	require.NoError(t, err, "input without JS files should not cause errors")
 	assert.Empty(t, compilers)
 }
 
@@ -21,7 +22,7 @@ func TestLoadScriptsFrom_on_disk_js(t *testing.T) {
 	scriptsFS := os.DirFS("scripts-for-unittest")
 	compilers, err := loadScriptsFrom(scriptsFS)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	expectKeys := map[string]bool{
 		"echo-and-sleep":        true,
 		"simple-blender-render": true,
@@ -34,7 +35,7 @@ func TestLoadScriptsFrom_embedded(t *testing.T) {
 	initEmbeddedFS()
 	compilers, err := loadScriptsFrom(embeddedScriptsFS)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	expectKeys := map[string]bool{
 		"echo-sleep-test":       true,
 		"simple-blender-render": true,
@@ -48,7 +49,7 @@ func BenchmarkLoadScripts_fromEmbedded(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		compilers, err := loadScriptsFrom(embeddedScriptsFS)
-		assert.NoError(b, err)
+		require.NoError(b, err)
 		assert.NotEmpty(b, compilers)
 	}
 }
@@ -59,7 +60,7 @@ func BenchmarkLoadScripts_fromDisk(b *testing.B) {
 	onDiskFS := os.DirFS("scripts-for-unittest")
 	for i := 0; i < b.N; i++ {
 		compilers, err := loadScriptsFrom(onDiskFS)
-		assert.NoError(b, err)
+		require.NoError(b, err)
 		assert.NotEmpty(b, compilers)
 	}
 }

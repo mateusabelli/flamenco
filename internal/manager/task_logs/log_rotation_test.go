@@ -12,11 +12,12 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setUpTest(t *testing.T) string {
 	temppath, err := ioutil.TempDir("", "testlogs")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	return temppath
 }
 
@@ -55,7 +56,7 @@ func TestNoFiles(t *testing.T) {
 
 	filepath := filepath.Join(temppath, "nonexisting.txt")
 	err := rotateLogFile(zerolog.Nop(), filepath)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, fileExists(filepath))
 }
 
@@ -67,7 +68,7 @@ func TestOneFile(t *testing.T) {
 	fileTouch(filepath)
 
 	err := rotateLogFile(zerolog.Nop(), filepath)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, fileExists(filepath))
 	assert.True(t, fileExists(filepath+".1"))
 }
@@ -77,16 +78,16 @@ func TestMultipleFilesWithHoles(t *testing.T) {
 	defer tearDownTest(temppath)
 
 	filepath := filepath.Join(temppath, "existing.txt")
-	assert.NoError(t, ioutil.WriteFile(filepath, []byte("thefile"), 0666))
-	assert.NoError(t, ioutil.WriteFile(filepath+".1", []byte("file .1"), 0666))
-	assert.NoError(t, ioutil.WriteFile(filepath+".2", []byte("file .2"), 0666))
-	assert.NoError(t, ioutil.WriteFile(filepath+".3", []byte("file .3"), 0666))
-	assert.NoError(t, ioutil.WriteFile(filepath+".5", []byte("file .5"), 0666))
-	assert.NoError(t, ioutil.WriteFile(filepath+".7", []byte("file .7"), 0666))
+	require.NoError(t, ioutil.WriteFile(filepath, []byte("thefile"), 0666))
+	require.NoError(t, ioutil.WriteFile(filepath+".1", []byte("file .1"), 0666))
+	require.NoError(t, ioutil.WriteFile(filepath+".2", []byte("file .2"), 0666))
+	require.NoError(t, ioutil.WriteFile(filepath+".3", []byte("file .3"), 0666))
+	require.NoError(t, ioutil.WriteFile(filepath+".5", []byte("file .5"), 0666))
+	require.NoError(t, ioutil.WriteFile(filepath+".7", []byte("file .7"), 0666))
 
 	err := rotateLogFile(zerolog.Nop(), filepath)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, fileExists(filepath))
 	assert.True(t, fileExists(filepath+".1"))
 	assert.True(t, fileExists(filepath+".2"))
@@ -100,7 +101,7 @@ func TestMultipleFilesWithHoles(t *testing.T) {
 
 	read := func(filename string) string {
 		content, err := ioutil.ReadFile(filename)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		return string(content)
 	}
 

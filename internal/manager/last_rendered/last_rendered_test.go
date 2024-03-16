@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"projects.blender.org/studio/flamenco/internal/manager/local_storage"
 )
 
@@ -38,9 +39,9 @@ func TestQueueImage(t *testing.T) {
 	defer storage.MustErase()
 	lrp := New(storage)
 
-	assert.NoError(t, lrp.QueueImage(payload))
-	assert.NoError(t, lrp.QueueImage(payload))
-	assert.NoError(t, lrp.QueueImage(payload))
+	require.NoError(t, lrp.QueueImage(payload))
+	require.NoError(t, lrp.QueueImage(payload))
+	require.NoError(t, lrp.QueueImage(payload))
 	assert.ErrorIs(t, lrp.QueueImage(payload), ErrQueueFull)
 }
 
@@ -48,9 +49,7 @@ func TestProcessImage(t *testing.T) {
 	// Load the test image. Note that this intentionally has an approximate 21:9
 	// ratio, whereas the thumbnail specs define a 16:9 ratio.
 	imgBytes, err := os.ReadFile("last_rendered_test.jpg")
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 
 	jobID := "e078438b-c9f5-43e6-9e86-52f8be91dd12"
 	payload := Payload{
@@ -87,15 +86,11 @@ func TestProcessImage(t *testing.T) {
 	assertImageSize := func(spec Thumbspec) {
 		path := filepath.Join(jobdir, spec.Filename)
 		file, err := os.Open(path)
-		if !assert.NoError(t, err, "thumbnail %s should be openable", spec.Filename) {
-			return
-		}
+		require.NoError(t, err, "thumbnail %s should be openable", spec.Filename)
 		defer file.Close()
 
 		img, format, err := image.Decode(file)
-		if !assert.NoErrorf(t, err, "thumbnail %s should be decodable", spec.Filename) {
-			return
-		}
+		require.NoErrorf(t, err, "thumbnail %s should be decodable", spec.Filename)
 
 		assert.Equalf(t, "jpeg", format, "thumbnail %s not written in the expected format", spec.Filename)
 		assert.LessOrEqualf(t, img.Bounds().Dx(), spec.MaxWidth, "thumbnail %s has wrong width", spec.Filename)

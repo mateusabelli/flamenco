@@ -26,18 +26,16 @@ func TestFetchWorkerSleepSchedule(t *testing.T) {
 		SupportedTaskTypes: "blender,ffmpeg,file-management",
 	}
 	err := db.CreateWorker(ctx, &linuxWorker)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 
 	// Not an existing Worker.
 	fetched, err := db.FetchWorkerSleepSchedule(ctx, "2cf6153a-3d4e-49f4-a5c0-1c9fc176e155")
-	assert.NoError(t, err, "non-existent worker should not cause an error")
+	require.NoError(t, err, "non-existent worker should not cause an error")
 	assert.Nil(t, fetched)
 
 	// No sleep schedule.
 	fetched, err = db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
-	assert.NoError(t, err, "non-existent schedule should not cause an error")
+	require.NoError(t, err, "non-existent schedule should not cause an error")
 	assert.Nil(t, fetched)
 
 	// Create a sleep schedule.
@@ -51,12 +49,10 @@ func TestFetchWorkerSleepSchedule(t *testing.T) {
 		EndTime:    TimeOfDay{9, 0},
 	}
 	tx := db.gormDB.Create(&created)
-	if !assert.NoError(t, tx.Error) {
-		t.FailNow()
-	}
+	require.NoError(t, tx.Error)
 
 	fetched, err = db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertEqualSleepSchedule(t, linuxWorker.ID, created, *fetched)
 }
 
@@ -74,9 +70,7 @@ func TestFetchSleepScheduleWorker(t *testing.T) {
 		SupportedTaskTypes: "blender,ffmpeg,file-management",
 	}
 	err := db.CreateWorker(ctx, &linuxWorker)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 
 	// Create a sleep schedule.
 	created := SleepSchedule{
@@ -89,16 +83,14 @@ func TestFetchSleepScheduleWorker(t *testing.T) {
 		EndTime:    TimeOfDay{9, 0},
 	}
 	tx := db.gormDB.Create(&created)
-	if !assert.NoError(t, tx.Error) {
-		t.FailNow()
-	}
+	require.NoError(t, tx.Error)
 
 	dbSchedule, err := db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Nil(t, dbSchedule.Worker, "worker should be nil when fetching schedule")
 
 	err = db.FetchSleepScheduleWorker(ctx, dbSchedule)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if assert.NotNil(t, dbSchedule.Worker) {
 		// Compare a few fields. If these are good, the correct worker has been fetched.
 		assert.Equal(t, linuxWorker.ID, dbSchedule.Worker.ID)
@@ -125,9 +117,7 @@ func TestSetWorkerSleepSchedule(t *testing.T) {
 		SupportedTaskTypes: "blender,ffmpeg,file-management",
 	}
 	err := db.CreateWorker(ctx, &linuxWorker)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 
 	schedule := SleepSchedule{
 		WorkerID: linuxWorker.ID,
@@ -145,13 +135,9 @@ func TestSetWorkerSleepSchedule(t *testing.T) {
 
 	// Create the sleep schedule.
 	err = db.SetWorkerSleepSchedule(ctx, linuxWorker.UUID, &schedule)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 	fetched, err := db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 	assertEqualSleepSchedule(t, linuxWorker.ID, schedule, *fetched)
 
 	// Overwrite the schedule with one that already has a database ID.
@@ -161,13 +147,9 @@ func TestSetWorkerSleepSchedule(t *testing.T) {
 	newSchedule.StartTime = TimeOfDay{2, 0}
 	newSchedule.EndTime = TimeOfDay{6, 0}
 	err = db.SetWorkerSleepSchedule(ctx, linuxWorker.UUID, &newSchedule)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 	fetched, err = db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 	assertEqualSleepSchedule(t, linuxWorker.ID, newSchedule, *fetched)
 
 	// Overwrite the schedule with a freshly constructed one.
@@ -181,13 +163,9 @@ func TestSetWorkerSleepSchedule(t *testing.T) {
 		EndTime:    TimeOfDay{15, 0},
 	}
 	err = db.SetWorkerSleepSchedule(ctx, linuxWorker.UUID, &newerSchedule)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 	fetched, err = db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 	assertEqualSleepSchedule(t, linuxWorker.ID, newerSchedule, *fetched)
 
 	// Clear the sleep schedule.
@@ -201,13 +179,9 @@ func TestSetWorkerSleepSchedule(t *testing.T) {
 		EndTime:    emptyToD,
 	}
 	err = db.SetWorkerSleepSchedule(ctx, linuxWorker.UUID, &emptySchedule)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 	fetched, err = db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 	assertEqualSleepSchedule(t, linuxWorker.ID, emptySchedule, *fetched)
 
 }
@@ -236,14 +210,10 @@ func TestSetWorkerSleepScheduleNextCheck(t *testing.T) {
 	schedule.NextCheck = future
 
 	err := db.SetWorkerSleepScheduleNextCheck(ctx, &schedule)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 
 	fetched, err := db.FetchWorkerSleepSchedule(ctx, schedule.Worker.UUID)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 	assertEqualSleepSchedule(t, schedule.Worker.ID, schedule, *fetched)
 }
 
@@ -322,12 +292,13 @@ func TestFetchSleepSchedulesToCheck(t *testing.T) {
 	}
 
 	toCheck, err := db.FetchSleepSchedulesToCheck(ctx)
-	if assert.NoError(t, err) && assert.Len(t, toCheck, 2) {
-		assertEqualSleepSchedule(t, schedule0.Worker.ID, schedule0, *toCheck[0])
-		assert.Nil(t, toCheck[0].Worker, "the Worker should NOT be fetched")
-		assertEqualSleepSchedule(t, schedule2.Worker.ID, schedule1, *toCheck[1])
-		assert.Nil(t, toCheck[1].Worker, "the Worker should NOT be fetched")
-	}
+	require.NoError(t, err)
+	require.Len(t, toCheck, 2)
+
+	assertEqualSleepSchedule(t, schedule0.Worker.ID, schedule0, *toCheck[0])
+	assert.Nil(t, toCheck[0].Worker, "the Worker should NOT be fetched")
+	assertEqualSleepSchedule(t, schedule2.Worker.ID, schedule1, *toCheck[1])
+	assert.Nil(t, toCheck[1].Worker, "the Worker should NOT be fetched")
 }
 
 func assertEqualSleepSchedule(t *testing.T, workerID uint, expect, actual SleepSchedule) {

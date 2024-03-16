@@ -12,6 +12,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"projects.blender.org/studio/flamenco/internal/manager/config"
 	"projects.blender.org/studio/flamenco/internal/manager/last_rendered"
@@ -61,7 +62,7 @@ func TestTaskScheduleHappy(t *testing.T) {
 	mf.broadcaster.EXPECT().BroadcastWorkerUpdate(gomock.Any())
 
 	err := mf.flamenco.ScheduleTask(echo)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Check the response
 	assignedTask := api.AssignedTask{
@@ -98,7 +99,7 @@ func TestTaskScheduleNoTaskAvailable(t *testing.T) {
 	mf.persistence.EXPECT().WorkerSeen(bgCtx, &worker)
 
 	err := mf.flamenco.ScheduleTask(echo)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseNoContent(t, echo)
 }
 
@@ -119,7 +120,7 @@ func TestTaskScheduleNonActiveStatus(t *testing.T) {
 	mf.persistence.EXPECT().WorkerSeen(bgCtx, &worker)
 
 	err := mf.flamenco.ScheduleTask(echoCtx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	resp := getRecordedResponse(echoCtx)
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
@@ -142,7 +143,7 @@ func TestTaskScheduleOtherStatusRequested(t *testing.T) {
 	mf.persistence.EXPECT().WorkerSeen(bgCtx, &worker)
 
 	err := mf.flamenco.ScheduleTask(echoCtx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	expectBody := api.WorkerStateChange{StatusRequested: api.WorkerStatusAsleep}
 	assertResponseJSON(t, echoCtx, http.StatusLocked, expectBody)
@@ -169,7 +170,7 @@ func TestTaskScheduleOtherStatusRequestedAndBadState(t *testing.T) {
 	mf.persistence.EXPECT().WorkerSeen(bgCtx, &worker)
 
 	err := mf.flamenco.ScheduleTask(echoCtx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	expectBody := api.WorkerStateChange{StatusRequested: api.WorkerStatusAwake}
 	assertResponseJSON(t, echoCtx, http.StatusLocked, expectBody)
@@ -206,7 +207,7 @@ func TestWorkerSignOn(t *testing.T) {
 	})
 	requestWorkerStore(echo, &worker)
 	err := mf.flamenco.SignOn(echo)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assertResponseJSON(t, echo, http.StatusOK, api.WorkerStateChange{
 		StatusRequested: api.WorkerStatusAsleep,
@@ -253,7 +254,7 @@ func TestWorkerSignoffTaskRequeue(t *testing.T) {
 	})
 
 	err := mf.flamenco.SignOff(echo)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	resp := getRecordedResponse(echo)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
@@ -292,7 +293,7 @@ func TestWorkerRememberPreviousStatus(t *testing.T) {
 	echo := mf.prepareMockedRequest(nil)
 	requestWorkerStore(echo, &worker)
 	err := mf.flamenco.SignOff(echo)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseNoContent(t, echo)
 
 	assert.Equal(t, api.WorkerStatusAwake, worker.StatusRequested)
@@ -329,7 +330,7 @@ func TestWorkerDontRememberPreviousStatus(t *testing.T) {
 	echo := mf.prepareMockedRequest(nil)
 	requestWorkerStore(echo, &worker)
 	err := mf.flamenco.SignOff(echo)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseNoContent(t, echo)
 }
 
@@ -347,9 +348,8 @@ func TestWorkerState(t *testing.T) {
 		echo := mf.prepareMockedRequest(nil)
 		requestWorkerStore(echo, &worker)
 		err := mf.flamenco.WorkerState(echo)
-		if assert.NoError(t, err) {
-			assertResponseNoContent(t, echo)
-		}
+		require.NoError(t, err)
+		assertResponseNoContent(t, echo)
 	}
 
 	// State change requested.
@@ -361,11 +361,10 @@ func TestWorkerState(t *testing.T) {
 		requestWorkerStore(echo, &worker)
 
 		err := mf.flamenco.WorkerState(echo)
-		if assert.NoError(t, err) {
-			assertResponseJSON(t, echo, http.StatusOK, api.WorkerStateChange{
-				StatusRequested: requestStatus,
-			})
-		}
+		require.NoError(t, err)
+		assertResponseJSON(t, echo, http.StatusOK, api.WorkerStateChange{
+			StatusRequested: requestStatus,
+		})
 	}
 }
 
@@ -402,7 +401,7 @@ func TestWorkerStateChanged(t *testing.T) {
 	})
 	requestWorkerStore(echo, &worker)
 	err := mf.flamenco.WorkerStateChanged(echo)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseNoContent(t, echo)
 }
 
@@ -445,7 +444,7 @@ func TestWorkerStateChangedAfterChangeRequest(t *testing.T) {
 		})
 		requestWorkerStore(echo, &worker)
 		err := mf.flamenco.WorkerStateChanged(echo)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseNoContent(t, echo)
 	}
 
@@ -475,7 +474,7 @@ func TestWorkerStateChangedAfterChangeRequest(t *testing.T) {
 		})
 		requestWorkerStore(echo, &worker)
 		err := mf.flamenco.WorkerStateChanged(echo)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseNoContent(t, echo)
 	}
 }
@@ -514,7 +513,7 @@ func TestMayWorkerRun(t *testing.T) {
 	{
 		echo := prepareRequest()
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseJSON(t, echo, http.StatusOK, api.MayKeepRunning{
 			MayKeepRunning: false,
 			Reason:         "task not assigned to this worker",
@@ -529,7 +528,7 @@ func TestMayWorkerRun(t *testing.T) {
 		echo := prepareRequest()
 		task.WorkerID = &worker.ID
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseJSON(t, echo, http.StatusOK, api.MayKeepRunning{
 			MayKeepRunning: true,
 		})
@@ -541,7 +540,7 @@ func TestMayWorkerRun(t *testing.T) {
 		task.WorkerID = &worker.ID
 		task.Status = api.TaskStatusCanceled
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseJSON(t, echo, http.StatusOK, api.MayKeepRunning{
 			MayKeepRunning: false,
 			Reason:         "task is in non-runnable status \"canceled\"",
@@ -555,7 +554,7 @@ func TestMayWorkerRun(t *testing.T) {
 		task.WorkerID = &worker.ID
 		task.Status = api.TaskStatusActive
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseJSON(t, echo, http.StatusOK, api.MayKeepRunning{
 			MayKeepRunning:        false,
 			Reason:                "worker status change requested",
@@ -573,7 +572,7 @@ func TestMayWorkerRun(t *testing.T) {
 		task.WorkerID = &worker.ID
 		task.Status = api.TaskStatusActive
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseJSON(t, echo, http.StatusOK, api.MayKeepRunning{
 			MayKeepRunning: true,
 		})
@@ -618,7 +617,7 @@ func TestTaskOutputProduced(t *testing.T) {
 
 		echo := prepareRequest(nil)
 		err := mf.flamenco.TaskOutputProduced(echo, task.UUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseAPIError(t, echo, http.StatusLengthRequired, "Content-Length header required")
 	}
 
@@ -633,7 +632,7 @@ func TestTaskOutputProduced(t *testing.T) {
 
 		echo := prepareRequest(bytes.NewReader(bodyBytes))
 		err := mf.flamenco.TaskOutputProduced(echo, task.UUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseAPIError(t, echo, http.StatusRequestEntityTooLarge,
 			"image too large; should be max %v bytes", last_rendered.MaxImageSizeBytes)
 	}
@@ -648,7 +647,7 @@ func TestTaskOutputProduced(t *testing.T) {
 		mf.lastRender.EXPECT().QueueImage(gomock.Any()).Return(last_rendered.ErrMimeTypeUnsupported)
 
 		err := mf.flamenco.TaskOutputProduced(echo, task.UUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseAPIError(t, echo, http.StatusUnsupportedMediaType, `unsupported mime type "image/openexr"`)
 	}
 
@@ -661,7 +660,7 @@ func TestTaskOutputProduced(t *testing.T) {
 		mf.lastRender.EXPECT().QueueImage(gomock.Any()).Return(last_rendered.ErrQueueFull)
 
 		err := mf.flamenco.TaskOutputProduced(echo, task.UUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseAPIError(t, echo, http.StatusTooManyRequests, "image processing queue is full")
 	}
 
@@ -687,7 +686,7 @@ func TestTaskOutputProduced(t *testing.T) {
 		})
 
 		err := mf.flamenco.TaskOutputProduced(echo, task.UUID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseNoBody(t, echo, http.StatusAccepted)
 
 		if assert.NotNil(t, actualPayload) {

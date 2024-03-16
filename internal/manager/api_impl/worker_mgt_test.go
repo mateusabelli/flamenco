@@ -33,7 +33,7 @@ func TestFetchWorkers(t *testing.T) {
 
 	echo := mf.prepareMockedRequest(nil)
 	err := mf.flamenco.FetchWorkers(echo)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Check the response
 	workers := api.WorkerList{
@@ -74,7 +74,7 @@ func TestFetchWorker(t *testing.T) {
 		Return(nil, fmt.Errorf("wrapped: %w", persistence.ErrWorkerNotFound))
 	echo := mf.prepareMockedRequest(nil)
 	err := mf.flamenco.FetchWorker(echo, workerUUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseAPIError(t, echo, http.StatusNotFound, fmt.Sprintf("worker %q not found", workerUUID))
 
 	// Test database error fetching worker.
@@ -82,7 +82,7 @@ func TestFetchWorker(t *testing.T) {
 		Return(nil, errors.New("some unknown error"))
 	echo = mf.prepareMockedRequest(nil)
 	err = mf.flamenco.FetchWorker(echo, workerUUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseAPIError(t, echo, http.StatusInternalServerError, "error fetching worker: some unknown error")
 
 	// Test with worker that does NOT have a status change requested, and DOES have an assigned task.
@@ -97,7 +97,7 @@ func TestFetchWorker(t *testing.T) {
 
 	echo = mf.prepareMockedRequest(nil)
 	err = mf.flamenco.FetchWorker(echo, workerUUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseJSON(t, echo, http.StatusOK, api.Worker{
 		WorkerSummary: api.WorkerSummary{
 			Id:      workerUUID,
@@ -126,7 +126,7 @@ func TestFetchWorker(t *testing.T) {
 
 	echo = mf.prepareMockedRequest(nil)
 	err = mf.flamenco.FetchWorker(echo, worker.UUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseJSON(t, echo, http.StatusOK, api.Worker{
 		WorkerSummary: api.WorkerSummary{
 			Id:           workerUUID,
@@ -155,7 +155,7 @@ func TestDeleteWorker(t *testing.T) {
 		Return(nil, fmt.Errorf("wrapped: %w", persistence.ErrWorkerNotFound))
 	echo := mf.prepareMockedRequest(nil)
 	err := mf.flamenco.DeleteWorker(echo, workerUUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseAPIError(t, echo, http.StatusNotFound, fmt.Sprintf("worker %q not found", workerUUID))
 
 	// Test with existing worker.
@@ -176,7 +176,7 @@ func TestDeleteWorker(t *testing.T) {
 
 	echo = mf.prepareMockedRequest(nil)
 	err = mf.flamenco.DeleteWorker(echo, workerUUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseNoContent(t, echo)
 }
 
@@ -214,7 +214,7 @@ func TestRequestWorkerStatusChange(t *testing.T) {
 		IsLazy: true,
 	})
 	err := mf.flamenco.RequestWorkerStatusChange(echo, workerUUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseNoContent(t, echo)
 }
 
@@ -258,7 +258,7 @@ func TestRequestWorkerStatusChangeRevert(t *testing.T) {
 		IsLazy: true,
 	})
 	err := mf.flamenco.RequestWorkerStatusChange(echo, workerUUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseNoContent(t, echo)
 }
 

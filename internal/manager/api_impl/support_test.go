@@ -16,6 +16,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"projects.blender.org/studio/flamenco/internal/manager/api_impl/mocks"
 	"projects.blender.org/studio/flamenco/internal/manager/config"
@@ -182,14 +183,10 @@ func getResponseJSON(t *testing.T, echoCtx echo.Context, expectStatusCode int, a
 	}
 
 	actualJSON, err := io.ReadAll(resp.Body)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 
 	err = json.Unmarshal(actualJSON, actualPayloadPtr)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 }
 
 // assertResponseJSON asserts that a recorded response is JSON with the given HTTP status code.
@@ -204,14 +201,10 @@ func assertResponseJSON(t *testing.T, echoCtx echo.Context, expectStatusCode int
 	}
 
 	expectJSON, err := json.Marshal(expectBody)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 
 	actualJSON, err := io.ReadAll(resp.Body)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 
 	assert.JSONEq(t, string(expectJSON), string(actualJSON))
 }

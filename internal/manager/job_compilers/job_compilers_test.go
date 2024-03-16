@@ -58,7 +58,7 @@ func exampleSubmittedJob() api.SubmittedJob {
 func mockedClock(t *testing.T) clock.Clock {
 	c := clock.NewMock()
 	now, err := time.ParseInLocation("2006-01-02T15:04:05", "2006-01-02T15:04:05", time.Local)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	c.Set(now)
 	return c
 }
@@ -67,7 +67,7 @@ func TestSimpleBlenderRenderHappy(t *testing.T) {
 	c := mockedClock(t)
 
 	s, err := Load(c)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Compiling a job should be really fast.
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
@@ -172,7 +172,7 @@ func TestSimpleBlenderRenderWindowsPaths(t *testing.T) {
 	c := mockedClock(t)
 
 	s, err := Load(c)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Compiling a job should be really fast.
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
@@ -307,9 +307,8 @@ func TestEtag(t *testing.T) {
 
 	{ // Test without etag.
 		aj, err := s.Compile(ctx, sj)
-		if assert.NoError(t, err, "job without etag should always be accepted") {
-			assert.NotNil(t, aj)
-		}
+		require.NoError(t, err, "job without etag should always be accepted")
+		assert.NotNil(t, aj)
 	}
 
 	{ // Test with bad etag.
@@ -321,9 +320,8 @@ func TestEtag(t *testing.T) {
 	{ // Test with correct etag.
 		sj.TypeEtag = ptr(expectEtag)
 		aj, err := s.Compile(ctx, sj)
-		if assert.NoError(t, err, "job with correct etag should be accepted") {
-			assert.NotNil(t, aj)
-		}
+		require.NoError(t, err, "job with correct etag should be accepted")
+		assert.NotNil(t, aj)
 	}
 }
 

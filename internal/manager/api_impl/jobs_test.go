@@ -88,7 +88,7 @@ func TestSubmitJobWithoutSettings(t *testing.T) {
 	echoCtx := mf.prepareMockedJSONRequest(submittedJob)
 	requestWorkerStore(echoCtx, &worker)
 	err := mf.flamenco.SubmitJob(echoCtx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestSubmitJobWithSettings(t *testing.T) {
@@ -177,7 +177,7 @@ func TestSubmitJobWithSettings(t *testing.T) {
 	echoCtx := mf.prepareMockedJSONRequest(submittedJob)
 	requestWorkerStore(echoCtx, &worker)
 	err := mf.flamenco.SubmitJob(echoCtx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestSubmitJobWithEtag(t *testing.T) {
@@ -202,7 +202,7 @@ func TestSubmitJobWithEtag(t *testing.T) {
 	{
 		echoCtx := mf.prepareMockedJSONRequest(submittedJob)
 		err := mf.flamenco.SubmitJob(echoCtx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseAPIError(t, echoCtx,
 			http.StatusPreconditionFailed, "rejecting job because its settings are outdated, refresh the job type")
 	}
@@ -240,7 +240,7 @@ func TestSubmitJobWithEtag(t *testing.T) {
 		submittedJob.TypeEtag = ptr("correct etag")
 		echoCtx := mf.prepareMockedJSONRequest(submittedJob)
 		err := mf.flamenco.SubmitJob(echoCtx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 }
 
@@ -318,7 +318,7 @@ func TestSubmitJobWithShamanCheckoutID(t *testing.T) {
 	echoCtx := mf.prepareMockedJSONRequest(submittedJob)
 	requestWorkerStore(echoCtx, &worker)
 	err := mf.flamenco.SubmitJob(echoCtx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestSubmitJobWithWorkerTag(t *testing.T) {
@@ -437,7 +437,7 @@ func TestGetJobTypeHappy(t *testing.T) {
 
 	echoCtx := mf.prepareMockedRequest(nil)
 	err := mf.flamenco.GetJobType(echoCtx, "test-job-type")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assertResponseJSON(t, echoCtx, http.StatusOK, jt)
 }
@@ -453,7 +453,7 @@ func TestGetJobTypeUnknown(t *testing.T) {
 
 	echoCtx := mf.prepareMockedRequest(nil)
 	err := mf.flamenco.GetJobType(echoCtx, "nonexistent-type")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseJSON(t, echoCtx, http.StatusNotFound, api.Error{
 		Code:    http.StatusNotFound,
 		Message: "no such job type known",
@@ -482,7 +482,7 @@ func TestSubmitJobCheckWithEtag(t *testing.T) {
 	{
 		echoCtx := mf.prepareMockedJSONRequest(submittedJob)
 		err := mf.flamenco.SubmitJobCheck(echoCtx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseAPIError(t, echoCtx,
 			http.StatusPreconditionFailed, "rejecting job because its settings are outdated, refresh the job type")
 	}
@@ -502,7 +502,7 @@ func TestSubmitJobCheckWithEtag(t *testing.T) {
 		submittedJob.TypeEtag = ptr("correct etag")
 		echoCtx := mf.prepareMockedJSONRequest(submittedJob)
 		err := mf.flamenco.SubmitJobCheck(echoCtx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 }
 
@@ -516,7 +516,7 @@ func TestGetJobTypeError(t *testing.T) {
 		Return(api.AvailableJobType{}, errors.New("didn't expect this"))
 	echoCtx := mf.prepareMockedRequest(nil)
 	err := mf.flamenco.GetJobType(echoCtx, "error")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseAPIError(t, echoCtx, http.StatusInternalServerError, "error getting job type")
 }
 
@@ -537,7 +537,7 @@ func TestSetJobStatus_nonexistentJob(t *testing.T) {
 	// Do the call.
 	echoCtx := mf.prepareMockedJSONRequest(statusUpdate)
 	err := mf.flamenco.SetJobStatus(echoCtx, jobID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assertResponseAPIError(t, echoCtx, http.StatusNotFound, "no such job")
 }
@@ -571,7 +571,7 @@ func TestSetJobStatus_happy(t *testing.T) {
 	// Do the call.
 	echoCtx := mf.prepareMockedJSONRequest(statusUpdate)
 	err := mf.flamenco.SetJobStatus(echoCtx, jobID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assertResponseNoContent(t, echoCtx)
 }
@@ -592,7 +592,7 @@ func TestSetJobPrio_nonexistentJob(t *testing.T) {
 	// Do the call.
 	echoCtx := mf.prepareMockedJSONRequest(prioUpdate)
 	err := mf.flamenco.SetJobStatus(echoCtx, jobID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assertResponseAPIError(t, echoCtx, http.StatusNotFound, "no such job")
 }
@@ -634,7 +634,7 @@ func TestSetJobPrio(t *testing.T) {
 	mf.broadcaster.EXPECT().BroadcastJobUpdate(expectUpdate)
 
 	err := mf.flamenco.SetJobPriority(echoCtx, jobID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assertResponseNoContent(t, echoCtx)
 }
@@ -668,7 +668,7 @@ func TestSetJobStatusFailedToRequeueing(t *testing.T) {
 
 	// Do the call.
 	err := mf.flamenco.SetJobStatus(echoCtx, jobID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assertResponseNoContent(t, echoCtx)
 }
@@ -714,7 +714,7 @@ func TestSetTaskStatusQueued(t *testing.T) {
 
 	// Do the call.
 	err := mf.flamenco.SetTaskStatus(echoCtx, taskID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assertResponseNoContent(t, echoCtx)
 }
@@ -748,7 +748,7 @@ func TestFetchTaskLogTail(t *testing.T) {
 
 	echoCtx := mf.prepareMockedRequest(nil)
 	err := mf.flamenco.FetchTaskLogTail(echoCtx, taskID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseNoContent(t, echoCtx)
 
 	// Check that a 204 No Content is also returned when the task log file on disk exists, but is empty.
@@ -758,7 +758,7 @@ func TestFetchTaskLogTail(t *testing.T) {
 
 	echoCtx = mf.prepareMockedRequest(nil)
 	err = mf.flamenco.FetchTaskLogTail(echoCtx, taskID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseNoContent(t, echoCtx)
 }
 
@@ -794,7 +794,7 @@ func TestFetchTaskLogInfo(t *testing.T) {
 
 	echoCtx := mf.prepareMockedRequest(nil)
 	err := mf.flamenco.FetchTaskLogInfo(echoCtx, taskID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseNoContent(t, echoCtx)
 
 	// Check that a 204 No Content is also returned when the task log file on disk exists, but is empty.
@@ -803,7 +803,7 @@ func TestFetchTaskLogInfo(t *testing.T) {
 
 	echoCtx = mf.prepareMockedRequest(nil)
 	err = mf.flamenco.FetchTaskLogInfo(echoCtx, taskID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseNoContent(t, echoCtx)
 
 	// Check that otherwise we actually get the info.
@@ -813,7 +813,7 @@ func TestFetchTaskLogInfo(t *testing.T) {
 
 	echoCtx = mf.prepareMockedRequest(nil)
 	err = mf.flamenco.FetchTaskLogInfo(echoCtx, taskID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assertResponseJSON(t, echoCtx, http.StatusOK, api.TaskLogInfo{
 		JobId:  jobID,
 		TaskId: taskID,
@@ -842,7 +842,7 @@ func TestFetchJobLastRenderedInfo(t *testing.T) {
 
 		echoCtx := mf.prepareMockedRequest(nil)
 		err := mf.flamenco.FetchJobLastRenderedInfo(echoCtx, jobID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		expectBody := api.JobLastRenderedImageInfo{
 			Base:     "/job-files/relative/path",
@@ -857,7 +857,7 @@ func TestFetchJobLastRenderedInfo(t *testing.T) {
 
 		echoCtx := mf.prepareMockedRequest(nil)
 		err := mf.flamenco.FetchJobLastRenderedInfo(echoCtx, jobID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseNoContent(t, echoCtx)
 	}
 }
@@ -876,7 +876,7 @@ func TestFetchGlobalLastRenderedInfo(t *testing.T) {
 
 		echoCtx := mf.prepareMockedRequest(nil)
 		err := mf.flamenco.FetchGlobalLastRenderedInfo(echoCtx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseNoContent(t, echoCtx)
 	}
 
@@ -893,7 +893,7 @@ func TestFetchGlobalLastRenderedInfo(t *testing.T) {
 
 		echoCtx := mf.prepareMockedRequest(nil)
 		err := mf.flamenco.FetchGlobalLastRenderedInfo(echoCtx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		expectBody := api.JobLastRenderedImageInfo{
 			Base:     "/job-files/relative/path",
@@ -927,7 +927,7 @@ func TestDeleteJob(t *testing.T) {
 
 	// Do the call.
 	err := mf.flamenco.DeleteJob(echoCtx, jobID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assertResponseNoContent(t, echoCtx)
 }

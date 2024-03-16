@@ -43,7 +43,7 @@ func TestGetVariables(t *testing.T) {
 
 		echoCtx := mf.prepareMockedRequest(nil)
 		err := mf.flamenco.GetVariables(echoCtx, api.ManagerVariableAudienceWorkers, "linux")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseJSON(t, echoCtx, http.StatusOK, api.ManagerVariables{
 			AdditionalProperties: map[string]api.ManagerVariable{
 				"blender": {Value: "/usr/local/blender", IsTwoway: false},
@@ -61,7 +61,7 @@ func TestGetVariables(t *testing.T) {
 
 		echoCtx := mf.prepareMockedRequest(nil)
 		err := mf.flamenco.GetVariables(echoCtx, api.ManagerVariableAudienceUsers, "troll")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assertResponseJSON(t, echoCtx, http.StatusOK, api.ManagerVariables{})
 	}
 }
@@ -208,9 +208,7 @@ func TestCheckSharedStoragePath(t *testing.T) {
 		echoCtx := mf.prepareMockedJSONRequest(
 			api.PathCheckInput{Path: path})
 		err := mf.flamenco.CheckSharedStoragePath(echoCtx)
-		if !assert.NoError(t, err) {
-			t.FailNow()
-		}
+		require.NoError(t, err)
 		return echoCtx
 	}
 
@@ -230,9 +228,8 @@ func TestCheckSharedStoragePath(t *testing.T) {
 		Cause:    "Directory checked successfully",
 	})
 	files, err := filepath.Glob(filepath.Join(mf.tempdir, "*"))
-	if assert.NoError(t, err) {
-		assert.Empty(t, files, "After a query, there should not be any leftovers")
-	}
+	require.NoError(t, err)
+	assert.Empty(t, files, "After a query, there should not be any leftovers")
 
 	// Test inaccessible path.
 	// For some reason, this doesn't work on Windows, and creating a file in
@@ -253,12 +250,9 @@ func TestCheckSharedStoragePath(t *testing.T) {
 
 		parentPath := filepath.Join(mf.tempdir, "deep")
 		testPath := filepath.Join(parentPath, "nesting")
-		if err := os.Mkdir(parentPath, fs.ModePerm); !assert.NoError(t, err) {
-			t.FailNow()
-		}
-		if err := os.Mkdir(testPath, fs.FileMode(0)); !assert.NoError(t, err) {
-			t.FailNow()
-		}
+		require.NoError(t, os.Mkdir(parentPath, fs.ModePerm))
+		require.NoError(t, os.Mkdir(testPath, fs.FileMode(0)))
+
 		echoCtx := doTest(testPath)
 		result := api.PathCheckResult{}
 		getResponseJSON(t, echoCtx, http.StatusOK, &result)
@@ -295,9 +289,7 @@ func TestSaveSetupAssistantConfig(t *testing.T) {
 		// Call the API.
 		echoCtx := mf.prepareMockedJSONRequest(body)
 		err := mf.flamenco.SaveSetupAssistantConfig(echoCtx)
-		if !assert.NoError(t, err) {
-			t.FailNow()
-		}
+		require.NoError(t, err)
 
 		assertResponseNoContent(t, echoCtx)
 		return savedConfig
@@ -378,9 +370,7 @@ func metaTestFixtures(t *testing.T) (mockedFlamenco, func()) {
 	mf := newMockedFlamenco(mockCtrl)
 
 	tempdir, err := os.MkdirTemp("", "test-temp-dir")
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 	mf.tempdir = tempdir
 
 	finish := func() {

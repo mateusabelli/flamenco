@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
@@ -52,7 +52,7 @@ func TestQueryJobs(t *testing.T) {
 		Return([]*persistence.Job{&activeJob, &deletionQueuedJob}, nil)
 
 	err := mf.flamenco.QueryJobs(echoCtx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	expectedJobs := api.JobsQueryResult{
 		Jobs: []api.Job{
@@ -160,7 +160,7 @@ func TestFetchTask(t *testing.T) {
 		Return([]*persistence.Worker{&taskWorker}, nil)
 
 	err := mf.flamenco.FetchTask(echoCtx, taskUUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assertResponseJSON(t, echoCtx, http.StatusOK, expectAPITask)
 }
