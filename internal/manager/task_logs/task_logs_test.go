@@ -217,9 +217,7 @@ func taskLogsTestFixtures(t *testing.T) (*Storage, func(), *TaskLogsMocks) {
 	mockCtrl := gomock.NewController(t)
 
 	temppath, err := ioutil.TempDir("", "testlogs")
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 
 	mocks := &TaskLogsMocks{
 		temppath:     temppath,
@@ -229,9 +227,8 @@ func taskLogsTestFixtures(t *testing.T) (*Storage, func(), *TaskLogsMocks) {
 	}
 
 	mockedNow, err := time.Parse(time.RFC3339, "2022-06-09T16:52:04+02:00")
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
+
 	mocks.clock.Set(mockedNow)
 
 	// This should be called at the end of each unit test.

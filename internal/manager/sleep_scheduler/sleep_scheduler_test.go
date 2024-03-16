@@ -267,9 +267,8 @@ func testFixtures(t *testing.T) (*SleepScheduler, TestMocks, context.Context) {
 
 	mockedClock := clock.NewMock()
 	mockedNow, err := time.Parse(time.RFC3339, "2022-06-07T11:14:47+02:00")
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
+
 	mockedClock.Set(mockedNow)
 	if !assert.Equal(t, time.Tuesday.String(), mockedNow.Weekday().String()) {
 		t.Fatal("tests assume 'now' is a Tuesday")

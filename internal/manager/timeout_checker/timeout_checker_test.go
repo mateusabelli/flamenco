@@ -11,6 +11,7 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"projects.blender.org/studio/flamenco/internal/manager/timeout_checker/mocks"
 )
@@ -50,9 +51,7 @@ func timeoutCheckerTestFixtures(t *testing.T) (*TimeoutChecker, func(), *Timeout
 	}
 
 	mockedNow, err := time.Parse(time.RFC3339, "2022-06-09T12:00:00+00:00")
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 	mocks.clock.Set(mockedNow)
 
 	ctx, cancel := context.WithCancel(context.Background())

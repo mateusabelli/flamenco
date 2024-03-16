@@ -762,17 +762,12 @@ func createTestAuthoredJob(jobID string, tasks ...job_compilers.AuthoredTask) jo
 
 func persistAuthoredJob(t *testing.T, ctx context.Context, db *DB, authoredJob job_compilers.AuthoredJob) *Job {
 	err := db.StoreAuthoredJob(ctx, authoredJob)
-	if err != nil {
-		t.Fatalf("error storing authored job in DB: %v", err)
-	}
+	require.NoError(t, err, "error storing authored job in DB")
 
 	dbJob, err := db.FetchJob(ctx, authoredJob.JobID)
-	if err != nil {
-		t.Fatalf("error fetching job from DB: %v", err)
-	}
-	if dbJob == nil {
-		t.Fatalf("nil job obtained from DB but with no error!")
-	}
+	require.NoError(t, err, "error fetching job from DB")
+	require.NotNil(t, dbJob, "nil job obtained from DB but with no error!")
+
 	return dbJob
 }
 
@@ -849,18 +844,11 @@ func createWorker(ctx context.Context, t *testing.T, db *DB, updaters ...func(*W
 	}
 
 	err := db.CreateWorker(ctx, &w)
-	if err != nil {
-		t.Fatalf("error creating worker: %v", err)
-	}
-	require.NoError(t, err)
+	require.NoError(t, err, "error creating worker")
 
 	fetchedWorker, err := db.FetchWorker(ctx, w.UUID)
-	if err != nil {
-		t.Fatalf("error fetching worker: %v", err)
-	}
-	if fetchedWorker == nil {
-		t.Fatal("fetched worker is nil, but no error returned")
-	}
+	require.NoError(t, err, "error fetching worker")
+	require.NotNil(t, fetchedWorker, "fetched worker is nil, but no error returned")
 
 	return fetchedWorker
 }

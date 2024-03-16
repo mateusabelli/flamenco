@@ -410,21 +410,15 @@ func constructTestJob(
 	ctx context.Context, t *testing.T, db *DB, authoredJob job_compilers.AuthoredJob,
 ) *Job {
 	err := db.StoreAuthoredJob(ctx, authoredJob)
-	if err != nil {
-		t.Fatalf("storing authored job: %v", err)
-	}
+	require.NoError(t, err, "storing authored job")
 
 	dbJob, err := db.FetchJob(ctx, authoredJob.JobID)
-	if err != nil {
-		t.Fatalf("fetching authored job: %v", err)
-	}
+	require.NoError(t, err, "fetching authored job")
 
 	// Queue the job.
 	dbJob.Status = api.JobStatusQueued
 	err = db.SaveJobStatus(ctx, dbJob)
-	if err != nil {
-		t.Fatalf("queueing job: %v", err)
-	}
+	require.NoError(t, err, "queueing job")
 
 	return dbJob
 }
@@ -457,16 +451,11 @@ func authorTestTask(name, taskType string, dependencies ...*job_compilers.Author
 func setTaskStatus(t *testing.T, db *DB, taskUUID string, status api.TaskStatus) {
 	ctx := context.Background()
 	task, err := db.FetchTask(ctx, taskUUID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	task.Status = status
 
-	err = db.SaveTask(ctx, task)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, db.SaveTask(ctx, task))
 }
 
 func linuxWorker(t *testing.T, db *DB, updaters ...func(worker *Worker)) Worker {
@@ -483,10 +472,7 @@ func linuxWorker(t *testing.T, db *DB, updaters ...func(worker *Worker)) Worker 
 	}
 
 	err := db.gormDB.Save(&w).Error
-	if err != nil {
-		t.Logf("cannot save Linux worker: %v", err)
-		t.FailNow()
-	}
+	require.NoError(t, err, "cannot save Linux worker")
 
 	return w
 }
@@ -501,10 +487,6 @@ func windowsWorker(t *testing.T, db *DB) Worker {
 	}
 
 	err := db.gormDB.Save(&w).Error
-	if err != nil {
-		t.Logf("cannot save Windows worker: %v", err)
-		t.FailNow()
-	}
-
+	require.NoError(t, err, "cannot save Windows worker")
 	return w
 }
