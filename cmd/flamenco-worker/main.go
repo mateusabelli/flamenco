@@ -24,6 +24,7 @@ import (
 	"projects.blender.org/studio/flamenco/internal/worker"
 	"projects.blender.org/studio/flamenco/internal/worker/cli_runner"
 	"projects.blender.org/studio/flamenco/pkg/sysinfo"
+	"projects.blender.org/studio/flamenco/pkg/website"
 )
 
 var (
@@ -296,8 +297,10 @@ func upstreamBufferOrDie(client worker.FlamencoClient, timeService clock.Clock) 
 
 func logFatalManagerDiscoveryError(err error, discoverTimeout time.Duration) {
 	if errors.Is(err, context.DeadlineExceeded) {
-		log.Fatal().Str("timeout", discoverTimeout.String()).Msg("could not discover Manager in time")
+		log.Fatal().Stringer("timeout", discoverTimeout).
+			Msgf("could not discover Manager in time, see %s", website.CannotFindManagerHelpURL)
 	} else {
-		log.Fatal().Err(err).Msg("auto-discovery error")
+		log.Fatal().Err(err).
+			Msgf("auto-discovery error, see %s", website.CannotFindManagerHelpURL)
 	}
 }
