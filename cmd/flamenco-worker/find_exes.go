@@ -38,7 +38,7 @@ func findBlender() {
 	result, err := find_blender.Find(ctx)
 	switch {
 	case errors.Is(err, fs.ErrNotExist), errors.Is(err, exec.ErrNotFound):
-		log.Warn().Msg("Blender could not be found. " + helpMsg)
+		log.Info().Msg("Blender could not be found. " + helpMsg)
 	case err != nil:
 		log.Warn().AnErr("cause", err).Msg("There was an error finding Blender on this system. " + helpMsg)
 	default:
