@@ -442,6 +442,32 @@ func TestGetJobTypeHappy(t *testing.T) {
 	assertResponseJSON(t, echoCtx, http.StatusOK, jt)
 }
 
+func TestGetJobTypeWithDescriptionHappy(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mf := newMockedFlamenco(mockCtrl)
+
+	// Get an existing job type with a description.
+	description := "This is a test job type"
+	jt := api.AvailableJobType{
+		Description: &description,
+		Etag:        "some etag",
+		Name:        "test-job-type",
+		Label:       "Test Job Type",
+		Settings: []api.AvailableJobSetting{
+			{Key: "setting", Type: api.AvailableJobSettingTypeString},
+		},
+	}
+	mf.jobCompiler.EXPECT().GetJobType("test-job-type").
+		Return(jt, nil)
+
+	echoCtx := mf.prepareMockedRequest(nil)
+	err := mf.flamenco.GetJobType(echoCtx, "test-job-type")
+	require.NoError(t, err)
+
+	assertResponseJSON(t, echoCtx, http.StatusOK, jt)
+}
+
 func TestGetJobTypeUnknown(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()

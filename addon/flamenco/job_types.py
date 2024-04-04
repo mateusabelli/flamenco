@@ -116,7 +116,8 @@ def _store_available_job_types(available_job_types: _AvailableJobTypes) -> None:
     else:
         # Convert from API response type to list suitable for an EnumProperty.
         _job_type_enum_items = [
-            (job_type.name, job_type.label, "") for job_type in job_types
+            (job_type.name, job_type.label, getattr(job_type, "description", ""))
+            for job_type in job_types
         ]
     _job_type_enum_items.insert(0, _JOB_TYPE_NOT_SELECTED_ENUM_ITEM)
 

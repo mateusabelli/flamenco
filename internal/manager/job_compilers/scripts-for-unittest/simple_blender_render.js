@@ -2,6 +2,7 @@
 
 const JOB_TYPE = {
     label: "Simple Blender Render",
+    description: "Render a sequence of frames, and create a preview video file",
     settings: [
         // Settings for artists to determine:
         { key: "frames", type: "string", required: true, eval: "f'{C.scene.frame_start}-{C.scene.frame_end}'",
