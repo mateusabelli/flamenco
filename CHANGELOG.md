@@ -12,6 +12,11 @@ bugs in actually-released versions.
 - Show the farm status in the web frontend. This shows whether the farm is actively working on a job, idle, asleep (all workers are sleeping and no work is queued), waiting (all workers are sleeping, and work is queued), or inoperable (no workers, or all workers are offline). This status is also broadcast as event via the event bus, and thus available via SocketIO and MQTT.
 - Fix an issue where the columns in the web interface wouldn't correctly resize when the shown information changed.
 - Add-on: replace the different 'refresh' buttons (for Manager info & storage location, job types, and worker tags) with a single button that just refreshes everything in one go. The information obtained from Flamenco Manager is now stored in a JSON file on disk, making it independent from Blender auto-saving the user preferences.
+- Security updates of some dependencies:
+    - [Incorrect forwarding of sensitive headers and cookies on HTTP redirect in net/http](https://pkg.go.dev/vuln/GO-2024-2600)
+    - [Memory exhaustion in multipart form parsing in net/textproto and net/http](https://pkg.go.dev/vuln/GO-2024-2599)
+    - [Verify panics on certificates with an unknown public key algorithm in crypto/x509](https://pkg.go.dev/vuln/GO-2024-2600)
+    - [HTTP/2 CONTINUATION flood in net/http](https://pkg.go.dev/vuln/GO-2024-2687)
 
 ## 3.4 - released 2024-01-12
 
