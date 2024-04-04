@@ -74,11 +74,3 @@ Flamenco v3 is in active development at Blender Studio. Join
 [the chat](https://blender.chat/channel/flamenco) to see what's happening!
 
 {{< /columns >}}
-
-
-
--------------------
-
-Looking for the old [Flamenco v2 documentation][F2]?
-
-[F2]: /v2/
