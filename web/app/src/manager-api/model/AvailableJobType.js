@@ -63,6 +63,9 @@ class AvailableJobType {
             if (data.hasOwnProperty('label')) {
                 obj['label'] = ApiClient.convertToType(data['label'], 'String');
             }
+            if (data.hasOwnProperty('description')) {
+                obj['description'] = ApiClient.convertToType(data['description'], 'String');
+            }
             if (data.hasOwnProperty('settings')) {
                 obj['settings'] = ApiClient.convertToType(data['settings'], [AvailableJobSetting]);
             }
@@ -85,6 +88,12 @@ AvailableJobType.prototype['name'] = undefined;
  * @member {String} label
  */
 AvailableJobType.prototype['label'] = undefined;
+
+/**
+ * The description/tooltip shown in the user interface.
+ * @member {String} description
+ */
+AvailableJobType.prototype['description'] = undefined;
 
 /**
  * @member {Array.<module:model/AvailableJobSetting>} settings

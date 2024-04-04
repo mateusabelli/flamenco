@@ -242,6 +242,9 @@ type AvailableJobSettingVisibility string
 
 // Job type supported by this Manager, and its parameters.
 type AvailableJobType struct {
+	// The description/tooltip shown in the user interface.
+	Description *string `json:"description,omitempty"`
+
 	// Hash of the job type. If the job settings or the label change, this etag will change. This is used on job submission to ensure that the submitted job settings are up to date.
 	Etag     string                `json:"etag"`
 	Label    string                `json:"label"`

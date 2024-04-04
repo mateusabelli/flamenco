@@ -91,6 +91,7 @@ class AvailableJobType(ModelNormal):
             'label': (str,),  # noqa: E501
             'settings': ([AvailableJobSetting],),  # noqa: E501
             'etag': (str,),  # noqa: E501
+            'description': (str,),  # noqa: E501
         }
 
     @cached_property
@@ -103,6 +104,7 @@ class AvailableJobType(ModelNormal):
         'label': 'label',  # noqa: E501
         'settings': 'settings',  # noqa: E501
         'etag': 'etag',  # noqa: E501
+        'description': 'description',  # noqa: E501
     }
 
     read_only_vars = {
@@ -152,6 +154,7 @@ class AvailableJobType(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
+            description (str): The description/tooltip shown in the user interface.. [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)
@@ -243,6 +246,7 @@ class AvailableJobType(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
+            description (str): The description/tooltip shown in the user interface.. [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)
