@@ -68,8 +68,8 @@ start afresh with the following steps:
 
 The macOS "Silicon" build does not ship with FFmpeg, because a trusted build for
 this architecture is not provided by the FFmpeg project. This is why Flamenco v3
-did not ship macOS/ARM64 builds. As of v3.3 this architecture will be included
-in the official Flamenco builds, but still without FFmpeg binary.
+did not ship macOS/ARM64 builds. As of v3.3 this architecture is included in the
+official Flamenco builds, but still without FFmpeg binary.
 
 You can install FFmpeg using [the ffmpeg Homebrew formula][brew] or any other
 method. Once installed Flamenco Worker should find it automatically. If not,
