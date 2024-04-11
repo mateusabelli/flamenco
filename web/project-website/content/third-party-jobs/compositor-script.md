@@ -3,9 +3,10 @@ title: Compositor Nodes
 weight: 10
 ---
 
-*Job type documented and maintained by: [Dylan Blanqué][author].*
+*Job type documented and maintained by: [Dylan Blanqué][author]. Please report any issues at [the script's Github project][github].*
 
 [author]: https://projects.blender.org/Dylan-Blanque
+[github]: https://github.com/dblanque/flamenco-compositor-script/issues
 
 {{< hint >}}
 
