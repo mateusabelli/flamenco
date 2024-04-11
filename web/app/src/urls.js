@@ -1,18 +1,15 @@
 let url = new URL(window.location.href);
-// Uncomment this when the web interface is running on a different port than the
-// API, for example when using the Vite devserver. Set the API port here.
-if (url.port == '8081') {
+
+// When the web interface is running on a different port than the API, for
+// example when using the Vite devserver, setting the Vite --mode flag to
+// "development" will force port 8080 for the API.
+if (import.meta.env.MODE == 'development') {
   url.port = '8080';
 }
-url.pathname = '/';
-const flamencoAPIURL = url.href;
-
-url.protocol = 'ws:';
-const websocketURL = url.href;
 
 const URLs = {
-  api: flamencoAPIURL,
-  ws: websocketURL,
+  api: `${url.protocol}//${url.hostname}:${url.port}/`,
+  ws: `${url.protocol.replace('http', 'ws')}//${url.hostname}:${url.port}/`,
 };
 
 // console.log("Flamenco API:", URLs.api);
