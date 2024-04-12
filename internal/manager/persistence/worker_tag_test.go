@@ -68,6 +68,31 @@ func TestFetchDeleteTags(t *testing.T) {
 	assert.False(t, has, "expecting HasWorkerTags to return false")
 }
 
+func TestDeleteTagsWithoutFK(t *testing.T) {
+	f := workerTestFixtures(t, 1*time.Second)
+	defer f.done()
+
+	// Single tag was created by fixture.
+	has, err := f.db.HasWorkerTags(f.ctx)
+	require.NoError(t, err)
+	assert.True(t, has, "expecting HasWorkerTags to return true")
+
+	secondTag := WorkerTag{
+		UUID:        uuid.New(),
+		Name:        "arbeiderskaartje",
+		Description: "Worker tag in Dutch",
+	}
+	require.NoError(t, f.db.CreateWorkerTag(f.ctx, &secondTag))
+
+	// Try deleting with foreign key constraints disabled.
+	require.NoError(t, f.db.pragmaForeignKeys(false))
+	err = f.db.DeleteWorkerTag(f.ctx, f.tag.UUID)
+	require.ErrorIs(t, err, ErrDeletingWithoutFK)
+
+	// Test the deletion did not happen.
+	assertTagsMatch(t, f, f.tag.UUID, secondTag.UUID)
+}
+
 func TestAssignUnassignWorkerTags(t *testing.T) {
 	f := workerTestFixtures(t, 1*time.Second)
 	defer f.done()
