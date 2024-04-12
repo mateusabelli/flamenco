@@ -3,6 +3,7 @@ package persistence
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import (
+	"slices"
 	"testing"
 	"time"
 
@@ -50,17 +51,7 @@ func TestFetchDeleteTags(t *testing.T) {
 	}
 
 	require.NoError(t, f.db.CreateWorkerTag(f.ctx, &secondTag))
-
-	allTags, err := f.db.FetchWorkerTags(f.ctx)
-	require.NoError(t, err)
-
-	require.Len(t, allTags, 2)
-	var allTagIDs [2]string
-	for idx := range allTags {
-		allTagIDs[idx] = allTags[idx].UUID
-	}
-	assert.Contains(t, allTagIDs, f.tag.UUID)
-	assert.Contains(t, allTagIDs, secondTag.UUID)
+	assertTagsMatch(t, f, f.tag.UUID, secondTag.UUID)
 
 	has, err = f.db.HasWorkerTags(f.ctx)
 	require.NoError(t, err)
@@ -68,11 +59,7 @@ func TestFetchDeleteTags(t *testing.T) {
 
 	// Test deleting the 2nd tag.
 	require.NoError(t, f.db.DeleteWorkerTag(f.ctx, secondTag.UUID))
-
-	allTags, err = f.db.FetchWorkerTags(f.ctx)
-	require.NoError(t, err)
-	require.Len(t, allTags, 1)
-	assert.Equal(t, f.tag.UUID, allTags[0].UUID)
+	assertTagsMatch(t, f, f.tag.UUID)
 
 	// Test deleting the 1st tag.
 	require.NoError(t, f.db.DeleteWorkerTag(f.ctx, f.tag.UUID))
@@ -162,4 +149,20 @@ func TestDeleteWorkerTagWithWorkersAssigned(t *testing.T) {
 	w, err := f.db.FetchWorker(f.ctx, f.worker.UUID)
 	require.NoError(t, err)
 	assert.Empty(t, w.Tags)
+}
+
+func assertTagsMatch(t *testing.T, f WorkerTestFixture, expectUUIDs ...string) {
+	allTags, err := f.db.FetchWorkerTags(f.ctx)
+	require.NoError(t, err)
+
+	require.Len(t, allTags, len(expectUUIDs))
+	var actualUUIDs []string
+	for idx := range allTags {
+		actualUUIDs = append(actualUUIDs, allTags[idx].UUID)
+	}
+
+	slices.Sort(expectUUIDs)
+	slices.Sort(actualUUIDs)
+
+	assert.Equal(t, actualUUIDs, expectUUIDs)
 }
