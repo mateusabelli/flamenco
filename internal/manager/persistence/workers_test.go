@@ -314,6 +314,30 @@ func TestDeleteWorker(t *testing.T) {
 	}
 }
 
+func TestDeleteWorkerNoForeignKeys(t *testing.T) {
+	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	defer cancel()
+
+	// Create a Worker to delete.
+	w1 := Worker{
+		UUID:   "fd97a35b-a5bd-44b4-ac2b-64c193ca877d",
+		Name:   "Worker 1",
+		Status: api.WorkerStatusAwake,
+	}
+	require.NoError(t, db.CreateWorker(ctx, &w1))
+
+	// Try deleting with foreign key constraints disabled.
+	require.NoError(t, db.pragmaForeignKeys(false))
+	require.ErrorIs(t, ErrDeletingWithoutFK, db.DeleteWorker(ctx, w1.UUID))
+
+	// The worker should still exist.
+	{
+		fetchedWorker, err := db.FetchWorker(ctx, w1.UUID)
+		require.NoError(t, err)
+		assert.Equal(t, w1.UUID, fetchedWorker.UUID)
+	}
+}
+
 func TestDeleteWorkerWithTagAssigned(t *testing.T) {
 	f := workerTestFixtures(t, 1*time.Second)
 	defer f.done()
