@@ -23,6 +23,7 @@ import (
 	"projects.blender.org/studio/flamenco/internal/appinfo"
 	"projects.blender.org/studio/flamenco/internal/worker"
 	"projects.blender.org/studio/flamenco/internal/worker/cli_runner"
+	"projects.blender.org/studio/flamenco/pkg/oomscore"
 	"projects.blender.org/studio/flamenco/pkg/sysinfo"
 	"projects.blender.org/studio/flamenco/pkg/website"
 )
@@ -114,6 +115,10 @@ func main() {
 	findBlender()
 	findFFmpeg()
 
+	// Create the CLI runner before the auto-discovery, to make any configuration
+	// problems clear before waiting for the Manager to respond.
+	cliRunner := createCLIRunner(&configWrangler)
+
 	// Give the auto-discovery some time to find a Manager.
 	discoverTimeout := 10 * time.Minute
 	discoverCtx, discoverCancel := context.WithTimeout(context.Background(), discoverTimeout)
@@ -149,7 +154,6 @@ func main() {
 		return
 	}
 
-	cliRunner := cli_runner.NewCLIRunner()
 	listener = worker.NewListener(client, buffer)
 	cmdRunner := worker.NewCommandExecutor(cliRunner, listener, timeService)
 	taskRunner := worker.NewTaskExecutor(cmdRunner, listener)
@@ -303,4 +307,28 @@ func logFatalManagerDiscoveryError(err error, discoverTimeout time.Duration) {
 		log.Fatal().Err(err).
 			Msgf("auto-discovery error, see %s", website.CannotFindManagerHelpURL)
 	}
+}
+
+func createCLIRunner(configWrangler *worker.FileConfigWrangler) *cli_runner.CLIRunner {
+	config, err := configWrangler.WorkerConfig()
+	if err != nil {
+		log.Fatal().Err(err).Msg("error loading worker configuration")
+	}
+
+	if config.LinuxOOMScoreAdjust == nil {
+		log.Debug().Msg("executables will be run without OOM score adjustment")
+		return cli_runner.NewCLIRunner()
+	}
+
+	if !oomscore.Available() {
+		log.Warn().
+			Msgf("config: oom_score_adjust configured, but that is only available on Linux, not this platform. See %s for more information.",
+				website.OOMScoreAdjURL)
+		return cli_runner.NewCLIRunner()
+	}
+
+	adjustment := *config.LinuxOOMScoreAdjust
+	log.Info().Int("oom_score_adjust", adjustment).Msg("executables will be run with OOM score adjustment")
+
+	return cli_runner.NewCLIRunnerWithOOMScoreAdjuster(adjustment)
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/alessio/shellescape"
 	"github.com/rs/zerolog"
+	"projects.blender.org/studio/flamenco/pkg/oomscore"
 )
 
 // The buffer size used to read stdout/stderr output from subprocesses, in
@@ -20,10 +21,18 @@ const StdoutBufferSize = 40 * 1024
 
 // CLIRunner is a wrapper around exec.CommandContext() to allow mocking.
 type CLIRunner struct {
+	oomScoreAdjust    int
+	useOOMScoreAdjust bool
 }
 
 func NewCLIRunner() *CLIRunner {
 	return &CLIRunner{}
+}
+func NewCLIRunnerWithOOMScoreAdjuster(oomScoreAdjust int) *CLIRunner {
+	return &CLIRunner{
+		oomScoreAdjust:    oomScoreAdjust,
+		useOOMScoreAdjust: true,
+	}
 }
 
 func (cli *CLIRunner) CommandContext(ctx context.Context, name string, arg ...string) *exec.Cmd {
@@ -55,7 +64,7 @@ func (cli *CLIRunner) RunWithTextOutput(
 		return err
 	}
 
-	if err := execCmd.Start(); err != nil {
+	if err := cli.startWithOOMAdjust(execCmd); err != nil {
 		logger.Error().Err(err).Msg("error starting CLI execution")
 		return err
 	}
@@ -170,4 +179,14 @@ func (cli *CLIRunner) logCmd(
 		return fmt.Errorf("could not send to Manager's task log: %w", err)
 	}
 	return nil
+}
+
+// startWithOOMAdjust runs the command with its OOM score adjusted.
+func (cli *CLIRunner) startWithOOMAdjust(execCmd *exec.Cmd) error {
+	if cli.useOOMScoreAdjust {
+		oomScoreRestore := oomscore.Adjust(cli.oomScoreAdjust)
+		defer oomScoreRestore()
+	}
+
+	return execCmd.Start()
 }

@@ -58,6 +58,18 @@ type WorkerConfig struct {
 
 	TaskTypes       []string `yaml:"task_types"`
 	RestartExitCode int      `yaml:"restart_exit_code"`
+
+	// LinuxOOMScoreAdjust controls the Linux out-of-memory killer. Is used when
+	// spawning a sub-process, to adjust the likelyness that that subprocess is
+	// killed rather than Flamenco Worker itself. That way Flamenco Worker can
+	// report the failure to the Manager.
+	//
+	// If the Worker itself would be OOM-killed, it would just be restarted and
+	// get the task it was already working on, causing an infinite OOM-loop.
+	//
+	// If this value is not specified in the configuration file, Flamenco Worker
+	// will not attempt to adjust its OOM score.
+	LinuxOOMScoreAdjust *int `yaml:"oom_score_adjust"`
 }
 
 type WorkerCredentials struct {

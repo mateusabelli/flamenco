@@ -13,6 +13,7 @@ bugs in actually-released versions.
 - Fix an issue where the columns in the web interface wouldn't correctly resize when the shown information changed.
 - Add-on: replace the different 'refresh' buttons (for Manager info & storage location, job types, and worker tags) with a single button that just refreshes everything in one go. The information obtained from Flamenco Manager is now stored in a JSON file on disk, making it independent from Blender auto-saving the user preferences.
 - Ensure the web frontend connects to the backend correctly when served over HTTPS ([#104296](https://projects.blender.org/studio/flamenco/pulls/104296)).
+- For Workers running on Linux, it is now possible to configure the "OOM score adjustment" for sub-processes. This makes it possible for the out-of-memory killer to target Blender, and not Flamenco Worker itself.
 - Security updates of some dependencies:
     - [Incorrect forwarding of sensitive headers and cookies on HTTP redirect in net/http](https://pkg.go.dev/vuln/GO-2024-2600)
     - [Memory exhaustion in multipart form parsing in net/textproto and net/http](https://pkg.go.dev/vuln/GO-2024-2599)

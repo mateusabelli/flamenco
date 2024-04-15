@@ -19,6 +19,9 @@ This is an example of such a configuration file:
 manager_url: http://flamenco.local:8080/
 task_types: [blender, ffmpeg, file-management, misc]
 restart_exit_code: 47
+
+# Optional advanced option, available on Linux only:
+oom_score_adjust: 500
 ```
 
 - `manager_url`: The URL of the Manager to connect to. If the setting is blank
@@ -31,10 +34,17 @@ restart_exit_code: 47
 - `restart_exit_code`: Having this set to a non-zero value will mark this Worker
   as 'restartable'. See [Shut Down & Restart Actions][restarting] for more
   information.
+- `oom_score_adjust`: an optional value between 0 and 1000, only available on
+  Linux. It configures the Out Of Memory behaviour of the Linux kernel. This is
+  the `oom_score_adj` value for all sub-processes started by the Worker. Set
+  this to a high value, so that when the machine runs out of memory when
+  rendering, it is Blender that gets killed, and not Flamenco Worker itself. For
+  more information, see [Linux Kernel: Per-Process Parameters][per-process-proc].
 
 [scripts]: {{< ref "usage/job-types" >}}
 [task-types]: {{< ref "usage/job-types" >}}#task-types
 [restarting]: {{< ref "usage/worker-actions" >}}#shut-down--restart-actions
+[per-process-proc]: https://docs.kernel.org/filesystems/proc.html#chapter-3-per-process-parameters
 
 ## Worker-Specific Files
 
