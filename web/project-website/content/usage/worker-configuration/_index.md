@@ -40,6 +40,7 @@ oom_score_adjust: 500
   this to a high value, so that when the machine runs out of memory when
   rendering, it is Blender that gets killed, and not Flamenco Worker itself. For
   more information, see [Linux Kernel: Per-Process Parameters][per-process-proc].
+  *This option was introduced in Flamenco v3.5.*
 
 [scripts]: {{< ref "usage/job-types" >}}
 [task-types]: {{< ref "usage/job-types" >}}#task-types
