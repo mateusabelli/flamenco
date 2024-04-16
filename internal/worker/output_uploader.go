@@ -52,8 +52,8 @@ func (ou *OutputUploader) OutputProduced(taskID, filename string) {
 }
 
 func (ou *OutputUploader) Run(ctx context.Context) {
-	log.Info().Msg("output uploader: running")
-	defer log.Info().Msg("output uploader: shutting down")
+	log.Debug().Msg("output uploader: running")
+	defer log.Debug().Msg("output uploader: shutting down")
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

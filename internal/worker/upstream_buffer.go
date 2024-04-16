@@ -133,7 +133,7 @@ func (ub *UpstreamBufferDB) Close() error {
 	ub.wg.Wait()
 
 	// Attempt one final flush, if it's fast enough:
-	log.Info().Msg("upstream buffer shutting down, doing one final flush")
+	log.Debug().Msg("upstream buffer shutting down, doing one final flush")
 	flushCtx, ctxCancel := context.WithTimeout(context.Background(), flushOnShutdownTimeout)
 	defer ctxCancel()
 	if err := ub.Flush(flushCtx); err != nil {
