@@ -4,7 +4,7 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
-## 3.5 - in development
+## 3.5 - released 2024-04-16
 
 - Add MQTT support. Flamenco Manager can now send internal events to an MQTT broker.
 - Simplify the preview video filename when a complex set of frames rendered ([#104285](https://projects.blender.org/studio/flamenco/issues/104285)). Instead of `video-1, 4, 10.mp4` it is now simply `video-1-10.mp4`.
