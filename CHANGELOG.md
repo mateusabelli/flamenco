@@ -4,6 +4,8 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
+## 3.6 - in development
+
 ## 3.5 - released 2024-04-16
 
 - Add MQTT support ([docs](https://flamenco.blender.org/usage/manager-configuration/mqtt/)). Flamenco Manager can now send internal events to an MQTT broker.
