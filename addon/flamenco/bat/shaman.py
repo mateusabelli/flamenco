@@ -286,16 +286,16 @@ class Transferrer(submodules.transfer.FileTransferer):  # type: ignore
                 return None
 
             self.log.debug("   %s: %s", file_spec.status, file_spec.path)
-            match file_spec.status.value:
-                case "unknown":
-                    to_upload.appendleft(file_spec)
-                case "uploading":
-                    to_upload.append(file_spec)
-                case _:
-                    msg = "Unknown status in response from Shaman: %r" % file_spec
-                    self.log.error(msg)
-                    self.error_set(msg)
-                    return None
+            status = file_spec.status.value
+            if status == "unknown":
+                to_upload.appendleft(file_spec)
+            elif status == "uploading":
+                to_upload.append(file_spec)
+            else:
+                msg = "Unknown status in response from Shaman: %r" % file_spec
+                self.log.error(msg)
+                self.error_set(msg)
+                return None
         return to_upload
 
     def _upload_files(
@@ -375,25 +375,26 @@ class Transferrer(submodules.transfer.FileTransferer):  # type: ignore
                         x_shaman_original_filename=file_spec.path,
                     )
             except ApiException as ex:
-                match ex.status:
-                    case 425:  # Too Early, i.e. defer uploading this file.
-                        self.log.info(
-                            "  %s: someone else is uploading this file, deferring",
-                            file_spec.path,
-                        )
-                        defer(file_spec)
-                        continue
-                    case 417:  # Expectation Failed; mismatch of checksum or file size.
-                        msg = "Error from Shaman uploading %s, code %d: %s" % (
-                            file_spec.path,
-                            ex.status,
-                            ex.body,
-                        )
-                    case _:  # Unknown error
-                        msg = "API exception\nHeaders: %s\nBody: %s\n" % (
-                            ex.headers,
-                            ex.body,
-                        )
+                if ex.status == 425:
+                    # Too Early, i.e. defer uploading this file.
+                    self.log.info(
+                        "  %s: someone else is uploading this file, deferring",
+                        file_spec.path,
+                    )
+                    defer(file_spec)
+                    continue
+                elif ex.status == 417:
+                    # Expectation Failed; mismatch of checksum or file size.
+                    msg = "Error from Shaman uploading %s, code %d: %s" % (
+                        file_spec.path,
+                        ex.status,
+                        ex.body,
+                    )
+                else:  # Unknown error
+                    msg = "API exception\nHeaders: %s\nBody: %s\n" % (
+                        ex.headers,
+                        ex.body,
+                    )
 
                 self.log.error(msg)
                 self.error_set(msg)
@@ -453,19 +454,15 @@ class Transferrer(submodules.transfer.FileTransferer):  # type: ignore
                 checkoutRequest
             )
         except ApiException as ex:
-            match ex.status:
-                case 424:  # Files were missing
-                    msg = "We did not upload some files, checkout aborted"
-                case 409:  # Checkout already exists
-                    msg = (
-                        "There is already an existing checkout at %s"
-                        % self.checkout_path
-                    )
-                case _:  # Unknown error
-                    msg = "API exception\nHeaders: %s\nBody: %s\n" % (
-                        ex.headers,
-                        ex.body,
-                    )
+            if ex.status == 424:  # Files were missing
+                msg = "We did not upload some files, checkout aborted"
+            elif ex.status == 409:  # Checkout already exists
+                msg = "There is already an existing checkout at %s" % self.checkout_path
+            else:  # Unknown error
+                msg = "API exception\nHeaders: %s\nBody: %s\n" % (
+                    ex.headers,
+                    ex.body,
+                )
             self.log.error(msg)
             self.error_set(msg)
             return None

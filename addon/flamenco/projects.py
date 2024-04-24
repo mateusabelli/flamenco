@@ -2,7 +2,7 @@
 # <pep8 compliant>
 
 from pathlib import Path
-from typing import Callable, TypeAlias
+from typing import Callable
 import dataclasses
 
 from .bat.submodules import bpathlib
@@ -64,7 +64,7 @@ def _search_path_marker(blendfile: Path, marker_path: str) -> Path:
     return blendfile_dir
 
 
-Finder: TypeAlias = Callable[[Path], Path]
+Finder = Callable[[Path], Path]
 
 
 @dataclasses.dataclass

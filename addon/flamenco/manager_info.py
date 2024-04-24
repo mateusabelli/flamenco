@@ -5,7 +5,7 @@ import dataclasses
 import json
 import platform
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from urllib3.exceptions import HTTPError, MaxRetryError
 
@@ -133,7 +133,7 @@ def _to_json(info: ManagerInfo) -> str:
     return json.dumps(info, indent="  ", cls=Encoder)
 
 
-def _from_json(contents: str | bytes) -> ManagerInfo:
+def _from_json(contents: Union[str, bytes]) -> ManagerInfo:
     # Do a late import, so that the API is only imported when actually used.
     from flamenco.manager.configuration import Configuration
     from flamenco.manager.model_utils import validate_and_convert_types
