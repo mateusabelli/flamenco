@@ -134,9 +134,9 @@ Storage Services][cloud-storage].
 
 ### My Worker cannot find my Manager, what do I do?
 
-First check the Manager output on the terminal, to see if it shows any messages
-about "auto-discovery" or "UPnP/SSDP". Most of the time it's actually Spotify
-getting in the way, so make sure to close that before you start the Manager.
+First, ensure that the Manager port is open in your firewall. On Windows, you should be prompted by the system during the initial setup. If you're using a third-party antivirus, you may need to create a custom rule manually.
+
+If you're still experiencing issues, check the Manager output on the terminal for any messages related to "auto-discovery" or "UPnP/SSDP". Often, Spotify can interfere, so try closing it before starting the Manager.
 
 If that doesn't help, you'll have to tell the Worker where it can find the
 Manager. This can be done on the commandline, by running it like
