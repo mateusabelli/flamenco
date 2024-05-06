@@ -134,17 +134,14 @@ Storage Services][cloud-storage].
 
 ### My Worker cannot find my Manager, what do I do?
 
-First, ensure that the Manager port is open in your firewall. On Windows, you should be prompted by the system during the initial setup. If you're using a third-party antivirus, you may need to create a custom rule manually.
+There can be a few causes for this, each with their own solution.
 
-If you're still experiencing issues, check the Manager output on the terminal for any messages related to "auto-discovery" or "UPnP/SSDP". Often, Spotify can interfere, so try closing it before starting the Manager.
-
-If that doesn't help, you'll have to tell the Worker where it can find the
-Manager. This can be done on the commandline, by running it like
-`flamenco-worker -manager http://192.168.0.1:8080/` (adjust the address to your
-situation) or more permanently by [editing the worker configuration
-file][workercfg].
+1. **Check the Manager output on the terminal** for any messages related to "auto-discovery" or "UPnP/SSDP". Older versions of Spotify can interfere, so make sure to close that before you start the Manager.
+2. Ensure that the **Manager port is open** in your firewall. On Windows, the system will prompt you for this during the initial setup. If you're using a third-party firewall (sometimes presenting itself as anti-virus software), you may need to create a custom rule manually. The default port is `8080`, which can be changed in [the Manager configuration file][managercfg].
+3. If that doesn't help, you'll have to **tell the Worker where it can find the Manager**. This can be done on the commandline, by running it like `flamenco-worker -manager http://192.168.0.1:8080/` (adjust the address to your situation) or more permanently by editing [the worker configuration file][workercfg].
 
 [workercfg]: {{< ref "usage/worker-configuration" >}}
+[managercfg]: {{< ref "usage/manager-configuration" >}}
 
 ### My Worker cannot find Blender, what do I do?
 
