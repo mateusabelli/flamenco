@@ -304,8 +304,8 @@ def _create_property(job_type: _AvailableJobType, setting: _AvailableJobSetting)
     if not setting.get("editable", True):
         prop_kwargs["get"] = _create_prop_getter(job_type, setting)
 
-    prop_name = _job_setting_key_to_label(setting.key)
-    prop = prop_type(name=prop_name, **prop_kwargs)
+    prop_label = _job_setting_label(setting)
+    prop = prop_type(name=prop_label, **prop_kwargs)
     return prop
 
 
@@ -316,10 +316,10 @@ def _create_autoeval_property(
 
     assert isinstance(setting, AvailableJobSetting)
 
-    setting_name = _job_setting_key_to_label(setting.key)
+    setting_label = _job_setting_label(setting)
     prop_descr = (
         "Automatically determine the value for %r when the job gets submitted"
-        % setting_name
+        % setting_label
     )
 
     prop = bpy.props.BoolProperty(
@@ -379,13 +379,13 @@ def _job_type_to_class_name(job_type_name: str) -> str:
     return job_type_name.title().replace("-", "")
 
 
-def _job_setting_key_to_label(setting_key: str) -> str:
-    """Change 'some_setting_key' to 'Some Setting Key'.
+def _job_setting_label(setting: _AvailableJobSetting) -> str:
+    """Return a suitable label for this job setting."""
 
-    >>> _job_setting_key_to_label('some_setting_key')
-    'Some Setting Key'
-    """
-    return setting_key.title().replace("_", " ")
+    label = setting.get("label", default="")
+    if label:
+        return label
+    return setting.key.title().replace("_", " ")
 
 
 def _set_if_available(
