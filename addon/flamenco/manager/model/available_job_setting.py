@@ -99,6 +99,7 @@ class AvailableJobSetting(ModelNormal):
             'choices': ([str],),  # noqa: E501
             'propargs': ({str: (bool, date, datetime, dict, float, int, list, str, none_type)},),  # noqa: E501
             'description': (bool, date, datetime, dict, float, int, list, str, none_type,),  # noqa: E501
+            'label': (bool, date, datetime, dict, float, int, list, str, none_type,),  # noqa: E501
             'default': (bool, date, datetime, dict, float, int, list, str, none_type,),  # noqa: E501
             'eval': (str,),  # noqa: E501
             'eval_info': (AvailableJobSettingEvalInfo,),  # noqa: E501
@@ -119,6 +120,7 @@ class AvailableJobSetting(ModelNormal):
         'choices': 'choices',  # noqa: E501
         'propargs': 'propargs',  # noqa: E501
         'description': 'description',  # noqa: E501
+        'label': 'label',  # noqa: E501
         'default': 'default',  # noqa: E501
         'eval': 'eval',  # noqa: E501
         'eval_info': 'evalInfo',  # noqa: E501
@@ -176,6 +178,7 @@ class AvailableJobSetting(ModelNormal):
             choices ([str]): When given, limit the valid values to these choices. Only usable with string type.. [optional]  # noqa: E501
             propargs ({str: (bool, date, datetime, dict, float, int, list, str, none_type)}): Any extra arguments to the bpy.props.SomeProperty() call used to create this property.. [optional]  # noqa: E501
             description (bool, date, datetime, dict, float, int, list, str, none_type): The description/tooltip shown in the user interface.. [optional]  # noqa: E501
+            label (bool, date, datetime, dict, float, int, list, str, none_type): Label for displaying this setting. If not specified, the key is used to generate a reasonable label.. [optional]  # noqa: E501
             default (bool, date, datetime, dict, float, int, list, str, none_type): The default value shown to the user when determining this setting.. [optional]  # noqa: E501
             eval (str): Python expression to be evaluated in order to determine the default value for this setting.. [optional]  # noqa: E501
             eval_info (AvailableJobSettingEvalInfo): [optional]  # noqa: E501
@@ -273,6 +276,7 @@ class AvailableJobSetting(ModelNormal):
             choices ([str]): When given, limit the valid values to these choices. Only usable with string type.. [optional]  # noqa: E501
             propargs ({str: (bool, date, datetime, dict, float, int, list, str, none_type)}): Any extra arguments to the bpy.props.SomeProperty() call used to create this property.. [optional]  # noqa: E501
             description (bool, date, datetime, dict, float, int, list, str, none_type): The description/tooltip shown in the user interface.. [optional]  # noqa: E501
+            label (bool, date, datetime, dict, float, int, list, str, none_type): Label for displaying this setting. If not specified, the key is used to generate a reasonable label.. [optional]  # noqa: E501
             default (bool, date, datetime, dict, float, int, list, str, none_type): The default value shown to the user when determining this setting.. [optional]  # noqa: E501
             eval (str): Python expression to be evaluated in order to determine the default value for this setting.. [optional]  # noqa: E501
             eval_info (AvailableJobSettingEvalInfo): [optional]  # noqa: E501

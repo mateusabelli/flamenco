@@ -74,6 +74,9 @@ class AvailableJobSetting {
             if (data.hasOwnProperty('description')) {
                 obj['description'] = ApiClient.convertToType(data['description'], Object);
             }
+            if (data.hasOwnProperty('label')) {
+                obj['label'] = ApiClient.convertToType(data['label'], Object);
+            }
             if (data.hasOwnProperty('default')) {
                 obj['default'] = ApiClient.convertToType(data['default'], Object);
             }
@@ -132,6 +135,12 @@ AvailableJobSetting.prototype['propargs'] = undefined;
  * @member {Object} description
  */
 AvailableJobSetting.prototype['description'] = undefined;
+
+/**
+ * Label for displaying this setting. If not specified, the key is used to generate a reasonable label.
+ * @member {Object} label
+ */
+AvailableJobSetting.prototype['label'] = undefined;
 
 /**
  * The default value shown to the user when determining this setting.

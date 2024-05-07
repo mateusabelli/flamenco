@@ -215,6 +215,9 @@ type AvailableJobSetting struct {
 	// Identifier for the setting, must be unique within the job type.
 	Key string `json:"key"`
 
+	// Label for displaying this setting. If not specified, the key is used to generate a reasonable label.
+	Label *interface{} `json:"label,omitempty"`
+
 	// Any extra arguments to the bpy.props.SomeProperty() call used to create this property.
 	Propargs *map[string]interface{} `json:"propargs,omitempty"`
 
