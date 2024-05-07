@@ -1751,6 +1751,8 @@ components:
           type: object
         "description":
           description: The description/tooltip shown in the user interface.
+        "label":
+          description: Label for displaying this setting. If not specified, the key is used to generate a reasonable label.
         "default":
           description: The default value shown to the user when determining this setting.
         "eval":
