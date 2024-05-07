@@ -5,9 +5,27 @@ package job_compilers
 import (
 	"testing"
 
+	"github.com/dop251/goja"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestShellSplitHappy(t *testing.T) {
+	expect := []string{"--python-expr", "print(1 + 1)"}
+	actual := jsShellSplit(nil, "--python-expr 'print(1 + 1)'")
+	assert.Equal(t, expect, actual)
+}
+
+func TestShellSplitFailure(t *testing.T) {
+	vm := goja.New()
+
+	testFunc := func() {
+		jsShellSplit(vm, "--python-expr invalid_quoting(1 + 1)'")
+	}
+	// Testing that a goja.Value is used for the panic is a bit tricky, so just
+	// test that the function panics.
+	assert.Panics(t, testFunc)
+}
 
 func TestFrameChunkerHappyBlenderStyle(t *testing.T) {
 	chunks, err := jsFrameChunker("1..10,20..25,40,3..8", 4)

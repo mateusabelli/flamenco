@@ -140,6 +140,9 @@ func newGojaVM(registry *require.Registry) *goja.Runtime {
 	mustSet("alert", jsAlert)
 	mustSet("frameChunker", jsFrameChunker)
 	mustSet("formatTimestampLocal", jsFormatTimestampLocal)
+	mustSet("shellSplit", func(cliArgs string) []string {
+		return jsShellSplit(vm, cliArgs)
+	})
 
 	// Pre-import some useful modules.
 	registry.Enable(vm)

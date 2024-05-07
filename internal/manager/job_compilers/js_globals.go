@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/dop251/goja"
+	"github.com/google/shlex"
 	"github.com/rs/zerolog/log"
 )
 
@@ -31,6 +32,19 @@ func jsAlert(call goja.FunctionCall) goja.Value {
 // jsFormatTimestampLocal returns the timestamp formatted as local time in a way that's compatible with filenames.
 func jsFormatTimestampLocal(timestamp time.Time) string {
 	return timestamp.Local().Format("2006-01-02_150405")
+}
+
+// jsShellSplit splits a string into its parts, using CLI/shell semantics.
+func jsShellSplit(vm *goja.Runtime, someCLIArgs string) []string {
+	split, err := shlex.Split(someCLIArgs)
+
+	if err != nil {
+		// Generate a JS exception by panicing with a Goja Value.
+		exception := vm.ToValue(err)
+		panic(exception)
+	}
+
+	return split
 }
 
 type ErrInvalidRange struct {
