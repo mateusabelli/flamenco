@@ -108,6 +108,30 @@ func TestSaveJobStorageInfo(t *testing.T) {
 	assert.Equal(t, startTime, updatedJob.UpdatedAt, "SaveJobStorageInfo should not touch UpdatedAt")
 }
 
+func TestSaveJobPriority(t *testing.T) {
+	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	defer cancel()
+
+	// Create test job.
+	authoredJob := createTestAuthoredJobWithTasks()
+	err := db.StoreAuthoredJob(ctx, authoredJob)
+	require.NoError(t, err)
+
+	// Set a new priority.
+	newPriority := 47
+	dbJob, err := db.FetchJob(ctx, authoredJob.JobID)
+	require.NoError(t, err)
+	require.NotEqual(t, newPriority, dbJob.Priority,
+		"Initial priority should not be the same as what this test changes it to")
+	dbJob.Priority = newPriority
+	require.NoError(t, db.SaveJobPriority(ctx, dbJob))
+
+	// Check the result.
+	dbJob, err = db.FetchJob(ctx, authoredJob.JobID)
+	require.NoError(t, err)
+	assert.EqualValues(t, newPriority, dbJob.Priority)
+}
+
 func TestDeleteJob(t *testing.T) {
 	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
 	defer cancel()
@@ -491,6 +515,79 @@ func TestFetchTasksOfWorkerInStatus(t *testing.T) {
 	tasks, err = db.FetchTasksOfWorkerInStatus(ctx, w, api.TaskStatusCanceled)
 	require.NoError(t, err)
 	assert.Empty(t, tasks, "worker should have no task in status %q", w)
+}
+
+func TestFetchTasksOfWorkerInStatusOfJob(t *testing.T) {
+	ctx, close, db, dbJob, authoredJob := jobTasksTestFixtures(t)
+	defer close()
+
+	// Create multiple Workers, to test the function doesn't return tasks from
+	// other Workers.
+	worker := createWorker(ctx, t, db, func(worker *Worker) {
+		worker.UUID = "43300628-5f3b-4724-ab30-9821af8bda86"
+	})
+	otherWorker := createWorker(ctx, t, db, func(worker *Worker) {
+		worker.UUID = "2327350f-75ec-4b0e-bd28-31a7b045c85c"
+	})
+
+	// Create another job, to make sure the function under test doesn't return
+	// tasks from other jobs.
+	otherJob := duplicateJobAndTasks(authoredJob)
+	otherJob.Name = "The other job"
+	persistAuthoredJob(t, ctx, db, otherJob)
+
+	// Assign a task from each job to each Worker.
+	// Also double-check the test precondition that all tasks have the same status.
+	{ // Job / Worker.
+		task1, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
+		require.NoError(t, err)
+		require.NoError(t, db.TaskAssignToWorker(ctx, task1, worker))
+		require.Equal(t, task1.Status, api.TaskStatusQueued)
+
+		task2, err := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
+		require.NoError(t, err)
+		require.NoError(t, db.TaskAssignToWorker(ctx, task2, worker))
+		require.Equal(t, task2.Status, api.TaskStatusQueued)
+	}
+	{ // Job / Other Worker.
+		task, err := db.FetchTask(ctx, authoredJob.Tasks[2].UUID)
+		require.NoError(t, err)
+		require.NoError(t, db.TaskAssignToWorker(ctx, task, otherWorker))
+		require.Equal(t, task.Status, api.TaskStatusQueued)
+	}
+	{ // Other Job / Worker.
+		task, err := db.FetchTask(ctx, otherJob.Tasks[1].UUID)
+		require.NoError(t, err)
+		require.NoError(t, db.TaskAssignToWorker(ctx, task, worker))
+		require.Equal(t, task.Status, api.TaskStatusQueued)
+	}
+	{ // Other Job / Other Worker.
+		task, err := db.FetchTask(ctx, otherJob.Tasks[2].UUID)
+		require.NoError(t, err)
+		require.NoError(t, db.TaskAssignToWorker(ctx, task, otherWorker))
+		require.Equal(t, task.Status, api.TaskStatusQueued)
+	}
+
+	{ // Test active tasks, should be none.
+		tasks, err := db.FetchTasksOfWorkerInStatusOfJob(ctx, worker, api.TaskStatusActive, dbJob)
+		require.NoError(t, err)
+		require.Len(t, tasks, 0)
+	}
+	{ // Test queued tasks, should be two.
+		tasks, err := db.FetchTasksOfWorkerInStatusOfJob(ctx, worker, api.TaskStatusQueued, dbJob)
+		require.NoError(t, err)
+		require.Len(t, tasks, 2)
+		assert.Equal(t, authoredJob.Tasks[0].UUID, tasks[0].UUID)
+		assert.Equal(t, authoredJob.Tasks[1].UUID, tasks[1].UUID)
+	}
+	{ // Test queued tasks for worker without tasks, should be none.
+		worker := createWorker(ctx, t, db, func(worker *Worker) {
+			worker.UUID = "6534a1d4-f58e-4f2c-8925-4b2cd6caac22"
+		})
+		tasks, err := db.FetchTasksOfWorkerInStatusOfJob(ctx, worker, api.TaskStatusQueued, dbJob)
+		require.NoError(t, err)
+		require.Len(t, tasks, 0)
+	}
 }
 
 func TestTaskTouchedByWorker(t *testing.T) {
