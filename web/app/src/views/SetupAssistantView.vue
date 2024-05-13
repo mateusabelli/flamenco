@@ -101,7 +101,7 @@
         v-show="currentSetupStep == 3"
         @next-clicked="nextStepAfterCheckBlenderExePath"
         @back-clicked="prevStep"
-        :is-next-clickable="selectedBlender != null || customBlenderExe != (null || '')"
+        :is-next-clickable="selectedBlender != null || customBlenderExe != ''"
         title="Blender">
         <div v-if="isBlenderExeFinding" class="is-in-progress">Looking for Blender installs...</div>
 
