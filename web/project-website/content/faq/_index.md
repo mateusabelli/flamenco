@@ -137,6 +137,9 @@ Storage Services][cloud-storage].
 There can be a few causes for this, each with their own solution.
 
 1. **Check the Manager output on the terminal** for any messages related to "auto-discovery" or "UPnP/SSDP". Older versions of Spotify can interfere, so make sure to close that before you start the Manager.
+
+![Screenshot of Flamenco Manager's log output on the terminal](ssdp-port-already-in-use.webp)
+
 2. Ensure that the **Manager port is open** in your firewall. On Windows, the system will prompt you for this during the initial setup. If you're using a third-party firewall (sometimes presenting itself as anti-virus software), you may need to create a custom rule manually. The default port is `8080`, which can be changed in [the Manager configuration file][managercfg].
 3. If that doesn't help, you'll have to **tell the Worker where it can find the Manager**. This can be done on the commandline, by running it like `flamenco-worker -manager http://192.168.0.1:8080/` (adjust the address to your situation) or more permanently by editing [the worker configuration file][workercfg].
 
