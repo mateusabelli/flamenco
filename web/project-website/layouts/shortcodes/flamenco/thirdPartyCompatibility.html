@@ -1,0 +1,39 @@
+{{/*
+This is an adjusted copy of themes/hugo-geekdoc/layouts/shortcodes/hint.html
+
+- Add a CSS class.
+- Different the default title.
+*/}}
+{{ $type := default "note" (.Get "type") }}
+{{ $icon := .Get "icon" }}
+{{ $title := default "Compatibility Information" (.Get "title") }}
+
+{{ $blender := default "unknown" (.Get "blender" ) }}
+{{ $flamenco := default "unknown" (.Get "flamenco" ) }}
+
+<blockquote class="gdoc-hint {{ $type | lower }} compatibility-box">
+  <div class="gdoc-hint__title flex align-center">
+    {{- with $icon -}}
+    <svg class="gdoc-icon {{ . }}">
+      <use xlink:href="#{{ . }}"></use>
+    </svg>
+    <span>{{ $title }}</span>
+    {{- else -}}
+    <i class="fa {{ $type | lower }}" title="{{ $title }}"></i>
+    {{- end -}}
+  </div>
+  <div class="gdoc-hint__text">
+    <div class="infobox">
+      <dl class="versions">
+        <dt>Blender</dt>
+        <dd>{{ $blender }}</dd>
+        <dt>Flamenco</dt>
+        <dd>{{ $flamenco }}</dd>
+      </dl>
+      <p class="disclaimer">This is a community-made job type. It may not reflect the same design as the
+        rest of Flamenco, as it was made for a specific person to solve a specific need.</p>
+    </div>
+
+    {{ .Inner | $.Page.RenderString }}
+  </div>
+</blockquote>

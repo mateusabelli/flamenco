@@ -208,3 +208,38 @@ article p {
 table tbody td {
   vertical-align: top;
 }
+
+/* 3rd party job types compatibility notes. */
+.compatibility-box .infobox {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+}
+.compatibility-box p.disclaimer {
+  font-style: italic;
+  flex-basis: 70%;
+  text-align: justify;
+}
+.compatibility-box .infobox dl, .compatibility-box .infobox p.disclaimer {
+  margin: 0.6ex;
+}
+.compatibility-box dl {
+  flex-basis: 20%;
+  display: flex;
+  flex-flow: row wrap;
+}
+.compatibility-box dl dt {
+  margin: 0;
+  flex-basis: 66%;
+  padding: 0.2em 0.4em;
+  text-align: right;
+}
+.compatibility-box dl dt::after {
+  content: ":";
+}
+.compatibility-box dl dd {
+  flex-basis: 33%;
+  flex-grow: 1;
+  margin: 0;
+  padding: 0.2em 0.4em;
+}

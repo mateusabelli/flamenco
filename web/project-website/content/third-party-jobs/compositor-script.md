@@ -3,18 +3,13 @@ title: Compositor Nodes
 weight: 10
 ---
 
-*Job type documented and maintained by: [Dylan Blanqué][author]. Please report any issues at [the script's Github project][github].*
+{{< flamenco/thirdPartyCompatibility blender="v4.0" flamenco="v3.5" >}}
+Documented and maintained by [Dylan Blanqué][author].
+Please report any issues at [the script's Github][github].
 
 [author]: https://projects.blender.org/Dylan-Blanque
 [github]: https://github.com/dblanque/flamenco-compositor-script/issues
-
-{{< hint >}}
-
-This is a community-made job type. It may not reflect the same design as the
-rest of Flamenco, as it was made for a specific person to solve a specific need.
-
-{{< /hint >}}
-
+{{< /flamenco/thirdPartyCompatibility >}}
 
 This job type updates Blender's compositor nodes to work with Flamenco.
 
