@@ -4,7 +4,7 @@ weight: 20
 
 resources:
   - name: screenshot
-    src: cycles-optix-gpu.webp
+    src: cycles-optix-gpu.png
     title: Screenshot of the Flamenco job submission panel in Blender
 ---
 
