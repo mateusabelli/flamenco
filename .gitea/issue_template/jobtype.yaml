@@ -1,0 +1,43 @@
+name: Custom Job Type
+about: Submit your custom job type
+labels:
+  - "Type/Job Type"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Thanks for contributing!
+
+        With this form you can submit your custom job type for listing on https://flamenco.blender.org/third-party-jobs/
+  - type: input
+    id: blender_version
+    attributes:
+      label: "Blender Version(s)"
+      description: "Which version(s) of Blender are known to work with this job type?"
+      required: true
+  - type: input
+    id: flamenco_version
+    attributes:
+      label: "Flamenco Version(s)"
+      description: "Which version(s) of Flamenco are known to work with this job type?"
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: "Please describe what this job type does, what the target audience is, how to use it, etc. Feel free to include images as well."
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        Please understand that both Flamenco and Blender are under constant
+        development. By their very nature, this means that every once in a while
+        your job type will need some attention and updating.
+  - type: checkboxes
+    id: understanding
+    attributes:
+      label: "Will you help to keep things up to date?"
+      required: true
+      options:
+        - label: "Yes, I'll check with new versions of Blender and/or Flamenco, and send in a report when updating is necessary"
+        - label: "Nope, someone else will have to do this"
