@@ -30,4 +30,4 @@ directory if necessary. Then restart Flamenco Manager and in Blender press the
 [jobtypes]: {{< ref "usage/job-types" >}}
 [built-in-scripts]: https://projects.blender.org/studio/flamenco/src/branch/main/internal/manager/job_compilers/scripts
 [flamencochannel]: https://blender.chat/channel/flamenco
-[tracker]: https://projects.blender.org/studio/flamenco/issues
+[tracker]: https://projects.blender.org/studio/flamenco/issues/new?template=.gitea%2fissue_template%2fjobtype.yaml
