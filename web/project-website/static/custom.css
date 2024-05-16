@@ -224,13 +224,13 @@ table tbody td {
   margin: 0.6ex;
 }
 .compatibility-box dl {
-  flex-basis: 20%;
+  flex-basis: 30%;
   display: flex;
   flex-flow: row wrap;
 }
 .compatibility-box dl dt {
   margin: 0;
-  flex-basis: 66%;
+  flex-basis: 55%;
   padding: 0.2em 0.4em;
   text-align: right;
 }
@@ -238,7 +238,7 @@ table tbody td {
   content: ":";
 }
 .compatibility-box dl dd {
-  flex-basis: 33%;
+  flex-basis: 45%;
   flex-grow: 1;
   margin: 0;
   padding: 0.2em 0.4em;
