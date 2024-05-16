@@ -39,9 +39,7 @@ JS_API_PKG_NAME=manager
 # ANY ABSOLUTE PATH.
 WEB_STATIC=web/static
 
-# The Hugo package + its version. When installing locally, use
-# go install -v -tags extended github.com/gohugoio/hugo@v0.121.2
-# The 'extended' version is necessary for WebP encoding support.
+# The Hugo package + its version.
 HUGO_PKG := github.com/gohugoio/hugo@v0.121.2
 
 # Prevent any dependency that requires a C compiler, i.e. only work with pure-Go libraries.
@@ -257,7 +255,7 @@ clean-webapp-static:
 	touch ${WEB_STATIC}/emptyfile
 
 devserver-website:
-	go run -tags extended ${HUGO_PKG} -s web/project-website serve
+	go run ${HUGO_PKG} -s web/project-website serve
 
 devserver-webapp:
 	yarn --cwd web/app run dev --host
@@ -265,7 +263,7 @@ devserver-webapp:
 deploy-website:
 	$(MAKE) -s check-environment
 	rm -rf web/project-website/public/
-	go run -tags extended ${HUGO_PKG} -s web/project-website --baseURL https://flamenco.blender.org/
+	go run ${HUGO_PKG} -s web/project-website --baseURL https://flamenco.blender.org/
 	rsync web/project-website/public/ ${WEBSERVER_SSH}:${WEBSERVER_ROOT}/ \
 		-e "ssh" \
 		-rl \
