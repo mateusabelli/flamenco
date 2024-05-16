@@ -37,7 +37,5 @@ body:
     id: understanding
     attributes:
       label: "Will you help to keep things up to date?"
-      required: true
       options:
         - label: "Yes, I'll check with new versions of Blender and/or Flamenco, and send in a report when updating is necessary"
-        - label: "Nope, someone else will have to do this"
