@@ -13,8 +13,8 @@ in this process.
 
 ## SQLC
 
-Flamenco mostly uses [GORM][gorm] for interfacing with its SQLite database. This
-is gradually being phased out, to be replaced with [SQLC][sqlc].
+Flamenco mostly uses [GORM](https://gorm.io/) for interfacing with its SQLite database. This
+is gradually being phased out, to be replaced with [SQLC](https://sqlc.dev/).
 
 To generate the SQLC schema file:
 ```sh
