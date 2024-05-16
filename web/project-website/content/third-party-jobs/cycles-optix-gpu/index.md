@@ -8,7 +8,7 @@ resources:
     title: Screenshot of the Flamenco job submission panel in Blender
 ---
 
-{{< flamenco/thirdPartyCompatibility blender="v4.2-alpha+" flamenco="v3.5+" >}}
+{{< flamenco/thirdPartyCompatibility blender="v4.2-alpha+" flamenco="v3.6-alpha+" >}}
 Documented and maintained by [Sybren Stüvel][author].
 Please report any issues at [Flamenco's tracker][tracker].
 
