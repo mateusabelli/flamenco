@@ -473,6 +473,26 @@ func TestFetchTasksOfJobInStatus(t *testing.T) {
 	assert.Empty(t, tasks)
 }
 
+func TestSaveTaskActivity(t *testing.T) {
+	ctx, close, db, _, authoredJob := jobTasksTestFixtures(t)
+	defer close()
+
+	taskUUID := authoredJob.Tasks[0].UUID
+	task, err := db.FetchTask(ctx, taskUUID)
+	require.NoError(t, err)
+	require.Equal(t, api.TaskStatusQueued, task.Status)
+
+	task.Activity = "Somebody ran a ünit test"
+	task.Status = api.TaskStatusPaused // Should not be saved.
+	require.NoError(t, db.SaveTaskActivity(ctx, task))
+
+	dbTask, err := db.FetchTask(ctx, taskUUID)
+	require.NoError(t, err)
+	require.Equal(t, "Somebody ran a ünit test", dbTask.Activity)
+	require.Equal(t, api.TaskStatusQueued, dbTask.Status,
+		"SaveTaskActivity() should not save the task status")
+}
+
 func TestTaskAssignToWorker(t *testing.T) {
 	ctx, close, db, _, authoredJob := jobTasksTestFixtures(t)
 	defer close()
