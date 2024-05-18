@@ -74,3 +74,17 @@ SELECT jobs.UUID as jobUUID
 FROM tasks
 LEFT JOIN jobs ON (tasks.job_id = jobs.id)
 WHERE tasks.uuid = @uuid;
+
+-- name: UpdateTask :exec
+-- Update a Task, except its id, created_at, uuid, or job_id fields.
+UPDATE tasks SET
+  updated_at = @updated_at,
+  name = @name,
+  type = @type,
+  priority = @priority,
+  status = @status,
+  worker_id = @worker_id,
+  last_touched_at = @last_touched_at,
+  commands = @commands,
+  activity = @activity
+WHERE id=@id;

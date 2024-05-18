@@ -518,13 +518,55 @@ func (db *DB) FetchTaskJobUUID(ctx context.Context, taskUUID string) (string, er
 	return jobUUID.String, nil
 }
 
+// SaveTask updates a task that already exists in the database.
+// This function is not used by the Flamenco API, only by unit tests.
 func (db *DB) SaveTask(ctx context.Context, t *Task) error {
-	tx := db.gormDB.WithContext(ctx).
-		Omit("job").
-		Omit("worker").
-		Save(t)
-	if tx.Error != nil {
-		return taskError(tx.Error, "saving task")
+	if t.ID == 0 {
+		panic(fmt.Errorf("cannot use this function to insert a task"))
+	}
+
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	commandsJSON, err := json.Marshal(t.Commands)
+	if err != nil {
+		return fmt.Errorf("cannot convert commands to JSON: %w", err)
+	}
+
+	param := sqlc.UpdateTaskParams{
+		UpdatedAt: db.now(),
+		Name:      t.Name,
+		Type:      t.Type,
+		Priority:  int64(t.Priority),
+		Status:    string(t.Status),
+		Commands:  commandsJSON,
+		Activity:  t.Activity,
+		ID:        int64(t.ID),
+	}
+	if t.WorkerID != nil {
+		param.WorkerID = sql.NullInt64{
+			Int64: int64(*t.WorkerID),
+			Valid: true,
+		}
+	} else if t.Worker != nil && t.Worker.ID > 0 {
+		param.WorkerID = sql.NullInt64{
+			Int64: int64(t.Worker.ID),
+			Valid: true,
+		}
+	}
+
+	if !t.LastTouchedAt.IsZero() {
+		param.LastTouchedAt = sql.NullTime{
+			Time:  t.LastTouchedAt,
+			Valid: true,
+		}
+	}
+
+	err = queries.UpdateTask(ctx, param)
+	if err != nil {
+		return taskError(err, "updating task")
 	}
 	return nil
 }

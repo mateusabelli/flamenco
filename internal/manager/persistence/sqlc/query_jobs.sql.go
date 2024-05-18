@@ -379,3 +379,47 @@ func (q *Queries) SaveJobStorageInfo(ctx context.Context, arg SaveJobStorageInfo
 	_, err := q.db.ExecContext(ctx, saveJobStorageInfo, arg.StorageShamanCheckoutID, arg.ID)
 	return err
 }
+
+const updateTask = `-- name: UpdateTask :exec
+UPDATE tasks SET
+  updated_at = ?1,
+  name = ?2,
+  type = ?3,
+  priority = ?4,
+  status = ?5,
+  worker_id = ?6,
+  last_touched_at = ?7,
+  commands = ?8,
+  activity = ?9
+WHERE id=?10
+`
+
+type UpdateTaskParams struct {
+	UpdatedAt     sql.NullTime
+	Name          string
+	Type          string
+	Priority      int64
+	Status        string
+	WorkerID      sql.NullInt64
+	LastTouchedAt sql.NullTime
+	Commands      json.RawMessage
+	Activity      string
+	ID            int64
+}
+
+// Update a Task, except its id, created_at, uuid, or job_id fields.
+func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) error {
+	_, err := q.db.ExecContext(ctx, updateTask,
+		arg.UpdatedAt,
+		arg.Name,
+		arg.Type,
+		arg.Priority,
+		arg.Status,
+		arg.WorkerID,
+		arg.LastTouchedAt,
+		arg.Commands,
+		arg.Activity,
+		arg.ID,
+	)
+	return err
+}
