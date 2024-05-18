@@ -424,6 +424,24 @@ func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) error {
 	return err
 }
 
+const updateTaskActivity = `-- name: UpdateTaskActivity :exec
+UPDATE tasks SET
+  updated_at = ?1,
+  activity = ?2
+WHERE id=?3
+`
+
+type UpdateTaskActivityParams struct {
+	UpdatedAt sql.NullTime
+	Activity  string
+	ID        int64
+}
+
+func (q *Queries) UpdateTaskActivity(ctx context.Context, arg UpdateTaskActivityParams) error {
+	_, err := q.db.ExecContext(ctx, updateTaskActivity, arg.UpdatedAt, arg.Activity, arg.ID)
+	return err
+}
+
 const updateTaskStatus = `-- name: UpdateTaskStatus :exec
 UPDATE tasks SET
   updated_at = ?1,

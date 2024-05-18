@@ -589,10 +589,17 @@ func (db *DB) SaveTaskStatus(ctx context.Context, t *Task) error {
 }
 
 func (db *DB) SaveTaskActivity(ctx context.Context, t *Task) error {
-	if err := db.gormDB.WithContext(ctx).
-		Model(t).
-		Select("Activity").
-		Updates(Task{Activity: t.Activity}).Error; err != nil {
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	err = queries.UpdateTaskActivity(ctx, sqlc.UpdateTaskActivityParams{
+		UpdatedAt: db.now(),
+		Activity:  t.Activity,
+		ID:        int64(t.ID),
+	})
+	if err != nil {
 		return taskError(err, "saving task activity")
 	}
 	return nil
