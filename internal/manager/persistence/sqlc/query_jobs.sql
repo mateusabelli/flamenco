@@ -88,3 +88,9 @@ UPDATE tasks SET
   commands = @commands,
   activity = @activity
 WHERE id=@id;
+
+-- name: UpdateTaskStatus :exec
+UPDATE tasks SET
+  updated_at = @updated_at,
+  status = @status
+WHERE id=@id;

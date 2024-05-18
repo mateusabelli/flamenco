@@ -572,11 +572,18 @@ func (db *DB) SaveTask(ctx context.Context, t *Task) error {
 }
 
 func (db *DB) SaveTaskStatus(ctx context.Context, t *Task) error {
-	tx := db.gormDB.WithContext(ctx).
-		Select("Status").
-		Save(t)
-	if tx.Error != nil {
-		return taskError(tx.Error, "saving task")
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	err = queries.UpdateTaskStatus(ctx, sqlc.UpdateTaskStatusParams{
+		UpdatedAt: db.now(),
+		Status:    string(t.Status),
+		ID:        int64(t.ID),
+	})
+	if err != nil {
+		return taskError(err, "saving task status")
 	}
 	return nil
 }
