@@ -408,7 +408,7 @@ func TestSummarizeWorkerStatusesTimeout(t *testing.T) {
 
 	// Force a timeout of the context. And yes, even when a nanosecond is quite
 	// short, it is still necessary to wait.
-	time.Sleep(2 * time.Nanosecond)
+	time.Sleep(1 * time.Millisecond)
 
 	// Test the summary.
 	summary, err := f.db.SummarizeWorkerStatuses(subCtx)
