@@ -774,39 +774,59 @@ func (db *DB) CountTasksOfJobInStatus(
 
 // FetchTaskIDsOfJob returns all tasks of the given job.
 func (db *DB) FetchTasksOfJob(ctx context.Context, job *Job) ([]*Task, error) {
-	var tasks []*Task
-	tx := db.gormDB.WithContext(ctx).
-		Model(&Task{}).
-		Where("job_id", job.ID).
-		Scan(&tasks)
-	if tx.Error != nil {
-		return nil, taskError(tx.Error, "fetching tasks of job %s", job.UUID)
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
 	}
 
-	for i := range tasks {
-		tasks[i].Job = job
+	rows, err := queries.FetchTasksOfJob(ctx, int64(job.ID))
+	if err != nil {
+		return nil, taskError(err, "fetching tasks of job %s", job.UUID)
 	}
 
-	return tasks, nil
+	result := make([]*Task, len(rows))
+	for i := range rows {
+		gormTask, err := convertSqlcTask(rows[i].Task, job.UUID, rows[i].WorkerUUID.String)
+		if err != nil {
+			return nil, err
+		}
+		gormTask.Job = job
+		result[i] = gormTask
+	}
+	return result, nil
 }
 
 // FetchTasksOfJobInStatus returns those tasks of the given job that have any of the given statuses.
 func (db *DB) FetchTasksOfJobInStatus(ctx context.Context, job *Job, taskStatuses ...api.TaskStatus) ([]*Task, error) {
-	var tasks []*Task
-	tx := db.gormDB.WithContext(ctx).
-		Model(&Task{}).
-		Where("job_id", job.ID).
-		Where("status in ?", taskStatuses).
-		Scan(&tasks)
-	if tx.Error != nil {
-		return nil, taskError(tx.Error, "fetching tasks of job %s in status %q", job.UUID, taskStatuses)
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
 	}
 
-	for i := range tasks {
-		tasks[i].Job = job
+	// Convert from []api.TaskStatus to []string for feeding to sqlc.
+	statusesAsStrings := make([]string, len(taskStatuses))
+	for index := range taskStatuses {
+		statusesAsStrings[index] = string(taskStatuses[index])
 	}
 
-	return tasks, nil
+	rows, err := queries.FetchTasksOfJobInStatus(ctx, sqlc.FetchTasksOfJobInStatusParams{
+		JobID:      int64(job.ID),
+		TaskStatus: statusesAsStrings,
+	})
+	if err != nil {
+		return nil, taskError(err, "fetching tasks of job %s in status %q", job.UUID, taskStatuses)
+	}
+
+	result := make([]*Task, len(rows))
+	for i := range rows {
+		gormTask, err := convertSqlcTask(rows[i].Task, job.UUID, rows[i].WorkerUUID.String)
+		if err != nil {
+			return nil, err
+		}
+		gormTask.Job = job
+		result[i] = gormTask
+	}
+	return result, nil
 }
 
 // UpdateJobsTaskStatuses updates the status & activity of all tasks of `job`.

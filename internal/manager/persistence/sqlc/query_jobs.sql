@@ -83,6 +83,19 @@ WHERE tasks.worker_id = @worker_id
   AND tasks.job_id = @job_id
   AND tasks.status = @task_status;
 
+-- name: FetchTasksOfJob :many
+SELECT sqlc.embed(tasks), workers.UUID as workerUUID
+FROM tasks
+LEFT JOIN workers ON (tasks.worker_id = workers.id)
+WHERE tasks.job_id = @job_id;
+
+-- name: FetchTasksOfJobInStatus :many
+SELECT sqlc.embed(tasks), workers.UUID as workerUUID
+FROM tasks
+LEFT JOIN workers ON (tasks.worker_id = workers.id)
+WHERE tasks.job_id = @job_id
+  AND tasks.status in (sqlc.slice('task_status'));
+
 -- name: FetchTaskJobUUID :one
 SELECT jobs.UUID as jobUUID
 FROM tasks
