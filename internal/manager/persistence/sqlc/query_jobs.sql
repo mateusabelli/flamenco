@@ -69,6 +69,13 @@ LEFT JOIN jobs ON (tasks.job_id = jobs.id)
 LEFT JOIN workers ON (tasks.worker_id = workers.id)
 WHERE tasks.uuid = @uuid;
 
+-- name: FetchTasksOfWorkerInStatus :many
+SELECT sqlc.embed(tasks), jobs.UUID as jobUUID
+FROM tasks
+LEFT JOIN jobs ON (tasks.job_id = jobs.id)
+WHERE tasks.worker_id = @worker_id
+  AND tasks.status = @task_status;
+
 -- name: FetchTaskJobUUID :one
 SELECT jobs.UUID as jobUUID
 FROM tasks
@@ -99,4 +106,10 @@ WHERE id=@id;
 UPDATE tasks SET
   updated_at = @updated_at,
   activity = @activity
+WHERE id=@id;
+
+-- name: TaskAssignToWorker :exec
+UPDATE tasks SET
+  updated_at = @updated_at,
+  worker_id = @worker_id
 WHERE id=@id;

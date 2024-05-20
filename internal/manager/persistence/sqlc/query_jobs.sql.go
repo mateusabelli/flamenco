@@ -285,6 +285,62 @@ func (q *Queries) FetchTaskJobUUID(ctx context.Context, uuid string) (sql.NullSt
 	return jobuuid, err
 }
 
+const fetchTasksOfWorkerInStatus = `-- name: FetchTasksOfWorkerInStatus :many
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, jobs.UUID as jobUUID
+FROM tasks
+LEFT JOIN jobs ON (tasks.job_id = jobs.id)
+WHERE tasks.worker_id = ?1
+  AND tasks.status = ?2
+`
+
+type FetchTasksOfWorkerInStatusParams struct {
+	WorkerID   sql.NullInt64
+	TaskStatus string
+}
+
+type FetchTasksOfWorkerInStatusRow struct {
+	Task    Task
+	JobUUID sql.NullString
+}
+
+func (q *Queries) FetchTasksOfWorkerInStatus(ctx context.Context, arg FetchTasksOfWorkerInStatusParams) ([]FetchTasksOfWorkerInStatusRow, error) {
+	rows, err := q.db.QueryContext(ctx, fetchTasksOfWorkerInStatus, arg.WorkerID, arg.TaskStatus)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FetchTasksOfWorkerInStatusRow
+	for rows.Next() {
+		var i FetchTasksOfWorkerInStatusRow
+		if err := rows.Scan(
+			&i.Task.ID,
+			&i.Task.CreatedAt,
+			&i.Task.UpdatedAt,
+			&i.Task.UUID,
+			&i.Task.Name,
+			&i.Task.Type,
+			&i.Task.JobID,
+			&i.Task.Priority,
+			&i.Task.Status,
+			&i.Task.WorkerID,
+			&i.Task.LastTouchedAt,
+			&i.Task.Commands,
+			&i.Task.Activity,
+			&i.JobUUID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const requestJobDeletion = `-- name: RequestJobDeletion :exec
 UPDATE jobs SET
   updated_at = ?1,
@@ -377,6 +433,24 @@ type SaveJobStorageInfoParams struct {
 
 func (q *Queries) SaveJobStorageInfo(ctx context.Context, arg SaveJobStorageInfoParams) error {
 	_, err := q.db.ExecContext(ctx, saveJobStorageInfo, arg.StorageShamanCheckoutID, arg.ID)
+	return err
+}
+
+const taskAssignToWorker = `-- name: TaskAssignToWorker :exec
+UPDATE tasks SET
+  updated_at = ?1,
+  worker_id = ?2
+WHERE id=?3
+`
+
+type TaskAssignToWorkerParams struct {
+	UpdatedAt sql.NullTime
+	WorkerID  sql.NullInt64
+	ID        int64
+}
+
+func (q *Queries) TaskAssignToWorker(ctx context.Context, arg TaskAssignToWorkerParams) error {
+	_, err := q.db.ExecContext(ctx, taskAssignToWorker, arg.UpdatedAt, arg.WorkerID, arg.ID)
 	return err
 }
 
