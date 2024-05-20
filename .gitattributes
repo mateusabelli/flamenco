@@ -19,6 +19,7 @@
 *.md text
 *.py text
 *.sh text
+*.sql text
 *.svg text
 *.toml text
 *.txt text
