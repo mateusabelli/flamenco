@@ -341,6 +341,61 @@ func (q *Queries) FetchTasksOfWorkerInStatus(ctx context.Context, arg FetchTasks
 	return items, nil
 }
 
+const fetchTasksOfWorkerInStatusOfJob = `-- name: FetchTasksOfWorkerInStatusOfJob :many
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity
+FROM tasks
+WHERE tasks.worker_id = ?1
+  AND tasks.job_id = ?2
+  AND tasks.status = ?3
+`
+
+type FetchTasksOfWorkerInStatusOfJobParams struct {
+	WorkerID   sql.NullInt64
+	JobID      int64
+	TaskStatus string
+}
+
+type FetchTasksOfWorkerInStatusOfJobRow struct {
+	Task Task
+}
+
+func (q *Queries) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, arg FetchTasksOfWorkerInStatusOfJobParams) ([]FetchTasksOfWorkerInStatusOfJobRow, error) {
+	rows, err := q.db.QueryContext(ctx, fetchTasksOfWorkerInStatusOfJob, arg.WorkerID, arg.JobID, arg.TaskStatus)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FetchTasksOfWorkerInStatusOfJobRow
+	for rows.Next() {
+		var i FetchTasksOfWorkerInStatusOfJobRow
+		if err := rows.Scan(
+			&i.Task.ID,
+			&i.Task.CreatedAt,
+			&i.Task.UpdatedAt,
+			&i.Task.UUID,
+			&i.Task.Name,
+			&i.Task.Type,
+			&i.Task.JobID,
+			&i.Task.Priority,
+			&i.Task.Status,
+			&i.Task.WorkerID,
+			&i.Task.LastTouchedAt,
+			&i.Task.Commands,
+			&i.Task.Activity,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const requestJobDeletion = `-- name: RequestJobDeletion :exec
 UPDATE jobs SET
   updated_at = ?1,

@@ -664,16 +664,34 @@ func (db *DB) FetchTasksOfWorkerInStatus(ctx context.Context, worker *Worker, ta
 }
 
 func (db *DB) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, worker *Worker, taskStatus api.TaskStatus, job *Job) ([]*Task, error) {
-	result := []*Task{}
-	tx := db.gormDB.WithContext(ctx).
-		Model(&Task{}).
-		Joins("Job").
-		Where("tasks.worker_id = ?", worker.ID).
-		Where("tasks.status = ?", taskStatus).
-		Where("job.id = ?", job.ID).
-		Scan(&result)
-	if tx.Error != nil {
-		return nil, taskError(tx.Error, "finding tasks of worker %s in status %q and job %s", worker.UUID, taskStatus, job.UUID)
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := queries.FetchTasksOfWorkerInStatusOfJob(ctx, sqlc.FetchTasksOfWorkerInStatusOfJobParams{
+		WorkerID: sql.NullInt64{
+			Int64: int64(worker.ID),
+			Valid: true,
+		},
+		JobID:      int64(job.ID),
+		TaskStatus: string(taskStatus),
+	})
+	if err != nil {
+		return nil, taskError(err, "finding tasks of worker %s in status %q and job %s", worker.UUID, taskStatus, job.UUID)
+	}
+
+	result := make([]*Task, len(rows))
+	for i := range rows {
+		gormTask, err := convertSqlcTask(rows[i].Task, job.UUID, worker.UUID)
+		if err != nil {
+			return nil, err
+		}
+		gormTask.Job = job
+		gormTask.JobID = job.ID
+		gormTask.Worker = worker
+		gormTask.WorkerID = &worker.ID
+		result[i] = gormTask
 	}
 	return result, nil
 }

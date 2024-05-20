@@ -76,6 +76,13 @@ LEFT JOIN jobs ON (tasks.job_id = jobs.id)
 WHERE tasks.worker_id = @worker_id
   AND tasks.status = @task_status;
 
+-- name: FetchTasksOfWorkerInStatusOfJob :many
+SELECT sqlc.embed(tasks)
+FROM tasks
+WHERE tasks.worker_id = @worker_id
+  AND tasks.job_id = @job_id
+  AND tasks.status = @task_status;
+
 -- name: FetchTaskJobUUID :one
 SELECT jobs.UUID as jobUUID
 FROM tasks
