@@ -679,6 +679,66 @@ func (q *Queries) TaskAssignToWorker(ctx context.Context, arg TaskAssignToWorker
 	return err
 }
 
+const updateJobsTaskStatuses = `-- name: UpdateJobsTaskStatuses :exec
+UPDATE tasks SET
+  updated_at = ?1,
+  status = ?2,
+  activity = ?3
+WHERE job_id = ?4
+`
+
+type UpdateJobsTaskStatusesParams struct {
+	UpdatedAt sql.NullTime
+	Status    string
+	Activity  string
+	JobID     int64
+}
+
+func (q *Queries) UpdateJobsTaskStatuses(ctx context.Context, arg UpdateJobsTaskStatusesParams) error {
+	_, err := q.db.ExecContext(ctx, updateJobsTaskStatuses,
+		arg.UpdatedAt,
+		arg.Status,
+		arg.Activity,
+		arg.JobID,
+	)
+	return err
+}
+
+const updateJobsTaskStatusesConditional = `-- name: UpdateJobsTaskStatusesConditional :exec
+UPDATE tasks SET
+  updated_at = ?1,
+  status = ?2,
+  activity = ?3
+WHERE job_id = ?4 AND status in (/*SLICE:statuses_to_update*/?)
+`
+
+type UpdateJobsTaskStatusesConditionalParams struct {
+	UpdatedAt        sql.NullTime
+	Status           string
+	Activity         string
+	JobID            int64
+	StatusesToUpdate []string
+}
+
+func (q *Queries) UpdateJobsTaskStatusesConditional(ctx context.Context, arg UpdateJobsTaskStatusesConditionalParams) error {
+	query := updateJobsTaskStatusesConditional
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.UpdatedAt)
+	queryParams = append(queryParams, arg.Status)
+	queryParams = append(queryParams, arg.Activity)
+	queryParams = append(queryParams, arg.JobID)
+	if len(arg.StatusesToUpdate) > 0 {
+		for _, v := range arg.StatusesToUpdate {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:statuses_to_update*/?", strings.Repeat(",?", len(arg.StatusesToUpdate))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:statuses_to_update*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
+}
+
 const updateTask = `-- name: UpdateTask :exec
 UPDATE tasks SET
   updated_at = ?1,

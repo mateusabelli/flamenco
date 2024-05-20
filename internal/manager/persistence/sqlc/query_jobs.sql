@@ -128,6 +128,20 @@ UPDATE tasks SET
   activity = @activity
 WHERE id=@id;
 
+-- name: UpdateJobsTaskStatusesConditional :exec
+UPDATE tasks SET
+  updated_at = @updated_at,
+  status = @status,
+  activity = @activity
+WHERE job_id = @job_id AND status in (sqlc.slice('statuses_to_update'));
+
+-- name: UpdateJobsTaskStatuses :exec
+UPDATE tasks SET
+  updated_at = @updated_at,
+  status = @status,
+  activity = @activity
+WHERE job_id = @job_id;
+
 -- name: TaskAssignToWorker :exec
 UPDATE tasks SET
   updated_at = @updated_at,

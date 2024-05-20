@@ -744,12 +744,6 @@ func (db *DB) CountTasksOfJobInStatus(
 		return 0, 0, err
 	}
 
-	// Convert from []api.TaskStatus to []string for feeding to sqlc.
-	statusesAsStrings := make([]string, len(taskStatuses))
-	for index := range taskStatuses {
-		statusesAsStrings[index] = string(taskStatuses[index])
-	}
-
 	results, err := queries.JobCountTaskStatuses(ctx, int64(job.ID))
 	if err != nil {
 		return 0, 0, jobError(err, "count tasks of job %s in status %q", job.UUID, taskStatuses)
@@ -803,15 +797,9 @@ func (db *DB) FetchTasksOfJobInStatus(ctx context.Context, job *Job, taskStatuse
 		return nil, err
 	}
 
-	// Convert from []api.TaskStatus to []string for feeding to sqlc.
-	statusesAsStrings := make([]string, len(taskStatuses))
-	for index := range taskStatuses {
-		statusesAsStrings[index] = string(taskStatuses[index])
-	}
-
 	rows, err := queries.FetchTasksOfJobInStatus(ctx, sqlc.FetchTasksOfJobInStatusParams{
 		JobID:      int64(job.ID),
-		TaskStatus: statusesAsStrings,
+		TaskStatus: convertTaskStatuses(taskStatuses),
 	})
 	if err != nil {
 		return nil, taskError(err, "fetching tasks of job %s in status %q", job.UUID, taskStatuses)
@@ -837,13 +825,20 @@ func (db *DB) UpdateJobsTaskStatuses(ctx context.Context, job *Job,
 		return taskError(nil, "empty status not allowed")
 	}
 
-	tx := db.gormDB.WithContext(ctx).
-		Model(Task{}).
-		Where("job_Id = ?", job.ID).
-		Updates(Task{Status: taskStatus, Activity: activity})
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
 
-	if tx.Error != nil {
-		return taskError(tx.Error, "updating status of all tasks of job %s", job.UUID)
+	err = queries.UpdateJobsTaskStatuses(ctx, sqlc.UpdateJobsTaskStatusesParams{
+		UpdatedAt: db.now(),
+		Status:    string(taskStatus),
+		Activity:  activity,
+		JobID:     int64(job.ID),
+	})
+
+	if err != nil {
+		return taskError(err, "updating status of all tasks of job %s", job.UUID)
 	}
 	return nil
 }
@@ -857,13 +852,21 @@ func (db *DB) UpdateJobsTaskStatusesConditional(ctx context.Context, job *Job,
 		return taskError(nil, "empty status not allowed")
 	}
 
-	tx := db.gormDB.WithContext(ctx).
-		Model(Task{}).
-		Where("job_Id = ?", job.ID).
-		Where("status in ?", statusesToUpdate).
-		Updates(Task{Status: taskStatus, Activity: activity})
-	if tx.Error != nil {
-		return taskError(tx.Error, "updating status of all tasks in status %v of job %s", statusesToUpdate, job.UUID)
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	err = queries.UpdateJobsTaskStatusesConditional(ctx, sqlc.UpdateJobsTaskStatusesConditionalParams{
+		UpdatedAt:        db.now(),
+		Status:           string(taskStatus),
+		Activity:         activity,
+		JobID:            int64(job.ID),
+		StatusesToUpdate: convertTaskStatuses(statusesToUpdate),
+	})
+
+	if err != nil {
+		return taskError(err, "updating status of all tasks in status %v of job %s", statusesToUpdate, job.UUID)
 	}
 	return nil
 }
@@ -1026,4 +1029,13 @@ func convertSqlcTask(task sqlc.Task, jobUUID string, workerUUID string) (*Task, 
 	}
 
 	return &dbTask, nil
+}
+
+// convertTaskStatuses converts from []api.TaskStatus to []string for feeding to sqlc.
+func convertTaskStatuses(taskStatuses []api.TaskStatus) []string {
+	statusesAsStrings := make([]string, len(taskStatuses))
+	for index := range taskStatuses {
+		statusesAsStrings[index] = string(taskStatuses[index])
+	}
+	return statusesAsStrings
 }
