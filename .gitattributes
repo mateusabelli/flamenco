@@ -4,6 +4,10 @@
 /web/app/src/manager-api/** linguist-generated=true
 **/*.gen.go linguist-generated=true
 
+# In your Git config, set:
+# git config core.eol native
+# git config core.autocrlf true
+
 # Set the default newline behavior, in case people don't have core.autocrlf set.
 * text=auto
 
