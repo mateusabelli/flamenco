@@ -5,7 +5,7 @@ info:
   description: Render Farm manager API
   contact:
     name: Flamenco Team
-    url: https://flamenco.io/
+    url: https://flamenco.blender.org/
   license:
     name: GPLv3
     url: https://www.gnu.org/licenses/gpl-3.0.en.html
