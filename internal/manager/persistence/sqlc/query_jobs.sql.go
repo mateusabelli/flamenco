@@ -679,6 +679,24 @@ func (q *Queries) TaskAssignToWorker(ctx context.Context, arg TaskAssignToWorker
 	return err
 }
 
+const taskTouchedByWorker = `-- name: TaskTouchedByWorker :exec
+UPDATE tasks SET
+  updated_at = ?1,
+  last_touched_at = ?2
+WHERE id=?3
+`
+
+type TaskTouchedByWorkerParams struct {
+	UpdatedAt     sql.NullTime
+	LastTouchedAt sql.NullTime
+	ID            int64
+}
+
+func (q *Queries) TaskTouchedByWorker(ctx context.Context, arg TaskTouchedByWorkerParams) error {
+	_, err := q.db.ExecContext(ctx, taskTouchedByWorker, arg.UpdatedAt, arg.LastTouchedAt, arg.ID)
+	return err
+}
+
 const updateJobsTaskStatuses = `-- name: UpdateJobsTaskStatuses :exec
 UPDATE tasks SET
   updated_at = ?1,

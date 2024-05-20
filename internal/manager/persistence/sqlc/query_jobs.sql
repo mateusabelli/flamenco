@@ -148,6 +148,12 @@ UPDATE tasks SET
   worker_id = @worker_id
 WHERE id=@id;
 
+-- name: TaskTouchedByWorker :exec
+UPDATE tasks SET
+  updated_at = @updated_at,
+  last_touched_at = @last_touched_at
+WHERE id=@id;
+
 -- name: JobCountTasksInStatus :one
 -- Fetch number of tasks in the given status, of the given job.
 SELECT count(*) as num_tasks FROM tasks

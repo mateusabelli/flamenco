@@ -873,13 +873,24 @@ func (db *DB) UpdateJobsTaskStatusesConditional(ctx context.Context, job *Job,
 
 // TaskTouchedByWorker marks the task as 'touched' by a worker. This is used for timeout detection.
 func (db *DB) TaskTouchedByWorker(ctx context.Context, t *Task) error {
-	tx := db.gormDB.WithContext(ctx).
-		Model(t).
-		Select("LastTouchedAt").
-		Updates(Task{LastTouchedAt: db.gormDB.NowFunc()})
-	if err := tx.Error; err != nil {
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	now := db.now()
+	err = queries.TaskTouchedByWorker(ctx, sqlc.TaskTouchedByWorkerParams{
+		UpdatedAt:     now,
+		LastTouchedAt: now,
+		ID:            int64(t.ID),
+	})
+	if err != nil {
 		return taskError(err, "saving task 'last touched at'")
 	}
+
+	// Also update the given task, so that it's consistent with the database.
+	t.LastTouchedAt = now.Time
+
 	return nil
 }
 
