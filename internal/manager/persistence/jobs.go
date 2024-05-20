@@ -715,38 +715,44 @@ func (db *DB) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, worker *Worke
 }
 
 func (db *DB) JobHasTasksInStatus(ctx context.Context, job *Job, taskStatus api.TaskStatus) (bool, error) {
-	var numTasksInStatus int64
-	tx := db.gormDB.WithContext(ctx).
-		Model(&Task{}).
-		Where("job_id", job.ID).
-		Where("status", taskStatus).
-		Count(&numTasksInStatus)
-	if tx.Error != nil {
-		return false, taskError(tx.Error, "counting tasks of job %s in status %q", job.UUID, taskStatus)
+	queries, err := db.queries()
+	if err != nil {
+		return false, err
 	}
-	return numTasksInStatus > 0, nil
+
+	count, err := queries.JobCountTasksInStatus(ctx, sqlc.JobCountTasksInStatusParams{
+		JobID:      int64(job.ID),
+		TaskStatus: string(taskStatus),
+	})
+	if err != nil {
+		return false, taskError(err, "counting tasks of job %s in status %q", job.UUID, taskStatus)
+	}
+
+	return count > 0, nil
 }
 
+// CountTasksOfJobInStatus counts the number of tasks in the job.
+// It returns two counts, one is the number of tasks in the given statuses, the
+// other is the total number of tasks of the job.
 func (db *DB) CountTasksOfJobInStatus(
 	ctx context.Context,
 	job *Job,
 	taskStatuses ...api.TaskStatus,
 ) (numInStatus, numTotal int, err error) {
-	type Result struct {
-		Status   api.TaskStatus
-		NumTasks int
+	queries, err := db.queries()
+	if err != nil {
+		return 0, 0, err
 	}
-	var results []Result
 
-	tx := db.gormDB.WithContext(ctx).
-		Model(&Task{}).
-		Select("status, count(*) as num_tasks").
-		Where("job_id", job.ID).
-		Group("status").
-		Scan(&results)
+	// Convert from []api.TaskStatus to []string for feeding to sqlc.
+	statusesAsStrings := make([]string, len(taskStatuses))
+	for index := range taskStatuses {
+		statusesAsStrings[index] = string(taskStatuses[index])
+	}
 
-	if tx.Error != nil {
-		return 0, 0, jobError(tx.Error, "count tasks of job %s in status %q", job.UUID, taskStatuses)
+	results, err := queries.JobCountTaskStatuses(ctx, int64(job.ID))
+	if err != nil {
+		return 0, 0, jobError(err, "count tasks of job %s in status %q", job.UUID, taskStatuses)
 	}
 
 	// Create lookup table for which statuses to count.
@@ -757,10 +763,10 @@ func (db *DB) CountTasksOfJobInStatus(
 
 	// Count the number of tasks per status.
 	for _, result := range results {
-		if countStatus[result.Status] {
-			numInStatus += result.NumTasks
+		if countStatus[api.TaskStatus(result.Status)] {
+			numInStatus += int(result.NumTasks)
 		}
-		numTotal += result.NumTasks
+		numTotal += int(result.NumTasks)
 	}
 
 	return

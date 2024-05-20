@@ -120,3 +120,14 @@ UPDATE tasks SET
   updated_at = @updated_at,
   worker_id = @worker_id
 WHERE id=@id;
+
+-- name: JobCountTasksInStatus :one
+-- Fetch number of tasks in the given status, of the given job.
+SELECT count(*) as num_tasks FROM tasks
+WHERE job_id = @job_id AND status = @task_status;
+
+-- name: JobCountTaskStatuses :many
+-- Fetch (status, num tasks in that status) rows for the given job.
+SELECT status, count(*) as num_tasks FROM tasks
+WHERE job_id = @job_id
+GROUP BY status;

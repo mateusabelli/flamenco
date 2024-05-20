@@ -396,6 +396,12 @@ func TestCountTasksOfJobInStatus(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, numActive)
 	assert.Equal(t, 3, numTotal)
+
+	numCounted, numTotal, err := db.CountTasksOfJobInStatus(ctx, job,
+		api.TaskStatusFailed, api.TaskStatusQueued)
+	require.NoError(t, err)
+	assert.Equal(t, 3, numCounted)
+	assert.Equal(t, 3, numTotal)
 }
 
 func TestCheckIfJobsHoldLargeNumOfTasks(t *testing.T) {

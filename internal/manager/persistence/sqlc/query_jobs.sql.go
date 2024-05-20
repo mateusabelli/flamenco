@@ -396,6 +396,59 @@ func (q *Queries) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, arg Fetch
 	return items, nil
 }
 
+const jobCountTaskStatuses = `-- name: JobCountTaskStatuses :many
+SELECT status, count(*) as num_tasks FROM tasks
+WHERE job_id = ?1
+GROUP BY status
+`
+
+type JobCountTaskStatusesRow struct {
+	Status   string
+	NumTasks int64
+}
+
+// Fetch (status, num tasks in that status) rows for the given job.
+func (q *Queries) JobCountTaskStatuses(ctx context.Context, jobID int64) ([]JobCountTaskStatusesRow, error) {
+	rows, err := q.db.QueryContext(ctx, jobCountTaskStatuses, jobID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []JobCountTaskStatusesRow
+	for rows.Next() {
+		var i JobCountTaskStatusesRow
+		if err := rows.Scan(&i.Status, &i.NumTasks); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const jobCountTasksInStatus = `-- name: JobCountTasksInStatus :one
+SELECT count(*) as num_tasks FROM tasks
+WHERE job_id = ?1 AND status = ?2
+`
+
+type JobCountTasksInStatusParams struct {
+	JobID      int64
+	TaskStatus string
+}
+
+// Fetch number of tasks in the given status, of the given job.
+func (q *Queries) JobCountTasksInStatus(ctx context.Context, arg JobCountTasksInStatusParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, jobCountTasksInStatus, arg.JobID, arg.TaskStatus)
+	var num_tasks int64
+	err := row.Scan(&num_tasks)
+	return num_tasks, err
+}
+
 const requestJobDeletion = `-- name: RequestJobDeletion :exec
 UPDATE jobs SET
   updated_at = ?1,
