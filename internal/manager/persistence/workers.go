@@ -251,9 +251,9 @@ func convertSqlcWorker(worker sqlc.Worker) Worker {
 		Software:           worker.Software,
 		Status:             api.WorkerStatus(worker.Status),
 		LastSeenAt:         worker.LastSeenAt.Time,
-		CanRestart:         worker.CanRestart != 0,
+		CanRestart:         worker.CanRestart,
 		StatusRequested:    api.WorkerStatus(worker.StatusRequested),
-		LazyStatusRequest:  worker.LazyStatusRequest != 0,
+		LazyStatusRequest:  worker.LazyStatusRequest,
 		SupportedTaskTypes: worker.SupportedTaskTypes,
 	}
 }

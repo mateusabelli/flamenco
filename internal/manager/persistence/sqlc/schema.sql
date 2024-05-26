@@ -109,10 +109,10 @@ CREATE TABLE workers (
   status varchar(16) DEFAULT '' NOT NULL,
   last_seen_at datetime,
   status_requested varchar(16) DEFAULT '' NOT NULL,
-  lazy_status_request smallint DEFAULT false NOT NULL,
+  lazy_status_request boolean DEFAULT false NOT NULL,
   supported_task_types varchar(255) DEFAULT '' NOT NULL,
   deleted_at datetime,
-  can_restart smallint DEFAULT false NOT NULL,
+  can_restart boolean DEFAULT false NOT NULL,
   PRIMARY KEY (id)
 );
 CREATE INDEX idx_jobs_uuid ON jobs(uuid);

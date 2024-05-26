@@ -94,10 +94,10 @@ type Worker struct {
 	Status             string
 	LastSeenAt         sql.NullTime
 	StatusRequested    string
-	LazyStatusRequest  int64
+	LazyStatusRequest  bool
 	SupportedTaskTypes string
 	DeletedAt          sql.NullTime
-	CanRestart         int64
+	CanRestart         bool
 }
 
 type WorkerTag struct {
