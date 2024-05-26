@@ -38,6 +38,7 @@ func TestCreateFetchWorker(t *testing.T) {
 
 	err = db.CreateWorker(ctx, &w)
 	require.NoError(t, err)
+	assert.NotZero(t, w.ID)
 
 	fetchedWorker, err = db.FetchWorker(ctx, w.UUID)
 	require.NoError(t, err)
@@ -50,6 +51,7 @@ func TestCreateFetchWorker(t *testing.T) {
 	assert.Equal(t, w.Platform, fetchedWorker.Platform)
 	assert.Equal(t, w.Software, fetchedWorker.Software)
 	assert.Equal(t, w.Status, fetchedWorker.Status)
+	assert.False(t, fetchedWorker.DeletedAt.Valid)
 
 	assert.EqualValues(t, w.SupportedTaskTypes, fetchedWorker.SupportedTaskTypes)
 }

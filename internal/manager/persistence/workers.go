@@ -4,6 +4,7 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -67,9 +68,50 @@ func (w *Worker) StatusChangeClear() {
 }
 
 func (db *DB) CreateWorker(ctx context.Context, w *Worker) error {
-	if err := db.gormDB.WithContext(ctx).Create(w).Error; err != nil {
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	now := db.now().Time
+	workerID, err := queries.CreateWorker(ctx, sqlc.CreateWorkerParams{
+		CreatedAt: now,
+		UUID:      w.UUID,
+		Secret:    w.Secret,
+		Name:      w.Name,
+		Address:   w.Address,
+		Platform:  w.Platform,
+		Software:  w.Software,
+		Status:    string(w.Status),
+		LastSeenAt: sql.NullTime{
+			Time:  w.LastSeenAt,
+			Valid: !w.LastSeenAt.IsZero(),
+		},
+		StatusRequested:    string(w.StatusRequested),
+		LazyStatusRequest:  w.LazyStatusRequest,
+		SupportedTaskTypes: w.SupportedTaskTypes,
+		DeletedAt:          sql.NullTime(w.DeletedAt),
+		CanRestart:         w.CanRestart,
+	})
+	if err != nil {
 		return fmt.Errorf("creating new worker: %w", err)
 	}
+
+	w.ID = uint(workerID)
+	w.CreatedAt = now
+
+	// TODO: remove the create-with-tags functionality to a higher-level function.
+	// This code is just here to make this function work like the GORM code did.
+	for _, tag := range w.Tags {
+		err := queries.AddWorkerTagMembership(ctx, sqlc.AddWorkerTagMembershipParams{
+			WorkerTagID: int64(tag.ID),
+			WorkerID:    workerID,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

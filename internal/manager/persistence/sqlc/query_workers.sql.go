@@ -7,15 +7,106 @@ package sqlc
 
 import (
 	"context"
+	"database/sql"
+	"time"
 )
 
-const fetchWorker = `-- name: FetchWorker :one
-
-SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart FROM workers WHERE workers.uuid = ?1 and deleted_at is NULL
+const addWorkerTagMembership = `-- name: AddWorkerTagMembership :exec
+INSERT INTO worker_tag_membership (worker_tag_id, worker_id)
+VALUES (?1, ?2)
 `
+
+type AddWorkerTagMembershipParams struct {
+	WorkerTagID int64
+	WorkerID    int64
+}
+
+func (q *Queries) AddWorkerTagMembership(ctx context.Context, arg AddWorkerTagMembershipParams) error {
+	_, err := q.db.ExecContext(ctx, addWorkerTagMembership, arg.WorkerTagID, arg.WorkerID)
+	return err
+}
+
+const createWorker = `-- name: CreateWorker :one
+
+INSERT INTO workers (
+  created_at,
+  uuid,
+  secret,
+  name,
+  address,
+  platform,
+  software,
+  status,
+  last_seen_at,
+  status_requested,
+  lazy_status_request,
+  supported_task_types,
+  deleted_at,
+  can_restart
+) values (
+  ?1,
+  ?2,
+  ?3,
+  ?4,
+  ?5,
+  ?6,
+  ?7,
+  ?8,
+  ?9,
+  ?10,
+  ?11,
+  ?12,
+  ?13,
+  ?14
+)
+RETURNING id
+`
+
+type CreateWorkerParams struct {
+	CreatedAt          time.Time
+	UUID               string
+	Secret             string
+	Name               string
+	Address            string
+	Platform           string
+	Software           string
+	Status             string
+	LastSeenAt         sql.NullTime
+	StatusRequested    string
+	LazyStatusRequest  bool
+	SupportedTaskTypes string
+	DeletedAt          sql.NullTime
+	CanRestart         bool
+}
 
 // Worker queries
 //
+func (q *Queries) CreateWorker(ctx context.Context, arg CreateWorkerParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createWorker,
+		arg.CreatedAt,
+		arg.UUID,
+		arg.Secret,
+		arg.Name,
+		arg.Address,
+		arg.Platform,
+		arg.Software,
+		arg.Status,
+		arg.LastSeenAt,
+		arg.StatusRequested,
+		arg.LazyStatusRequest,
+		arg.SupportedTaskTypes,
+		arg.DeletedAt,
+		arg.CanRestart,
+	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const fetchWorker = `-- name: FetchWorker :one
+SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart FROM workers WHERE workers.uuid = ?1 and deleted_at is NULL
+`
+
 // FetchWorker only returns the worker if it wasn't soft-deleted.
 func (q *Queries) FetchWorker(ctx context.Context, uuid string) (Worker, error) {
 	row := q.db.QueryRowContext(ctx, fetchWorker, uuid)
