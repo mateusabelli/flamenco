@@ -40,6 +40,10 @@ RETURNING id;
 INSERT INTO worker_tag_membership (worker_tag_id, worker_id)
 VALUES (@worker_tag_id, @worker_id);
 
+-- name: FetchWorkers :many
+SELECT sqlc.embed(workers) FROM workers
+WHERE deleted_at IS NULL;
+
 -- name: FetchWorker :one
 -- FetchWorker only returns the worker if it wasn't soft-deleted.
 SELECT * FROM workers WHERE workers.uuid = @uuid and deleted_at is NULL;
@@ -54,3 +58,43 @@ FROM worker_tags
 LEFT JOIN worker_tag_membership m ON (m.worker_tag_id = worker_tags.id)
 LEFT JOIN workers on (m.worker_id = workers.id)
 WHERE workers.uuid = @uuid;
+
+-- name: SoftDeleteWorker :execrows
+UPDATE workers SET deleted_at=@deleted_at
+WHERE uuid=@uuid;
+
+-- name: SaveWorkerStatus :exec
+UPDATE workers SET
+  updated_at=@updated_at,
+  status=@status,
+  status_requested=@status_requested,
+  lazy_status_request=@lazy_status_request
+WHERE id=@id;
+
+-- name: SaveWorker :exec
+UPDATE workers SET
+  updated_at=@updated_at,
+  uuid=@uuid,
+  secret=@secret,
+  name=@name,
+  address=@address,
+  platform=@platform,
+  software=@software,
+  status=@status,
+  last_seen_at=@last_seen_at,
+  status_requested=@status_requested,
+  lazy_status_request=@lazy_status_request,
+  supported_task_types=@supported_task_types,
+  can_restart=@can_restart
+WHERE id=@id;
+
+-- name: WorkerSeen :exec
+UPDATE workers SET
+  updated_at=@updated_at,
+  last_seen_at=@last_seen_at
+WHERE id=@id;
+
+-- name: SummarizeWorkerStatuses :many
+SELECT status, count(id) as status_count FROM workers
+WHERE deleted_at is NULL
+GROUP BY status;

@@ -152,25 +152,41 @@ func (db *DB) DeleteWorker(ctx context.Context, uuid string) error {
 		return ErrDeletingWithoutFK
 	}
 
-	tx := db.gormDB.WithContext(ctx).
-		Where("uuid = ?", uuid).
-		Delete(&Worker{})
-	if tx.Error != nil {
-		return workerError(tx.Error, "deleting worker")
+	queries, err := db.queries()
+	if err != nil {
+		return err
 	}
-	if tx.RowsAffected == 0 {
+
+	rowsAffected, err := queries.SoftDeleteWorker(ctx, sqlc.SoftDeleteWorkerParams{
+		DeletedAt: db.now(),
+		UUID:      uuid,
+	})
+	if err != nil {
+		return workerError(err, "deleting worker")
+	}
+	if rowsAffected == 0 {
 		return ErrWorkerNotFound
 	}
 	return nil
 }
 
 func (db *DB) FetchWorkers(ctx context.Context) ([]*Worker, error) {
-	workers := make([]*Worker, 0)
-	tx := db.gormDB.WithContext(ctx).Model(&Worker{}).Scan(&workers)
-	if tx.Error != nil {
-		return nil, workerError(tx.Error, "fetching all workers")
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
 	}
-	return workers, nil
+
+	workers, err := queries.FetchWorkers(ctx)
+	if err != nil {
+		return nil, workerError(err, "fetching all workers")
+	}
+
+	gormWorkers := make([]*Worker, len(workers))
+	for idx := range workers {
+		worker := convertSqlcWorker(workers[idx].Worker)
+		gormWorkers[idx] = &worker
+	}
+	return gormWorkers, nil
 }
 
 // FetchWorkerTask returns the most recent task assigned to the given Worker.
@@ -210,22 +226,52 @@ func (db *DB) FetchWorkerTask(ctx context.Context, worker *Worker) (*Task, error
 }
 
 func (db *DB) SaveWorkerStatus(ctx context.Context, w *Worker) error {
-	err := db.gormDB.WithContext(ctx).
-		Model(w).
-		Select("status", "status_requested", "lazy_status_request").
-		Updates(Worker{
-			Status:            w.Status,
-			StatusRequested:   w.StatusRequested,
-			LazyStatusRequest: w.LazyStatusRequest,
-		}).Error
+	queries, err := db.queries()
 	if err != nil {
-		return fmt.Errorf("saving worker: %w", err)
+		return err
+	}
+
+	err = queries.SaveWorkerStatus(ctx, sqlc.SaveWorkerStatusParams{
+		UpdatedAt:         db.now(),
+		Status:            string(w.Status),
+		StatusRequested:   string(w.StatusRequested),
+		LazyStatusRequest: w.LazyStatusRequest,
+		ID:                int64(w.ID),
+	})
+	if err != nil {
+		return fmt.Errorf("saving worker status: %w", err)
 	}
 	return nil
 }
 
 func (db *DB) SaveWorker(ctx context.Context, w *Worker) error {
-	if err := db.gormDB.WithContext(ctx).Save(w).Error; err != nil {
+	// TODO: remove this code, and just let the caller call CreateWorker() directly.
+	if w.ID == 0 {
+		return db.CreateWorker(ctx, w)
+	}
+
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	err = queries.SaveWorker(ctx, sqlc.SaveWorkerParams{
+		UpdatedAt:          db.now(),
+		UUID:               w.UUID,
+		Secret:             w.Secret,
+		Name:               w.Name,
+		Address:            w.Address,
+		Platform:           w.Platform,
+		Software:           w.Software,
+		Status:             string(w.Status),
+		LastSeenAt:         sql.NullTime{Time: w.LastSeenAt, Valid: !w.LastSeenAt.IsZero()},
+		StatusRequested:    string(w.StatusRequested),
+		LazyStatusRequest:  w.LazyStatusRequest,
+		SupportedTaskTypes: w.SupportedTaskTypes,
+		CanRestart:         w.CanRestart,
+		ID:                 int64(w.ID),
+	})
+	if err != nil {
 		return fmt.Errorf("saving worker: %w", err)
 	}
 	return nil
@@ -233,10 +279,18 @@ func (db *DB) SaveWorker(ctx context.Context, w *Worker) error {
 
 // WorkerSeen marks the worker as 'seen' by this Manager. This is used for timeout detection.
 func (db *DB) WorkerSeen(ctx context.Context, w *Worker) error {
-	tx := db.gormDB.WithContext(ctx).
-		Model(w).
-		Updates(Worker{LastSeenAt: db.gormDB.NowFunc()})
-	if err := tx.Error; err != nil {
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	now := db.now()
+	err = queries.WorkerSeen(ctx, sqlc.WorkerSeenParams{
+		UpdatedAt:  now,
+		LastSeenAt: now,
+		ID:         int64(w.ID),
+	})
+	if err != nil {
 		return workerError(err, "saving worker 'last seen at'")
 	}
 	return nil
@@ -249,24 +303,19 @@ func (db *DB) SummarizeWorkerStatuses(ctx context.Context) (WorkerStatusCount, e
 	logger := log.Ctx(ctx)
 	logger.Debug().Msg("database: summarizing worker statuses")
 
-	// Query the database using a data structure that's easy to handle in GORM.
-	type queryResult struct {
-		Status      api.WorkerStatus
-		StatusCount int
-	}
-	result := []*queryResult{}
-	tx := db.gormDB.WithContext(ctx).Model(&Worker{}).
-		Select("status as Status", "count(id) as StatusCount").
-		Group("status").
-		Scan(&result)
-	if tx.Error != nil {
-		return nil, workerError(tx.Error, "summarizing worker statuses")
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
 	}
 
-	// Convert the array-of-structs to a map that's easier to handle by the caller.
+	rows, err := queries.SummarizeWorkerStatuses(ctx)
+	if err != nil {
+		return nil, workerError(err, "summarizing worker statuses")
+	}
+
 	statusCounts := make(WorkerStatusCount)
-	for _, singleStatusCount := range result {
-		statusCounts[singleStatusCount.Status] = singleStatusCount.StatusCount
+	for _, row := range rows {
+		statusCounts[api.WorkerStatus(row.Status)] = int(row.StatusCount)
 	}
 
 	return statusCounts, nil

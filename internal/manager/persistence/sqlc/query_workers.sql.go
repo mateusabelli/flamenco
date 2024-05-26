@@ -198,3 +198,205 @@ func (q *Queries) FetchWorkerUnconditional(ctx context.Context, uuid string) (Wo
 	)
 	return i, err
 }
+
+const fetchWorkers = `-- name: FetchWorkers :many
+SELECT workers.id, workers.created_at, workers.updated_at, workers.uuid, workers.secret, workers.name, workers.address, workers.platform, workers.software, workers.status, workers.last_seen_at, workers.status_requested, workers.lazy_status_request, workers.supported_task_types, workers.deleted_at, workers.can_restart FROM workers
+WHERE deleted_at IS NULL
+`
+
+type FetchWorkersRow struct {
+	Worker Worker
+}
+
+func (q *Queries) FetchWorkers(ctx context.Context) ([]FetchWorkersRow, error) {
+	rows, err := q.db.QueryContext(ctx, fetchWorkers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FetchWorkersRow
+	for rows.Next() {
+		var i FetchWorkersRow
+		if err := rows.Scan(
+			&i.Worker.ID,
+			&i.Worker.CreatedAt,
+			&i.Worker.UpdatedAt,
+			&i.Worker.UUID,
+			&i.Worker.Secret,
+			&i.Worker.Name,
+			&i.Worker.Address,
+			&i.Worker.Platform,
+			&i.Worker.Software,
+			&i.Worker.Status,
+			&i.Worker.LastSeenAt,
+			&i.Worker.StatusRequested,
+			&i.Worker.LazyStatusRequest,
+			&i.Worker.SupportedTaskTypes,
+			&i.Worker.DeletedAt,
+			&i.Worker.CanRestart,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const saveWorker = `-- name: SaveWorker :exec
+UPDATE workers SET
+  updated_at=?1,
+  uuid=?2,
+  secret=?3,
+  name=?4,
+  address=?5,
+  platform=?6,
+  software=?7,
+  status=?8,
+  last_seen_at=?9,
+  status_requested=?10,
+  lazy_status_request=?11,
+  supported_task_types=?12,
+  can_restart=?13
+WHERE id=?14
+`
+
+type SaveWorkerParams struct {
+	UpdatedAt          sql.NullTime
+	UUID               string
+	Secret             string
+	Name               string
+	Address            string
+	Platform           string
+	Software           string
+	Status             string
+	LastSeenAt         sql.NullTime
+	StatusRequested    string
+	LazyStatusRequest  bool
+	SupportedTaskTypes string
+	CanRestart         bool
+	ID                 int64
+}
+
+func (q *Queries) SaveWorker(ctx context.Context, arg SaveWorkerParams) error {
+	_, err := q.db.ExecContext(ctx, saveWorker,
+		arg.UpdatedAt,
+		arg.UUID,
+		arg.Secret,
+		arg.Name,
+		arg.Address,
+		arg.Platform,
+		arg.Software,
+		arg.Status,
+		arg.LastSeenAt,
+		arg.StatusRequested,
+		arg.LazyStatusRequest,
+		arg.SupportedTaskTypes,
+		arg.CanRestart,
+		arg.ID,
+	)
+	return err
+}
+
+const saveWorkerStatus = `-- name: SaveWorkerStatus :exec
+UPDATE workers SET
+  updated_at=?1,
+  status=?2,
+  status_requested=?3,
+  lazy_status_request=?4
+WHERE id=?5
+`
+
+type SaveWorkerStatusParams struct {
+	UpdatedAt         sql.NullTime
+	Status            string
+	StatusRequested   string
+	LazyStatusRequest bool
+	ID                int64
+}
+
+func (q *Queries) SaveWorkerStatus(ctx context.Context, arg SaveWorkerStatusParams) error {
+	_, err := q.db.ExecContext(ctx, saveWorkerStatus,
+		arg.UpdatedAt,
+		arg.Status,
+		arg.StatusRequested,
+		arg.LazyStatusRequest,
+		arg.ID,
+	)
+	return err
+}
+
+const softDeleteWorker = `-- name: SoftDeleteWorker :execrows
+UPDATE workers SET deleted_at=?1
+WHERE uuid=?2
+`
+
+type SoftDeleteWorkerParams struct {
+	DeletedAt sql.NullTime
+	UUID      string
+}
+
+func (q *Queries) SoftDeleteWorker(ctx context.Context, arg SoftDeleteWorkerParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, softDeleteWorker, arg.DeletedAt, arg.UUID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const summarizeWorkerStatuses = `-- name: SummarizeWorkerStatuses :many
+SELECT status, count(id) as status_count FROM workers
+WHERE deleted_at is NULL
+GROUP BY status
+`
+
+type SummarizeWorkerStatusesRow struct {
+	Status      string
+	StatusCount int64
+}
+
+func (q *Queries) SummarizeWorkerStatuses(ctx context.Context) ([]SummarizeWorkerStatusesRow, error) {
+	rows, err := q.db.QueryContext(ctx, summarizeWorkerStatuses)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SummarizeWorkerStatusesRow
+	for rows.Next() {
+		var i SummarizeWorkerStatusesRow
+		if err := rows.Scan(&i.Status, &i.StatusCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const workerSeen = `-- name: WorkerSeen :exec
+UPDATE workers SET
+  updated_at=?1,
+  last_seen_at=?2
+WHERE id=?3
+`
+
+type WorkerSeenParams struct {
+	UpdatedAt  sql.NullTime
+	LastSeenAt sql.NullTime
+	ID         int64
+}
+
+func (q *Queries) WorkerSeen(ctx context.Context, arg WorkerSeenParams) error {
+	_, err := q.db.ExecContext(ctx, workerSeen, arg.UpdatedAt, arg.LastSeenAt, arg.ID)
+	return err
+}
