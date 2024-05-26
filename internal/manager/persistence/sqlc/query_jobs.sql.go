@@ -13,6 +13,56 @@ import (
 	"time"
 )
 
+const addWorkerToTaskFailedList = `-- name: AddWorkerToTaskFailedList :exec
+INSERT INTO task_failures (created_at, task_id, worker_id)
+VALUES (?1, ?2, ?3)
+ON CONFLICT DO NOTHING
+`
+
+type AddWorkerToTaskFailedListParams struct {
+	CreatedAt time.Time
+	TaskID    int64
+	WorkerID  int64
+}
+
+func (q *Queries) AddWorkerToTaskFailedList(ctx context.Context, arg AddWorkerToTaskFailedListParams) error {
+	_, err := q.db.ExecContext(ctx, addWorkerToTaskFailedList, arg.CreatedAt, arg.TaskID, arg.WorkerID)
+	return err
+}
+
+const clearFailureListOfJob = `-- name: ClearFailureListOfJob :exec
+DELETE FROM task_failures
+WHERE task_id in (SELECT id FROM tasks WHERE job_id=?1)
+`
+
+// SQLite doesn't support JOIN in DELETE queries, so use a sub-query instead.
+func (q *Queries) ClearFailureListOfJob(ctx context.Context, jobID int64) error {
+	_, err := q.db.ExecContext(ctx, clearFailureListOfJob, jobID)
+	return err
+}
+
+const clearFailureListOfTask = `-- name: ClearFailureListOfTask :exec
+DELETE FROM task_failures WHERE task_id=?1
+`
+
+func (q *Queries) ClearFailureListOfTask(ctx context.Context, taskID int64) error {
+	_, err := q.db.ExecContext(ctx, clearFailureListOfTask, taskID)
+	return err
+}
+
+const countWorkersFailingTask = `-- name: CountWorkersFailingTask :one
+SELECT count(*) as num_failed FROM task_failures
+WHERE task_id=?1
+`
+
+// Count how many workers have failed a given task.
+func (q *Queries) CountWorkersFailingTask(ctx context.Context, taskID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countWorkersFailingTask, taskID)
+	var num_failed int64
+	err := row.Scan(&num_failed)
+	return num_failed, err
+}
+
 const createJob = `-- name: CreateJob :exec
 
 INSERT INTO jobs (
@@ -269,6 +319,56 @@ func (q *Queries) FetchTask(ctx context.Context, uuid string) (FetchTaskRow, err
 		&i.WorkerUUID,
 	)
 	return i, err
+}
+
+const fetchTaskFailureList = `-- name: FetchTaskFailureList :many
+SELECT workers.id, workers.created_at, workers.updated_at, workers.uuid, workers.secret, workers.name, workers.address, workers.platform, workers.software, workers.status, workers.last_seen_at, workers.status_requested, workers.lazy_status_request, workers.supported_task_types, workers.deleted_at, workers.can_restart FROM workers
+INNER JOIN task_failures TF on TF.worker_id = workers.id
+WHERE TF.task_id=?1
+`
+
+type FetchTaskFailureListRow struct {
+	Worker Worker
+}
+
+func (q *Queries) FetchTaskFailureList(ctx context.Context, taskID int64) ([]FetchTaskFailureListRow, error) {
+	rows, err := q.db.QueryContext(ctx, fetchTaskFailureList, taskID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FetchTaskFailureListRow
+	for rows.Next() {
+		var i FetchTaskFailureListRow
+		if err := rows.Scan(
+			&i.Worker.ID,
+			&i.Worker.CreatedAt,
+			&i.Worker.UpdatedAt,
+			&i.Worker.UUID,
+			&i.Worker.Secret,
+			&i.Worker.Name,
+			&i.Worker.Address,
+			&i.Worker.Platform,
+			&i.Worker.Software,
+			&i.Worker.Status,
+			&i.Worker.LastSeenAt,
+			&i.Worker.StatusRequested,
+			&i.Worker.LazyStatusRequest,
+			&i.Worker.SupportedTaskTypes,
+			&i.Worker.DeletedAt,
+			&i.Worker.CanRestart,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const fetchTaskJobUUID = `-- name: FetchTaskJobUUID :one

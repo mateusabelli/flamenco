@@ -164,3 +164,26 @@ WHERE job_id = @job_id AND status = @task_status;
 SELECT status, count(*) as num_tasks FROM tasks
 WHERE job_id = @job_id
 GROUP BY status;
+
+-- name: AddWorkerToTaskFailedList :exec
+INSERT INTO task_failures (created_at, task_id, worker_id)
+VALUES (@created_at, @task_id, @worker_id)
+ON CONFLICT DO NOTHING;
+
+-- name: CountWorkersFailingTask :one
+-- Count how many workers have failed a given task.
+SELECT count(*) as num_failed FROM task_failures
+WHERE task_id=@task_id;
+
+-- name: ClearFailureListOfTask :exec
+DELETE FROM task_failures WHERE task_id=@task_id;
+
+-- name: ClearFailureListOfJob :exec
+-- SQLite doesn't support JOIN in DELETE queries, so use a sub-query instead.
+DELETE FROM task_failures
+WHERE task_id in (SELECT id FROM tasks WHERE job_id=@job_id);
+
+-- name: FetchTaskFailureList :many
+SELECT sqlc.embed(workers) FROM workers
+INNER JOIN task_failures TF on TF.worker_id=workers.id
+WHERE TF.task_id=@task_id;

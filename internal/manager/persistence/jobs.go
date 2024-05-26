@@ -14,7 +14,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
@@ -903,64 +902,72 @@ func (db *DB) TaskTouchedByWorker(ctx context.Context, t *Task) error {
 //
 // Returns the new number of workers that failed this task.
 func (db *DB) AddWorkerToTaskFailedList(ctx context.Context, t *Task, w *Worker) (numFailed int, err error) {
-	entry := TaskFailure{
-		Task:   t,
-		Worker: w,
-	}
-	tx := db.gormDB.WithContext(ctx).
-		Clauses(clause.OnConflict{DoNothing: true}).
-		Create(&entry)
-	if tx.Error != nil {
-		return 0, tx.Error
+	queries, err := db.queries()
+	if err != nil {
+		return 0, err
 	}
 
-	var numFailed64 int64
-	tx = db.gormDB.WithContext(ctx).Model(&TaskFailure{}).
-		Where("task_id=?", t.ID).
-		Count(&numFailed64)
+	err = queries.AddWorkerToTaskFailedList(ctx, sqlc.AddWorkerToTaskFailedListParams{
+		CreatedAt: db.now().Time,
+		TaskID:    int64(t.ID),
+		WorkerID:  int64(w.ID),
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	numFailed64, err := queries.CountWorkersFailingTask(ctx, int64(t.ID))
+	if err != nil {
+		return 0, err
+	}
 
 	// Integer literals are of type `int`, so that's just a bit nicer to work with
 	// than `int64`.
 	if numFailed64 > math.MaxInt32 {
 		log.Warn().Int64("numFailed", numFailed64).Msg("number of failed workers is crazy high, something is wrong here")
-		return math.MaxInt32, tx.Error
+		return math.MaxInt32, nil
 	}
-	return int(numFailed64), tx.Error
+	return int(numFailed64), nil
 }
 
 // ClearFailureListOfTask clears the list of workers that failed this task.
 func (db *DB) ClearFailureListOfTask(ctx context.Context, t *Task) error {
-	tx := db.gormDB.WithContext(ctx).
-		Where("task_id = ?", t.ID).
-		Delete(&TaskFailure{})
-	return tx.Error
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	return queries.ClearFailureListOfTask(ctx, int64(t.ID))
 }
 
 // ClearFailureListOfJob en-mass, for all tasks of this job, clears the list of
 // workers that failed those tasks.
 func (db *DB) ClearFailureListOfJob(ctx context.Context, j *Job) error {
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
 
-	// SQLite doesn't support JOIN in DELETE queries, so use a sub-query instead.
-	jobTasksQuery := db.gormDB.Model(&Task{}).
-		Select("id").
-		Where("job_id = ?", j.ID)
-
-	tx := db.gormDB.WithContext(ctx).
-		Where("task_id in (?)", jobTasksQuery).
-		Delete(&TaskFailure{})
-	return tx.Error
+	return queries.ClearFailureListOfJob(ctx, int64(j.ID))
 }
 
 func (db *DB) FetchTaskFailureList(ctx context.Context, t *Task) ([]*Worker, error) {
-	var workers []*Worker
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
+	}
 
-	tx := db.gormDB.WithContext(ctx).
-		Model(&Worker{}).
-		Joins("inner join task_failures TF on TF.worker_id = workers.id").
-		Where("TF.task_id = ?", t.ID).
-		Scan(&workers)
+	failureList, err := queries.FetchTaskFailureList(ctx, int64(t.ID))
+	if err != nil {
+		return nil, err
+	}
 
-	return workers, tx.Error
+	workers := make([]*Worker, len(failureList))
+	for idx := range failureList {
+		worker := convertSqlcWorker(failureList[idx].Worker)
+		workers[idx] = &worker
+	}
+	return workers, nil
 }
 
 // convertSqlcJob converts a job from the SQLC-generated model to the model
