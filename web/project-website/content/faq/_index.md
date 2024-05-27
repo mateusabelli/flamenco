@@ -209,3 +209,18 @@ The Worker was deleted via the Flamenco Manager web interface.
 This is shown on the Manager after an "unknown worker is trying to communicate"
 message. It is also shown on the Worker for the same reason. See
 [What does "unknown worker is trying to communicate" mean?](#what-does-unknown-worker-is-trying-to-communicate-mean)
+
+### Why are all the `\` doubled?
+
+You may see double backslashes in Flamenco Manager's log output, error messages,
+etc. To give an example, `C:\path-to\myfile.blend` may be shown as
+`C:\\path-to\\myfile.blend`. The technical reason for this is that the path
+separator `\` has double duty, and in certain cases can also be used as an
+'escape character', denoting that the character *following* it should be treated
+specially. Common uses are a newline `\n` or a quote within quoted text: `"They
+said \"hello\" to me"`. In such cases, a literal backslash should be escaped as
+well, and thus `\` becomes `\\`.
+
+In other words, even though it looks strange, this is not a bug in Flamenco. The
+aim is to prevent you from seeing these doublings as little as possible, but
+unfortunately it cannot always be avoided.
