@@ -150,19 +150,28 @@ func (s *Service) Run(ctx context.Context) {
 	log.Debug().Msg("job deleter: running")
 	defer log.Debug().Msg("job deleter: shutting down")
 
+	waitTime := jobDeletionCheckInterval
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case jobUUID := <-s.queue:
 			s.deleteJob(ctx, jobUUID)
-		case <-time.After(jobDeletionCheckInterval):
+
+			if len(s.queue) == 0 {
+				waitTime = 100 * time.Millisecond
+			}
+		case <-time.After(waitTime):
 			// Inspect the database to see if there was anything marked for deletion
 			// without getting into our queue. This can happen when lots of jobs are
 			// queued in quick succession, as then the queue channel gets full.
 			if len(s.queue) == 0 {
 				s.queuePendingDeletions(ctx)
 			}
+
+			// The next iteration should just wait for the default duration.
+			waitTime = jobDeletionCheckInterval
 		}
 	}
 }
