@@ -650,14 +650,32 @@ func (db *DB) FetchTasksOfWorkerInStatus(ctx context.Context, worker *Worker, ta
 		return nil, taskError(err, "finding tasks of worker %s in status %q", worker.UUID, taskStatus)
 	}
 
+	jobCache := make(map[uint]*Job)
+
 	result := make([]*Task, len(rows))
 	for i := range rows {
-		gormTask, err := convertSqlcTask(rows[i].Task, rows[i].JobUUID.String, worker.UUID)
+		jobUUID := rows[i].JobUUID.String
+		gormTask, err := convertSqlcTask(rows[i].Task, jobUUID, worker.UUID)
 		if err != nil {
 			return nil, err
 		}
 		gormTask.Worker = worker
 		gormTask.WorkerID = &worker.ID
+
+		// Fetch the job, either from the cache or from the database. This is done
+		// here because the task_state_machine functionality expects that task.Job
+		// is set.
+		// TODO: make that code fetch the job details it needs, rather than fetching
+		// the entire job here.
+		job := jobCache[gormTask.JobID]
+		if job == nil {
+			job, err = db.FetchJob(ctx, jobUUID)
+			if err != nil {
+				return nil, jobError(err, "finding job %s of task %s", jobUUID, gormTask.UUID)
+			}
+		}
+		gormTask.Job = job
+
 		result[i] = gormTask
 	}
 	return result, nil

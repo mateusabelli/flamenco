@@ -473,8 +473,9 @@ func taskWithStatus(jobStatus api.JobStatus, taskStatus api.TaskStatus) *persist
 		Model: persistence.Model{ID: 327},
 		UUID:  "testtask-0001-4e28-aeea-8cbaf2fc96a5",
 
-		JobID: job.ID,
-		Job:   &job,
+		JobUUID: job.UUID,
+		JobID:   job.ID,
+		Job:     &job,
 
 		Status: taskStatus,
 	}
@@ -486,11 +487,12 @@ func taskWithStatus(jobStatus api.JobStatus, taskStatus api.TaskStatus) *persist
 func taskOfSameJob(task *persistence.Task, taskStatus api.TaskStatus) *persistence.Task {
 	newTaskID := task.ID + 1
 	return &persistence.Task{
-		Model:  persistence.Model{ID: newTaskID},
-		UUID:   fmt.Sprintf("testtask-%04d-4e28-aeea-8cbaf2fc96a5", newTaskID),
-		JobID:  task.JobID,
-		Job:    task.Job,
-		Status: taskStatus,
+		Model:   persistence.Model{ID: newTaskID},
+		UUID:    fmt.Sprintf("testtask-%04d-4e28-aeea-8cbaf2fc96a5", newTaskID),
+		JobUUID: task.JobUUID,
+		JobID:   task.JobID,
+		Job:     task.Job,
+		Status:  taskStatus,
 	}
 }
 

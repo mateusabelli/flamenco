@@ -59,9 +59,8 @@ func (sm *StateMachine) taskStatusChangeOnly(
 	task *persistence.Task,
 	newTaskStatus api.TaskStatus,
 ) error {
-	job := task.Job
-	if job == nil {
-		log.Panic().Str("task", task.UUID).Msg("task without job, cannot handle this")
+	if task.JobUUID == "" {
+		log.Panic().Str("task", task.UUID).Msg("task without job UUID, cannot handle this")
 		return nil // Will not run because of the panic.
 	}
 
@@ -70,7 +69,7 @@ func (sm *StateMachine) taskStatusChangeOnly(
 
 	logger := log.With().
 		Str("task", task.UUID).
-		Str("job", job.UUID).
+		Str("job", task.JobUUID).
 		Str("taskStatusOld", string(oldTaskStatus)).
 		Str("taskStatusNew", string(newTaskStatus)).
 		Logger()
@@ -83,7 +82,7 @@ func (sm *StateMachine) taskStatusChangeOnly(
 	if oldTaskStatus != newTaskStatus {
 		// logStorage already logs any error, and an error here shouldn't block the
 		// rest of the function.
-		_ = sm.logStorage.WriteTimestamped(logger, job.UUID, task.UUID,
+		_ = sm.logStorage.WriteTimestamped(logger, task.JobUUID, task.UUID,
 			fmt.Sprintf("task changed status %s -> %s", oldTaskStatus, newTaskStatus))
 	}
 
@@ -101,9 +100,13 @@ func (sm *StateMachine) updateJobAfterTaskStatusChange(
 	ctx context.Context, task *persistence.Task, oldTaskStatus api.TaskStatus,
 ) error {
 	job := task.Job
+	if job == nil {
+		log.Panic().Str("task", task.UUID).Msg("task without job, cannot handle this")
+		return nil // Will not run because of the panic.
+	}
 
 	logger := log.With().
-		Str("job", job.UUID).
+		Str("job", task.JobUUID).
 		Str("task", task.UUID).
 		Str("taskStatusOld", string(oldTaskStatus)).
 		Str("taskStatusNew", string(task.Status)).
