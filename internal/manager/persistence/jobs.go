@@ -65,14 +65,14 @@ type Task struct {
 	Type     string         `gorm:"type:varchar(32);default:''"`
 	JobID    uint           `gorm:"default:0"`
 	Job      *Job           `gorm:"foreignkey:JobID;references:ID;constraint:OnDelete:CASCADE"`
-	JobUUID  string         `gorm:"-"` // Fetched by SQLC, not GORM.
+	JobUUID  string         `gorm:"-"` // Fetched by SQLC, handled by GORM in Task.AfterFind()
 	Priority int            `gorm:"type:smallint;default:50"`
 	Status   api.TaskStatus `gorm:"type:varchar(16);default:''"`
 
 	// Which worker is/was working on this.
 	WorkerID      *uint
 	Worker        *Worker   `gorm:"foreignkey:WorkerID;references:ID;constraint:OnDelete:SET NULL"`
-	WorkerUUID    string    `gorm:"-"`     // Fetched by SQLC, not GORM.
+	WorkerUUID    string    `gorm:"-"`     // Fetched by SQLC, handled by GORM in Task.AfterFind()
 	LastTouchedAt time.Time `gorm:"index"` // Should contain UTC timestamps.
 
 	// Dependencies are tasks that need to be completed before this one can run.
@@ -80,6 +80,17 @@ type Task struct {
 
 	Commands Commands `gorm:"type:jsonb"`
 	Activity string   `gorm:"type:varchar(255);default:''"`
+}
+
+// AfterFind updates the task JobUUID and WorkerUUID fields from its job/worker, if known.
+func (t *Task) AfterFind(tx *gorm.DB) error {
+	if t.JobUUID == "" && t.Job != nil {
+		t.JobUUID = t.Job.UUID
+	}
+	if t.WorkerUUID == "" && t.Worker != nil {
+		t.WorkerUUID = t.Worker.UUID
+	}
+	return nil
 }
 
 type Commands []Command
