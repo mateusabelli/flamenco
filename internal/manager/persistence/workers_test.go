@@ -5,6 +5,7 @@ package persistence
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -412,6 +413,17 @@ func TestSummarizeWorkerStatusesTimeout(t *testing.T) {
 
 	// Test the summary.
 	summary, err := f.db.SummarizeWorkerStatuses(subCtx)
-	assert.ErrorIs(t, err, context.DeadlineExceeded)
+
+	// Unfortunately, the exact error returned seems to be non-deterministic.
+	switch {
+	case errors.Is(err, context.DeadlineExceeded):
+		// Good!
+	case errors.Is(err, ErrContextCancelled):
+		// Also good!
+	case err == nil:
+		t.Fatal("no error returned where a timeout error was expected")
+	default:
+		t.Fatalf("unexpected error returned: %v", err)
+	}
 	assert.Nil(t, summary)
 }

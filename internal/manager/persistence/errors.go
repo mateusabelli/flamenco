@@ -17,6 +17,13 @@ var (
 	ErrWorkerTagNotFound = PersistenceError{Message: "worker tag not found", Err: gorm.ErrRecordNotFound}
 
 	ErrDeletingWithoutFK = errors.New("refusing to delete a job when foreign keys are not enabled on the database")
+
+	// ErrContextCancelled wraps the SQLite error "interrupted (9)". That error is
+	// (as far as Sybren could figure out) caused by the context being closed.
+	// Unfortunately there is no wrapping of the context error, so it's not
+	// possible to determine whether it was due to a 'deadline exceeded' error or
+	// another cancellation cause (like upstream HTTP connection closing).
+	ErrContextCancelled = errors.New("context cancelled")
 )
 
 type PersistenceError struct {
@@ -55,6 +62,12 @@ func wrapError(errorToWrap error, message string, format ...interface{}) error {
 		formattedMsg = fmt.Sprintf(message, format...)
 	} else {
 		formattedMsg = message
+	}
+
+	// Translate the SQLite "interrupted" error into something the error-handling
+	// code can check for.
+	if errorToWrap.Error() == "interrupted (9)" {
+		errorToWrap = ErrContextCancelled
 	}
 
 	return PersistenceError{
