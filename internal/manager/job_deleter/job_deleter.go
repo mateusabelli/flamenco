@@ -231,10 +231,6 @@ func (s *Service) deleteJob(ctx context.Context, jobUUID string) error {
 		Stringer("duration", duration).
 		Msg("job deleter: job removal complete")
 
-	// Request a consistency check on the database. In the past there have been
-	// some issues after deleting a job.
-	s.persist.RequestIntegrityCheck()
-
 	return nil
 }
 

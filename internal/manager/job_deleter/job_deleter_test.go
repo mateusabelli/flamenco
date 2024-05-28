@@ -110,7 +110,6 @@ func TestDeleteJobWithoutShaman(t *testing.T) {
 	// Mock that everything went OK.
 	mocks.storage.EXPECT().RemoveJobStorage(mocks.ctx, jobUUID)
 	mocks.persist.EXPECT().DeleteJob(mocks.ctx, jobUUID)
-	mocks.persist.EXPECT().RequestIntegrityCheck()
 	mocks.broadcaster.EXPECT().BroadcastJobUpdate(gomock.Any())
 	require.NoError(t, s.deleteJob(mocks.ctx, jobUUID))
 }
@@ -155,7 +154,6 @@ func TestDeleteJobWithShaman(t *testing.T) {
 	mocks.shaman.EXPECT().EraseCheckout(shamanCheckoutID)
 	mocks.storage.EXPECT().RemoveJobStorage(mocks.ctx, jobUUID)
 	mocks.persist.EXPECT().DeleteJob(mocks.ctx, jobUUID)
-	mocks.persist.EXPECT().RequestIntegrityCheck()
 	mocks.broadcaster.EXPECT().BroadcastJobUpdate(gomock.Any())
 	require.NoError(t, s.deleteJob(mocks.ctx, jobUUID))
 }
