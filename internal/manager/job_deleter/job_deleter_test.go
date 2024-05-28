@@ -128,14 +128,7 @@ func TestDeleteJobWithShaman(t *testing.T) {
 		AnyTimes()
 
 	shamanCheckoutID := "010_0431_lighting"
-	dbJob := persistence.Job{
-		UUID: jobUUID,
-		Name: "сцена/shot/010_0431_lighting",
-		Storage: persistence.JobStorageInfo{
-			ShamanCheckoutID: shamanCheckoutID,
-		},
-	}
-	mocks.persist.EXPECT().FetchJob(mocks.ctx, jobUUID).Return(&dbJob, nil).AnyTimes()
+	mocks.persist.EXPECT().FetchJobShamanCheckoutID(mocks.ctx, jobUUID).Return(shamanCheckoutID, nil).AnyTimes()
 
 	// Mock that Shaman deletion failed. The rest of the deletion should be
 	// blocked by this.

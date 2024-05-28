@@ -66,6 +66,21 @@ func (mr *MockPersistenceServiceMockRecorder) FetchJob(arg0, arg1 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchJob", reflect.TypeOf((*MockPersistenceService)(nil).FetchJob), arg0, arg1)
 }
 
+// FetchJobShamanCheckoutID mocks base method.
+func (m *MockPersistenceService) FetchJobShamanCheckoutID(arg0 context.Context, arg1 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchJobShamanCheckoutID", arg0, arg1)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchJobShamanCheckoutID indicates an expected call of FetchJobShamanCheckoutID.
+func (mr *MockPersistenceServiceMockRecorder) FetchJobShamanCheckoutID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchJobShamanCheckoutID", reflect.TypeOf((*MockPersistenceService)(nil).FetchJobShamanCheckoutID), arg0, arg1)
+}
+
 // FetchJobsDeletionRequested mocks base method.
 func (m *MockPersistenceService) FetchJobsDeletionRequested(arg0 context.Context) ([]string, error) {
 	m.ctrl.T.Helper()

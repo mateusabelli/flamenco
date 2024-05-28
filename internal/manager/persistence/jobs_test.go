@@ -192,6 +192,29 @@ func TestDeleteJob(t *testing.T) {
 		"all remaining tasks should belong to the other job")
 }
 
+func TestFetchJobShamanCheckoutID(t *testing.T) {
+	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	defer cancel()
+
+	authJob := createTestAuthoredJobWithTasks()
+	authJob.JobID = "e1a034cc-b709-45f5-b80f-9cf16511c678"
+	authJob.Name = "Job to delete"
+	authJob.Storage.ShamanCheckoutID = "some-✓out-id-string"
+	persistAuthoredJob(t, ctx, db, authJob)
+
+	{ // Test fetching a non-existing job.
+		checkoutID, err := db.FetchJobShamanCheckoutID(ctx, "4cb20f0d-f1f6-4d56-8277-9b208a99fed0")
+		assert.ErrorIs(t, err, ErrJobNotFound)
+		assert.Equal(t, "", checkoutID)
+	}
+
+	{ // Test existing job.
+		checkoutID, err := db.FetchJobShamanCheckoutID(ctx, authJob.JobID)
+		require.NoError(t, err)
+		assert.Equal(t, authJob.Storage.ShamanCheckoutID, checkoutID)
+	}
+}
+
 func TestDeleteJobWithoutFK(t *testing.T) {
 	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
 	defer cancel()

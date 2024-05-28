@@ -197,6 +197,7 @@ queueLoop:
 func (s *Service) deleteJob(ctx context.Context, jobUUID string) error {
 	logger := log.With().Str("job", jobUUID).Logger()
 
+	logger.Debug().Msg("job deleter: starting job deletion")
 	err := s.deleteShamanCheckout(ctx, logger, jobUUID)
 	if err != nil {
 		return err
@@ -258,12 +259,10 @@ func (s *Service) deleteShamanCheckout(ctx context.Context, logger zerolog.Logge
 	}
 
 	// To erase the Shaman checkout we need more info than just its UUID.
-	dbJob, err := s.persist.FetchJob(ctx, jobUUID)
+	checkoutID, err := s.persist.FetchJobShamanCheckoutID(ctx, jobUUID)
 	if err != nil {
 		return fmt.Errorf("unable to fetch job from database: %w", err)
 	}
-
-	checkoutID := dbJob.Storage.ShamanCheckoutID
 	if checkoutID == "" {
 		logger.Info().Msg("job deleter: job was not created with Shaman (or before Flamenco v3.2), skipping job file deletion")
 		return nil
@@ -272,10 +271,10 @@ func (s *Service) deleteShamanCheckout(ctx context.Context, logger zerolog.Logge
 	err = s.shaman.EraseCheckout(checkoutID)
 	switch {
 	case errors.Is(err, shaman.ErrDoesNotExist):
-		logger.Info().Msg("job deleter: Shaman checkout directory does not exist, ignoring")
+		logger.Debug().Msg("job deleter: Shaman checkout directory does not exist, ignoring")
 		return nil
 	case err != nil:
-		logger.Info().Err(err).Msg("job deleter: Shaman checkout directory could not be erased")
+		logger.Warn().Err(err).Msg("job deleter: Shaman checkout directory could not be erased")
 		return err
 	}
 

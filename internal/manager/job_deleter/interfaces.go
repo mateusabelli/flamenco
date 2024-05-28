@@ -18,6 +18,7 @@ import (
 
 type PersistenceService interface {
 	FetchJob(ctx context.Context, jobUUID string) (*persistence.Job, error)
+	FetchJobShamanCheckoutID(ctx context.Context, jobUUID string) (string, error)
 
 	RequestJobDeletion(ctx context.Context, j *persistence.Job) error
 	RequestJobMassDeletion(ctx context.Context, lastUpdatedMax time.Time) ([]string, error)

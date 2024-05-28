@@ -27,6 +27,9 @@ WHERE uuid = ? LIMIT 1;
 SELECT * FROM jobs
 WHERE id = ? LIMIT 1;
 
+-- name: FetchJobShamanCheckoutID :one
+SELECT storage_shaman_checkout_id FROM jobs WHERE uuid=@uuid;
+
 -- name: DeleteJob :exec
 DELETE FROM jobs WHERE uuid = ?;
 

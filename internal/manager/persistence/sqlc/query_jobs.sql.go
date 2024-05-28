@@ -94,7 +94,6 @@ type CreateJobParams struct {
 }
 
 // Jobs / Tasks queries
-//
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 	_, err := q.db.ExecContext(ctx, createJob,
 		arg.CreatedAt,
@@ -174,6 +173,17 @@ func (q *Queries) FetchJobByID(ctx context.Context, id int64) (Job, error) {
 		&i.WorkerTagID,
 	)
 	return i, err
+}
+
+const fetchJobShamanCheckoutID = `-- name: FetchJobShamanCheckoutID :one
+SELECT storage_shaman_checkout_id FROM jobs WHERE uuid=?1
+`
+
+func (q *Queries) FetchJobShamanCheckoutID(ctx context.Context, uuid string) (string, error) {
+	row := q.db.QueryRowContext(ctx, fetchJobShamanCheckoutID, uuid)
+	var storage_shaman_checkout_id string
+	err := row.Scan(&storage_shaman_checkout_id)
+	return storage_shaman_checkout_id, err
 }
 
 const fetchJobUUIDsUpdatedBefore = `-- name: FetchJobUUIDsUpdatedBefore :many
@@ -323,7 +333,7 @@ func (q *Queries) FetchTask(ctx context.Context, uuid string) (FetchTaskRow, err
 
 const fetchTaskFailureList = `-- name: FetchTaskFailureList :many
 SELECT workers.id, workers.created_at, workers.updated_at, workers.uuid, workers.secret, workers.name, workers.address, workers.platform, workers.software, workers.status, workers.last_seen_at, workers.status_requested, workers.lazy_status_request, workers.supported_task_types, workers.deleted_at, workers.can_restart FROM workers
-INNER JOIN task_failures TF on TF.worker_id = workers.id
+INNER JOIN task_failures TF on TF.worker_id=workers.id
 WHERE TF.task_id=?1
 `
 

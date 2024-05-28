@@ -270,6 +270,23 @@ func (db *DB) FetchJob(ctx context.Context, jobUUID string) (*Job, error) {
 	return convertSqlcJob(sqlcJob)
 }
 
+// FetchJobShamanCheckoutID fetches the job's Shaman Checkout ID.
+func (db *DB) FetchJobShamanCheckoutID(ctx context.Context, jobUUID string) (string, error) {
+	queries, err := db.queries()
+	if err != nil {
+		return "", err
+	}
+
+	checkoutID, err := queries.FetchJobShamanCheckoutID(ctx, jobUUID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return "", ErrJobNotFound
+	case err != nil:
+		return "", jobError(err, "fetching job")
+	}
+	return checkoutID, nil
+}
+
 // DeleteJob deletes a job from the database.
 // The deletion cascades to its tasks and other job-related tables.
 func (db *DB) DeleteJob(ctx context.Context, jobUUID string) error {
