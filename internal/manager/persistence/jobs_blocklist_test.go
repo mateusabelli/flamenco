@@ -170,7 +170,7 @@ func TestWorkersLeftToRun(t *testing.T) {
 }
 
 func TestWorkersLeftToRunWithTags(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	// Create tags.

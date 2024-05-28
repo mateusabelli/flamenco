@@ -6,6 +6,7 @@ package persistence
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -22,11 +23,11 @@ import (
 // resulting database.
 const TestDSN = "file::memory:"
 
-func CreateTestDB(t *testing.T) (db *DB, closer func()) {
+func CreateTestDB() (db *DB, closer func()) {
 	// Delete the SQLite file if it exists on disk.
 	if _, err := os.Stat(TestDSN); err == nil {
 		if err := os.Remove(TestDSN); err != nil {
-			t.Fatalf("unable to remove %s: %v", TestDSN, err)
+			panic(fmt.Sprintf("unable to remove %s: %v", TestDSN, err))
 		}
 	}
 
@@ -38,7 +39,7 @@ func CreateTestDB(t *testing.T) (db *DB, closer func()) {
 	// can be closed when the unit test is done running.
 	sqliteConn, err := sql.Open(sqlite.DriverName, TestDSN)
 	if err != nil {
-		t.Fatalf("opening SQLite connection: %v", err)
+		panic(fmt.Sprintf("opening SQLite connection: %v", err))
 	}
 
 	config := gorm.Config{
@@ -49,19 +50,19 @@ func CreateTestDB(t *testing.T) (db *DB, closer func()) {
 
 	db, err = openDBWithConfig(TestDSN, &config)
 	if err != nil {
-		t.Fatalf("opening DB: %v", err)
+		panic(fmt.Sprintf("opening DB: %v", err))
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	err = db.migrate(ctx)
 	if err != nil {
-		t.Fatalf("migrating DB: %v", err)
+		panic(fmt.Sprintf("migrating DB: %v", err))
 	}
 
 	closer = func() {
 		if err := db.Close(); err != nil {
-			t.Fatalf("closing DB: %v", err)
+			panic(fmt.Sprintf("closing DB: %v", err))
 		}
 	}
 
@@ -70,8 +71,8 @@ func CreateTestDB(t *testing.T) (db *DB, closer func()) {
 
 // persistenceTestFixtures creates a test database and returns it and a context.
 // Tests should call the returned cancel function when they're done.
-func persistenceTestFixtures(t *testing.T, testContextTimeout time.Duration) (context.Context, context.CancelFunc, *DB) {
-	db, dbCloser := CreateTestDB(t)
+func persistenceTestFixtures(testContextTimeout time.Duration) (context.Context, context.CancelFunc, *DB) {
+	db, dbCloser := CreateTestDB()
 
 	var (
 		ctx       context.Context
@@ -102,7 +103,7 @@ type WorkerTestFixture struct {
 }
 
 func workerTestFixtures(t *testing.T, testContextTimeout time.Duration) WorkerTestFixture {
-	ctx, cancel, db := persistenceTestFixtures(t, testContextTimeout)
+	ctx, cancel, db := persistenceTestFixtures(testContextTimeout)
 
 	w := Worker{
 		UUID:               "557930e7-5b55-469e-a6d7-fc800f3685be",

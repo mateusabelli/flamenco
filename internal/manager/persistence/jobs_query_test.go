@@ -45,7 +45,7 @@ func TestSimpleQuery(t *testing.T) {
 }
 
 func TestQueryMetadata(t *testing.T) {
-	ctx, close, db := persistenceTestFixtures(t, 0)
+	ctx, close, db := persistenceTestFixtures(0)
 	defer close()
 
 	testJob := persistAuthoredJob(t, ctx, db, createTestAuthoredJobWithTasks())

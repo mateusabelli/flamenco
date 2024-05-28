@@ -16,7 +16,7 @@ import (
 )
 
 func TestCreateFetchWorker(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	// Test fetching non-existent worker
@@ -54,7 +54,7 @@ func TestCreateFetchWorker(t *testing.T) {
 }
 
 func TestFetchWorkerTask(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 10*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(10 * time.Second)
 	defer cancel()
 
 	// Worker without task.
@@ -135,7 +135,7 @@ func TestFetchWorkerTask(t *testing.T) {
 }
 
 func TestSaveWorker(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	w := Worker{
@@ -190,7 +190,7 @@ func TestSaveWorker(t *testing.T) {
 }
 
 func TestFetchWorkers(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	// No workers
@@ -250,7 +250,7 @@ func TestFetchWorkers(t *testing.T) {
 }
 
 func TestDeleteWorker(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	// Test deleting non-existent worker
@@ -315,7 +315,7 @@ func TestDeleteWorker(t *testing.T) {
 }
 
 func TestDeleteWorkerNoForeignKeys(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	// Create a Worker to delete.

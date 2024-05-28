@@ -19,7 +19,7 @@ import (
 )
 
 func TestStoreAuthoredJob(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	job := createTestAuthoredJobWithTasks()
@@ -59,7 +59,7 @@ func TestStoreAuthoredJob(t *testing.T) {
 }
 
 func TestStoreAuthoredJobWithShamanCheckoutID(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	job := createTestAuthoredJobWithTasks()
@@ -76,7 +76,7 @@ func TestStoreAuthoredJobWithShamanCheckoutID(t *testing.T) {
 }
 
 func TestFetchTaskJobUUID(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	job := createTestAuthoredJobWithTasks()
@@ -91,7 +91,7 @@ func TestFetchTaskJobUUID(t *testing.T) {
 func TestSaveJobStorageInfo(t *testing.T) {
 	// Test that saving job storage info doesn't count as "update".
 	// This is necessary for `cmd/shaman-checkout-id-setter` to do its work quietly.
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	startTime := time.Date(2023, time.February, 7, 15, 0, 0, 0, time.UTC)
@@ -122,7 +122,7 @@ func TestSaveJobStorageInfo(t *testing.T) {
 }
 
 func TestSaveJobPriority(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	// Create test job.
@@ -146,7 +146,7 @@ func TestSaveJobPriority(t *testing.T) {
 }
 
 func TestDeleteJob(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	authJob := createTestAuthoredJobWithTasks()
@@ -193,7 +193,7 @@ func TestDeleteJob(t *testing.T) {
 }
 
 func TestFetchJobShamanCheckoutID(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	authJob := createTestAuthoredJobWithTasks()
@@ -216,7 +216,7 @@ func TestFetchJobShamanCheckoutID(t *testing.T) {
 }
 
 func TestDeleteJobWithoutFK(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	authJob := createTestAuthoredJobWithTasks()
@@ -919,7 +919,7 @@ func createTestAuthoredJob(jobID string, tasks ...job_compilers.AuthoredTask) jo
 	return job
 }
 
-func persistAuthoredJob(t *testing.T, ctx context.Context, db *DB, authoredJob job_compilers.AuthoredJob) *Job {
+func persistAuthoredJob(t require.TestingT, ctx context.Context, db *DB, authoredJob job_compilers.AuthoredJob) *Job {
 	err := db.StoreAuthoredJob(ctx, authoredJob)
 	require.NoError(t, err, "error storing authored job in DB")
 
@@ -968,7 +968,7 @@ func duplicateJobAndTasks(job job_compilers.AuthoredJob) job_compilers.AuthoredJ
 }
 
 func jobTasksTestFixtures(t *testing.T) (context.Context, context.CancelFunc, *DB, *Job, job_compilers.AuthoredJob) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 
 	authoredJob := createTestAuthoredJobWithTasks()
 	dbJob := persistAuthoredJob(t, ctx, db, authoredJob)
@@ -978,7 +978,7 @@ func jobTasksTestFixtures(t *testing.T) (context.Context, context.CancelFunc, *D
 
 // This created Test Jobs using the new function createTestAuthoredJobWithNumTasks so that you can set the number of tasks
 func jobTasksTestFixturesWithTaskNum(t *testing.T, numtasks int) (context.Context, context.CancelFunc, *DB, *Job, job_compilers.AuthoredJob) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeoutlong)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeoutlong)
 
 	authoredJob := createTestAuthoredJobWithNumTasks(numtasks)
 	dbJob := persistAuthoredJob(t, ctx, db, authoredJob)

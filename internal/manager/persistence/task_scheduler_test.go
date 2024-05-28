@@ -19,7 +19,7 @@ const schedulerTestTimeout = 100 * time.Millisecond
 const schedulerTestTimeoutlong = 5000 * time.Millisecond
 
 func TestNoTasks(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	w := linuxWorker(t, db)
@@ -30,7 +30,7 @@ func TestNoTasks(t *testing.T) {
 }
 
 func TestOneJobOneTask(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	w := linuxWorker(t, db)
@@ -67,7 +67,7 @@ func TestOneJobOneTask(t *testing.T) {
 }
 
 func TestOneJobThreeTasksByPrio(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	w := linuxWorker(t, db)
@@ -98,7 +98,7 @@ func TestOneJobThreeTasksByPrio(t *testing.T) {
 }
 
 func TestOneJobThreeTasksByDependencies(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	w := linuxWorker(t, db)
@@ -124,7 +124,7 @@ func TestOneJobThreeTasksByDependencies(t *testing.T) {
 }
 
 func TestTwoJobsThreeTasks(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	w := linuxWorker(t, db)
@@ -167,7 +167,7 @@ func TestSomeButNotAllDependenciesCompleted(t *testing.T) {
 	// There was a bug in the task scheduler query, where it would schedule a task
 	// if any of its dependencies was completed (instead of all dependencies).
 	// This test reproduces that problematic scenario.
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	att1 := authorTestTask("1.1 completed task", "blender")
@@ -190,7 +190,7 @@ func TestSomeButNotAllDependenciesCompleted(t *testing.T) {
 }
 
 func TestAlreadyAssigned(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	w := linuxWorker(t, db)
@@ -226,7 +226,7 @@ func TestAlreadyAssigned(t *testing.T) {
 }
 
 func TestAssignedToOtherWorker(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	w := linuxWorker(t, db)
@@ -262,7 +262,7 @@ func TestAssignedToOtherWorker(t *testing.T) {
 }
 
 func TestPreviouslyFailed(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	w := linuxWorker(t, db)
@@ -292,7 +292,7 @@ func TestPreviouslyFailed(t *testing.T) {
 }
 
 func TestWorkerTagJobWithTag(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	// Create worker tags:
@@ -341,7 +341,7 @@ func TestWorkerTagJobWithTag(t *testing.T) {
 }
 
 func TestWorkerTagJobWithoutTag(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	// Create worker tag:
@@ -376,7 +376,7 @@ func TestWorkerTagJobWithoutTag(t *testing.T) {
 }
 
 func TestBlocklisted(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, schedulerTestTimeout)
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
 	defer cancel()
 
 	w := linuxWorker(t, db)

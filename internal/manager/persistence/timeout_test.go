@@ -51,7 +51,7 @@ func TestFetchTimedOutTasks(t *testing.T) {
 }
 
 func TestFetchTimedOutWorkers(t *testing.T) {
-	ctx, cancel, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
 
 	timeoutDeadline := mustParseTime("2022-06-07T11:14:47+02:00")

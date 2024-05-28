@@ -13,7 +13,7 @@ import (
 )
 
 func TestFetchWorkerSleepSchedule(t *testing.T) {
-	ctx, finish, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, finish, db := persistenceTestFixtures(1 * time.Second)
 	defer finish()
 
 	linuxWorker := Worker{
@@ -57,7 +57,7 @@ func TestFetchWorkerSleepSchedule(t *testing.T) {
 }
 
 func TestFetchSleepScheduleWorker(t *testing.T) {
-	ctx, finish, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, finish, db := persistenceTestFixtures(1 * time.Second)
 	defer finish()
 
 	linuxWorker := Worker{
@@ -104,7 +104,7 @@ func TestFetchSleepScheduleWorker(t *testing.T) {
 }
 
 func TestSetWorkerSleepSchedule(t *testing.T) {
-	ctx, finish, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, finish, db := persistenceTestFixtures(1 * time.Second)
 	defer finish()
 
 	linuxWorker := Worker{
@@ -187,7 +187,7 @@ func TestSetWorkerSleepSchedule(t *testing.T) {
 }
 
 func TestSetWorkerSleepScheduleNextCheck(t *testing.T) {
-	ctx, finish, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, finish, db := persistenceTestFixtures(1 * time.Second)
 	defer finish()
 
 	schedule := SleepSchedule{
@@ -218,7 +218,7 @@ func TestSetWorkerSleepScheduleNextCheck(t *testing.T) {
 }
 
 func TestFetchSleepSchedulesToCheck(t *testing.T) {
-	ctx, finish, db := persistenceTestFixtures(t, 1*time.Second)
+	ctx, finish, db := persistenceTestFixtures(1 * time.Second)
 	defer finish()
 
 	mockedNow := mustParseTime("2022-06-07T11:14:47+02:00").UTC()
