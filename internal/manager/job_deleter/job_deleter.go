@@ -196,6 +196,7 @@ queueLoop:
 
 func (s *Service) deleteJob(ctx context.Context, jobUUID string) error {
 	logger := log.With().Str("job", jobUUID).Logger()
+	startTime := time.Now()
 
 	logger.Debug().Msg("job deleter: starting job deletion")
 	err := s.deleteShamanCheckout(ctx, logger, jobUUID)
@@ -225,7 +226,10 @@ func (s *Service) deleteJob(ctx context.Context, jobUUID string) error {
 	}
 	s.changeBroadcaster.BroadcastJobUpdate(jobUpdate)
 
-	logger.Info().Msg("job deleter: job removal complete")
+	duration := time.Since(startTime)
+	logger.Info().
+		Stringer("duration", duration).
+		Msg("job deleter: job removal complete")
 
 	// Request a consistency check on the database. In the past there have been
 	// some issues after deleting a job.
