@@ -60,7 +60,7 @@ func CreateTestDB(t *testing.T) (db *DB, closer func()) {
 	}
 
 	closer = func() {
-		if err := sqliteConn.Close(); err != nil {
+		if err := db.Close(); err != nil {
 			t.Fatalf("closing DB: %v", err)
 		}
 	}
