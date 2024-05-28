@@ -85,7 +85,7 @@ func (l *dbLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql st
 	// Function to lazily get the SQL, affected rows, and logger.
 	buildLogger := func() (loggerPtr *zerolog.Logger, sql string) {
 		sql, rows := fc()
-		logCtx = logCtx.Err(err)
+		logCtx = logCtx.AnErr("cause", err)
 		if rows >= 0 {
 			logCtx = logCtx.Int64("rowsAffected", rows)
 		}
@@ -94,9 +94,13 @@ func (l *dbLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql st
 	}
 
 	switch {
-	case err != nil && zlogLevel <= zerolog.ErrorLevel && (!errors.Is(err, gorm.ErrRecordNotFound) || !l.IgnoreRecordNotFoundError):
+	case err != nil && zlogLevel <= zerolog.ErrorLevel:
 		logger, sql := buildLogger()
-		logger.Error().Msg(sql)
+		if l.silenceLoggingError(err) {
+			logger.Debug().Msg(sql)
+		} else {
+			logger.Error().Msg(sql)
+		}
 
 	case elapsed > l.SlowThreshold && l.SlowThreshold != 0 && zlogLevel <= zerolog.WarnLevel:
 		logger, sql := buildLogger()
@@ -112,13 +116,27 @@ func (l *dbLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql st
 	}
 }
 
+func (l dbLogger) silenceLoggingError(err error) bool {
+	switch {
+	case l.IgnoreRecordNotFoundError && errors.Is(err, gorm.ErrRecordNotFound):
+		return true
+	case errors.Is(err, context.Canceled):
+		// These are usually caused by the HTTP client connection closing. Stopping
+		// a database query is normal behaviour in such a case, so this shouldn't be
+		// logged as an error.
+		return true
+	default:
+		return false
+	}
+}
+
 // logEvent logs an even at the given level.
 func (l dbLogger) logEvent(level zerolog.Level, msg string, args ...interface{}) {
 	if l.zlog.GetLevel() > level {
 		return
 	}
 	logger := l.logger(args)
-	logger.WithLevel(level).Msg(msg)
+	logger.WithLevel(level).Msg("logEvent: " + msg)
 }
 
 // logger constructs a zerolog logger. The given arguments are added via reflection.

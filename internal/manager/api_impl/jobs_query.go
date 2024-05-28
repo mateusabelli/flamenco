@@ -70,9 +70,13 @@ func (f *Flamenco) QueryJobs(e echo.Context) error {
 
 	ctx := e.Request().Context()
 	dbJobs, err := f.persist.QueryJobs(ctx, api.JobsQuery(jobsQuery))
-	if err != nil {
+	switch {
+	case errors.Is(err, context.Canceled):
+		logger.Debug().AnErr("cause", err).Msg("could not query for jobs, remote end probably closed the connection")
+		return sendAPIError(e, http.StatusInternalServerError, "error querying for jobs: %v", err)
+	case err != nil:
 		logger.Warn().Err(err).Msg("error querying for jobs")
-		return sendAPIError(e, http.StatusInternalServerError, "error querying for jobs")
+		return sendAPIError(e, http.StatusInternalServerError, "error querying for jobs: %v", err)
 	}
 
 	apiJobs := make([]api.Job, len(dbJobs))
@@ -97,9 +101,13 @@ func (f *Flamenco) FetchJobTasks(e echo.Context, jobID string) error {
 	}
 
 	tasks, err := f.persist.QueryJobTaskSummaries(ctx, jobID)
-	if err != nil {
-		logger.Warn().Err(err).Msg("error querying for jobs")
-		return sendAPIError(e, http.StatusInternalServerError, "error querying for jobs")
+	switch {
+	case errors.Is(err, context.Canceled):
+		logger.Debug().AnErr("cause", err).Msg("could not fetch job tasks, remote end probably closed connection")
+		return sendAPIError(e, http.StatusInternalServerError, "error fetching job tasks: %v", err)
+	case err != nil:
+		logger.Warn().Err(err).Msg("error fetching job tasks")
+		return sendAPIError(e, http.StatusInternalServerError, "error fetching job tasks: %v", err)
 	}
 
 	summaries := make([]api.TaskSummary, len(tasks))
