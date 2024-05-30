@@ -126,7 +126,10 @@ enable the race condition checker, and all other kinds of useful things.
 
 If you're interested in helping out with Flamenco development, please read [Get Involved][get-involved]!
 
+If you need to change or add any database queries, read through the [database section][database].
+
 [get-involved]: {{<ref "development/get-involved" >}}
+[database]: {{<ref "development/database" >}}
 
 
 ## Software Design
