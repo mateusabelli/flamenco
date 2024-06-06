@@ -28,7 +28,7 @@ import StatusFilterBar from '@/components/StatusFilterBar.vue';
 export default {
   name: 'JobsTable',
   props: ['activeJobID'],
-  emits: ['tableRowClicked', 'activeJobDeleted'],
+  emits: ['tableRowClicked', 'activeJobDeleted', 'jobDeleted'],
   components: {
     JobActionsBar,
     StatusFilterBar,
@@ -166,7 +166,10 @@ export default {
         if (row) promise = row.delete();
         else promise = Promise.resolve();
         promise.finally(() => {
-          this.$emit('activeJobDeleted', jobUpdate.id);
+          this.$emit('jobDeleted', jobUpdate.id);
+          if (jobUpdate.id == this.activeJobID) {
+            this.$emit('activeJobDeleted', jobUpdate.id);
+          }
         });
       } else {
         if (row) promise = this.tabulator.updateData([jobUpdate]);
