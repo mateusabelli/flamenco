@@ -1,7 +1,4 @@
 
--- Worker queries
---
-
 -- name: CreateWorker :one
 INSERT INTO workers (
   created_at,

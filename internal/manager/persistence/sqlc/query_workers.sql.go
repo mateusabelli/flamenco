@@ -27,7 +27,6 @@ func (q *Queries) AddWorkerTagMembership(ctx context.Context, arg AddWorkerTagMe
 }
 
 const createWorker = `-- name: CreateWorker :one
-
 INSERT INTO workers (
   created_at,
   uuid,
@@ -79,7 +78,6 @@ type CreateWorkerParams struct {
 	CanRestart         bool
 }
 
-// Worker queries
 func (q *Queries) CreateWorker(ctx context.Context, arg CreateWorkerParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createWorker,
 		arg.CreatedAt,

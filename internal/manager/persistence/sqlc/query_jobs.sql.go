@@ -64,7 +64,6 @@ func (q *Queries) CountWorkersFailingTask(ctx context.Context, taskID int64) (in
 }
 
 const createJob = `-- name: CreateJob :exec
-
 INSERT INTO jobs (
   created_at,
   uuid,
@@ -93,7 +92,6 @@ type CreateJobParams struct {
 	StorageShamanCheckoutID string
 }
 
-// Jobs / Tasks queries
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 	_, err := q.db.ExecContext(ctx, createJob,
 		arg.CreatedAt,

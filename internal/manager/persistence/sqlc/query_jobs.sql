@@ -1,7 +1,4 @@
 
--- Jobs / Tasks queries
---
-
 -- name: CreateJob :exec
 INSERT INTO jobs (
   created_at,
