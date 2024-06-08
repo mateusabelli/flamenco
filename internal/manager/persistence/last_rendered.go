@@ -4,8 +4,10 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
-	"gorm.io/gorm/clause"
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 )
 
 // LastRendered only has one entry in its database table, to indicate the job
@@ -19,30 +21,32 @@ type LastRendered struct {
 
 // SetLastRendered sets this job as the one with the most recent rendered image.
 func (db *DB) SetLastRendered(ctx context.Context, j *Job) error {
-	render := LastRendered{
-		// Always use the same database ID to ensure a single entry.
-		Model: Model{ID: uint(1)},
-
-		JobID: j.ID,
-		Job:   j,
+	queries, err := db.queries()
+	if err != nil {
+		return err
 	}
 
-	tx := db.gormDB.
-		WithContext(ctx).
-		Clauses(clause.OnConflict{UpdateAll: true}).
-		Create(&render)
-	return tx.Error
+	now := db.now()
+	return queries.SetLastRendered(ctx, sqlc.SetLastRenderedParams{
+		CreatedAt: now.Time,
+		UpdatedAt: now,
+		JobID:     int64(j.ID),
+	})
 }
 
 // GetLastRendered returns the UUID of the job with the most recent rendered image.
 func (db *DB) GetLastRenderedJobUUID(ctx context.Context) (string, error) {
-	job := Job{}
-	tx := db.gormDB.WithContext(ctx).
-		Joins("inner join last_rendereds LR on jobs.id = LR.job_id").
-		Select("uuid").
-		Find(&job)
-	if tx.Error != nil {
-		return "", jobError(tx.Error, "finding job with most rencent render")
+	queries, err := db.queries()
+	if err != nil {
+		return "", err
 	}
-	return job.UUID, nil
+
+	jobUUID, err := queries.GetLastRenderedJobUUID(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", jobError(err, "finding job with most rencent render")
+	}
+	return jobUUID, nil
 }

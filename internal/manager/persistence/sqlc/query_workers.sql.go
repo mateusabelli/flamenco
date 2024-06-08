@@ -80,7 +80,6 @@ type CreateWorkerParams struct {
 }
 
 // Worker queries
-//
 func (q *Queries) CreateWorker(ctx context.Context, arg CreateWorkerParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createWorker,
 		arg.CreatedAt,

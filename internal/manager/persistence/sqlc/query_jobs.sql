@@ -190,3 +190,19 @@ WHERE task_id in (SELECT id FROM tasks WHERE job_id=@job_id);
 SELECT sqlc.embed(workers) FROM workers
 INNER JOIN task_failures TF on TF.worker_id=workers.id
 WHERE TF.task_id=@task_id;
+
+-- name: SetLastRendered :exec
+-- Set the 'last rendered' job info.
+--
+-- Note that the use of ?2 and ?3 in the SQL is not desirable, and should be
+-- replaced with @updated_at and @job_id as soon as sqlc issue #3334 is fixed.
+-- See https://github.com/sqlc-dev/sqlc/issues/3334 for more info.
+INSERT INTO last_rendereds (id, created_at, updated_at, job_id)
+VALUES (1, @created_at, @updated_at, @job_id)
+ON CONFLICT DO UPDATE
+  SET updated_at=?2, job_id=?3
+  WHERE id=1;
+
+-- name: GetLastRenderedJobUUID :one
+SELECT uuid FROM jobs
+INNER JOIN last_rendereds LR ON jobs.id = LR.job_id;

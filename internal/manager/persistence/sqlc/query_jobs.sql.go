@@ -623,6 +623,18 @@ func (q *Queries) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, arg Fetch
 	return items, nil
 }
 
+const getLastRenderedJobUUID = `-- name: GetLastRenderedJobUUID :one
+SELECT uuid FROM jobs
+INNER JOIN last_rendereds LR ON jobs.id = LR.job_id
+`
+
+func (q *Queries) GetLastRenderedJobUUID(ctx context.Context) (string, error) {
+	row := q.db.QueryRowContext(ctx, getLastRenderedJobUUID)
+	var uuid string
+	err := row.Scan(&uuid)
+	return uuid, err
+}
+
 const jobCountTaskStatuses = `-- name: JobCountTaskStatuses :many
 SELECT status, count(*) as num_tasks FROM tasks
 WHERE job_id = ?1
@@ -768,6 +780,30 @@ type SaveJobStorageInfoParams struct {
 
 func (q *Queries) SaveJobStorageInfo(ctx context.Context, arg SaveJobStorageInfoParams) error {
 	_, err := q.db.ExecContext(ctx, saveJobStorageInfo, arg.StorageShamanCheckoutID, arg.ID)
+	return err
+}
+
+const setLastRendered = `-- name: SetLastRendered :exec
+INSERT INTO last_rendereds (id, created_at, updated_at, job_id)
+VALUES (1, ?1, ?2, ?3)
+ON CONFLICT DO UPDATE
+  SET updated_at=?2, job_id=?3
+  WHERE id=1
+`
+
+type SetLastRenderedParams struct {
+	CreatedAt time.Time
+	UpdatedAt sql.NullTime
+	JobID     int64
+}
+
+// Set the 'last rendered' job info.
+//
+// Note that the use of ?2 and ?3 in the SQL is not desirable, and should be
+// replaced with @updated_at and @job_id as soon as sqlc issue #3334 is fixed.
+// See https://github.com/sqlc-dev/sqlc/issues/3334 for more info.
+func (q *Queries) SetLastRendered(ctx context.Context, arg SetLastRenderedParams) error {
+	_, err := q.db.ExecContext(ctx, setLastRendered, arg.CreatedAt, arg.UpdatedAt, arg.JobID)
 	return err
 }
 
