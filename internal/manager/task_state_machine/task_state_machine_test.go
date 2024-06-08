@@ -221,7 +221,7 @@ func TestTaskStatusChangeCancelSingleTaskWithOtherFailed(t *testing.T) {
 	mocks.expectSaveJobWithStatus(t, job, api.JobStatusCanceled)
 	mocks.expectBroadcastJobChange(task1.Job, api.JobStatusCancelRequested, api.JobStatusCanceled)
 
-	// The paused task just stays paused, so don't expectBroadcastTaskChange(task3).
+	// The canceled task just stays canceled, so don't expectBroadcastTaskChange(task3).
 
 	require.NoError(t, sm.TaskStatusChange(ctx, task1, api.TaskStatusCanceled))
 }
