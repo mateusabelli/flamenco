@@ -39,15 +39,6 @@ func (c *Conf) NewVariableToValueConverter(audience VariableAudience, platform V
 
 // NewVariableExpander returns a new VariableExpander for the given audience & platform.
 func (c *Conf) NewVariableExpander(audience VariableAudience, platform VariablePlatform) *VariableExpander {
-	// Get the variables for the given audience & platform.
-	varsForPlatform := c.getVariables(audience, platform)
-	if len(varsForPlatform) == 0 {
-		log.Warn().
-			Str("audience", string(audience)).
-			Str("platform", string(platform)).
-			Msg("no variables defined for this platform given this audience")
-	}
-
 	return &VariableExpander{
 		oneWayVars:        varsForPlatform,
 		managerTwoWayVars: c.GetTwoWayVariables(audience, c.currentGOOS),
