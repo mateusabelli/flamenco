@@ -162,6 +162,8 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         is_running = self._submit_files(context, filepath)
         if not is_running:
             return {"CANCELLED"}
+
+        context.window_manager.modal_handler_add(self)
         return {"RUNNING_MODAL"}
 
     def modal(self, context: bpy.types.Context, event: bpy.types.Event) -> set[str]:
@@ -383,7 +385,6 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
                 self._quit(context)
                 return False
 
-        context.window_manager.modal_handler_add(self)
         wm = context.window_manager
         self.timer = wm.event_timer_add(self.TIMER_PERIOD, window=context.window)
 
