@@ -40,7 +40,7 @@ func (c *Conf) NewVariableToValueConverter(audience VariableAudience, platform V
 // NewVariableExpander returns a new VariableExpander for the given audience & platform.
 func (c *Conf) NewVariableExpander(audience VariableAudience, platform VariablePlatform) *VariableExpander {
 	return &VariableExpander{
-		oneWayVars:        varsForPlatform,
+		oneWayVars:        c.GetOneWayVariables(audience, platform),
 		managerTwoWayVars: c.GetTwoWayVariables(audience, c.currentGOOS),
 		targetTwoWayVars:  c.GetTwoWayVariables(audience, platform),
 		targetPlatform:    platform,
@@ -80,15 +80,16 @@ func isValueMatch(valueToMatch, variableValue string) bool {
 		return true
 	}
 
-	// If the variable value has a backslash, assume it is a Windows path.
+	// If any of the values have backslashes, assume it is a Windows path.
 	// Convert it to slash notation just to see if that would provide a
 	// match.
 	if strings.ContainsRune(variableValue, '\\') {
-		slashedValue := crosspath.ToSlash(variableValue)
-		return strings.HasPrefix(valueToMatch, slashedValue)
+		variableValue = crosspath.ToSlash(variableValue)
 	}
-
-	return false
+	if strings.ContainsRune(valueToMatch, '\\') {
+		valueToMatch = crosspath.ToSlash(valueToMatch)
+	}
+	return strings.HasPrefix(valueToMatch, variableValue)
 }
 
 // Replace converts "{variable name}" to the value that belongs to the audience and platform.
@@ -101,6 +102,17 @@ func (ve *VariableExpander) Expand(valueToExpand string) string {
 		expanded = strings.Replace(expanded, placeholder, varvalue, -1)
 	}
 
+	// Go through the two-way variables for the target platform.
+	isPathValue := false
+	for varname, varvalue := range ve.targetTwoWayVars {
+		placeholder := fmt.Sprintf("{%s}", varname)
+		expanded = strings.Replace(expanded, placeholder, varvalue, -1)
+
+		// Since two-way variables are meant for path replacement, we know this
+		// should be a path.
+		isPathValue = true
+	}
+
 	// Go through the two-way variables, to make sure that the result of
 	// expanding variables gets the two-way variables applied as well. This is
 	// necessary to make implicitly-defined variable, which are only defined for
@@ -108,7 +120,6 @@ func (ve *VariableExpander) Expand(valueToExpand string) string {
 	//
 	// Practically, this replaces "value for the Manager platform" with "value
 	// for the target platform".
-	isPathValue := false
 	for varname, managerValue := range ve.managerTwoWayVars {
 		targetValue, ok := ve.targetTwoWayVars[varname]
 		if !ok {
@@ -128,6 +139,11 @@ func (ve *VariableExpander) Expand(valueToExpand string) string {
 		expanded = crosspath.ToPlatform(expanded, string(ve.targetPlatform))
 	}
 
+	log.Trace().
+		Str("valueToExpand", valueToExpand).
+		Str("expanded", expanded).
+		Bool("isPathValue", isPathValue).
+		Msg("expanded variable")
 	return expanded
 }
 

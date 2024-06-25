@@ -517,6 +517,23 @@ func (c *Conf) GetTwoWayVariables(audience VariableAudience, platform VariablePl
 	return twoWayVars
 }
 
+// GetOneWayVariables returns the regular (one-way) variable values for this (audience,
+// platform) combination. If no variables are found, just returns an empty map.
+// If a value is defined for both the "all" platform and specifically the given
+// platform, the specific platform definition wins.
+func (c *Conf) GetOneWayVariables(audience VariableAudience, platform VariablePlatform) map[string]string {
+	varsForPlatform := c.getVariables(audience, platform)
+
+	// Only keep the two-way variables.
+	oneWayVars := map[string]string{}
+	for varname, value := range varsForPlatform {
+		if !c.isTwoWay(varname) {
+			oneWayVars[varname] = value
+		}
+	}
+	return oneWayVars
+}
+
 // ResolveVariables returns the variables for this (audience, platform) combination.
 // If no variables are found, just returns an empty map. If a value is defined
 // for both the "all" platform and specifically the given platform, the specific
