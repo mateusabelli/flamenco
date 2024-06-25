@@ -128,6 +128,32 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         job_type = job_types.active_job_type(context.scene)
         return job_type is not None
 
+    def execute(self, context: bpy.types.Context) -> set[str]:
+        filepath, ok = self._presubmit_check(context)
+        if not ok:
+            return {"CANCELLED"}
+
+        is_running = self._submit_files(context, filepath)
+        if not is_running:
+            return {"CANCELLED"}
+
+        if self.packthread is None:
+            # If there is no pack thread running, there isn't much we can do.
+            return self._quit(context)
+
+        # Keep handling messages from the background thread.
+        while True:
+            # Block for 5 seconds at a time. The exact duration doesn't matter,
+            # as this while-loop is blocking the main thread anyway.
+            msg = self.packthread.poll(timeout=5)
+            if not msg:
+                # No message received, is fine, just wait for another one.
+                continue
+
+            result = self._on_bat_pack_msg(context, msg)
+            if "RUNNING_MODAL" not in result:
+                return result
+
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[str]:
         filepath, ok = self._presubmit_check(context)
         if not ok:
