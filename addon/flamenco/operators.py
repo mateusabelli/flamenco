@@ -139,7 +139,9 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         if self.packthread is None:
             # If there is no pack thread running, there isn't much we can do.
-            return self._quit(context)
+            self.report({"ERROR"}, "No pack thread running, please report a bug")
+            self._quit(context)
+            return {"CANCELLED"}
 
         # Keep handling messages from the background thread.
         while True:
@@ -152,9 +154,14 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
             result = self._on_bat_pack_msg(context, msg)
             if "RUNNING_MODAL" not in result:
-                return result
+                break
+
+        self._quit(context)
+        self.packthread.join(timeout=5)
+        return {"FINISHED"}
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[str]:
+
         filepath, ok = self._presubmit_check(context)
         if not ok:
             return {"CANCELLED"}
