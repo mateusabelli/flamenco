@@ -382,10 +382,12 @@ def _job_type_to_class_name(job_type_name: str) -> str:
 def _job_setting_label(setting: _AvailableJobSetting) -> str:
     """Return a suitable label for this job setting."""
 
-    label = setting.get("label", default="")
+    label = str(setting.get("label", default=""))
     if label:
         return label
-    return setting.key.title().replace("_", " ")
+
+    generated_label: str = setting.key.title().replace("_", " ")
+    return generated_label
 
 
 def _set_if_available(
