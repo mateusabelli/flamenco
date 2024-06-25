@@ -37,6 +37,15 @@ func (db *DB) FetchTimedOutTasks(ctx context.Context, untouchedSince time.Time) 
 	if tx.Error != nil {
 		return nil, taskError(tx.Error, "finding timed out tasks (untouched since %s)", untouchedSince.String())
 	}
+
+	// GORM apparently doesn't call the task's AfterFind() function for the above query.
+	for _, task := range result {
+		err := task.AfterFind(tx)
+		if err != nil {
+			return nil, taskError(tx.Error, "finding the job & worker UUIDs for task %s", task.UUID)
+		}
+	}
+
 	return result, nil
 }
 
