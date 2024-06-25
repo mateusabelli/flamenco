@@ -180,9 +180,9 @@ class PackThread(threading.Thread):
     def poll(self, timeout: Optional[int] = None) -> Optional[Message]:
         """Poll the queue, return the first message or None if there is none.
 
-        :param timeout: Max time to wait for a message to appear on the queue.
-            If None, will not wait and just return None immediately (if there is
-            no queued message).
+        :param timeout: Max time to wait for a message to appear on the queue,
+            in seconds. If None, will not wait and just return None immediately
+            (if there is no queued message).
         """
         try:
             return self.queue.get(block=timeout is not None, timeout=timeout)
