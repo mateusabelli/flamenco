@@ -129,30 +129,14 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         return job_type is not None
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[str]:
-        # Before doing anything, make sure the info we cached about the Manager
-        # is up to date. A change in job storage directory on the Manager can
-        # cause nasty error messages when we submit, and it's better to just be
-        # ahead of the curve and refresh first. This also allows for checking
-        # the actual Manager version before submitting.
-        err = self._check_manager(context)
-        if err:
-            self.report({"WARNING"}, err)
+        filepath, ok = self._presubmit_check(context)
+        if not ok:
             return {"CANCELLED"}
 
-        if not context.blend_data.filepath:
-            # The file path needs to be known before the file can be submitted.
-            self.report(
-                {"ERROR"}, "Please save your .blend file before submitting to Flamenco"
-            )
+        is_running = self._submit_files(context, filepath)
+        if not is_running:
             return {"CANCELLED"}
-
-        filepath = self._save_blendfile(context)
-
-        # Check the job with the Manager, to see if it would be accepted.
-        if not self._check_job(context):
-            return {"CANCELLED"}
-
-        return self._submit_files(context, filepath)
+        return {"RUNNING_MODAL"}
 
     def modal(self, context: bpy.types.Context, event: bpy.types.Event) -> set[str]:
         # This function is called for TIMER events to poll the BAT pack thread.
@@ -244,6 +228,39 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             return None
         return manager
 
+    def _presubmit_check(self, context: bpy.types.Context) -> tuple[Path, bool]:
+        """Do a pre-submission check, returning whether submission can continue.
+
+        Reports warnings when returning False, so the caller can just abort.
+
+        Returns a tuple (can_submit, filepath_to_submit)
+        """
+
+        # Before doing anything, make sure the info we cached about the Manager
+        # is up to date. A change in job storage directory on the Manager can
+        # cause nasty error messages when we submit, and it's better to just be
+        # ahead of the curve and refresh first. This also allows for checking
+        # the actual Manager version before submitting.
+        err = self._check_manager(context)
+        if err:
+            self.report({"WARNING"}, err)
+            return Path(), False
+
+        if not context.blend_data.filepath:
+            # The file path needs to be known before the file can be submitted.
+            self.report(
+                {"ERROR"}, "Please save your .blend file before submitting to Flamenco"
+            )
+            return Path(), False
+
+        filepath = self._save_blendfile(context)
+
+        # Check the job with the Manager, to see if it would be accepted.
+        if not self._check_job(context):
+            return Path(), False
+
+        return filepath, True
+
     def _save_blendfile(self, context):
         """Save to a different file, specifically for Flamenco.
 
@@ -303,19 +320,22 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         return filepath
 
-    def _submit_files(self, context: bpy.types.Context, blendfile: Path) -> set[str]:
-        """Ensure that the files are somewhere in the shared storage."""
+    def _submit_files(self, context: bpy.types.Context, blendfile: Path) -> bool:
+        """Ensure that the files are somewhere in the shared storage.
+
+        Returns True if a packing thread has been started, and False otherwise.
+        """
 
         from .bat import interface as bat_interface
 
         if bat_interface.is_packing():
             self.report({"ERROR"}, "Another packing operation is running")
             self._quit(context)
-            return {"CANCELLED"}
+            return False
 
         manager = self._manager_info(context)
         if not manager:
-            return {"CANCELLED"}
+            return False
 
         if manager.shared_storage.shaman_enabled:
             # self.blendfile_on_farm will be set when BAT created the checkout,
@@ -335,13 +355,13 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
                 self.blendfile_on_farm = self._bat_pack_filesystem(context, blendfile)
             except FileNotFoundError:
                 self._quit(context)
-                return {"CANCELLED"}
+                return False
 
         context.window_manager.modal_handler_add(self)
         wm = context.window_manager
         self.timer = wm.event_timer_add(self.TIMER_PERIOD, window=context.window)
 
-        return {"RUNNING_MODAL"}
+        return True
 
     def _bat_pack_filesystem(
         self, context: bpy.types.Context, blendfile: Path
