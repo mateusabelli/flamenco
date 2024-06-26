@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -133,4 +134,13 @@ func sendAPIErrorDBBusy(e echo.Context, message string, args ...interface{}) err
 	seconds := int64(retryAfter.Seconds())
 	e.Response().Header().Set("Retry-After", strconv.FormatInt(seconds, 10))
 	return e.JSON(code, apiErr)
+}
+
+// handleConnectionClosed logs a message and sends a "418 I'm a teapot" response
+// to the HTTP client. The response is likely to be seen, as the connection was
+// closed. But just in case this function was called by mistake, it's a response
+// code that is unlikely to be accepted by the client.
+func handleConnectionClosed(e echo.Context, logger zerolog.Logger, logMessage string) error {
+	logger.Debug().Msg(logMessage)
+	return e.NoContent(http.StatusTeapot)
 }

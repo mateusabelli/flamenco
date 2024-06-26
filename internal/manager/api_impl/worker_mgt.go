@@ -3,6 +3,7 @@ package api_impl
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -16,7 +17,10 @@ import (
 func (f *Flamenco) FetchWorkers(e echo.Context) error {
 	logger := requestLogger(e)
 	dbWorkers, err := f.persist.FetchWorkers(e.Request().Context())
-	if err != nil {
+	switch {
+	case errors.Is(err, context.Canceled):
+		return handleConnectionClosed(e, logger, "fetching all workers")
+	case err != nil:
 		logger.Error().Err(err).Msg("fetching all workers")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching workers: %v", err)
 	}
@@ -42,18 +46,23 @@ func (f *Flamenco) FetchWorker(e echo.Context, workerUUID string) error {
 
 	ctx := e.Request().Context()
 	dbWorker, err := f.persist.FetchWorker(ctx, workerUUID)
-	if errors.Is(err, persistence.ErrWorkerNotFound) {
+	switch {
+	case errors.Is(err, persistence.ErrWorkerNotFound):
 		logger.Debug().Msg("non-existent worker requested")
 		return sendAPIError(e, http.StatusNotFound, "worker %q not found", workerUUID)
-	}
-	if err != nil {
+	case errors.Is(err, context.Canceled):
+		return handleConnectionClosed(e, logger, "fetching task assigned to worker")
+	case err != nil:
 		logger.Error().Err(err).Msg("fetching worker")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching worker: %v", err)
 	}
 
 	dbTask, err := f.persist.FetchWorkerTask(ctx, dbWorker)
-	if err != nil {
-		logger.Error().Err(err).Msg("fetching task assigned to worker")
+	switch {
+	case errors.Is(err, context.Canceled):
+		return handleConnectionClosed(e, logger, "fetching task assigned to worker")
+	case err != nil:
+		logger.Error().AnErr("cause", err).Msg("fetching task assigned to worker")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching task assigned to worker: %v", err)
 	}
 
@@ -86,11 +95,11 @@ func (f *Flamenco) DeleteWorker(e echo.Context, workerUUID string) error {
 
 	// Fetch the worker in order to re-queue its tasks.
 	worker, err := f.persist.FetchWorker(ctx, workerUUID)
-	if errors.Is(err, persistence.ErrWorkerNotFound) {
+	switch {
+	case errors.Is(err, persistence.ErrWorkerNotFound):
 		logger.Debug().Msg("deletion of non-existent worker requested")
 		return sendAPIError(e, http.StatusNotFound, "worker %q not found", workerUUID)
-	}
-	if err != nil {
+	case err != nil:
 		logger.Error().Err(err).Msg("fetching worker for deletion")
 		return sendAPIError(e, http.StatusInternalServerError,
 			"error fetching worker for deletion: %v", err)
@@ -105,11 +114,11 @@ func (f *Flamenco) DeleteWorker(e echo.Context, workerUUID string) error {
 
 	// Actually delete the worker.
 	err = f.persist.DeleteWorker(ctx, workerUUID)
-	if errors.Is(err, persistence.ErrWorkerNotFound) {
+	switch {
+	case errors.Is(err, persistence.ErrWorkerNotFound):
 		logger.Debug().Msg("deletion of non-existent worker requested")
 		return sendAPIError(e, http.StatusNotFound, "worker %q not found", workerUUID)
-	}
-	if err != nil {
+	case err != nil:
 		logger.Error().Err(err).Msg("deleting worker")
 		return sendAPIError(e, http.StatusInternalServerError, "error deleting worker: %v", err)
 	}
@@ -145,11 +154,13 @@ func (f *Flamenco) RequestWorkerStatusChange(e echo.Context, workerUUID string) 
 
 	// Fetch the worker.
 	dbWorker, err := f.persist.FetchWorker(e.Request().Context(), workerUUID)
-	if errors.Is(err, persistence.ErrWorkerNotFound) {
+	switch {
+	case errors.Is(err, context.Canceled):
+		return handleConnectionClosed(e, logger, "fetching worker")
+	case errors.Is(err, persistence.ErrWorkerNotFound):
 		logger.Debug().Msg("non-existent worker requested")
 		return sendAPIError(e, http.StatusNotFound, "worker %q not found", workerUUID)
-	}
-	if err != nil {
+	case err != nil:
 		logger.Error().Err(err).Msg("fetching worker")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching worker: %v", err)
 	}
