@@ -163,6 +163,67 @@ func TestTwoJobsThreeTasks(t *testing.T) {
 	assert.Equal(t, att2_3.Name, task.Name, "the 3rd task of the 2nd job should have been chosen")
 }
 
+// TestFanOutFanIn tests one starting task, then multiple tasks that depend on
+// it that can run in parallel (fan-out), then one task that depends on all the
+// parallel tasks (fan-in), and finally one last task that depends on the fan-in
+// task.
+func TestFanOutFanIn(t *testing.T) {
+	ctx, cancel, db := persistenceTestFixtures(schedulerTestTimeout)
+	defer cancel()
+
+	w := linuxWorker(t, db)
+
+	// Single start task.
+	task1 := authorTestTask("1 start", "blender")
+
+	// Fan out.
+	task2_1 := authorTestTask("2.1 parallel", "blender")
+	task2_1.Dependencies = []*job_compilers.AuthoredTask{&task1}
+	task2_2 := authorTestTask("2.2 parallel", "blender")
+	task2_2.Dependencies = []*job_compilers.AuthoredTask{&task1}
+	task2_3 := authorTestTask("2.3 parallel", "blender")
+	task2_3.Dependencies = []*job_compilers.AuthoredTask{&task1}
+
+	// Fan in.
+	task3 := authorTestTask("3 fan-in", "blender")
+	task3.Dependencies = []*job_compilers.AuthoredTask{&task2_1, &task2_2, &task2_3}
+
+	// Final task.
+	task4 := authorTestTask("4 final", "ffmpeg")
+	task4.Dependencies = []*job_compilers.AuthoredTask{&task3}
+
+	// Construct the job, with the tasks not in execution order, to root out
+	// potential issues with the dependency resolution.
+	atj := authorTestJob(
+		"92e75ecf-7d2a-461c-8443-2fbe6a8b559d",
+		"fan-out-fan-in",
+		task4, task3, task2_1, task2_2, task1, task2_3)
+	require.NotNil(t, constructTestJob(ctx, t, db, atj))
+
+	// Check the order in which tasks are handed out.
+	executionOrder := []string{} // Slice of task names.
+	for index := range 6 {
+		task, err := db.ScheduleTask(ctx, &w)
+		require.NoError(t, err)
+		require.NotNil(t, task, "task #%d is nil", index)
+		executionOrder = append(executionOrder, task.Name)
+
+		// Fake that the task has been completed by the worker.
+		task.Status = api.TaskStatusCompleted
+		require.NoError(t, db.SaveTaskStatus(ctx, task))
+	}
+
+	expectedOrder := []string{
+		"1 start",
+		"2.1 parallel",
+		"2.2 parallel",
+		"2.3 parallel",
+		"3 fan-in",
+		"4 final",
+	}
+	assert.Equal(t, expectedOrder, executionOrder)
+}
+
 func TestSomeButNotAllDependenciesCompleted(t *testing.T) {
 	// There was a bug in the task scheduler query, where it would schedule a task
 	// if any of its dependencies was completed (instead of all dependencies).
