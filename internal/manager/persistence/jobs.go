@@ -162,6 +162,13 @@ func (db *DB) StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.Au
 			},
 		}
 
+		log.Debug().
+			Str("job", dbJob.UUID).
+			Str("type", dbJob.JobType).
+			Str("name", dbJob.Name).
+			Str("status", string(dbJob.Status)).
+			Msg("persistence: storing authored job")
+
 		// Find and assign the worker tag.
 		if authoredJob.WorkerTagUUID != "" {
 			dbTag, err := fetchWorkerTag(tx, authoredJob.WorkerTagUUID)
@@ -218,6 +225,15 @@ func (db *DB) storeAuthoredJobTaks(
 			Commands: commands,
 			// dependencies are stored below.
 		}
+
+		log.Debug().
+			Str("task", dbTask.UUID).
+			Str("job", dbJob.UUID).
+			Str("type", dbTask.Type).
+			Str("name", dbTask.Name).
+			Str("status", string(dbTask.Status)).
+			Msg("persistence: storing authored task")
+
 		if err := tx.Create(&dbTask).Error; err != nil {
 			return taskError(err, "storing task: %v", err)
 		}
@@ -244,6 +260,19 @@ func (db *DB) storeAuthoredJobTaks(
 			}
 			deps[i] = depTask
 		}
+
+		if log.Debug().Enabled() {
+			depNames := make([]string, len(deps))
+			for i, dep := range deps {
+				depNames[i] = dep.Name
+			}
+			log.Debug().
+				Str("task", dbTask.UUID).
+				Str("name", dbTask.Name).
+				Strs("dependencies", depNames).
+				Msg("persistence: storing authored task dependencies")
+		}
+
 		dependenciesbatchsize := 1000
 		for j := 0; j < len(deps); j += dependenciesbatchsize {
 			end := j + dependenciesbatchsize
