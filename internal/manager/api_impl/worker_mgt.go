@@ -179,6 +179,11 @@ func (f *Flamenco) RequestWorkerStatusChange(e echo.Context, workerUUID string) 
 
 	logger.Info().Msg("worker status change requested")
 
+	// All information to do the operation is known, so even when the client
+	// disconnects, the work should be completed.
+	ctx, ctxCancel := bgContext()
+	defer ctxCancel()
+
 	if dbWorker.Status == change.Status {
 		// Requesting that the worker should go to its current status basically
 		// means cancelling any previous status change request.
@@ -188,7 +193,7 @@ func (f *Flamenco) RequestWorkerStatusChange(e echo.Context, workerUUID string) 
 	}
 
 	// Store the status change.
-	if err := f.persist.SaveWorker(e.Request().Context(), dbWorker); err != nil {
+	if err := f.persist.SaveWorker(ctx, dbWorker); err != nil {
 		logger.Error().Err(err).Msg("saving worker after status change request")
 		return sendAPIError(e, http.StatusInternalServerError, "error saving worker: %v", err)
 	}
@@ -231,6 +236,11 @@ func (f *Flamenco) SetWorkerTags(e echo.Context, workerUUID string) error {
 		Strs("tags", change.TagIds).
 		Logger()
 	logger.Info().Msg("worker tag change requested")
+
+	// All information to do the operation is known, so even when the client
+	// disconnects, the work should be completed.
+	ctx, ctxCancel := bgContext()
+	defer ctxCancel()
 
 	// Store the new tag assignment.
 	if err := f.persist.WorkerSetTags(ctx, dbWorker, change.TagIds); err != nil {
