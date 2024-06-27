@@ -355,6 +355,7 @@ release-package:
 	$(MAKE) -s release-package-linux
 	$(MAKE) -s release-package-darwin
 	$(MAKE) -s release-package-windows
+	$(MAKE) -s clean
 
 .PHONY: release-package-linux
 release-package-linux:
