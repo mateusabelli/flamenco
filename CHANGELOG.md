@@ -9,6 +9,8 @@ bugs in actually-released versions.
 - Add `label` to job settings, to have full control over how they are presented in Blender's job submission GUI. If a job setting does not define a label, its `key` is used to generate one (like Flamenco 3.5 and older).
 - Add `shellSplit(someString)` function to the job compiler scripts. This splits a string into an array of strings using shell/CLI semantics.
 - Make it possible to script job submissions in Blender, by executing the `bpy.ops.flamenco.submit_job(job_name="jobname")` operator.
+- Security updates of some deendencies:
+  - [GO-2024-2937: Parsing a corrupt or malicious image with invalid color indices can cause a panic](https://pkg.go.dev/vuln/GO-2024-2937)
 
 ## 3.5 - released 2024-04-16
 
