@@ -189,6 +189,37 @@ func (db *DB) queries() (*sqlc.Queries, error) {
 	return sqlc.New(&loggingWrapper), nil
 }
 
+type queriesTX struct {
+	queries  *sqlc.Queries
+	commit   func() error
+	rollback func() error
+}
+
+// queries returns the SQLC Queries struct, connected to this database.
+// It is intended that all GORM queries will be migrated to use this interface
+// instead.
+func (db *DB) queriesWithTX() (*queriesTX, error) {
+	sqldb, err := db.gormDB.DB()
+	if err != nil {
+		return nil, fmt.Errorf("could not get low-level database driver: %w", err)
+	}
+
+	tx, err := sqldb.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("could not begin database transaction: %w", err)
+	}
+
+	loggingWrapper := LoggingDBConn{tx}
+
+	qtx := queriesTX{
+		queries:  sqlc.New(&loggingWrapper),
+		commit:   tx.Commit,
+		rollback: tx.Rollback,
+	}
+
+	return &qtx, nil
+}
+
 // now returns the result of `nowFunc()` wrapped in a sql.NullTime.
 func (db *DB) now() sql.NullTime {
 	return sql.NullTime{

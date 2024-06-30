@@ -49,6 +49,10 @@ SELECT * FROM workers WHERE workers.uuid = @uuid and deleted_at is NULL;
 -- FetchWorkerUnconditional ignores soft-deletion status and just returns the worker.
 SELECT * FROM workers WHERE workers.uuid = @uuid;
 
+-- name: FetchWorkerUnconditionalByID :one
+-- FetchWorkerUnconditional ignores soft-deletion status and just returns the worker.
+SELECT * FROM workers WHERE workers.id = @worker_id;
+
 -- name: FetchWorkerTags :many
 SELECT worker_tags.*
 FROM worker_tags

@@ -196,6 +196,35 @@ func (q *Queries) FetchWorkerUnconditional(ctx context.Context, uuid string) (Wo
 	return i, err
 }
 
+const fetchWorkerUnconditionalByID = `-- name: FetchWorkerUnconditionalByID :one
+SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart FROM workers WHERE workers.id = ?1
+`
+
+// FetchWorkerUnconditional ignores soft-deletion status and just returns the worker.
+func (q *Queries) FetchWorkerUnconditionalByID(ctx context.Context, workerID int64) (Worker, error) {
+	row := q.db.QueryRowContext(ctx, fetchWorkerUnconditionalByID, workerID)
+	var i Worker
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UUID,
+		&i.Secret,
+		&i.Name,
+		&i.Address,
+		&i.Platform,
+		&i.Software,
+		&i.Status,
+		&i.LastSeenAt,
+		&i.StatusRequested,
+		&i.LazyStatusRequest,
+		&i.SupportedTaskTypes,
+		&i.DeletedAt,
+		&i.CanRestart,
+	)
+	return i, err
+}
+
 const fetchWorkers = `-- name: FetchWorkers :many
 SELECT workers.id, workers.created_at, workers.updated_at, workers.uuid, workers.secret, workers.name, workers.address, workers.platform, workers.software, workers.status, workers.last_seen_at, workers.status_requested, workers.lazy_status_request, workers.supported_task_types, workers.deleted_at, workers.can_restart FROM workers
 WHERE deleted_at IS NULL

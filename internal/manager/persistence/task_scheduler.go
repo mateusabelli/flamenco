@@ -4,11 +4,15 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -26,149 +30,139 @@ func (db *DB) ScheduleTask(ctx context.Context, w *Worker) (*Task, error) {
 	logger := log.With().Str("worker", w.UUID).Logger()
 	logger.Trace().Msg("finding task for worker")
 
-	hasWorkerTags, err := db.HasWorkerTags(ctx)
+	// Run all queries in a single transaction.
+	//
+	// After this point, all queries should use this transaction. Otherwise SQLite
+	// will deadlock, as it will make any other query wait until this transaction
+	// is done.
+	qtx, err := db.queriesWithTX()
 	if err != nil {
 		return nil, err
 	}
 
-	// Run two queries in one transaction:
-	// 1. find task, and
-	// 2. assign the task to the worker.
-	var task *Task
-	txErr := db.gormDB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var err error
-		task, err = findTaskForWorker(tx, w, hasWorkerTags)
-		if err != nil {
-			if isDatabaseBusyError(err) {
-				logger.Trace().Err(err).Msg("database busy while finding task for worker")
-				return errDatabaseBusy
-			}
-			logger.Error().Err(err).Msg("finding task for worker")
-			return fmt.Errorf("finding task for worker: %w", err)
-		}
-		if task == nil {
-			// No task found, which is fine.
-			return nil
-		}
+	defer qtx.rollback()
 
-		// Found a task, now assign it to the requesting worker.
-		if err := assignTaskToWorker(tx, w, task); err != nil {
-			if isDatabaseBusyError(err) {
-				logger.Trace().Err(err).Msg("database busy while assigning task to worker")
-				return errDatabaseBusy
-			}
-
-			logger.Warn().
-				Str("taskID", task.UUID).
-				Err(err).
-				Msg("assigning task to worker")
-			return fmt.Errorf("assigning task to worker: %w", err)
-		}
-
-		return nil
-	})
-
-	if txErr != nil {
-		return nil, txErr
+	task, err := db.scheduleTask(ctx, qtx.queries, w, logger)
+	if err != nil {
+		return nil, err
 	}
 
 	if task == nil {
-		logger.Debug().Msg("no task for worker")
+		// No task means no changes to the database.
+		// It's fine to just roll back the transaction.
 		return nil, nil
 	}
+
+	gormTask, err := convertSqlTaskWithJobAndWorker(ctx, qtx.queries, *task)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := qtx.commit(); err != nil {
+		return nil, fmt.Errorf(
+			"could not commit database transaction after scheduling task %s for worker %s: %w",
+			task.UUID, w.UUID, err)
+	}
+
+	return gormTask, nil
+}
+
+func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker, logger zerolog.Logger) (*sqlc.Task, error) {
+	if w.ID == 0 {
+		panic("worker should be in database, but has zero ID")
+	}
+	workerID := sql.NullInt64{Int64: int64(w.ID), Valid: true}
+
+	// If a task is alreay active & assigned to this worker, return just that.
+	// Note that this task type could be blocklisted or no longer supported by the
+	// Worker, but since it's active that is unlikely.
+	{
+		row, err := queries.FetchAssignedAndRunnableTaskOfWorker(ctx, sqlc.FetchAssignedAndRunnableTaskOfWorkerParams{
+			ActiveTaskStatus:  string(api.TaskStatusActive),
+			ActiveJobStatuses: convertJobStatuses(schedulableJobStatuses),
+			WorkerID:          workerID,
+		})
+
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			// Fine, just means there was no task assigned yet.
+		case err != nil:
+			return nil, err
+		case row.Task.ID > 0:
+			return &row.Task, nil
+		}
+	}
+
+	task, err := findTaskForWorker(ctx, queries, w)
+
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		// Fine, just means there was no task assigned yet.
+		return nil, nil
+	case isDatabaseBusyError(err):
+		logger.Trace().Err(err).Msg("database busy while finding task for worker")
+		return nil, errDatabaseBusy
+	case err != nil:
+		logger.Error().Err(err).Msg("finding task for worker")
+		return nil, fmt.Errorf("finding task for worker: %w", err)
+	}
+
+	// Assign the task to the worker.
+	err = queries.AssignTaskToWorker(ctx, sqlc.AssignTaskToWorkerParams{
+		WorkerID: workerID,
+		Now:      db.now(),
+		TaskID:   task.ID,
+	})
+
+	switch {
+	case isDatabaseBusyError(err):
+		logger.Trace().Err(err).Msg("database busy while assigning task to worker")
+		return nil, errDatabaseBusy
+	case err != nil:
+		logger.Warn().
+			Str("taskID", task.UUID).
+			Err(err).
+			Msg("assigning task to worker")
+		return nil, fmt.Errorf("assigning task to worker: %w", err)
+	}
+
+	// Make sure the returned task matches the database.
+	task.WorkerID = workerID
 
 	logger.Info().
 		Str("taskID", task.UUID).
 		Msg("assigned task to worker")
 
-	return task, nil
-}
-
-func findTaskForWorker(tx *gorm.DB, w *Worker, checkWorkerTags bool) (*Task, error) {
-	task := Task{}
-
-	// If a task is alreay active & assigned to this worker, return just that.
-	// Note that this task type could be blocklisted or no longer supported by the
-	// Worker, but since it's active that is unlikely.
-	assignedTaskResult := taskAssignedAndRunnableQuery(tx.Model(&task), w).
-		Preload("Job").
-		Find(&task)
-	if assignedTaskResult.Error != nil {
-		return nil, assignedTaskResult.Error
-	}
-	if assignedTaskResult.RowsAffected > 0 {
-		return &task, nil
-	}
-
-	// Produce the 'current task ID' by selecting all its incomplete dependencies.
-	// This can then be used in a subquery to filter out such tasks.
-	// `tasks.id` is the task ID from the outer query.
-	incompleteDepsQuery := tx.Table("tasks as tasks2").
-		Select("tasks2.id").
-		Joins("left join task_dependencies td on tasks2.id = td.task_id").
-		Joins("left join tasks dep on dep.id = td.dependency_id").
-		Where("tasks2.id = tasks.id").
-		Where("dep.status is not NULL and dep.status != ?", api.TaskStatusCompleted)
-
-	blockedTaskTypesQuery := tx.Model(&JobBlock{}).
-		Select("job_blocks.task_type").
-		Where("job_blocks.worker_id = ?", w.ID).
-		Where("job_blocks.job_id = jobs.id")
-
-	// Note that this query doesn't check for the assigned worker. Tasks that have
-	// a 'schedulable' status might have been assigned to a worker, representing
-	// the last worker to touch it -- it's not meant to indicate "ownership" of
-	// the task.
-	findTaskQuery := tx.Model(&task).
-		Joins("left join jobs on tasks.job_id = jobs.id").
-		Joins("left join task_failures TF on tasks.id = TF.task_id and TF.worker_id=?", w.ID).
-		Where("tasks.status in ?", schedulableTaskStatuses).  // Schedulable task statuses
-		Where("jobs.status in ?", schedulableJobStatuses).    // Schedulable job statuses
-		Where("tasks.type in ?", w.TaskTypes()).              // Supported task types
-		Where("tasks.id not in (?)", incompleteDepsQuery).    // Dependencies completed
-		Where("TF.worker_id is NULL").                        // Not failed before
-		Where("tasks.type not in (?)", blockedTaskTypesQuery) // Non-blocklisted
-
-	if checkWorkerTags {
-		// The system has one or more tags, so limit the available jobs to those
-		// that have no tag, or overlap with the Worker's tags.
-		if len(w.Tags) == 0 {
-			// Tagless workers only get tagless jobs.
-			findTaskQuery = findTaskQuery.
-				Where("jobs.worker_tag_id is NULL")
-		} else {
-			// Taged workers get tagless jobs AND jobs of their own tags.
-			tagIDs := []uint{}
-			for _, tag := range w.Tags {
-				tagIDs = append(tagIDs, tag.ID)
-			}
-			findTaskQuery = findTaskQuery.
-				Where("jobs.worker_tag_id is NULL or worker_tag_id in ?", tagIDs)
-		}
-	}
-
-	findTaskResult := findTaskQuery.
-		Order("jobs.priority desc").  // Highest job priority
-		Order("tasks.priority desc"). // Highest task priority
-		Limit(1).
-		Preload("Job").
-		Find(&task)
-
-	if findTaskResult.Error != nil {
-		return nil, findTaskResult.Error
-	}
-	if task.ID == 0 {
-		// No task fetched, which doesn't result in an error with Limt(1).Find(&task).
-		return nil, nil
-	}
-
 	return &task, nil
 }
 
-func assignTaskToWorker(tx *gorm.DB, w *Worker, t *Task) error {
-	return tx.Model(t).
-		Select("WorkerID", "LastTouchedAt").
-		Updates(Task{WorkerID: &w.ID, LastTouchedAt: tx.NowFunc()}).Error
+func findTaskForWorker(
+	ctx context.Context,
+	queries *sqlc.Queries,
+	w *Worker,
+) (sqlc.Task, error) {
+
+	// Construct the list of worker tags to check.
+	workerTags := make([]sql.NullInt64, len(w.Tags))
+	for index, tag := range w.Tags {
+		workerTags[index] = sql.NullInt64{Int64: int64(tag.ID), Valid: true}
+	}
+
+	row, err := queries.FindRunnableTask(ctx, sqlc.FindRunnableTaskParams{
+		WorkerID:                int64(w.ID),
+		SchedulableTaskStatuses: convertTaskStatuses(schedulableTaskStatuses),
+		SchedulableJobStatuses:  convertJobStatuses(schedulableJobStatuses),
+		SupportedTaskTypes:      w.TaskTypes(),
+		TaskStatusCompleted:     string(api.TaskStatusCompleted),
+		WorkerTags:              workerTags,
+	})
+	if err != nil {
+		return sqlc.Task{}, err
+	}
+	if row.Task.ID == 0 {
+		return sqlc.Task{}, nil
+	}
+	return row.Task, nil
 }
 
 // taskAssignedAndRunnableQuery appends some GORM clauses to query for a task
