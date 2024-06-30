@@ -147,44 +147,66 @@ type TaskFailure struct {
 // StoreJob stores an AuthoredJob and its tasks, and saves it to the database.
 // The job will be in 'under construction' status. It is up to the caller to transition it to its desired initial status.
 func (db *DB) StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.AuthoredJob) error {
-	return db.gormDB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// TODO: separate conversion of struct types from storing things in the database.
-		dbJob := Job{
-			UUID:     authoredJob.JobID,
-			Name:     authoredJob.Name,
-			JobType:  authoredJob.JobType,
-			Status:   authoredJob.Status,
-			Priority: authoredJob.Priority,
-			Settings: StringInterfaceMap(authoredJob.Settings),
-			Metadata: StringStringMap(authoredJob.Metadata),
-			Storage: JobStorageInfo{
-				ShamanCheckoutID: authoredJob.Storage.ShamanCheckoutID,
-			},
+
+	// Run all queries in a single transaction.
+	qtx, err := db.queriesWithTX()
+	if err != nil {
+		return err
+	}
+	defer qtx.rollback()
+
+	// Serialise the embedded JSON.
+	settings, err := json.Marshal(authoredJob.Settings)
+	if err != nil {
+		return fmt.Errorf("converting job settings to JSON: %w", err)
+	}
+	metadata, err := json.Marshal(authoredJob.Metadata)
+	if err != nil {
+		return fmt.Errorf("converting job metadata to JSON: %w", err)
+	}
+
+	// Create the job itself.
+	params := sqlc.CreateJobParams{
+		CreatedAt:               db.gormDB.NowFunc(),
+		UUID:                    authoredJob.JobID,
+		Name:                    authoredJob.Name,
+		JobType:                 authoredJob.JobType,
+		Priority:                int64(authoredJob.Priority),
+		Status:                  string(authoredJob.Status),
+		Settings:                settings,
+		Metadata:                metadata,
+		StorageShamanCheckoutID: authoredJob.Storage.ShamanCheckoutID,
+	}
+
+	if authoredJob.WorkerTagUUID != "" {
+		dbTag, err := qtx.queries.FetchWorkerTagByUUID(ctx, authoredJob.WorkerTagUUID)
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return fmt.Errorf("no worker tag %q found", authoredJob.WorkerTagUUID)
+		case err != nil:
+			return fmt.Errorf("could not find worker tag %q: %w", authoredJob.WorkerTagUUID, err)
 		}
+		params.WorkerTagID = sql.NullInt64{Int64: dbTag.WorkerTag.ID, Valid: true}
+	}
 
-		log.Debug().
-			Str("job", dbJob.UUID).
-			Str("type", dbJob.JobType).
-			Str("name", dbJob.Name).
-			Str("status", string(dbJob.Status)).
-			Msg("persistence: storing authored job")
+	log.Debug().
+		Str("job", params.UUID).
+		Str("type", params.JobType).
+		Str("name", params.Name).
+		Str("status", params.Status).
+		Msg("persistence: storing authored job")
 
-		// Find and assign the worker tag.
-		if authoredJob.WorkerTagUUID != "" {
-			dbTag, err := fetchWorkerTag(tx, authoredJob.WorkerTagUUID)
-			if err != nil {
-				return err
-			}
-			dbJob.WorkerTagID = &dbTag.ID
-			dbJob.WorkerTag = dbTag
-		}
+	jobID, err := qtx.queries.CreateJob(ctx, params)
+	if err != nil {
+		return jobError(err, "storing job")
+	}
 
-		if err := tx.Create(&dbJob).Error; err != nil {
-			return jobError(err, "storing job")
-		}
+	err = db.storeAuthoredJobTaks(ctx, qtx, jobID, &authoredJob)
+	if err != nil {
+		return err
+	}
 
-		return db.storeAuthoredJobTaks(ctx, tx, &dbJob, &authoredJob)
-	})
+	return qtx.commit()
 }
 
 // StoreAuthoredJobTaks is a low-level function that is only used for recreating an existing job's tasks.
@@ -194,19 +216,41 @@ func (db *DB) StoreAuthoredJobTaks(
 	job *Job,
 	authoredJob *job_compilers.AuthoredJob,
 ) error {
-	tx := db.gormDB.WithContext(ctx)
-	return db.storeAuthoredJobTaks(ctx, tx, job, authoredJob)
+	qtx, err := db.queriesWithTX()
+	if err != nil {
+		return err
+	}
+	defer qtx.rollback()
+
+	err = db.storeAuthoredJobTaks(ctx, qtx, int64(job.ID), authoredJob)
+	if err != nil {
+		return err
+	}
+
+	return qtx.commit()
 }
 
+// storeAuthoredJobTaks stores the tasks of the authored job.
+// Note that this function does NOT commit the database transaction. That is up
+// to the caller.
 func (db *DB) storeAuthoredJobTaks(
 	ctx context.Context,
-	tx *gorm.DB,
-	dbJob *Job,
+	qtx *queriesTX,
+	jobID int64,
 	authoredJob *job_compilers.AuthoredJob,
 ) error {
+	type TaskInfo struct {
+		ID   int64
+		UUID string
+		Name string
+	}
 
-	uuidToTask := make(map[string]*Task)
+	// Give every task the same creation timestamp.
+	now := db.gormDB.NowFunc()
+
+	uuidToTask := make(map[string]TaskInfo)
 	for _, authoredTask := range authoredJob.Tasks {
+		// Marshal commands to JSON.
 		var commands []Command
 		for _, authoredCommand := range authoredTask.Commands {
 			commands = append(commands, Command{
@@ -214,31 +258,41 @@ func (db *DB) storeAuthoredJobTaks(
 				Parameters: StringInterfaceMap(authoredCommand.Parameters),
 			})
 		}
+		commandsJSON, err := json.Marshal(commands)
+		if err != nil {
+			return fmt.Errorf("could not convert commands of task %q to JSON: %w",
+				authoredTask.Name, err)
+		}
 
-		dbTask := Task{
-			Name:     authoredTask.Name,
-			Type:     authoredTask.Type,
-			UUID:     authoredTask.UUID,
-			Job:      dbJob,
-			Priority: authoredTask.Priority,
-			Status:   api.TaskStatusQueued,
-			Commands: commands,
+		taskParams := sqlc.CreateTaskParams{
+			CreatedAt: now,
+			Name:      authoredTask.Name,
+			Type:      authoredTask.Type,
+			UUID:      authoredTask.UUID,
+			JobID:     jobID,
+			Priority:  int64(authoredTask.Priority),
+			Status:    string(api.TaskStatusQueued),
+			Commands:  commandsJSON,
 			// dependencies are stored below.
 		}
 
 		log.Debug().
-			Str("task", dbTask.UUID).
-			Str("job", dbJob.UUID).
-			Str("type", dbTask.Type).
-			Str("name", dbTask.Name).
-			Str("status", string(dbTask.Status)).
+			Str("task", taskParams.UUID).
+			Str("type", taskParams.Type).
+			Str("name", taskParams.Name).
+			Str("status", string(taskParams.Status)).
 			Msg("persistence: storing authored task")
 
-		if err := tx.Create(&dbTask).Error; err != nil {
+		taskID, err := qtx.queries.CreateTask(ctx, taskParams)
+		if err != nil {
 			return taskError(err, "storing task: %v", err)
 		}
 
-		uuidToTask[authoredTask.UUID] = &dbTask
+		uuidToTask[authoredTask.UUID] = TaskInfo{
+			ID:   taskID,
+			UUID: taskParams.UUID,
+			Name: taskParams.Name,
+		}
 	}
 
 	// Store the dependencies between tasks.
@@ -247,18 +301,27 @@ func (db *DB) storeAuthoredJobTaks(
 			continue
 		}
 
-		dbTask, ok := uuidToTask[authoredTask.UUID]
+		taskInfo, ok := uuidToTask[authoredTask.UUID]
 		if !ok {
 			return taskError(nil, "unable to find task %q in the database, even though it was just authored", authoredTask.UUID)
 		}
 
-		deps := make([]*Task, len(authoredTask.Dependencies))
-		for i, t := range authoredTask.Dependencies {
-			depTask, ok := uuidToTask[t.UUID]
+		deps := make([]*TaskInfo, len(authoredTask.Dependencies))
+		for idx, authoredDep := range authoredTask.Dependencies {
+			depTask, ok := uuidToTask[authoredDep.UUID]
 			if !ok {
-				return taskError(nil, "finding task with UUID %q; a task depends on a task that is not part of this job", t.UUID)
+				return taskError(nil, "finding task with UUID %q; a task depends on a task that is not part of this job", authoredDep.UUID)
 			}
-			deps[i] = depTask
+
+			err := qtx.queries.StoreTaskDependency(ctx, sqlc.StoreTaskDependencyParams{
+				TaskID:       taskInfo.ID,
+				DependencyID: depTask.ID,
+			})
+			if err != nil {
+				return taskError(err, "error storing task %q depending on task %q", authoredTask.UUID, depTask.UUID)
+			}
+
+			deps[idx] = &depTask
 		}
 
 		if log.Debug().Enabled() {
@@ -267,25 +330,10 @@ func (db *DB) storeAuthoredJobTaks(
 				depNames[i] = dep.Name
 			}
 			log.Debug().
-				Str("task", dbTask.UUID).
-				Str("name", dbTask.Name).
+				Str("task", taskInfo.UUID).
+				Str("name", taskInfo.Name).
 				Strs("dependencies", depNames).
 				Msg("persistence: storing authored task dependencies")
-		}
-
-		dependenciesbatchsize := 1000
-		for j := 0; j < len(deps); j += dependenciesbatchsize {
-			end := j + dependenciesbatchsize
-			if end > len(deps) {
-				end = len(deps)
-			}
-			currentDeps := deps[j:end]
-			dbTask.Dependencies = currentDeps
-			tx.Model(&dbTask).Where("UUID = ?", dbTask.UUID)
-			subQuery := tx.Model(dbTask).Updates(Task{Dependencies: currentDeps})
-			if subQuery.Error != nil {
-				return taskError(subQuery.Error, "error with storing dependencies of task %q issue exists in dependencies %d to %d", authoredTask.UUID, j, end)
-			}
 		}
 	}
 

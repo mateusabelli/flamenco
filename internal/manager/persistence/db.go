@@ -198,6 +198,10 @@ type queriesTX struct {
 // queries returns the SQLC Queries struct, connected to this database.
 // It is intended that all GORM queries will be migrated to use this interface
 // instead.
+//
+// After calling this function, all queries should use this transaction until it
+// is closed (either committed or rolled back). Otherwise SQLite will deadlock,
+// as it will make any other query wait until this transaction is done.
 func (db *DB) queriesWithTX() (*queriesTX, error) {
 	sqldb, err := db.gormDB.DB()
 	if err != nil {

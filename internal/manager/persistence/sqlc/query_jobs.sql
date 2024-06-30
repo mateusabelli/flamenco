@@ -1,7 +1,8 @@
 
--- name: CreateJob :exec
+-- name: CreateJob :execlastid
 INSERT INTO jobs (
   created_at,
+  updated_at,
   uuid,
   name,
   job_type,
@@ -10,9 +11,49 @@ INSERT INTO jobs (
   activity,
   settings,
   metadata,
-  storage_shaman_checkout_id
+  storage_shaman_checkout_id,
+  worker_tag_id
 )
-VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? );
+VALUES (
+  @created_at,
+  @created_at,
+  @uuid,
+  @name,
+  @job_type,
+  @priority,
+  @status,
+  @activity,
+  @settings,
+  @metadata,
+  @storage_shaman_checkout_id,
+  @worker_tag_id
+);
+
+-- name: CreateTask :execlastid
+INSERT INTO tasks (
+  created_at,
+  updated_at,
+  uuid,
+  name,
+  type,
+  job_id,
+  priority,
+  status,
+  commands
+) VALUES (
+  @created_at,
+  @created_at,
+  @uuid,
+  @name,
+  @type,
+  @job_id,
+  @priority,
+  @status,
+  @commands
+);
+
+-- name: StoreTaskDependency :exec
+INSERT INTO task_dependencies (task_id, dependency_id) VALUES (@task_id, @dependency_id);
 
 -- name: FetchJob :one
 -- Fetch a job by its UUID.

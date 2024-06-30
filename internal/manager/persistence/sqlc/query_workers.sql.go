@@ -129,6 +129,30 @@ func (q *Queries) FetchWorker(ctx context.Context, uuid string) (Worker, error) 
 	return i, err
 }
 
+const fetchWorkerTagByUUID = `-- name: FetchWorkerTagByUUID :one
+SELECT worker_tags.id, worker_tags.created_at, worker_tags.updated_at, worker_tags.uuid, worker_tags.name, worker_tags.description
+FROM worker_tags
+WHERE worker_tags.uuid = ?1
+`
+
+type FetchWorkerTagByUUIDRow struct {
+	WorkerTag WorkerTag
+}
+
+func (q *Queries) FetchWorkerTagByUUID(ctx context.Context, uuid string) (FetchWorkerTagByUUIDRow, error) {
+	row := q.db.QueryRowContext(ctx, fetchWorkerTagByUUID, uuid)
+	var i FetchWorkerTagByUUIDRow
+	err := row.Scan(
+		&i.WorkerTag.ID,
+		&i.WorkerTag.CreatedAt,
+		&i.WorkerTag.UpdatedAt,
+		&i.WorkerTag.UUID,
+		&i.WorkerTag.Name,
+		&i.WorkerTag.Description,
+	)
+	return i, err
+}
+
 const fetchWorkerTags = `-- name: FetchWorkerTags :many
 SELECT worker_tags.id, worker_tags.created_at, worker_tags.updated_at, worker_tags.uuid, worker_tags.name, worker_tags.description
 FROM worker_tags

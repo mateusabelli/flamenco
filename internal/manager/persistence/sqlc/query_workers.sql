@@ -60,6 +60,11 @@ LEFT JOIN worker_tag_membership m ON (m.worker_tag_id = worker_tags.id)
 LEFT JOIN workers on (m.worker_id = workers.id)
 WHERE workers.uuid = @uuid;
 
+-- name: FetchWorkerTagByUUID :one
+SELECT sqlc.embed(worker_tags)
+FROM worker_tags
+WHERE worker_tags.uuid = @uuid;
+
 -- name: SoftDeleteWorker :execrows
 UPDATE workers SET deleted_at=@deleted_at
 WHERE uuid=@uuid;

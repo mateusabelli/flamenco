@@ -63,9 +63,10 @@ func (q *Queries) CountWorkersFailingTask(ctx context.Context, taskID int64) (in
 	return num_failed, err
 }
 
-const createJob = `-- name: CreateJob :exec
+const createJob = `-- name: CreateJob :execlastid
 INSERT INTO jobs (
   created_at,
+  updated_at,
   uuid,
   name,
   job_type,
@@ -74,9 +75,23 @@ INSERT INTO jobs (
   activity,
   settings,
   metadata,
-  storage_shaman_checkout_id
+  storage_shaman_checkout_id,
+  worker_tag_id
 )
-VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+VALUES (
+  ?1,
+  ?1,
+  ?2,
+  ?3,
+  ?4,
+  ?5,
+  ?6,
+  ?7,
+  ?8,
+  ?9,
+  ?10,
+  ?11
+)
 `
 
 type CreateJobParams struct {
@@ -90,10 +105,11 @@ type CreateJobParams struct {
 	Settings                json.RawMessage
 	Metadata                json.RawMessage
 	StorageShamanCheckoutID string
+	WorkerTagID             sql.NullInt64
 }
 
-func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
-	_, err := q.db.ExecContext(ctx, createJob,
+func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, createJob,
 		arg.CreatedAt,
 		arg.UUID,
 		arg.Name,
@@ -104,8 +120,64 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) error {
 		arg.Settings,
 		arg.Metadata,
 		arg.StorageShamanCheckoutID,
+		arg.WorkerTagID,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+const createTask = `-- name: CreateTask :execlastid
+INSERT INTO tasks (
+  created_at,
+  updated_at,
+  uuid,
+  name,
+  type,
+  job_id,
+  priority,
+  status,
+  commands
+) VALUES (
+  ?1,
+  ?1,
+  ?2,
+  ?3,
+  ?4,
+  ?5,
+  ?6,
+  ?7,
+  ?8
+)
+`
+
+type CreateTaskParams struct {
+	CreatedAt time.Time
+	UUID      string
+	Name      string
+	Type      string
+	JobID     int64
+	Priority  int64
+	Status    string
+	Commands  json.RawMessage
+}
+
+func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, createTask,
+		arg.CreatedAt,
+		arg.UUID,
+		arg.Name,
+		arg.Type,
+		arg.JobID,
+		arg.Priority,
+		arg.Status,
+		arg.Commands,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
 }
 
 const deleteJob = `-- name: DeleteJob :exec
@@ -802,6 +874,20 @@ type SetLastRenderedParams struct {
 // See https://github.com/sqlc-dev/sqlc/issues/3334 for more info.
 func (q *Queries) SetLastRendered(ctx context.Context, arg SetLastRenderedParams) error {
 	_, err := q.db.ExecContext(ctx, setLastRendered, arg.CreatedAt, arg.UpdatedAt, arg.JobID)
+	return err
+}
+
+const storeTaskDependency = `-- name: StoreTaskDependency :exec
+INSERT INTO task_dependencies (task_id, dependency_id) VALUES (?1, ?2)
+`
+
+type StoreTaskDependencyParams struct {
+	TaskID       int64
+	DependencyID int64
+}
+
+func (q *Queries) StoreTaskDependency(ctx context.Context, arg StoreTaskDependencyParams) error {
+	_, err := q.db.ExecContext(ctx, storeTaskDependency, arg.TaskID, arg.DependencyID)
 	return err
 }
 
