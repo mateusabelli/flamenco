@@ -43,25 +43,18 @@ func TestOneJobOneTask(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check the returned task.
-	if task == nil {
-		t.Fatal("task is nil")
-	}
+	require.NotNil(t, task)
 	assert.Equal(t, job.ID, task.JobID)
-	if task.WorkerID == nil {
-		t.Fatal("no worker assigned to task")
-	}
+	require.NotNil(t, task.WorkerID, "no worker assigned to returned task")
 	assert.Equal(t, w.ID, *task.WorkerID, "task must be assigned to the requesting worker")
 
 	// Check the task in the database.
 	now := db.gormDB.NowFunc()
 	dbTask, err := db.FetchTask(context.Background(), authTask.UUID)
 	require.NoError(t, err)
-	if dbTask == nil {
-		t.Fatal("task cannot be fetched from database")
-	}
-	if dbTask.WorkerID == nil {
-		t.Fatal("no worker assigned to task")
-	}
+	require.NotNil(t, dbTask)
+	require.NotNil(t, dbTask.WorkerID, "no worker assigned to task in database")
+
 	assert.Equal(t, w.ID, *dbTask.WorkerID, "task must be assigned to the requesting worker")
 	assert.WithinDuration(t, now, dbTask.LastTouchedAt, time.Second, "task must be 'touched' by the worker after scheduling")
 }
@@ -85,14 +78,10 @@ func TestOneJobThreeTasksByPrio(t *testing.T) {
 
 	task, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	if task == nil {
-		t.Fatal("task is nil")
-	}
+	require.NotNil(t, task)
 
 	assert.Equal(t, job.ID, task.JobID)
-	if task.Job == nil {
-		t.Fatal("task.Job is nil")
-	}
+	assert.NotNil(t, task.Job)
 
 	assert.Equal(t, att2.Name, task.Name, "the high-prio task should have been chosen")
 }
@@ -116,9 +105,7 @@ func TestOneJobThreeTasksByDependencies(t *testing.T) {
 
 	task, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	if task == nil {
-		t.Fatal("task is nil")
-	}
+	require.NotNil(t, task)
 	assert.Equal(t, job.ID, task.JobID)
 	assert.Equal(t, att1.Name, task.Name, "the first task should have been chosen")
 }
@@ -156,9 +143,7 @@ func TestTwoJobsThreeTasks(t *testing.T) {
 
 	task, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	if task == nil {
-		t.Fatal("task is nil")
-	}
+	require.NotNil(t, task)
 	assert.Equal(t, job2.ID, task.JobID)
 	assert.Equal(t, att2_3.Name, task.Name, "the 3rd task of the 2nd job should have been chosen")
 }
@@ -279,9 +264,7 @@ func TestAlreadyAssigned(t *testing.T) {
 
 	task, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	if task == nil {
-		t.Fatal("task is nil")
-	}
+	require.NotNil(t, task)
 
 	assert.Equal(t, att3.Name, task.Name, "the already-assigned task should have been chosen")
 }
@@ -314,9 +297,7 @@ func TestAssignedToOtherWorker(t *testing.T) {
 
 	task, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	if task == nil {
-		t.Fatal("task is nil")
-	}
+	require.NotNil(t, task)
 
 	assert.Equal(t, att2.Name, task.Name, "the high-prio task should have been chosen")
 	assert.Equal(t, *task.WorkerID, w.ID, "the task should now be assigned to the worker it was scheduled for")
@@ -346,9 +327,7 @@ func TestPreviouslyFailed(t *testing.T) {
 	// This should assign the 2nd task.
 	task, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	if task == nil {
-		t.Fatal("task is nil")
-	}
+	require.NotNil(t, task)
 	assert.Equal(t, att2.Name, task.Name, "the second task should have been chosen")
 }
 
@@ -457,9 +436,7 @@ func TestBlocklisted(t *testing.T) {
 	// This should assign the 2nd task.
 	task, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	if task == nil {
-		t.Fatal("task is nil")
-	}
+	require.NotNil(t, task)
 	assert.Equal(t, att2.Name, task.Name, "the second task should have been chosen")
 }
 
