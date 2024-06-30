@@ -307,7 +307,11 @@ func (db *DB) FetchJob(ctx context.Context, jobUUID string) (*Job, error) {
 		return nil, jobError(err, "fetching job")
 	}
 
-	return convertSqlcJob(sqlcJob)
+	gormJob, err := convertSqlcJob(sqlcJob)
+	if err != nil {
+		return nil, err
+	}
+	return &gormJob, nil
 }
 
 // FetchJobShamanCheckoutID fetches the job's Shaman Checkout ID.
@@ -443,7 +447,7 @@ func (db *DB) FetchJobsInStatus(ctx context.Context, jobStatuses ...api.JobStatu
 		if err != nil {
 			return nil, jobError(err, "converting fetched jobs in status %q", jobStatuses)
 		}
-		jobs = append(jobs, job)
+		jobs = append(jobs, &job)
 	}
 
 	return jobs, nil
@@ -522,39 +526,60 @@ func (db *DB) FetchTask(ctx context.Context, taskUUID string) (*Task, error) {
 		return nil, taskError(err, "fetching task %s", taskUUID)
 	}
 
-	convertedTask, err := convertSqlcTask(taskRow.Task, taskRow.JobUUID.String, taskRow.WorkerUUID.String)
+	return convertSqlTaskWithJobAndWorker(ctx, queries, taskRow.Task)
+}
+
+// TODO: remove this code, and let the code that calls into the persistence
+// service fetch the job/worker explicitly when needed.
+func convertSqlTaskWithJobAndWorker(
+	ctx context.Context,
+	queries *sqlc.Queries,
+	task sqlc.Task,
+) (*Task, error) {
+	var (
+		gormJob    Job
+		gormWorker Worker
+	)
+
+	// Fetch & convert the Job.
+	if task.JobID > 0 {
+		sqlcJob, err := queries.FetchJobByID(ctx, task.JobID)
+		if err != nil {
+			return nil, jobError(err, "fetching job of task %s", task.UUID)
+		}
+
+		gormJob, err = convertSqlcJob(sqlcJob)
+		if err != nil {
+			return nil, jobError(err, "converting job of task %s", task.UUID)
+		}
+	}
+
+	// Fetch & convert the Worker.
+	if task.WorkerID.Valid && task.WorkerID.Int64 > 0 {
+		sqlcWorker, err := queries.FetchWorkerUnconditionalByID(ctx, task.WorkerID.Int64)
+		if err != nil {
+			return nil, taskError(err, "fetching worker assigned to task %s", task.UUID)
+		}
+		gormWorker = convertSqlcWorker(sqlcWorker)
+	}
+
+	// Convert the Task.
+	gormTask, err := convertSqlcTask(task, gormJob.UUID, gormWorker.UUID)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: remove this code, and let the caller fetch the job explicitly when needed.
-	if taskRow.Task.JobID > 0 {
-		dbJob, err := queries.FetchJobByID(ctx, taskRow.Task.JobID)
-		if err != nil {
-			return nil, jobError(err, "fetching job of task %s", taskUUID)
-		}
-
-		convertedJob, err := convertSqlcJob(dbJob)
-		if err != nil {
-			return nil, jobError(err, "converting job of task %s", taskUUID)
-		}
-		convertedTask.Job = convertedJob
-		if convertedTask.JobUUID != convertedJob.UUID {
-			panic("Conversion to SQLC is incomplete")
-		}
+	// Put the Job & Worker into the Task.
+	if gormJob.ID > 0 {
+		gormTask.Job = &gormJob
+		gormTask.JobUUID = gormJob.UUID
+	}
+	if gormWorker.ID > 0 {
+		gormTask.Worker = &gormWorker
+		gormTask.WorkerUUID = gormWorker.UUID
 	}
 
-	// TODO: remove this code, and let the caller fetch the Worker explicitly when needed.
-	if taskRow.WorkerUUID.Valid {
-		worker, err := queries.FetchWorkerUnconditional(ctx, taskRow.WorkerUUID.String)
-		if err != nil {
-			return nil, taskError(err, "fetching worker assigned to task %s", taskUUID)
-		}
-		convertedWorker := convertSqlcWorker(worker)
-		convertedTask.Worker = &convertedWorker
-	}
-
-	return convertedTask, nil
+	return gormTask, nil
 }
 
 // FetchTaskJobUUID fetches the job UUID of the given task.
@@ -1031,7 +1056,7 @@ func (db *DB) FetchTaskFailureList(ctx context.Context, t *Task) ([]*Worker, err
 // expected by the rest of the code. This is mostly in place to aid in the GORM
 // to SQLC migration. It is intended that eventually the rest of the code will
 // use the same SQLC-generated model.
-func convertSqlcJob(job sqlc.Job) (*Job, error) {
+func convertSqlcJob(job sqlc.Job) (Job, error) {
 	dbJob := Job{
 		Model: Model{
 			ID:        uint(job.ID),
@@ -1051,11 +1076,11 @@ func convertSqlcJob(job sqlc.Job) (*Job, error) {
 	}
 
 	if err := json.Unmarshal(job.Settings, &dbJob.Settings); err != nil {
-		return nil, jobError(err, fmt.Sprintf("job %s has invalid settings: %v", job.UUID, err))
+		return Job{}, jobError(err, fmt.Sprintf("job %s has invalid settings: %v", job.UUID, err))
 	}
 
 	if err := json.Unmarshal(job.Metadata, &dbJob.Metadata); err != nil {
-		return nil, jobError(err, fmt.Sprintf("job %s has invalid metadata: %v", job.UUID, err))
+		return Job{}, jobError(err, fmt.Sprintf("job %s has invalid metadata: %v", job.UUID, err))
 	}
 
 	if job.WorkerTagID.Valid {
@@ -1063,7 +1088,7 @@ func convertSqlcJob(job sqlc.Job) (*Job, error) {
 		dbJob.WorkerTagID = &workerTagID
 	}
 
-	return &dbJob, nil
+	return dbJob, nil
 }
 
 // convertSqlcTask converts a FetchTaskRow from the SQLC-generated model to the
@@ -1111,6 +1136,15 @@ func convertTaskStatuses(taskStatuses []api.TaskStatus) []string {
 	statusesAsStrings := make([]string, len(taskStatuses))
 	for index := range taskStatuses {
 		statusesAsStrings[index] = string(taskStatuses[index])
+	}
+	return statusesAsStrings
+}
+
+// convertJobStatuses converts from []api.JobStatus to []string for feeding to sqlc.
+func convertJobStatuses(jobStatuses []api.JobStatus) []string {
+	statusesAsStrings := make([]string, len(jobStatuses))
+	for index := range jobStatuses {
+		statusesAsStrings[index] = string(jobStatuses[index])
 	}
 	return statusesAsStrings
 }
