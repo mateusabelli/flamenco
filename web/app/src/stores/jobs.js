@@ -33,6 +33,9 @@ export const useJobs = defineStore('jobs', {
     canRequeue() {
       return this._anyJobWithStatus(['canceled', 'completed', 'failed', 'paused']);
     },
+    canPause() {
+      return this._anyJobWithStatus(['active', 'queued', 'canceled']);
+    },
   },
   actions: {
     setIsJobless(isJobless) {
@@ -73,6 +76,9 @@ export const useJobs = defineStore('jobs', {
      */
     cancelJobs() {
       return this._setJobStatus('cancel-requested');
+    },
+    pauseJobs() {
+      return this._setJobStatus('pause-requested');
     },
     requeueJobs() {
       return this._setJobStatus('requeueing');

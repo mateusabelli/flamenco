@@ -336,6 +336,94 @@ func TestJobCancelWithSomeCompletedTasks(t *testing.T) {
 	require.NoError(t, sm.JobStatusChange(ctx, job, api.JobStatusCancelRequested, "someone wrote a unittest"))
 }
 
+func TestJobPauseWithAllQueuedTasks(t *testing.T) {
+	mockCtrl, ctx, sm, mocks := taskStateMachineTestFixtures(t)
+	defer mockCtrl.Finish()
+
+	task1 := taskWithStatus(api.JobStatusQueued, api.TaskStatusQueued)
+	task2 := taskOfSameJob(task1, api.TaskStatusQueued)
+	task3 := taskOfSameJob(task2, api.TaskStatusQueued)
+	job := task3.Job
+
+	mocks.expectSaveJobWithStatus(t, job, api.JobStatusPauseRequested)
+
+	// Expect pausing of the job to trigger pausing of all its queued tasks.
+	mocks.persist.EXPECT().UpdateJobsTaskStatusesConditional(ctx, job,
+		[]api.TaskStatus{
+			api.TaskStatusQueued,
+			api.TaskStatusSoftFailed,
+		},
+		api.TaskStatusPaused,
+		"Manager paused this task because the job got status \"pause-requested\".",
+	)
+	mocks.persist.EXPECT().CountTasksOfJobInStatus(ctx, job,
+		api.TaskStatusActive).
+		Return(0, 3, nil)
+	mocks.expectSaveJobWithStatus(t, job, api.JobStatusPaused)
+	mocks.expectBroadcastJobChangeWithTaskRefresh(job, api.JobStatusQueued, api.JobStatusPauseRequested)
+	mocks.expectBroadcastJobChange(job, api.JobStatusPauseRequested, api.JobStatusPaused)
+
+	require.NoError(t, sm.JobStatusChange(ctx, job, api.JobStatusPauseRequested, "someone wrote a unittest"))
+}
+
+func TestJobPauseWithSomeCompletedTasks(t *testing.T) {
+	mockCtrl, ctx, sm, mocks := taskStateMachineTestFixtures(t)
+	defer mockCtrl.Finish()
+
+	task1 := taskWithStatus(api.JobStatusQueued, api.TaskStatusCompleted)
+	task2 := taskOfSameJob(task1, api.TaskStatusQueued)
+	task3 := taskOfSameJob(task2, api.TaskStatusQueued)
+	job := task3.Job
+
+	mocks.expectSaveJobWithStatus(t, job, api.JobStatusPauseRequested)
+
+	// Expect pausing of the job to trigger pausing of all its queued tasks.
+	mocks.persist.EXPECT().UpdateJobsTaskStatusesConditional(ctx, job,
+		[]api.TaskStatus{
+			api.TaskStatusQueued,
+			api.TaskStatusSoftFailed,
+		},
+		api.TaskStatusPaused,
+		"Manager paused this task because the job got status \"pause-requested\".",
+	)
+	mocks.persist.EXPECT().CountTasksOfJobInStatus(ctx, job,
+		api.TaskStatusActive).
+		Return(0, 3, nil)
+	mocks.expectSaveJobWithStatus(t, job, api.JobStatusPaused)
+	mocks.expectBroadcastJobChangeWithTaskRefresh(job, api.JobStatusQueued, api.JobStatusPauseRequested)
+	mocks.expectBroadcastJobChange(job, api.JobStatusPauseRequested, api.JobStatusPaused)
+
+	require.NoError(t, sm.JobStatusChange(ctx, job, api.JobStatusPauseRequested, "someone wrote a unittest"))
+}
+
+func TestJobPauseWithSomeActiveTasks(t *testing.T) {
+	mockCtrl, ctx, sm, mocks := taskStateMachineTestFixtures(t)
+	defer mockCtrl.Finish()
+
+	task1 := taskWithStatus(api.JobStatusActive, api.TaskStatusActive)
+	task2 := taskOfSameJob(task1, api.TaskStatusCompleted)
+	task3 := taskOfSameJob(task2, api.TaskStatusQueued)
+	job := task3.Job
+
+	mocks.expectSaveJobWithStatus(t, job, api.JobStatusPauseRequested)
+
+	// Expect pausing of the job to trigger pausing of all its queued tasks.
+	mocks.persist.EXPECT().UpdateJobsTaskStatusesConditional(ctx, job,
+		[]api.TaskStatus{
+			api.TaskStatusQueued,
+			api.TaskStatusSoftFailed,
+		},
+		api.TaskStatusPaused,
+		"Manager paused this task because the job got status \"pause-requested\".",
+	)
+	mocks.persist.EXPECT().CountTasksOfJobInStatus(ctx, job,
+		api.TaskStatusActive).
+		Return(1, 3, nil)
+	mocks.expectBroadcastJobChangeWithTaskRefresh(job, api.JobStatusActive, api.JobStatusPauseRequested)
+
+	require.NoError(t, sm.JobStatusChange(ctx, job, api.JobStatusPauseRequested, "someone wrote a unittest"))
+}
+
 func TestCheckStuck(t *testing.T) {
 	mockCtrl, ctx, sm, mocks := taskStateMachineTestFixtures(t)
 	defer mockCtrl.Finish()

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 
 import * as API from '@/manager-api';
 import { getAPIClient } from '@/api-client';
+import { useJobs } from '@/stores/jobs';
 
 const jobsAPI = new API.JobsApi(getAPIClient());
 
@@ -19,6 +20,21 @@ export const useTasks = defineStore('tasks', {
   }),
   getters: {
     canCancel() {
+      const jobs = useJobs();
+      const activeJob = jobs.activeJob;
+
+      if (!activeJob) {
+        console.warn('no active job, unable to determine whether the active task is cancellable');
+        return false;
+      }
+
+      if (activeJob.status == 'pause-requested') {
+        // Cancelling a task should not be possible while the job is being paused.
+        // In the future this might be supported, see issue #104315.
+        return false;
+      }
+
+      // Allow cancellation for specified task statuses.
       return this._anyTaskWithStatus(['queued', 'active', 'soft-failed']);
     },
     canRequeue() {

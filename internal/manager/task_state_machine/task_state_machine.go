@@ -166,6 +166,18 @@ func (sm *StateMachine) jobStatusIfAThenB(
 	return sm.JobStatusChange(ctx, job, thenStatus, reason)
 }
 
+// isJobPausingComplete returns true when the job status is pause-requested and there are no more active tasks.
+func (sm *StateMachine) isJobPausingComplete(ctx context.Context, job *persistence.Job) (bool, error) {
+	if job.Status != api.JobStatusPauseRequested {
+		return false, nil
+	}
+	numActive, _, err := sm.persist.CountTasksOfJobInStatus(ctx, job, api.TaskStatusActive)
+	if err != nil {
+		return false, err
+	}
+	return numActive == 0, nil
+}
+
 // updateJobOnTaskStatusCanceled conditionally escalates the cancellation of a task to cancel the job.
 func (sm *StateMachine) updateJobOnTaskStatusCanceled(ctx context.Context, logger zerolog.Logger, job *persistence.Job) error {
 	// If no more tasks can run, cancel the job.
@@ -178,6 +190,15 @@ func (sm *StateMachine) updateJobOnTaskStatusCanceled(ctx context.Context, logge
 		// NOTE: this does NOT cancel any non-runnable (paused/failed) tasks. If that's desired, just cancel the job as a whole.
 		logger.Info().Msg("canceled task was last runnable task of job, canceling job")
 		return sm.JobStatusChange(ctx, job, api.JobStatusCanceled, "canceled task was last runnable task of job, canceling job")
+	}
+
+	// Deal with the special case when the job is in pause-requested status.
+	toBePaused, err := sm.isJobPausingComplete(ctx, job)
+	if err != nil {
+		return err
+	}
+	if toBePaused {
+		return sm.JobStatusChange(ctx, job, api.JobStatusPaused, "no more active tasks after task cancellation")
 	}
 
 	return nil
@@ -204,6 +225,16 @@ func (sm *StateMachine) updateJobOnTaskStatusFailed(ctx context.Context, logger 
 	}
 	// If the job didn't fail, this failure indicates that at least the job is active.
 	failLogger.Info().Msg("task failed, but not enough to fail the job")
+
+	// Deal with the special case when the job is in pause-requested status.
+	toBePaused, err := sm.isJobPausingComplete(ctx, job)
+	if err != nil {
+		return err
+	}
+	if toBePaused {
+		return sm.JobStatusChange(ctx, job, api.JobStatusPaused, "no more active tasks after task failure")
+	}
+
 	return sm.jobStatusIfAThenB(ctx, logger, job, api.JobStatusQueued, api.JobStatusActive,
 		"task failed, but not enough to fail the job")
 }
@@ -218,6 +249,16 @@ func (sm *StateMachine) updateJobOnTaskStatusCompleted(ctx context.Context, logg
 		logger.Info().Msg("all tasks of job are completed, job is completed")
 		return sm.JobStatusChange(ctx, job, api.JobStatusCompleted, "all tasks completed")
 	}
+
+	// Deal with the special case when the job is in pause-requested status.
+	toBePaused, err := sm.isJobPausingComplete(ctx, job)
+	if err != nil {
+		return err
+	}
+	if toBePaused {
+		return sm.JobStatusChange(ctx, job, api.JobStatusPaused, "no more active tasks after task completion")
+	}
+
 	logger.Info().
 		Int("taskNumTotal", numTotal).
 		Int("taskNumComplete", numComplete).
@@ -369,7 +410,7 @@ func (sm *StateMachine) updateTasksAfterJobStatusChange(
 
 	// Every case in this switch MUST return, for sanity sake.
 	switch job.Status {
-	case api.JobStatusCompleted, api.JobStatusCanceled:
+	case api.JobStatusCompleted, api.JobStatusCanceled, api.JobStatusPaused:
 		// Nothing to do; this will happen as a response to all tasks receiving this status.
 		return tasksUpdateResult{}, nil
 
@@ -380,6 +421,13 @@ func (sm *StateMachine) updateTasksAfterJobStatusChange(
 
 	case api.JobStatusCancelRequested, api.JobStatusFailed:
 		jobStatus, err := sm.cancelTasks(ctx, logger, job)
+		return tasksUpdateResult{
+			followingJobStatus: jobStatus,
+			massTaskUpdate:     true,
+		}, err
+
+	case api.JobStatusPauseRequested:
+		jobStatus, err := sm.pauseTasks(ctx, logger, job)
 		return tasksUpdateResult{
 			followingJobStatus: jobStatus,
 			massTaskUpdate:     true,
@@ -436,6 +484,38 @@ func (sm *StateMachine) cancelTasks(
 	// This could mean cancellation was triggered by failure of the job, in which
 	// case the job is already in the correct status.
 	return "", nil
+}
+
+func (sm *StateMachine) pauseTasks(
+	ctx context.Context, logger zerolog.Logger, job *persistence.Job,
+) (api.JobStatus, error) {
+	logger.Info().Msg("pausing tasks of job")
+
+	// Any task that might run in the future should get paused.
+	// Active tasks should remain active until finished.
+	taskStatusesToPause := []api.TaskStatus{
+		api.TaskStatusQueued,
+		api.TaskStatusSoftFailed,
+	}
+	err := sm.persist.UpdateJobsTaskStatusesConditional(
+		ctx, job, taskStatusesToPause, api.TaskStatusPaused,
+		fmt.Sprintf("Manager paused this task because the job got status %q.", job.Status),
+	)
+	if err != nil {
+		return "", fmt.Errorf("pausing tasks of job %s: %w", job.UUID, err)
+	}
+
+	// If pausing was requested, it has now happened, so the job can transition.
+	toBePaused, err := sm.isJobPausingComplete(ctx, job)
+	if err != nil {
+		return "", err
+	}
+	if toBePaused {
+		logger.Info().Msg("all tasks of job paused, job can go to 'paused' status")
+		return api.JobStatusPaused, nil
+	}
+
+	return api.JobStatusPauseRequested, nil
 }
 
 // requeueTasks re-queues all tasks of the job.

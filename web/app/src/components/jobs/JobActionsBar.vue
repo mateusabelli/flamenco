@@ -8,6 +8,9 @@
         <button class="btn delete dangerous" v-on:click="onButtonDeleteConfirmed">Delete</button>
       </div>
     </div>
+    <button class="btn pause" :disabled="!jobs.canPause" v-on:click="onButtonPause">
+      Pause Job
+    </button>
     <button class="btn cancel" :disabled="!jobs.canCancel" v-on:click="onButtonCancel">
       Cancel Job
     </button>
@@ -68,6 +71,9 @@ export default {
     },
     onButtonRequeue() {
       return this._handleJobActionPromise(this.jobs.requeueJobs(), 'requeueing');
+    },
+    onButtonPause() {
+      return this._handleJobActionPromise(this.jobs.pauseJobs(), 'marked for pausing');
     },
 
     _handleJobActionPromise(promise, description) {
