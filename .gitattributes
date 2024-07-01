@@ -3,6 +3,7 @@
 /addon/flamenco/manager_README.md linguist-generated=true
 /web/app/src/manager-api/** linguist-generated=true
 **/*.gen.go linguist-generated=true
+/go.sum linguist-generated=true
 
 # In your Git config, set:
 # git config core.eol native
