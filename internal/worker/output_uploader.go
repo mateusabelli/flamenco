@@ -82,7 +82,7 @@ func (ou *OutputUploader) process(ctx context.Context, item TaskOutput) {
 		Str("image", item.Filename).
 		Str("task", item.TaskID).
 		Logger()
-	logger.Info().Msg("output uploader: processing file before uploading to Manager")
+	logger.Debug().Msg("output uploader: processing file before uploading to Manager")
 
 	jpegBytes := loadAsJPEG(item.Filename)
 	if len(jpegBytes) == 0 {
