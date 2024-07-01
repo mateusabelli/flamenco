@@ -55,6 +55,13 @@ export default class JobStatus {
 
     
         /**
+         * value: "pause-requested"
+         * @const
+         */
+        "pause-requested" = "pause-requested";
+
+    
+        /**
          * value: "queued"
          * @const
          */

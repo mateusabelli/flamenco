@@ -57,6 +57,7 @@ class JobStatus(ModelSimple):
             'COMPLETED': "completed",
             'FAILED': "failed",
             'PAUSED': "paused",
+            'PAUSE-REQUESTED': "pause-requested",
             'QUEUED': "queued",
             'CANCEL-REQUESTED': "cancel-requested",
             'REQUEUEING': "requeueing",
@@ -112,10 +113,10 @@ class JobStatus(ModelSimple):
         Note that value can be passed either in args or in kwargs, but not in both.
 
         Args:
-            args[0] (str):, must be one of ["active", "canceled", "completed", "failed", "paused", "queued", "cancel-requested", "requeueing", "under-construction", ]  # noqa: E501
+            args[0] (str):, must be one of ["active", "canceled", "completed", "failed", "paused", "pause-requested", "queued", "cancel-requested", "requeueing", "under-construction", ]  # noqa: E501
 
         Keyword Args:
-            value (str):, must be one of ["active", "canceled", "completed", "failed", "paused", "queued", "cancel-requested", "requeueing", "under-construction", ]  # noqa: E501
+            value (str):, must be one of ["active", "canceled", "completed", "failed", "paused", "pause-requested", "queued", "cancel-requested", "requeueing", "under-construction", ]  # noqa: E501
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -202,10 +203,10 @@ class JobStatus(ModelSimple):
         Note that value can be passed either in args or in kwargs, but not in both.
 
         Args:
-            args[0] (str):, must be one of ["active", "canceled", "completed", "failed", "paused", "queued", "cancel-requested", "requeueing", "under-construction", ]  # noqa: E501
+            args[0] (str):, must be one of ["active", "canceled", "completed", "failed", "paused", "pause-requested", "queued", "cancel-requested", "requeueing", "under-construction", ]  # noqa: E501
 
         Keyword Args:
-            value (str):, must be one of ["active", "canceled", "completed", "failed", "paused", "queued", "cancel-requested", "requeueing", "under-construction", ]  # noqa: E501
+            value (str):, must be one of ["active", "canceled", "completed", "failed", "paused", "pause-requested", "queued", "cancel-requested", "requeueing", "under-construction", ]  # noqa: E501
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.

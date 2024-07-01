@@ -84,6 +84,8 @@ const (
 
 	JobStatusFailed JobStatus = "failed"
 
+	JobStatusPauseRequested JobStatus = "pause-requested"
+
 	JobStatusPaused JobStatus = "paused"
 
 	JobStatusQueued JobStatus = "queued"
