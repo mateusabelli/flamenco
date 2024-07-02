@@ -47,6 +47,21 @@ WHERE TF.worker_id IS NULL -- Not failed by this worker before.
   AND tasks.type IN (sqlc.slice('supported_task_types'))
 ORDER BY jobs.priority DESC, tasks.priority DESC;
 
+-- name: FetchWorkerTask :one
+-- Find the currently-active task assigned to a Worker. If not found, find the last task this Worker worked on.
+SELECT
+  sqlc.embed(tasks),
+  sqlc.embed(jobs),
+  (tasks.status = @task_status_active AND jobs.status = @job_status_active) as is_active
+FROM tasks
+  INNER JOIN jobs ON tasks.job_id = jobs.id
+WHERE
+  tasks.worker_id = @worker_id
+ORDER BY
+  is_active DESC,
+  tasks.updated_at DESC
+LIMIT 1;
+
 -- name: AssignTaskToWorker :exec
 UPDATE tasks
 SET worker_id=@worker_id, last_touched_at=@now, updated_at=@now

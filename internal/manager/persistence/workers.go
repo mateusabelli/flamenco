@@ -5,6 +5,7 @@ package persistence
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -191,38 +192,49 @@ func (db *DB) FetchWorkers(ctx context.Context) ([]*Worker, error) {
 
 // FetchWorkerTask returns the most recent task assigned to the given Worker.
 func (db *DB) FetchWorkerTask(ctx context.Context, worker *Worker) (*Task, error) {
-	task := Task{}
-
-	// See if there is a task assigned to this worker in the same way that the
-	// task scheduler does.
-	query := db.gormDB.WithContext(ctx)
-	query = taskAssignedAndRunnableQuery(query, worker)
-	tx := query.
-		Order("tasks.updated_at").
-		Preload("Job").
-		Find(&task)
-	if tx.Error != nil {
-		return nil, taskError(tx.Error, "fetching task assigned to Worker %s", worker.UUID)
-	}
-	if task.ID != 0 {
-		// Found a task!
-		return &task, nil
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
 	}
 
-	// If not found, just find the last-modified task associated with this Worker.
-	tx = db.gormDB.WithContext(ctx).
-		Where("worker_id = ?", worker.ID).
-		Order("tasks.updated_at DESC").
-		Preload("Job").
-		Find(&task)
-	if tx.Error != nil {
-		return nil, taskError(tx.Error, "fetching task assigned to Worker %s", worker.UUID)
-	}
-	if task.ID == 0 {
+	// Convert the WorkerID to a NullInt64. As task.worker_id can be NULL, this is
+	// what sqlc expects us to pass in.
+	workerID := sql.NullInt64{Int64: int64(worker.ID), Valid: true}
+
+	row, err := queries.FetchWorkerTask(ctx, sqlc.FetchWorkerTaskParams{
+		TaskStatusActive: string(api.TaskStatusActive),
+		JobStatusActive:  string(api.JobStatusActive),
+		WorkerID:         workerID,
+	})
+
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
+	case err != nil:
+		return nil, taskError(err, "fetching task assigned to Worker %s", worker.UUID)
 	}
 
-	return &task, nil
+	// Found a task!
+	if row.Job.ID == 0 {
+		panic(fmt.Sprintf("task found but with no job: %#v", row))
+	}
+	if row.Task.ID == 0 {
+		panic(fmt.Sprintf("task found but with zero ID: %#v", row))
+	}
+
+	// Convert the task & job to gorm data types.
+	gormTask, err := convertSqlcTask(row.Task, row.Job.UUID, worker.UUID)
+	if err != nil {
+		return nil, err
+	}
+	gormJob, err := convertSqlcJob(row.Job)
+	if err != nil {
+		return nil, err
+	}
+	gormTask.Job = &gormJob
+	gormTask.Worker = worker
+
+	return gormTask, nil
 }
 
 func (db *DB) SaveWorkerStatus(ctx context.Context, w *Worker) error {

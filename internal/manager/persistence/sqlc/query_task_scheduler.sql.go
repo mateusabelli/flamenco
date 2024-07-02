@@ -82,6 +82,70 @@ func (q *Queries) FetchAssignedAndRunnableTaskOfWorker(ctx context.Context, arg 
 	return i, err
 }
 
+const fetchWorkerTask = `-- name: FetchWorkerTask :one
+SELECT
+  tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity,
+  jobs.id, jobs.created_at, jobs.updated_at, jobs.uuid, jobs.name, jobs.job_type, jobs.priority, jobs.status, jobs.activity, jobs.settings, jobs.metadata, jobs.delete_requested_at, jobs.storage_shaman_checkout_id, jobs.worker_tag_id,
+  (tasks.status = ?1 AND jobs.status = ?2) as is_active
+FROM tasks
+  INNER JOIN jobs ON tasks.job_id = jobs.id
+WHERE
+  tasks.worker_id = ?3
+ORDER BY
+  is_active DESC,
+  tasks.updated_at DESC
+LIMIT 1
+`
+
+type FetchWorkerTaskParams struct {
+	TaskStatusActive string
+	JobStatusActive  string
+	WorkerID         sql.NullInt64
+}
+
+type FetchWorkerTaskRow struct {
+	Task     Task
+	Job      Job
+	IsActive interface{}
+}
+
+// Find the currently-active task assigned to a Worker. If not found, find the last task this Worker worked on.
+func (q *Queries) FetchWorkerTask(ctx context.Context, arg FetchWorkerTaskParams) (FetchWorkerTaskRow, error) {
+	row := q.db.QueryRowContext(ctx, fetchWorkerTask, arg.TaskStatusActive, arg.JobStatusActive, arg.WorkerID)
+	var i FetchWorkerTaskRow
+	err := row.Scan(
+		&i.Task.ID,
+		&i.Task.CreatedAt,
+		&i.Task.UpdatedAt,
+		&i.Task.UUID,
+		&i.Task.Name,
+		&i.Task.Type,
+		&i.Task.JobID,
+		&i.Task.Priority,
+		&i.Task.Status,
+		&i.Task.WorkerID,
+		&i.Task.LastTouchedAt,
+		&i.Task.Commands,
+		&i.Task.Activity,
+		&i.Job.ID,
+		&i.Job.CreatedAt,
+		&i.Job.UpdatedAt,
+		&i.Job.UUID,
+		&i.Job.Name,
+		&i.Job.JobType,
+		&i.Job.Priority,
+		&i.Job.Status,
+		&i.Job.Activity,
+		&i.Job.Settings,
+		&i.Job.Metadata,
+		&i.Job.DeleteRequestedAt,
+		&i.Job.StorageShamanCheckoutID,
+		&i.Job.WorkerTagID,
+		&i.IsActive,
+	)
+	return i, err
+}
+
 const findRunnableTask = `-- name: FindRunnableTask :one
 SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity
 FROM tasks

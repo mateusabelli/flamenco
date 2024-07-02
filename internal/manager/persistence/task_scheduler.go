@@ -10,7 +10,6 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
 
 	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/pkg/api"
@@ -163,15 +162,4 @@ func findTaskForWorker(
 		return sqlc.Task{}, nil
 	}
 	return row.Task, nil
-}
-
-// taskAssignedAndRunnableQuery appends some GORM clauses to query for a task
-// that's already assigned to this worker, and is in a runnable state.
-func taskAssignedAndRunnableQuery(tx *gorm.DB, w *Worker) *gorm.DB {
-	return tx.
-		Joins("left join jobs on tasks.job_id = jobs.id").
-		Where("tasks.status = ?", api.TaskStatusActive).
-		Where("jobs.status in ?", schedulableJobStatuses).
-		Where("tasks.worker_id = ?", w.ID). // assigned to this worker
-		Limit(1)
 }
