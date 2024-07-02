@@ -32,9 +32,11 @@ from flamenco.manager.exceptions import ApiAttributeError
 def lazy_import():
     from flamenco.manager.model.job_metadata import JobMetadata
     from flamenco.manager.model.job_settings import JobSettings
+    from flamenco.manager.model.job_status import JobStatus
     from flamenco.manager.model.job_storage_info import JobStorageInfo
     globals()['JobMetadata'] = JobMetadata
     globals()['JobSettings'] = JobSettings
+    globals()['JobStatus'] = JobStatus
     globals()['JobStorageInfo'] = JobStorageInfo
 
 
@@ -100,6 +102,7 @@ class SubmittedJob(ModelNormal):
             'metadata': (JobMetadata,),  # noqa: E501
             'storage': (JobStorageInfo,),  # noqa: E501
             'worker_tag': (str,),  # noqa: E501
+            'initial_status': (JobStatus,),  # noqa: E501
         }
 
     @cached_property
@@ -117,6 +120,7 @@ class SubmittedJob(ModelNormal):
         'metadata': 'metadata',  # noqa: E501
         'storage': 'storage',  # noqa: E501
         'worker_tag': 'worker_tag',  # noqa: E501
+        'initial_status': 'initial_status',  # noqa: E501
     }
 
     read_only_vars = {
@@ -171,6 +175,7 @@ class SubmittedJob(ModelNormal):
             metadata (JobMetadata): [optional]  # noqa: E501
             storage (JobStorageInfo): [optional]  # noqa: E501
             worker_tag (str): Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job. . [optional]  # noqa: E501
+            initial_status (JobStatus): [optional]  # noqa: E501
         """
 
         priority = kwargs.get('priority', 50)
@@ -268,6 +273,7 @@ class SubmittedJob(ModelNormal):
             metadata (JobMetadata): [optional]  # noqa: E501
             storage (JobStorageInfo): [optional]  # noqa: E501
             worker_tag (str): Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job. . [optional]  # noqa: E501
+            initial_status (JobStatus): [optional]  # noqa: E501
         """
 
         priority = kwargs.get('priority', 50)

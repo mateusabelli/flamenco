@@ -12,6 +12,7 @@
  */
 
 import ApiClient from '../ApiClient';
+import JobStatus from './JobStatus';
 import JobStorageInfo from './JobStorageInfo';
 
 /**
@@ -84,6 +85,9 @@ class SubmittedJob {
             if (data.hasOwnProperty('worker_tag')) {
                 obj['worker_tag'] = ApiClient.convertToType(data['worker_tag'], 'String');
             }
+            if (data.hasOwnProperty('initial_status')) {
+                obj['initial_status'] = JobStatus.constructFromObject(data['initial_status']);
+            }
         }
         return obj;
     }
@@ -140,6 +144,11 @@ SubmittedJob.prototype['storage'] = undefined;
  * @member {String} worker_tag
  */
 SubmittedJob.prototype['worker_tag'] = undefined;
+
+/**
+ * @member {module:model/JobStatus} initial_status
+ */
+SubmittedJob.prototype['initial_status'] = undefined;
 
 
 

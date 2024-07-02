@@ -111,6 +111,7 @@ class Job(ModelComposed):
             'metadata': (JobMetadata,),  # noqa: E501
             'storage': (JobStorageInfo,),  # noqa: E501
             'worker_tag': (str,),  # noqa: E501
+            'initial_status': (JobStatus,),  # noqa: E501
             'delete_requested_at': (datetime,),  # noqa: E501
         }
 
@@ -134,6 +135,7 @@ class Job(ModelComposed):
         'metadata': 'metadata',  # noqa: E501
         'storage': 'storage',  # noqa: E501
         'worker_tag': 'worker_tag',  # noqa: E501
+        'initial_status': 'initial_status',  # noqa: E501
         'delete_requested_at': 'delete_requested_at',  # noqa: E501
     }
 
@@ -190,6 +192,7 @@ class Job(ModelComposed):
             metadata (JobMetadata): [optional]  # noqa: E501
             storage (JobStorageInfo): [optional]  # noqa: E501
             worker_tag (str): Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job. . [optional]  # noqa: E501
+            initial_status (JobStatus): [optional]  # noqa: E501
             delete_requested_at (datetime): If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager. . [optional]  # noqa: E501
         """
 
@@ -305,6 +308,7 @@ class Job(ModelComposed):
             metadata (JobMetadata): [optional]  # noqa: E501
             storage (JobStorageInfo): [optional]  # noqa: E501
             worker_tag (str): Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job. . [optional]  # noqa: E501
+            initial_status (JobStatus): [optional]  # noqa: E501
             delete_requested_at (datetime): If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager. . [optional]  # noqa: E501
         """
 

@@ -100,6 +100,9 @@ class Job {
             if (data.hasOwnProperty('worker_tag')) {
                 obj['worker_tag'] = ApiClient.convertToType(data['worker_tag'], 'String');
             }
+            if (data.hasOwnProperty('initial_status')) {
+                obj['initial_status'] = JobStatus.constructFromObject(data['initial_status']);
+            }
             if (data.hasOwnProperty('id')) {
                 obj['id'] = ApiClient.convertToType(data['id'], 'String');
             }
@@ -174,6 +177,11 @@ Job.prototype['storage'] = undefined;
  * @member {String} worker_tag
  */
 Job.prototype['worker_tag'] = undefined;
+
+/**
+ * @member {module:model/JobStatus} initial_status
+ */
+Job.prototype['initial_status'] = undefined;
 
 /**
  * UUID of the Job
@@ -253,6 +261,10 @@ SubmittedJob.prototype['storage'] = undefined;
  * @member {String} worker_tag
  */
 SubmittedJob.prototype['worker_tag'] = undefined;
+/**
+ * @member {module:model/JobStatus} initial_status
+ */
+SubmittedJob.prototype['initial_status'] = undefined;
 // Implement JobAllOf interface:
 /**
  * UUID of the Job

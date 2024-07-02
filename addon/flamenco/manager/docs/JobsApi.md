@@ -1296,6 +1296,7 @@ with flamenco.manager.ApiClient() as api_client:
             shaman_checkout_id="shaman_checkout_id_example",
         ),
         worker_tag="worker_tag_example",
+        initial_status=JobStatus("active"),
     ) # SubmittedJob | Job to submit
 
     # example passing only required values which don't have defaults set
@@ -1378,6 +1379,7 @@ with flamenco.manager.ApiClient() as api_client:
             shaman_checkout_id="shaman_checkout_id_example",
         ),
         worker_tag="worker_tag_example",
+        initial_status=JobStatus("active"),
     ) # SubmittedJob | Job to check
 
     # example passing only required values which don't have defaults set

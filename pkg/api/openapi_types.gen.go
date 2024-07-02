@@ -702,6 +702,8 @@ type SocketIOSubscriptionType string
 
 // Job definition submitted to Flamenco.
 type SubmittedJob struct {
+	InitialStatus *JobStatus `json:"initial_status,omitempty"`
+
 	// Arbitrary metadata strings. More complex structures can be modeled by using `a.b.c` notation for the key.
 	Metadata *JobMetadata `json:"metadata,omitempty"`
 	Name     string       `json:"name"`
