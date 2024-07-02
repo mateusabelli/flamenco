@@ -60,6 +60,10 @@ func TestFetchWorkerTask(t *testing.T) {
 	ctx, cancel, db := persistenceTestFixtures(10 * time.Second)
 	defer cancel()
 
+	startTime := time.Date(2024, time.July, 2, 7, 56, 0, 0, time.UTC)
+	mockNow := startTime
+	db.gormDB.NowFunc = func() time.Time { return mockNow }
+
 	// Worker without task.
 	w := Worker{
 		UUID:               uuid.New(),
@@ -82,13 +86,16 @@ func TestFetchWorkerTask(t *testing.T) {
 
 	// Create a job with tasks.
 	authTask1 := authorTestTask("the task", "blender")
+	authTask1.UUID = "11111111-1111-4111-1111-111111111111"
 	authTask2 := authorTestTask("the other task", "blender")
+	authTask2.UUID = "22222222-2222-4222-2222-222222222222"
 	jobUUID := "b6a1d859-122f-4791-8b78-b943329a9989"
 	atj := authorTestJob(jobUUID, "simple-blender-render", authTask1, authTask2)
 	constructTestJob(ctx, t, db, atj)
 
 	assignedTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
+	require.Equal(t, assignedTask.UUID, authTask1.UUID)
 
 	{ // Assigned task should be returned.
 		foundTask, err := db.FetchWorkerTask(ctx, &w)
@@ -110,10 +117,15 @@ func TestFetchWorkerTask(t *testing.T) {
 		assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
 	}
 
-	// Assign another task.
+	// Assign another task. Since the remainder of this test depends on the order
+	// of assignment, it is important to forward the mocked clock to keep things
+	// predictable.
+	mockNow = mockNow.Add(1 * time.Second)
+
 	newlyAssignedTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
 	require.NotNil(t, newlyAssignedTask)
+	require.Equal(t, newlyAssignedTask.UUID, authTask2.UUID)
 
 	{ // Newly assigned task should be returned.
 		foundTask, err := db.FetchWorkerTask(ctx, &w)
