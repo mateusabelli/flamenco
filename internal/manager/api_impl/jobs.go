@@ -91,8 +91,12 @@ func (f *Flamenco) SubmitJob(e echo.Context) error {
 
 	logger = logger.With().Str("job_id", authoredJob.JobID).Logger()
 
-	// TODO: check whether this job should be queued immediately or start paused.
-	authoredJob.Status = api.JobStatusQueued
+	submittedJob := api.SubmittedJob(job)
+	initialStatus := api.JobStatusQueued
+	if submittedJob.InitialStatus != nil {
+		initialStatus = *submittedJob.InitialStatus
+	}
+	authoredJob.Status = initialStatus
 
 	if err := f.persist.StoreAuthoredJob(ctx, *authoredJob); err != nil {
 		logger.Error().Err(err).Msg("error persisting job in database")
