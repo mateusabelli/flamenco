@@ -1867,6 +1867,7 @@ components:
             Worker tag that should execute this job. When a tag ID is
             given, only Workers in that tag will be scheduled to work on it.
             If empty or ommitted, all workers can work on this job.
+        "initial_status": { $ref: "#/components/schemas/JobStatus" }
       required: [name, type, priority, submitter_platform]
       example:
         type: "simple-blender-render"
