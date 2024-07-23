@@ -92,3 +92,26 @@ have arrived on a specific worker, without waiting for *all* syncing to be
 completed (as someone may have just submitted another job).
 
 [jobtypes]: {{< ref "/usage/job-types" >}}
+
+## Absolute vs. Relative Paths
+
+Blender can reference assets (textures, linked blend files, etc.) in two ways:
+
+- by **relative path**, like `//textures\my-favourite-brick.exr`, which is relative to the blend file, or
+- by **absolute path**, like `D:\texture-library\my-favourite-brick.exr`, which is the full path of the file.
+
+When an asset is referenced by an absolute path, **Flamenco assumes that this
+path is valid for all Workers, and will not copy those assets to the shared
+storage.** This makes it possible to store large files, like simulation caches,
+on the shared storage, without Flamenco creating a copy for each render job.
+
+{{< hint type=Warning >}} On Windows it is not possible to construct a relative
+path to an asset when that asset is no a different drive than the main blend
+file. If you still want Flamenco to copy such assets, there are two workarounds:
+
+- Move your asset libraries to the same drive as your Blender projects.
+- Use [symbolic links][symlinks-guide-windows] to make your assets available at
+  a suitable path.
+
+[symlinks-guide-windows]: https://www.howtogeek.com/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/
+{{< /hint >}}

@@ -224,3 +224,13 @@ well, and thus `\` becomes `\\`.
 In other words, even though it looks strange, this is not a bug in Flamenco. The
 aim is to prevent you from seeing these doublings as little as possible, but
 unfortunately it cannot always be avoided.
+
+### Assets are missing!
+
+When your blend file references your assets (textures, linked blend files, etc.)
+with an absolute path, **Flamenco assumes that this path is valid for all
+Workers, and will not copy those assets to the shared storage.** This makes it
+possible to store large files, like simulation caches, on the shared storage,
+without Flamenco creating a copy for each render job.
+
+Read more on this in [Absolute vs. Relative Paths](/usage/shared-storage/#absolute-vs-relative-paths).
