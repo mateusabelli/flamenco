@@ -29,6 +29,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // mustCreateFile creates an empty file.
@@ -105,17 +106,17 @@ func TestOpenForUpload(t *testing.T) {
 	fileSize := int64(len(contents))
 
 	file, err := store.OpenForUpload("abcdefxxx", fileSize)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = file.Write(contents)
-	assert.NoError(t, err)
-	assert.NoError(t, file.Close())
+	require.NoError(t, err)
+	require.NoError(t, file.Close())
 
 	foundPath, status := store.ResolveFile("abcdefxxx", fileSize, ResolveEverything)
 	assert.Equal(t, file.Name(), foundPath)
 	assert.Equal(t, StatusUploading, status)
 
 	readContents, err := ioutil.ReadFile(foundPath)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.EqualValues(t, contents, readContents)
 }
 
@@ -130,14 +131,14 @@ func TestMoveToStored(t *testing.T) {
 	assert.Error(t, err)
 
 	file, err := store.OpenForUpload("abcdefxxx", fileSize)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = file.Write(contents)
-	assert.NoError(t, err)
-	assert.NoError(t, file.Close())
+	require.NoError(t, err)
+	require.NoError(t, file.Close())
 	tempLocation := file.Name()
 
 	err = store.MoveToStored("abcdefxxx", fileSize, file.Name())
-	assert.NoError(t, err, "moving file %s", file.Name())
+	require.NoError(t, err, "moving file %s", file.Name())
 
 	foundPath, status := store.ResolveFile("abcdefxxx", fileSize, ResolveEverything)
 	assert.NotEqual(t, file.Name(), foundPath)

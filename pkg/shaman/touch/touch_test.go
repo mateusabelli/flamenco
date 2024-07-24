@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTouch(t *testing.T) {
@@ -46,7 +47,7 @@ func TestTouch(t *testing.T) {
 	assert.Nil(t, Touch(testPath))
 
 	stat, err := os.Stat(testPath)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	threshold := time.Now().Add(-5 * time.Second)
 	assert.True(t, stat.ModTime().After(threshold),

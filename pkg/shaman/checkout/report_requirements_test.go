@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -44,7 +45,7 @@ func TestReportRequirements(t *testing.T) {
 	}
 
 	response, err := manager.ReportRequirements(context.Background(), required)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// We should not be required to upload the same file twice, so the duplicate
 	// should not be in the response.

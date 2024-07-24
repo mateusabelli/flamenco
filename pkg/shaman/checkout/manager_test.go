@@ -24,7 +24,6 @@ package checkout
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -54,33 +53,33 @@ func TestSymlinkToCheckout(t *testing.T) {
 
 	// Fake an older file.
 	blobPath := filepath.Join(manager.checkoutBasePath, "jemoeder.blob")
-	err := ioutil.WriteFile(blobPath, []byte("op je hoofd"), 0600)
-	assert.NoError(t, err)
+	err := os.WriteFile(blobPath, []byte("op je hoofd"), 0600)
+	require.NoError(t, err)
 
 	wayBackWhen := time.Now().Add(-time.Hour * 24 * 100)
 	err = os.Chtimes(blobPath, wayBackWhen, wayBackWhen)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	symlinkRelativePath := "path/to/jemoeder.txt"
 	err = manager.SymlinkToCheckout(blobPath, manager.checkoutBasePath, symlinkRelativePath)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = manager.SymlinkToCheckout(blobPath, manager.checkoutBasePath, symlinkRelativePath)
-	assert.NoError(t, err, "symlinking a file twice should not be an issue")
+	require.NoError(t, err, "symlinking a file twice should not be an issue")
 
 	// Wait for touch() calls to be done.
 	manager.wg.Wait()
 
 	// The blob should have been touched to indicate it was referenced just now.
 	stat, err := os.Stat(blobPath)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t,
 		stat.ModTime().After(wayBackWhen),
 		"File must be touched (%v must be later than %v)", stat.ModTime(), wayBackWhen)
 
 	symlinkPath := filepath.Join(manager.checkoutBasePath, symlinkRelativePath)
 	stat, err = os.Lstat(symlinkPath)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, stat.Mode()&os.ModeType == os.ModeSymlink,
 		"%v should be a symlink", symlinkPath)
 }

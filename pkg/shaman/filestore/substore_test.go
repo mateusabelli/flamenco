@@ -29,6 +29,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStoragePrefix(t *testing.T) {
@@ -61,7 +62,7 @@ func TestFilePermissions(t *testing.T) {
 		t.SkipNow()
 	}
 	dirname, err := os.MkdirTemp("", "file-permission-test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(dirname)
 
 	bin := storageBin{
@@ -71,11 +72,11 @@ func TestFilePermissions(t *testing.T) {
 	}
 
 	file, err := bin.openForWriting("testfilename.blend")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer file.Close()
 
 	filestat, err := file.Stat()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// The exact permissions depend on the current (unittest) process umask. This
 	// umask is not easy to get, which is why we have a copy of `tempfile.go` in

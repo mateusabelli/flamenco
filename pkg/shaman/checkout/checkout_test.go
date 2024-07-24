@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"projects.blender.org/studio/flamenco/pkg/api"
 	"projects.blender.org/studio/flamenco/pkg/shaman/filestore"
 	"projects.blender.org/studio/flamenco/pkg/shaman/testsupport"
@@ -56,7 +57,7 @@ func TestCheckout(t *testing.T) {
 
 func assertLinksTo(t *testing.T, linkPath, expectedTarget string) {
 	actualTarget, err := os.Readlink(linkPath)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expectedTarget, actualTarget)
 }
 

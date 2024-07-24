@@ -33,6 +33,7 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/shaman/hasher"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"projects.blender.org/studio/flamenco/pkg/shaman/filestore"
 )
 
@@ -79,14 +80,14 @@ func TestStoreFile(t *testing.T) {
 
 	// The correct checksum should be accepted.
 	err = testWithChecksum(correctChecksum, filesize)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	path, status = server.fileStore.ResolveFile(correctChecksum, filesize, filestore.ResolveEverything)
 	assert.Equal(t, filestore.StatusStored, status)
 	assert.FileExists(t, path)
 
 	savedContent, err := ioutil.ReadFile(path)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.EqualValues(t, payload, savedContent, "The file should be saved uncompressed")
 }
 
