@@ -42,6 +42,7 @@ class FLAMENCO_PT_job_submission(bpy.types.Panel):
         col = layout.column(align=True)
         col.prop(context.scene, "flamenco_job_name", text="Job Name")
         col.prop(context.scene, "flamenco_job_priority", text="Priority")
+        col.prop(context.scene, "flamenco_job_submit_as_paused", text="Submit as Paused")
 
         # Refreshables:
         col = layout.column(align=True)

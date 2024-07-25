@@ -156,6 +156,12 @@ def register() -> None:
         max=100,
     )
 
+    bpy.types.Scene.flamenco_job_submit_as_paused = bpy.props.BoolProperty(
+        name="Flamenco Job Submit as Paused",
+        description="Whether the job is paused initially; Checked sets the job to `paused`, and Unchecked sets the job to `queued`",
+        default=False,
+    )
+
     preferences.register()
     worker_tags.register()
     operators.register()

@@ -33,6 +33,7 @@ log = logging.getLogger(__name__)
 
 def job_for_scene(scene: bpy.types.Scene) -> Optional[_SubmittedJob]:
     from flamenco.manager.models import SubmittedJob, JobMetadata
+    from flamenco.manager.model.job_status import JobStatus
 
     propgroup = getattr(scene, "flamenco_job_settings", None)
     assert isinstance(propgroup, JobTypePropertyGroup), "did not expect %s" % (
@@ -44,6 +45,12 @@ def job_for_scene(scene: bpy.types.Scene) -> Optional[_SubmittedJob]:
 
     priority = getattr(scene, "flamenco_job_priority", 50)
 
+    submit_as_paused = getattr(scene, "flamenco_job_submit_as_paused", False)
+    if submit_as_paused:
+        initial_status = JobStatus("paused")
+    else:
+        initial_status = JobStatus("queued")
+
     job: SubmittedJob = SubmittedJob(
         name=scene.flamenco_job_name,
         type=propgroup.job_type.name,
@@ -52,6 +59,7 @@ def job_for_scene(scene: bpy.types.Scene) -> Optional[_SubmittedJob]:
         metadata=metadata,
         submitter_platform=platform.system().lower(),
         type_etag=propgroup.job_type.etag,
+        initial_status=initial_status,
     )
 
     worker_tag: str = getattr(scene, "flamenco_worker_tag", "")
