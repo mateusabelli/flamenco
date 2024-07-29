@@ -1915,6 +1915,7 @@ components:
               description: >
                 If job deletion was requested, this is the timestamp at which
                 that request was stored on Flamenco Manager.
+            worker_tag: { $ref: "#/components/schemas/WorkerTag" }
           required: [id, created, updated, status, activity]
 
     JobSettings:
