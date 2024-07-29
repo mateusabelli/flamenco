@@ -32,6 +32,7 @@ MAX_FAILED_PATHS = 8
 HashableShamanFileSpec = tuple[str, int, str]
 """Tuple of the 'sha', 'size', and 'path' fields of a ShamanFileSpec."""
 
+
 # Mypy doesn't understand that submodules.pack.Packer exists.
 class Packer(submodules.pack.Packer):  # type: ignore
     """Creates BAT Packs on a Shaman server."""
