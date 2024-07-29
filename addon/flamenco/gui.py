@@ -51,7 +51,7 @@ class FLAMENCO_PT_job_submission(bpy.types.Panel):
         )
         if not job_types.are_job_types_available():
             return
-        col.prop(context.scene, "flamenco_worker_tag", text="Tag")
+        col.prop(context.scene, "flamenco_worker_tag", text="Worker Tag")
 
         # Job properties:
         job_col = layout.column(align=True)

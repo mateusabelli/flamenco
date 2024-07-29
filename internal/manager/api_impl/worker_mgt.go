@@ -313,8 +313,11 @@ func (f *Flamenco) FetchWorkerTag(e echo.Context, tagUUID string) error {
 		logger.Error().Err(err).Msg("fetching worker tag")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching worker tag: %v", err)
 	}
+	if tag == nil {
+		panic("Could fetch a worker tag without error, but then the returned tag was still nil")
+	}
 
-	return e.JSON(http.StatusOK, workerTagDBtoAPI(*tag))
+	return e.JSON(http.StatusOK, workerTagDBtoAPI(tag))
 }
 
 func (f *Flamenco) UpdateWorkerTag(e echo.Context, tagUUID string) error {
@@ -387,8 +390,8 @@ func (f *Flamenco) FetchWorkerTags(e echo.Context) error {
 
 	apiTags := []api.WorkerTag{}
 	for _, dbTag := range dbTags {
-		apiTag := workerTagDBtoAPI(*dbTag)
-		apiTags = append(apiTags, apiTag)
+		apiTag := workerTagDBtoAPI(dbTag)
+		apiTags = append(apiTags, *apiTag)
 	}
 
 	tagList := api.WorkerTagList{
@@ -443,7 +446,7 @@ func (f *Flamenco) CreateWorkerTag(e echo.Context) error {
 	sioUpdate := eventbus.NewWorkerTagUpdate(&dbTag)
 	f.broadcaster.BroadcastNewWorkerTag(sioUpdate)
 
-	return e.JSON(http.StatusOK, workerTagDBtoAPI(dbTag))
+	return e.JSON(http.StatusOK, workerTagDBtoAPI(&dbTag))
 }
 
 func workerSummary(w persistence.Worker) api.WorkerSummary {
@@ -479,7 +482,7 @@ func workerDBtoAPI(w persistence.Worker) api.Worker {
 	if len(w.Tags) > 0 {
 		tags := []api.WorkerTag{}
 		for i := range w.Tags {
-			tags = append(tags, workerTagDBtoAPI(*w.Tags[i]))
+			tags = append(tags, *workerTagDBtoAPI(w.Tags[i]))
 		}
 		apiWorker.Tags = &tags
 	}
@@ -487,7 +490,11 @@ func workerDBtoAPI(w persistence.Worker) api.Worker {
 	return apiWorker
 }
 
-func workerTagDBtoAPI(wc persistence.WorkerTag) api.WorkerTag {
+func workerTagDBtoAPI(wc *persistence.WorkerTag) *api.WorkerTag {
+	if wc == nil {
+		return nil
+	}
+
 	uuid := wc.UUID // Take a copy for safety.
 
 	apiTag := api.WorkerTag{
@@ -497,5 +504,5 @@ func workerTagDBtoAPI(wc persistence.WorkerTag) api.WorkerTag {
 	if len(wc.Description) > 0 {
 		apiTag.Description = &wc.Description
 	}
-	return apiTag
+	return &apiTag
 }

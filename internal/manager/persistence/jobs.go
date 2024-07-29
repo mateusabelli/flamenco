@@ -359,6 +359,18 @@ func (db *DB) FetchJob(ctx context.Context, jobUUID string) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if sqlcJob.WorkerTagID.Valid {
+		workerTag, err := fetchWorkerTagByID(db.gormDB, uint(sqlcJob.WorkerTagID.Int64))
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrWorkerTagNotFound
+		case err != nil:
+			return nil, workerTagError(err, "fetching worker tag of job")
+		}
+		gormJob.WorkerTag = workerTag
+	}
+
 	return &gormJob, nil
 }
 

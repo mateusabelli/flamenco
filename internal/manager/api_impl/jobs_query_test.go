@@ -89,6 +89,60 @@ func TestQueryJobs(t *testing.T) {
 	assertResponseJSON(t, echoCtx, http.StatusOK, expectedJobs)
 }
 
+func TestFetchJob(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mf := newMockedFlamenco(mockCtrl)
+
+	dbJob := persistence.Job{
+		UUID:     "afc47568-bd9d-4368-8016-e91d945db36d",
+		Name:     "работа",
+		JobType:  "test",
+		Priority: 50,
+		Status:   api.JobStatusActive,
+		Settings: persistence.StringInterfaceMap{
+			"result": "/render/frames/exploding.kittens",
+		},
+		Metadata: persistence.StringStringMap{
+			"project": "/projects/exploding-kittens",
+		},
+		WorkerTag: &persistence.WorkerTag{
+			UUID:        "d86e1b84-5ee2-4784-a178-65963eeb484b",
+			Name:        "Tikkie terug Kees!",
+			Description: "",
+		},
+	}
+
+	echoCtx := mf.prepareMockedRequest(nil)
+	mf.persistence.EXPECT().FetchJob(gomock.Any(), dbJob.UUID).Return(&dbJob, nil)
+
+	require.NoError(t, mf.flamenco.FetchJob(echoCtx, dbJob.UUID))
+
+	expectedJob := api.Job{
+		SubmittedJob: api.SubmittedJob{
+			Name:     "работа",
+			Type:     "test",
+			Priority: 50,
+			Settings: &api.JobSettings{AdditionalProperties: map[string]interface{}{
+				"result": "/render/frames/exploding.kittens",
+			}},
+			Metadata: &api.JobMetadata{AdditionalProperties: map[string]string{
+				"project": "/projects/exploding-kittens",
+			}},
+		},
+		Id:     "afc47568-bd9d-4368-8016-e91d945db36d",
+		Status: api.JobStatusActive,
+		WorkerTag: &api.WorkerTag{
+			Id:          ptr("d86e1b84-5ee2-4784-a178-65963eeb484b"),
+			Name:        "Tikkie terug Kees!",
+			Description: nil, // Empty description should just be excluded from the JSON.
+		},
+	}
+
+	assertResponseJSON(t, echoCtx, http.StatusOK, expectedJob)
+}
+
 func TestFetchTask(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()

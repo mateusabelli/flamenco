@@ -75,6 +75,38 @@ func TestStoreAuthoredJobWithShamanCheckoutID(t *testing.T) {
 	assert.Equal(t, job.Storage.ShamanCheckoutID, fetchedJob.Storage.ShamanCheckoutID)
 }
 
+func TestStoreAuthoredJobWithWorkerTag(t *testing.T) {
+	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
+	defer cancel()
+
+	workerTagUUID := "daa811ac-6861-4004-8748-7700aebc244c"
+	require.NoError(t, db.CreateWorkerTag(ctx, &WorkerTag{
+		UUID:        workerTagUUID,
+		Name:        "🐈",
+		Description: "Mrieuw",
+	}))
+	workerTag, err := db.FetchWorkerTag(ctx, workerTagUUID)
+	require.NoError(t, err)
+
+	job := createTestAuthoredJobWithTasks()
+	job.WorkerTagUUID = workerTagUUID
+
+	err = db.StoreAuthoredJob(ctx, job)
+	require.NoError(t, err)
+
+	fetchedJob, err := db.FetchJob(ctx, job.JobID)
+	require.NoError(t, err)
+	require.NotNil(t, fetchedJob)
+
+	require.NotNil(t, fetchedJob.WorkerTagID)
+	assert.Equal(t, *fetchedJob.WorkerTagID, workerTag.ID)
+
+	require.NotNil(t, fetchedJob.WorkerTag)
+	assert.Equal(t, fetchedJob.WorkerTag.Name, workerTag.Name)
+	assert.Equal(t, fetchedJob.WorkerTag.Description, workerTag.Description)
+	assert.Equal(t, fetchedJob.WorkerTag.UUID, workerTagUUID)
+}
+
 func TestFetchTaskJobUUID(t *testing.T) {
 	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()

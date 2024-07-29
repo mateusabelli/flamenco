@@ -687,7 +687,7 @@ func jobDBtoAPI(dbJob *persistence.Job) api.Job {
 		apiJob.DeleteRequestedAt = &dbJob.DeleteRequestedAt.Time
 	}
 	if dbJob.WorkerTag != nil {
-		apiJob.WorkerTag = &dbJob.WorkerTag.UUID
+		apiJob.WorkerTag = workerTagDBtoAPI(dbJob.WorkerTag)
 	}
 
 	return apiJob

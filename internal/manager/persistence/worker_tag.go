@@ -53,6 +53,16 @@ func fetchWorkerTag(gormDB *gorm.DB, uuid string) (*WorkerTag, error) {
 	return &w, nil
 }
 
+// fetchWorkerTagByID fetches the worker tag using the given database instance.
+func fetchWorkerTagByID(gormDB *gorm.DB, id uint) (*WorkerTag, error) {
+	w := WorkerTag{}
+	tx := gormDB.First(&w, "id = ?", id)
+	if tx.Error != nil {
+		return nil, workerTagError(tx.Error, "fetching worker tag")
+	}
+	return &w, nil
+}
+
 func (db *DB) SaveWorkerTag(ctx context.Context, tag *WorkerTag) error {
 	if err := db.gormDB.WithContext(ctx).Save(tag).Error; err != nil {
 		return workerTagError(err, "saving worker tag")

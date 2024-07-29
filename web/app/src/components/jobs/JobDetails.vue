@@ -52,8 +52,14 @@
             {{ jobData.status }}
           </dd>
 
-          <dt class="field-type" title="Type">Type</dt>
+          <dt class="field-type" title="Job Type">Job Type</dt>
           <dd>{{ jobType ? jobType.label : jobData.type }}</dd>
+
+          <dt class="field-worker-tag" title="Worker Tag">Worker Tag</dt>
+          <dd v-if="jobData.worker_tag" :title="jobData.worker_tag.description">
+            {{ jobData.worker_tag.name }}
+          </dd>
+          <dd v-else class="no-worker-tag">All Workers</dd>
 
           <dt class="field-priority" title="Priority">Priority</dt>
           <dd>
@@ -288,5 +294,9 @@ export default {
 .field-status-label {
   color: var(--indicator-color);
   font-weight: bold;
+}
+
+dd.no-worker-tag {
+  color: var(--color-text-muted);
 }
 </style>
