@@ -13,6 +13,7 @@
 
 import ApiClient from '../ApiClient';
 import JobStatus from './JobStatus';
+import WorkerTag from './WorkerTag';
 
 /**
  * The JobAllOf model module.
@@ -76,6 +77,9 @@ class JobAllOf {
             if (data.hasOwnProperty('delete_requested_at')) {
                 obj['delete_requested_at'] = ApiClient.convertToType(data['delete_requested_at'], 'Date');
             }
+            if (data.hasOwnProperty('worker_tag')) {
+                obj['worker_tag'] = WorkerTag.constructFromObject(data['worker_tag']);
+            }
         }
         return obj;
     }
@@ -117,6 +121,11 @@ JobAllOf.prototype['activity'] = undefined;
  * @member {Date} delete_requested_at
  */
 JobAllOf.prototype['delete_requested_at'] = undefined;
+
+/**
+ * @member {module:model/WorkerTag} worker_tag
+ */
+JobAllOf.prototype['worker_tag'] = undefined;
 
 
 

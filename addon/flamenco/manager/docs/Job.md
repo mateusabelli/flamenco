@@ -17,7 +17,7 @@ Name | Type | Description | Notes
 **settings** | [**JobSettings**](JobSettings.md) |  | [optional] 
 **metadata** | [**JobMetadata**](JobMetadata.md) |  | [optional] 
 **storage** | [**JobStorageInfo**](JobStorageInfo.md) |  | [optional] 
-**worker_tag** | **str** | Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job.  | [optional] 
+**worker_tag** | [**WorkerTag**](WorkerTag.md) |  | [optional] 
 **initial_status** | [**JobStatus**](JobStatus.md) |  | [optional] 
 **delete_requested_at** | **datetime** | If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager.  | [optional] 
 **any string name** | **bool, date, datetime, dict, float, int, list, str, none_type** | any string name can be used but the value must be the correct type | [optional]

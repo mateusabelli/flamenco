@@ -36,12 +36,14 @@ def lazy_import():
     from flamenco.manager.model.job_status import JobStatus
     from flamenco.manager.model.job_storage_info import JobStorageInfo
     from flamenco.manager.model.submitted_job import SubmittedJob
+    from flamenco.manager.model.worker_tag import WorkerTag
     globals()['JobAllOf'] = JobAllOf
     globals()['JobMetadata'] = JobMetadata
     globals()['JobSettings'] = JobSettings
     globals()['JobStatus'] = JobStatus
     globals()['JobStorageInfo'] = JobStorageInfo
     globals()['SubmittedJob'] = SubmittedJob
+    globals()['WorkerTag'] = WorkerTag
 
 
 class Job(ModelComposed):
@@ -110,7 +112,7 @@ class Job(ModelComposed):
             'settings': (JobSettings,),  # noqa: E501
             'metadata': (JobMetadata,),  # noqa: E501
             'storage': (JobStorageInfo,),  # noqa: E501
-            'worker_tag': (str,),  # noqa: E501
+            'worker_tag': (WorkerTag,),  # noqa: E501
             'initial_status': (JobStatus,),  # noqa: E501
             'delete_requested_at': (datetime,),  # noqa: E501
         }
@@ -191,7 +193,7 @@ class Job(ModelComposed):
             settings (JobSettings): [optional]  # noqa: E501
             metadata (JobMetadata): [optional]  # noqa: E501
             storage (JobStorageInfo): [optional]  # noqa: E501
-            worker_tag (str): Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job. . [optional]  # noqa: E501
+            worker_tag (WorkerTag): [optional]  # noqa: E501
             initial_status (JobStatus): [optional]  # noqa: E501
             delete_requested_at (datetime): If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager. . [optional]  # noqa: E501
         """
@@ -307,7 +309,7 @@ class Job(ModelComposed):
             settings (JobSettings): [optional]  # noqa: E501
             metadata (JobMetadata): [optional]  # noqa: E501
             storage (JobStorageInfo): [optional]  # noqa: E501
-            worker_tag (str): Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job. . [optional]  # noqa: E501
+            worker_tag (WorkerTag): [optional]  # noqa: E501
             initial_status (JobStatus): [optional]  # noqa: E501
             delete_requested_at (datetime): If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager. . [optional]  # noqa: E501
         """
