@@ -34,16 +34,6 @@
             <span @click="copyElementText" class="click-to-copy">{{ jobData.id }}</span>
           </dd>
 
-          <template v-if="workerTag">
-            <!-- TODO: fetch tag name and show that instead, and allow editing of the tag. -->
-            <dt class="field-name" title="Worker Tag">Tag</dt>
-            <dd :title="workerTag.description">
-              <span @click="copyElementData" class="click-to-copy" :data-clipboard="workerTag.id">{{
-                workerTag.name
-              }}</span>
-            </dd>
-          </template>
-
           <dt class="field-name" title="Name">Name</dt>
           <dd>{{ jobData.name }}</dd>
 
