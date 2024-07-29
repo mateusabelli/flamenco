@@ -11,6 +11,7 @@ bugs in actually-released versions.
 - Make it possible to script job submissions in Blender, by executing the `bpy.ops.flamenco.submit_job(job_name="jobname")` operator.
 - Security updates of some deendencies:
   - [GO-2024-2937: Parsing a corrupt or malicious image with invalid color indices can cause a panic](https://pkg.go.dev/vuln/GO-2024-2937)
+- Web interface: list the job's worker tag in the job details.
 
 ## 3.5 - released 2024-04-16
 
