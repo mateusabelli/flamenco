@@ -130,14 +130,10 @@ func TestFetchJob(t *testing.T) {
 			Metadata: &api.JobMetadata{AdditionalProperties: map[string]string{
 				"project": "/projects/exploding-kittens",
 			}},
+			WorkerTag: ptr("d86e1b84-5ee2-4784-a178-65963eeb484b"),
 		},
 		Id:     "afc47568-bd9d-4368-8016-e91d945db36d",
 		Status: api.JobStatusActive,
-		WorkerTag: &api.WorkerTag{
-			Id:          ptr("d86e1b84-5ee2-4784-a178-65963eeb484b"),
-			Name:        "Tikkie terug Kees!",
-			Description: nil, // Empty description should just be excluded from the JSON.
-		},
 	}
 
 	assertResponseJSON(t, echoCtx, http.StatusOK, expectedJob)

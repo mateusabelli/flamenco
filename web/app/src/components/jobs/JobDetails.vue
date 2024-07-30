@@ -46,8 +46,8 @@
           <dd>{{ jobType ? jobType.label : jobData.type }}</dd>
 
           <dt class="field-worker-tag" title="Worker Tag">Worker Tag</dt>
-          <dd v-if="jobData.worker_tag" :title="jobData.worker_tag.description">
-            {{ jobData.worker_tag.name }}
+          <dd v-if="workerTag" :title="workerTag.description">
+            {{ workerTag.name }}
           </dd>
           <dd v-else class="no-worker-tag">All Workers</dd>
 

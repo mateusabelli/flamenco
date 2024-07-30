@@ -415,11 +415,6 @@ func TestSubmitJobWithWorkerTag(t *testing.T) {
 		DeleteRequestedAt: nil,
 		Activity:          "",
 		Status:            api.JobStatusQueued,
-		WorkerTag: &api.WorkerTag{
-			Id:          ptr(workerTagUUID),
-			Name:        "first tag",
-			Description: ptr("my first tag"),
-		},
 	})
 }
 
