@@ -31,9 +31,7 @@ from flamenco.manager.exceptions import ApiAttributeError
 
 def lazy_import():
     from flamenco.manager.model.job_status import JobStatus
-    from flamenco.manager.model.worker_tag import WorkerTag
     globals()['JobStatus'] = JobStatus
-    globals()['WorkerTag'] = WorkerTag
 
 
 class JobAllOf(ModelNormal):
@@ -95,7 +93,6 @@ class JobAllOf(ModelNormal):
             'status': (JobStatus,),  # noqa: E501
             'activity': (str,),  # noqa: E501
             'delete_requested_at': (datetime,),  # noqa: E501
-            'worker_tag': (WorkerTag,),  # noqa: E501
         }
 
     @cached_property
@@ -110,7 +107,6 @@ class JobAllOf(ModelNormal):
         'status': 'status',  # noqa: E501
         'activity': 'activity',  # noqa: E501
         'delete_requested_at': 'delete_requested_at',  # noqa: E501
-        'worker_tag': 'worker_tag',  # noqa: E501
     }
 
     read_only_vars = {
@@ -162,7 +158,6 @@ class JobAllOf(ModelNormal):
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
             delete_requested_at (datetime): If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager. . [optional]  # noqa: E501
-            worker_tag (WorkerTag): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)
@@ -257,7 +252,6 @@ class JobAllOf(ModelNormal):
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
             delete_requested_at (datetime): If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager. . [optional]  # noqa: E501
-            worker_tag (WorkerTag): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)

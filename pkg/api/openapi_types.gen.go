@@ -439,9 +439,6 @@ type Job struct {
 
 	// Timestamp of last update.
 	Updated time.Time `json:"updated"`
-
-	// Tag of workers. A job can optionally specify which tag it should be limited to. Workers can be part of multiple tags simultaneously.
-	WorkerTag *WorkerTag `json:"worker_tag,omitempty"`
 }
 
 // List of workers that are not allowed certain task types on a specific job.

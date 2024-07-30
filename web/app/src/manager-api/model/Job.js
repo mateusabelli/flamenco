@@ -16,7 +16,6 @@ import JobAllOf from './JobAllOf';
 import JobStatus from './JobStatus';
 import JobStorageInfo from './JobStorageInfo';
 import SubmittedJob from './SubmittedJob';
-import WorkerTag from './WorkerTag';
 
 /**
  * The Job model module.
@@ -99,7 +98,7 @@ class Job {
                 obj['storage'] = JobStorageInfo.constructFromObject(data['storage']);
             }
             if (data.hasOwnProperty('worker_tag')) {
-                obj['worker_tag'] = WorkerTag.constructFromObject(data['worker_tag']);
+                obj['worker_tag'] = ApiClient.convertToType(data['worker_tag'], 'String');
             }
             if (data.hasOwnProperty('initial_status')) {
                 obj['initial_status'] = JobStatus.constructFromObject(data['initial_status']);
@@ -174,7 +173,8 @@ Job.prototype['submitter_platform'] = undefined;
 Job.prototype['storage'] = undefined;
 
 /**
- * @member {module:model/WorkerTag} worker_tag
+ * Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job. 
+ * @member {String} worker_tag
  */
 Job.prototype['worker_tag'] = undefined;
 
@@ -295,10 +295,6 @@ JobAllOf.prototype['activity'] = undefined;
  * @member {Date} delete_requested_at
  */
 JobAllOf.prototype['delete_requested_at'] = undefined;
-/**
- * @member {module:model/WorkerTag} worker_tag
- */
-JobAllOf.prototype['worker_tag'] = undefined;
 
 
 
