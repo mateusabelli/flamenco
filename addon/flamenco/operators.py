@@ -335,11 +335,18 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
                 )
                 prefs.experimental.use_all_linked_data_direct = True
 
-            filepath = Path(context.blend_data.filepath).with_suffix(".flamenco.blend")
-            self.log.info("Saving copy to temporary file %s", filepath)
-            bpy.ops.wm.save_as_mainfile(
-                filepath=str(filepath), compress=True, copy=True
-            )
+            filepath = Path(context.blend_data.filepath)
+            if job_submission.is_file_inside_job_storage(context, filepath):
+                self.log.info(
+                    "Saving blendfile, already in shared storage: %s", filepath
+                )
+                bpy.ops.wm.save_as_mainfile()
+            else:
+                filepath = filepath.with_suffix(".flamenco.blend")
+                self.log.info("Saving copy to temporary file %s", filepath)
+                bpy.ops.wm.save_as_mainfile(
+                    filepath=str(filepath), compress=True, copy=True
+                )
             self.temp_blendfile = filepath
         finally:
             # Restore the settings we changed, even after an exception.
