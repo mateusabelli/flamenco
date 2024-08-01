@@ -30,8 +30,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mattn/go-colorable"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"projects.blender.org/studio/flamenco/pkg/api"
 	"projects.blender.org/studio/flamenco/pkg/shaman/config"
 	"projects.blender.org/studio/flamenco/pkg/shaman/filestore"
@@ -39,6 +43,9 @@ import (
 )
 
 func createTestManager() (*Manager, func()) {
+	output := zerolog.ConsoleWriter{Out: colorable.NewColorableStdout(), TimeFormat: time.RFC3339}
+	log.Logger = log.Output(output)
+
 	conf, confCleanup := config.CreateTestConfig()
 	fileStore := filestore.New(conf)
 	manager := NewManager(conf, fileStore)
