@@ -23,7 +23,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -31,7 +30,7 @@ import (
 
 // CreateTestConfig creates a configuration + cleanup function.
 func CreateTestConfig() (conf Config, cleanup func()) {
-	tempDir, err := ioutil.TempDir("", "shaman-test-")
+	tempDir, err := os.MkdirTemp("", "shaman-test-")
 	if err != nil {
 		panic(err)
 	}
