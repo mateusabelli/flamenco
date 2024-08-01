@@ -139,6 +139,41 @@ func TestSimpleBlenderRenderHappy(t *testing.T) {
 	assert.Equal(t, expectDeps, tVideo.Dependencies)
 }
 
+func TestSimpleBlenderRenderWithScene(t *testing.T) {
+	c := mockedClock(t)
+
+	s, err := Load(c)
+	require.NoError(t, err)
+
+	// Compiling a job should be really fast.
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
+
+	sj := exampleSubmittedJob()
+	sj.Settings.AdditionalProperties["scene"] = "Test Scene"
+	aj, err := s.Compile(ctx, sj)
+	require.NoError(t, err)
+	require.NotNil(t, aj)
+
+	t0 := aj.Tasks[0]
+	expectCliArgs := []interface{}{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
+		"--scene", "Test Scene",
+		"--render-output", "/render/sprites/farm_output/promo/square_ellie/square_ellie.lighting_light_breakdown2/######",
+		"--render-format", "PNG",
+		"--render-frame", "1..3",
+	}
+	assert.Equal(t, "render-1-3", t0.Name)
+	assert.Equal(t, 1, len(t0.Commands))
+	assert.Equal(t, "blender-render", t0.Commands[0].Name)
+	assert.EqualValues(t, AuthoredCommandParameters{
+		"exe":        "{blender}",
+		"exeArgs":    "{blenderArgs}",
+		"blendfile":  "/render/sf/jobs/scene123.blend",
+		"args":       expectCliArgs,
+		"argsBefore": make([]interface{}, 0),
+	}, t0.Commands[0].Parameters)
+}
+
 func TestJobWithoutTag(t *testing.T) {
 	c := mockedClock(t)
 

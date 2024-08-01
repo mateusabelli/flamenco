@@ -32,6 +32,8 @@ const JOB_TYPE = {
           description: "File extension used when rendering images" },
         { key: "has_previews", type: "bool", required: false, eval: "C.scene.render.image_settings.use_preview", visible: "hidden",
           description: "Whether Blender will render preview images."},
+        { key: "scene", type: "string", required: true, eval: "C.scene.name", visible: "web",
+          description: "Name of the scene to render."},
     ]
 };
 
@@ -100,6 +102,12 @@ function authorRenderTasks(settings, renderDir, renderOutput) {
     print("authorRenderTasks(", renderDir, renderOutput, ")");
     let renderTasks = [];
     let chunks = frameChunker(settings.frames, settings.chunk_size);
+
+    let baseArgs = [];
+    if (settings.scene) {
+      baseArgs = baseArgs.concat(["--scene", settings.scene]);
+    }
+
     for (let chunk of chunks) {
         const task = author.Task(`render-${chunk}`, "blender");
         const command = author.Command("blender-render", {
@@ -107,11 +115,11 @@ function authorRenderTasks(settings, renderDir, renderOutput) {
             exeArgs: "{blenderArgs}",
             argsBefore: [],
             blendfile: settings.blendfile,
-            args: [
+            args: baseArgs.concat([
                 "--render-output", path.join(renderDir, path.basename(renderOutput)),
                 "--render-format", settings.format,
                 "--render-frame", chunk.replaceAll("-", ".."), // Convert to Blender frame range notation.
-            ]
+            ])
         });
         task.addCommand(command);
         renderTasks.push(task);
