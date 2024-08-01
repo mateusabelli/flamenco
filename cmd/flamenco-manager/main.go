@@ -148,7 +148,13 @@ func runFlamencoManager() bool {
 		log.Fatal().Err(err).Msg("unable to figure out my own URL")
 	}
 
-	ssdp := makeAutoDiscoverable(urls)
+	// Construct the UPnP/SSDP server.
+	var ssdp *upnp_ssdp.Server
+	if configService.Get().SSDPDiscovery {
+		ssdp = makeAutoDiscoverable(urls)
+	} else {
+		log.Debug().Msg("UPnP/SSDP autodiscovery disabled in configuration")
+	}
 
 	// Construct the services.
 	persist := openDB(*configService)
