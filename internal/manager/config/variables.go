@@ -106,6 +106,10 @@ func (ve *VariableExpander) Expand(valueToExpand string) string {
 	isPathValue := false
 	for varname, varvalue := range ve.targetTwoWayVars {
 		placeholder := fmt.Sprintf("{%s}", varname)
+		if !strings.Contains(expanded, placeholder) {
+			continue
+		}
+
 		expanded = strings.Replace(expanded, placeholder, varvalue, -1)
 
 		// Since two-way variables are meant for path replacement, we know this

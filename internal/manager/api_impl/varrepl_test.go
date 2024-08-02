@@ -243,6 +243,85 @@ func TestReplaceTwoWayVariables(t *testing.T) {
 	}
 }
 
+// TestReplaceTwoWayVariablesFFmpegExpression tests that slashes (for division)
+// in an FFmpeg filter expression are NOT replaced with backslashes when sending
+// to a Windows worker.
+func TestReplaceTwoWayVariablesFFmpegExpression(t *testing.T) {
+	c := config.DefaultConfig(func(c *config.Conf) {
+		// Mock that the Manager is running Linux.
+		c.MockCurrentGOOSForTests("linux")
+
+		// Trigger a translation of a path in the FFmpeg command arguments.
+		c.Variables["project"] = config.Variable{
+			IsTwoWay: true,
+			Values: []config.VariableValue{
+				{Value: "/projects/charge", Platform: config.VariablePlatformLinux, Audience: config.VariableAudienceAll},
+				{Value: `P:\charge`, Platform: config.VariablePlatformWindows, Audience: config.VariableAudienceAll},
+			},
+		}
+	})
+
+	task := api.AssignedTask{
+		Job:         "f0bde4d0-eaaf-4ee0-976b-802a86aa2d02",
+		JobPriority: 50,
+		JobType:     "simple-blender-render",
+		Name:        "preview-video",
+		Priority:    50,
+		Status:      api.TaskStatusQueued,
+		TaskType:    "ffmpeg",
+		Uuid:        "fd963a82-2e98-4a39-9bd4-c302e5b8814f",
+		Commands: []api.Command{
+			{
+				Name: "frames-to-video",
+				Parameters: map[string]interface{}{
+					"exe":        "ffmpeg",                             // Should not change.
+					"fps":        24,                                   // Should not change type.
+					"inputGlob":  "/projects/charge/renders/*.webp",    // Path, should change.
+					"outputFile": "/projects/charge/renders/video.mp4", // Path, should change.
+					"args": []string{
+						"-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2", // Should not change.
+						"-fake-lut", `/projects/charge/ffmpeg.lut`, // Path, should change.
+					},
+				},
+			},
+		},
+	}
+
+	worker := persistence.Worker{Platform: "windows"}
+	replacedTask := replaceTaskVariables(&c, task, worker)
+
+	expectTask := api.AssignedTask{
+		Job:         "f0bde4d0-eaaf-4ee0-976b-802a86aa2d02",
+		JobPriority: 50,
+		JobType:     "simple-blender-render",
+		Name:        "preview-video",
+		Priority:    50,
+		Status:      api.TaskStatusQueued,
+		TaskType:    "ffmpeg",
+		Uuid:        "fd963a82-2e98-4a39-9bd4-c302e5b8814f",
+		Commands: []api.Command{
+			{
+				Name: "frames-to-video",
+				Parameters: map[string]interface{}{
+					"exe": "ffmpeg",
+					"fps": 24,
+					// These two parameters matched a two-way variable:
+					"inputGlob":  `P:\charge\renders\*.webp`,
+					"outputFile": `P:\charge\renders\video.mp4`,
+					"args": []string{
+						// This parameter should not change:
+						"-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2",
+						// This parameter should change:
+						"-fake-lut", `P:\charge\ffmpeg.lut`,
+					},
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, expectTask, replacedTask)
+}
+
 func varReplSubmittedJob() api.SubmittedJob {
 	return api.SubmittedJob{
 		Type:              "simple-blender-render",
