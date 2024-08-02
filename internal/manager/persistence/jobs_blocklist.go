@@ -7,7 +7,7 @@ import (
 	"math"
 	"time"
 
-	"gorm.io/gorm/clause"
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 )
 
 // JobBlock keeps track of which Worker is not allowed to run which task type on which job.
@@ -28,66 +28,76 @@ type JobBlock struct {
 
 // AddWorkerToJobBlocklist prevents this Worker of getting any task, of this type, on this job, from the task scheduler.
 func (db *DB) AddWorkerToJobBlocklist(ctx context.Context, job *Job, worker *Worker, taskType string) error {
-	entry := JobBlock{
-		Job:      job,
-		Worker:   worker,
-		TaskType: taskType,
+	if job.ID == 0 {
+		panic("Cannot add worker to job blocklist with zero job ID")
 	}
-	tx := db.gormDB.WithContext(ctx).
-		Clauses(clause.OnConflict{DoNothing: true}).
-		Create(&entry)
-	return tx.Error
+	if worker.ID == 0 {
+		panic("Cannot add worker to job blocklist with zero worker ID")
+	}
+	if taskType == "" {
+		panic("Cannot add worker to job blocklist with empty task type")
+	}
+
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+
+	return queries.AddWorkerToJobBlocklist(ctx, sqlc.AddWorkerToJobBlocklistParams{
+		CreatedAt: db.now().Time,
+		JobID:     int64(job.ID),
+		WorkerID:  int64(worker.ID),
+		TaskType:  taskType,
+	})
 }
 
+// FetchJobBlocklist fetches the blocklist for the given job.
+// Workers are fetched too, and embedded in the returned list.
 func (db *DB) FetchJobBlocklist(ctx context.Context, jobUUID string) ([]JobBlock, error) {
-	entries := []JobBlock{}
+	queries, err := db.queries()
+	if err != nil {
+		return nil, err
+	}
 
-	tx := db.gormDB.WithContext(ctx).
-		Model(JobBlock{}).
-		Joins("inner join jobs on jobs.id = job_blocks.job_id").
-		Joins("Worker").
-		Where("jobs.uuid = ?", jobUUID).
-		Order("Worker.name").
-		Scan(&entries)
-	return entries, tx.Error
+	rows, err := queries.FetchJobBlocklist(ctx, jobUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	entries := make([]JobBlock, len(rows))
+	for idx, row := range rows {
+		entries[idx].ID = uint(row.JobBlock.ID)
+		entries[idx].CreatedAt = row.JobBlock.CreatedAt
+		entries[idx].TaskType = row.JobBlock.TaskType
+		entries[idx].JobID = uint(row.JobBlock.JobID)
+		entries[idx].WorkerID = uint(row.JobBlock.WorkerID)
+
+		worker := convertSqlcWorker(row.Worker)
+		entries[idx].Worker = &worker
+	}
+
+	return entries, nil
 }
 
 // ClearJobBlocklist removes the entire blocklist of this job.
 func (db *DB) ClearJobBlocklist(ctx context.Context, job *Job) error {
-	tx := db.gormDB.WithContext(ctx).
-		Where("job_id = ?", job.ID).
-		Delete(JobBlock{})
-	return tx.Error
+	queries, err := db.queries()
+	if err != nil {
+		return err
+	}
+	return queries.ClearJobBlocklist(ctx, job.UUID)
 }
 
 func (db *DB) RemoveFromJobBlocklist(ctx context.Context, jobUUID, workerUUID, taskType string) error {
-	// Find the job ID.
-	job := Job{}
-	tx := db.gormDB.WithContext(ctx).
-		Select("id").
-		Where("uuid = ?", jobUUID).
-		Find(&job)
-	if tx.Error != nil {
-		return jobError(tx.Error, "fetching job with uuid=%q", jobUUID)
+	queries, err := db.queries()
+	if err != nil {
+		return err
 	}
-
-	// Find the worker ID.
-	worker := Worker{}
-	tx = db.gormDB.WithContext(ctx).
-		Select("id").
-		Where("uuid = ?", workerUUID).
-		Find(&worker)
-	if tx.Error != nil {
-		return workerError(tx.Error, "fetching worker with uuid=%q", workerUUID)
-	}
-
-	// Remove the blocklist entry.
-	tx = db.gormDB.WithContext(ctx).
-		Where("job_id = ?", job.ID).
-		Where("worker_id = ?", worker.ID).
-		Where("task_type = ?", taskType).
-		Delete(JobBlock{})
-	return tx.Error
+	return queries.RemoveFromJobBlocklist(ctx, sqlc.RemoveFromJobBlocklistParams{
+		JobUUID:    jobUUID,
+		WorkerUUID: workerUUID,
+		TaskType:   taskType,
+	})
 }
 
 // WorkersLeftToRun returns a set of worker UUIDs that can run tasks of the given type on the given job.

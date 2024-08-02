@@ -13,6 +13,30 @@ import (
 	"time"
 )
 
+const addWorkerToJobBlocklist = `-- name: AddWorkerToJobBlocklist :exec
+INSERT INTO job_blocks (created_at, job_id, worker_id, task_type)
+VALUES (?1, ?2, ?3, ?4)
+ON CONFLICT DO NOTHING
+`
+
+type AddWorkerToJobBlocklistParams struct {
+	CreatedAt time.Time
+	JobID     int64
+	WorkerID  int64
+	TaskType  string
+}
+
+// Add a worker to a job's blocklist.
+func (q *Queries) AddWorkerToJobBlocklist(ctx context.Context, arg AddWorkerToJobBlocklistParams) error {
+	_, err := q.db.ExecContext(ctx, addWorkerToJobBlocklist,
+		arg.CreatedAt,
+		arg.JobID,
+		arg.WorkerID,
+		arg.TaskType,
+	)
+	return err
+}
+
 const addWorkerToTaskFailedList = `-- name: AddWorkerToTaskFailedList :exec
 INSERT INTO task_failures (created_at, task_id, worker_id)
 VALUES (?1, ?2, ?3)
@@ -47,6 +71,16 @@ DELETE FROM task_failures WHERE task_id=?1
 
 func (q *Queries) ClearFailureListOfTask(ctx context.Context, taskID int64) error {
 	_, err := q.db.ExecContext(ctx, clearFailureListOfTask, taskID)
+	return err
+}
+
+const clearJobBlocklist = `-- name: ClearJobBlocklist :exec
+DELETE FROM job_blocks
+WHERE job_id in (SELECT jobs.id FROM jobs WHERE jobs.uuid=?1)
+`
+
+func (q *Queries) ClearJobBlocklist(ctx context.Context, jobuuid string) error {
+	_, err := q.db.ExecContext(ctx, clearJobBlocklist, jobuuid)
 	return err
 }
 
@@ -215,6 +249,65 @@ func (q *Queries) FetchJob(ctx context.Context, uuid string) (Job, error) {
 		&i.WorkerTagID,
 	)
 	return i, err
+}
+
+const fetchJobBlocklist = `-- name: FetchJobBlocklist :many
+SELECT job_blocks.id, job_blocks.created_at, job_blocks.job_id, job_blocks.worker_id, job_blocks.task_type, workers.id, workers.created_at, workers.updated_at, workers.uuid, workers.secret, workers.name, workers.address, workers.platform, workers.software, workers.status, workers.last_seen_at, workers.status_requested, workers.lazy_status_request, workers.supported_task_types, workers.deleted_at, workers.can_restart
+FROM job_blocks
+INNER JOIN jobs ON jobs.id = job_blocks.job_id
+INNER JOIN workers on workers.id = job_blocks.worker_id
+WHERE jobs.uuid = ?1
+ORDER BY workers.name
+`
+
+type FetchJobBlocklistRow struct {
+	JobBlock JobBlock
+	Worker   Worker
+}
+
+func (q *Queries) FetchJobBlocklist(ctx context.Context, jobuuid string) ([]FetchJobBlocklistRow, error) {
+	rows, err := q.db.QueryContext(ctx, fetchJobBlocklist, jobuuid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FetchJobBlocklistRow
+	for rows.Next() {
+		var i FetchJobBlocklistRow
+		if err := rows.Scan(
+			&i.JobBlock.ID,
+			&i.JobBlock.CreatedAt,
+			&i.JobBlock.JobID,
+			&i.JobBlock.WorkerID,
+			&i.JobBlock.TaskType,
+			&i.Worker.ID,
+			&i.Worker.CreatedAt,
+			&i.Worker.UpdatedAt,
+			&i.Worker.UUID,
+			&i.Worker.Secret,
+			&i.Worker.Name,
+			&i.Worker.Address,
+			&i.Worker.Platform,
+			&i.Worker.Software,
+			&i.Worker.Status,
+			&i.Worker.LastSeenAt,
+			&i.Worker.StatusRequested,
+			&i.Worker.LazyStatusRequest,
+			&i.Worker.SupportedTaskTypes,
+			&i.Worker.DeletedAt,
+			&i.Worker.CanRestart,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const fetchJobByID = `-- name: FetchJobByID :one
@@ -756,6 +849,25 @@ func (q *Queries) JobCountTasksInStatus(ctx context.Context, arg JobCountTasksIn
 	var num_tasks int64
 	err := row.Scan(&num_tasks)
 	return num_tasks, err
+}
+
+const removeFromJobBlocklist = `-- name: RemoveFromJobBlocklist :exec
+DELETE FROM job_blocks
+WHERE
+    job_blocks.job_id in (SELECT jobs.id FROM jobs WHERE jobs.uuid=?1)
+AND job_blocks.worker_id in (SELECT workers.id FROM workers WHERE workers.uuid=?2)
+AND job_blocks.task_type = ?3
+`
+
+type RemoveFromJobBlocklistParams struct {
+	JobUUID    string
+	WorkerUUID string
+	TaskType   string
+}
+
+func (q *Queries) RemoveFromJobBlocklist(ctx context.Context, arg RemoveFromJobBlocklistParams) error {
+	_, err := q.db.ExecContext(ctx, removeFromJobBlocklist, arg.JobUUID, arg.WorkerUUID, arg.TaskType)
+	return err
 }
 
 const requestJobDeletion = `-- name: RequestJobDeletion :exec

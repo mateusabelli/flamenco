@@ -244,3 +244,28 @@ ON CONFLICT DO UPDATE
 -- name: GetLastRenderedJobUUID :one
 SELECT uuid FROM jobs
 INNER JOIN last_rendereds LR ON jobs.id = LR.job_id;
+
+-- name: AddWorkerToJobBlocklist :exec
+-- Add a worker to a job's blocklist.
+INSERT INTO job_blocks (created_at, job_id, worker_id, task_type)
+VALUES (@created_at, @job_id, @worker_id, @task_type)
+ON CONFLICT DO NOTHING;
+
+-- name: FetchJobBlocklist :many
+SELECT sqlc.embed(job_blocks), sqlc.embed(workers)
+FROM job_blocks
+INNER JOIN jobs ON jobs.id = job_blocks.job_id
+INNER JOIN workers on workers.id = job_blocks.worker_id
+WHERE jobs.uuid = @jobuuid
+ORDER BY workers.name;
+
+-- name: ClearJobBlocklist :exec
+DELETE FROM job_blocks
+WHERE job_id in (SELECT jobs.id FROM jobs WHERE jobs.uuid=@jobuuid);
+
+-- name: RemoveFromJobBlocklist :exec
+DELETE FROM job_blocks
+WHERE
+    job_blocks.job_id in (SELECT jobs.id FROM jobs WHERE jobs.uuid=@jobuuid)
+AND job_blocks.worker_id in (SELECT workers.id FROM workers WHERE workers.uuid=@workeruuid)
+AND job_blocks.task_type = @task_type;
