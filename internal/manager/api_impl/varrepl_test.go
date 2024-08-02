@@ -352,7 +352,7 @@ func varReplSubmittedJob() api.SubmittedJob {
 }
 
 // jsonWash converts the given value to JSON and back.
-// This makes sure the types are as closed to what the API will handle as
+// This makes sure the types are as close to what the API will handle as
 // possible, making the difference between "array of strings" and "array of
 // interface{}s that happen to be strings".
 func jsonWash[T any](value T) T {
