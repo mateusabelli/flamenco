@@ -38,7 +38,7 @@ software. Development is supported by the Blender project.
 
 ### Simple and Portable
 
-Flamenco consists of a few components and requires almost no configuration
+Flamenco consists of a few components and requires almost no configuration in order
 to be used in production.
 
 {{< /columns >}}
@@ -48,13 +48,13 @@ to be used in production.
 ### Easy Customization
 
 Designed to be customizable, Flamenco allows TDs to specify
-Job Types using the JavaScript language and seamlessly fit into the pipeline.
+Job Types are specified using the JavaScript language and seamlessly fit into a pipeline.
 
 <--->
 
 ### Cross-platform and Self-hosted
 
-Flamenco runs on all major operating system, and is fully hosted on your own hardware.
+Flamenco runs on all major operating systems, and is self hostable.
 Your data is yours, and yours alone.
 
 {{< /columns >}}
@@ -63,7 +63,7 @@ Your data is yours, and yours alone.
 
 ### Robust Technology
 
-The core of Flamenco is build using Go and SQLite. Check out the sources on
+The core of Flamenco is built using Go and SQLite. Check out the source code on
 [projects.blender.org](https://projects.blender.org/studio/flamenco).
 
 <--->
