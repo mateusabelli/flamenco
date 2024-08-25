@@ -71,6 +71,6 @@ The core of Flamenco is built using Go and SQLite. Check out the source code on
 ### In Development
 
 Flamenco v3 is in active development at Blender Studio. Join
-[the chat](https://blender.chat/channel/flamenco) to see what's happening!
+[the chat](https://chat.blender.org/#/room/#flamenco:blender.org) to see what's happening!
 
 {{< /columns >}}
