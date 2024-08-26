@@ -26,7 +26,7 @@ The constructed CLI invocation will be `{exe} {exeArgs} {argsBefore} {blendfile}
 
 Flamenco Worker monitors the logging of Blender; lines like `Saved: filename.jpg` are recognised and sent as preview images to Flamenco Manager.
 
-## FFmpeg: `create-video`
+## FFmpeg: `frames-to-video`
 
 Uses FFmpeg to convert an image sequence to a video file.
 
