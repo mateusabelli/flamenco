@@ -25,7 +25,7 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/crosspath"
 )
 
-type CreateVideoParams struct {
+type FramesToVideoParams struct {
 	exe        string   // Executable path defined by the Manager.
 	exeArgs    string   // Its CLI parameters defined by the Manager.
 	fps        float64  // Frames per second of the video file.
@@ -101,9 +101,9 @@ func (ce *CommandExecutor) cmdFramesToVideoExeCommand(
 	return execCmd, cleanup, nil
 }
 
-func cmdFramesToVideoParams(logger zerolog.Logger, cmd api.Command) (CreateVideoParams, error) {
+func cmdFramesToVideoParams(logger zerolog.Logger, cmd api.Command) (FramesToVideoParams, error) {
 	var (
-		parameters CreateVideoParams
+		parameters FramesToVideoParams
 		ok         bool
 	)
 
@@ -172,7 +172,7 @@ func cmdFramesToVideoParams(logger zerolog.Logger, cmd api.Command) (CreateVideo
 
 // getInputGlob constructs CLI arguments for FFmpeg input file globbing.
 // The 2nd return value is a cleanup function.
-func (p *CreateVideoParams) getInputGlob() ([]string, func(), error) {
+func (p *FramesToVideoParams) getInputGlob() ([]string, func(), error) {
 	if runtime.GOOS == "windows" {
 		return createIndexFile(p.inputGlob, p.fps)
 	}
