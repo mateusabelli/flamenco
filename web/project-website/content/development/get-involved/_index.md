@@ -15,7 +15,7 @@ Join the community on the [#flamenco channel][chat] of Blender Chat to discuss
 development topics. New faces are always welcome! Also, make sure you check out
 the [quickstart guide](/usage/quickstart/).
 
-[chat]: https://blender.chat/channel/flamenco
+[chat]: https://chat.blender.org/#/room/#flamenco:blender.org
 
 <--->
 
