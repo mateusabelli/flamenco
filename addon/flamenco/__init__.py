@@ -3,7 +3,7 @@
 # <pep8 compliant>
 
 bl_info = {
-    "name": "Flamenco 3",
+    "name": "Flamenco",
     "author": "Sybren A. Stüvel",
     "version": (3, 6),
     "blender": (3, 1, 0),

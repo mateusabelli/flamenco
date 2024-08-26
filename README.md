@@ -1,6 +1,6 @@
-# Flamenco 3
+# Flamenco
 
-This repository contains the sources for Flamenco 3. The Manager, Worker, and
+This repository contains the sources for Flamenco. The Manager, Worker, and
 Blender add-on sources are all combined in this one repository.
 
 The documentation is available on https://flamenco.blender.org/, including

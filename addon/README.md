@@ -1,4 +1,4 @@
-# Flamenco 3 Blender add-on
+# Flamenco Blender add-on
 
 ## Setting up development environment
 

@@ -22,7 +22,7 @@ class FLAMENCO_PT_job_submission(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "output"
-    bl_label = "Flamenco 3"
+    bl_label = "Flamenco"
 
     # A temporary job can be constructed so that dynamic, read-only properties can be evaluated.
     # This is only scoped to a single draw() call.

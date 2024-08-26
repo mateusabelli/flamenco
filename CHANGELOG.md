@@ -6,6 +6,7 @@ bugs in actually-released versions.
 
 ## 3.6 - in development
 
+- Change the name of the add-on from "Flamenco 3" to just "Flamenco".
 - Add `label` to job settings, to have full control over how they are presented in Blender's job submission GUI. If a job setting does not define a label, its `key` is used to generate one (like Flamenco 3.5 and older).
 - Add `shellSplit(someString)` function to the job compiler scripts. This splits a string into an array of strings using shell/CLI semantics.
 - Make it possible to script job submissions in Blender, by executing the `bpy.ops.flamenco.submit_job(job_name="jobname")` operator.
