@@ -126,6 +126,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
     def poll(cls, context: bpy.types.Context) -> bool:
         # Only allow submission when there is a job type selected.
         job_type = job_types.active_job_type(context.scene)
+        cls.poll_message_set("No job type selected")
         return job_type is not None
 
     def execute(self, context: bpy.types.Context) -> set[str]:
