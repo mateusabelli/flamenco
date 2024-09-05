@@ -44,18 +44,31 @@ func TestCheckout(t *testing.T) {
 	assert.FileExists(t, filepath.Join(coPath, "httpstuff.py"))
 	assert.FileExists(t, filepath.Join(coPath, "много ликова.py"))
 
-	storePath := manager.fileStore.StoragePath()
-	assertLinksTo(t, filepath.Join(coPath, "subdir", "replacer.py"),
-		filepath.Join(storePath, "59", "0c148428d5c35fab3ebad2f3365bb469ab9c531b60831f3e826c472027a0b9", "3367.blob"))
-	assertLinksTo(t, filepath.Join(coPath, "feed.py"),
-		filepath.Join(storePath, "80", "b749c27b2fef7255e7e7b3c2029b03b31299c75ff1f1c72732081c70a713a3", "7488.blob"))
-	assertLinksTo(t, filepath.Join(coPath, "httpstuff.py"),
-		filepath.Join(storePath, "91", "4853599dd2c351ab7b82b219aae6e527e51518a667f0ff32244b0c94c75688", "486.blob"))
-	assertLinksTo(t, filepath.Join(coPath, "много ликова.py"),
-		filepath.Join(storePath, "d6", "fc7289b5196cc96748ea72f882a22c39b8833b457fe854ef4c03a01f5db0d3", "7217.blob"))
+	storePath, err := filepath.Rel(
+		manager.checkoutBasePath,
+		manager.fileStore.StoragePath(),
+	)
+	require.NoError(t, err)
+	assertLinksTo(t,
+		// Two extra '..' for 'á hausinn á þér/subdir'.
+		filepath.Join("..", "..", storePath, "59", "0c148428d5c35fab3ebad2f3365bb469ab9c531b60831f3e826c472027a0b9", "3367.blob"),
+		filepath.Join(coPath, "subdir", "replacer.py"),
+	)
+	assertLinksTo(t,
+		filepath.Join("..", storePath, "80", "b749c27b2fef7255e7e7b3c2029b03b31299c75ff1f1c72732081c70a713a3", "7488.blob"),
+		filepath.Join(coPath, "feed.py"),
+	)
+	assertLinksTo(t,
+		filepath.Join("..", storePath, "91", "4853599dd2c351ab7b82b219aae6e527e51518a667f0ff32244b0c94c75688", "486.blob"),
+		filepath.Join(coPath, "httpstuff.py"),
+	)
+	assertLinksTo(t,
+		filepath.Join("..", storePath, "d6", "fc7289b5196cc96748ea72f882a22c39b8833b457fe854ef4c03a01f5db0d3", "7217.blob"),
+		filepath.Join(coPath, "много ликова.py"),
+	)
 }
 
-func assertLinksTo(t *testing.T, linkPath, expectedTarget string) {
+func assertLinksTo(t *testing.T, expectedTarget, linkPath string) {
 	actualTarget, err := os.Readlink(linkPath)
 	require.NoError(t, err)
 	assert.Equal(t, expectedTarget, actualTarget)

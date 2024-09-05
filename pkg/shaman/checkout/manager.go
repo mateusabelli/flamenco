@@ -202,22 +202,46 @@ func (m *Manager) EraseCheckout(checkoutID string) error {
 // It does *not* do any validation of the validity of the paths!
 func (m *Manager) SymlinkToCheckout(blobPath, checkoutPath, symlinkRelativePath string) error {
 	symlinkPath := filepath.Join(checkoutPath, symlinkRelativePath)
-	logger := log.With().
-		Str("blobPath", blobPath).
-		Str("symlinkPath", symlinkPath).
-		Logger()
+	logger := log.With().Str("symlinkPath", symlinkPath).Logger()
 
-	blobPath, err := filepath.Abs(blobPath)
+	blobAbsolute, err := filepath.Abs(blobPath)
 	if err != nil {
-		logger.Error().Err(err).Msg("shaman: unable to make blobPath absolute")
+		logger.Error().
+			Str("blobPath", blobPath).
+			Err(err).Msg("shaman: unable to make blobPath absolute")
 		return err
 	}
+	if blobAbsolute != blobPath {
+		logger.Trace().
+			Str("input", blobPath).
+			Str("absolute", blobAbsolute).
+			Msg("shaman: made blobpath absolute")
+	}
 
+	// Try and make blobAbsolute relative to the symlink target directory, so that
+	// mounting the symlinked storage at a different prefix works as well.
+	symlinkDir := filepath.Dir(symlinkPath)
+	blobRelativeToCheckout, err := filepath.Rel(symlinkDir, blobAbsolute)
+	if err != nil {
+		logger.Warn().
+			Str("blobPath", blobAbsolute).
+			AnErr("cause", err).
+			Msg("shaman: unable to make blobPath relative, will use absolute path")
+		blobRelativeToCheckout = blobAbsolute
+	}
+
+	logger.Trace().
+		Str("absolute", blobAbsolute).
+		Str("relative", blobRelativeToCheckout).
+		Str("symlinkDir", symlinkDir).
+		Msg("shaman: made blobpath relative")
+
+	logger = logger.With().Str("blobPath", blobRelativeToCheckout).Logger()
 	logger.Debug().Msg("shaman: creating symlink")
 
 	// This is expected to fail sometimes, because we don't create parent directories yet.
 	// We only create those when we get a failure from symlinking.
-	err = os.Symlink(blobPath, symlinkPath)
+	err = os.Symlink(blobRelativeToCheckout, symlinkPath)
 	switch {
 	case err == nil:
 		return nil
@@ -232,7 +256,7 @@ func (m *Manager) SymlinkToCheckout(blobPath, checkoutPath, symlinkRelativePath 
 				Msg("shaman: unable to create symlink as it already exists, but also it cannot be read")
 			return err
 		}
-		if linkTarget != blobPath {
+		if linkTarget != blobRelativeToCheckout {
 			logger.Error().
 				AnErr("symlinkError", err).
 				Str("alreadyLinkedFrom", linkTarget).
@@ -251,7 +275,7 @@ func (m *Manager) SymlinkToCheckout(blobPath, checkoutPath, symlinkRelativePath 
 			logger.Error().Err(err).Msg("shaman: unable to create parent directory")
 			return err
 		}
-		if err := os.Symlink(blobPath, symlinkPath); err != nil {
+		if err := os.Symlink(blobRelativeToCheckout, symlinkPath); err != nil {
 			logger.Error().Err(err).Msg("shaman: unable to create symlink, after creating parent directory")
 			return err
 		}
@@ -263,7 +287,7 @@ func (m *Manager) SymlinkToCheckout(blobPath, checkoutPath, symlinkRelativePath 
 	// Change the modification time of the blob to mark it as 'referenced' just now.
 	m.wg.Add(1)
 	go func() {
-		if err := touchFile(blobPath); err != nil {
+		if err := touchFile(blobAbsolute); err != nil {
 			logger.Warn().Err(err).Msg("shaman: unable to touch blob path")
 		}
 		m.wg.Done()

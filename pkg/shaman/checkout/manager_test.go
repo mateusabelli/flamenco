@@ -59,7 +59,7 @@ func TestSymlinkToCheckout(t *testing.T) {
 	defer cleanup()
 
 	// Fake an older file.
-	blobPath := filepath.Join(manager.checkoutBasePath, "jemoeder.blob")
+	blobPath := filepath.Join(manager.fileStore.StoragePath(), "opjehoofd.blob")
 	err := os.WriteFile(blobPath, []byte("op je hoofd"), 0600)
 	require.NoError(t, err)
 
@@ -67,14 +67,14 @@ func TestSymlinkToCheckout(t *testing.T) {
 	err = os.Chtimes(blobPath, wayBackWhen, wayBackWhen)
 	require.NoError(t, err)
 
-	symlinkRelativePath := "path/to/jemoeder.txt"
+	symlinkRelativePath := "path/to/opjehoofd.txt"
 	err = manager.SymlinkToCheckout(blobPath, manager.checkoutBasePath, symlinkRelativePath)
 	require.NoError(t, err)
 
 	err = manager.SymlinkToCheckout(blobPath, manager.checkoutBasePath, symlinkRelativePath)
 	require.NoError(t, err, "symlinking a file twice should not be an issue")
 
-	// Wait for touch() calls to be done.
+	// Wait for the manager to be done updating mtimes.
 	manager.wg.Wait()
 
 	// The blob should have been touched to indicate it was referenced just now.
@@ -89,6 +89,10 @@ func TestSymlinkToCheckout(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, stat.Mode()&os.ModeType == os.ModeSymlink,
 		"%v should be a symlink", symlinkPath)
+
+	contents, err := os.ReadFile(symlinkPath)
+	require.NoError(t, err)
+	assert.Equal(t, string(contents), "op je hoofd")
 }
 
 func TestPrepareCheckout(t *testing.T) {
