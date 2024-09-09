@@ -48,6 +48,8 @@ const (
 
 // Defines values for BlenderPathSource.
 const (
+	BlenderPathSourceDefault BlenderPathSource = "default"
+
 	BlenderPathSourceFileAssociation BlenderPathSource = "file_association"
 
 	BlenderPathSourceInputPath BlenderPathSource = "input_path"

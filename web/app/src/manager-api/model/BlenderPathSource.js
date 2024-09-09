@@ -40,6 +40,13 @@ export default class BlenderPathSource {
         "input_path" = "input_path";
 
     
+        /**
+         * value: "default"
+         * @const
+         */
+        "default" = "default";
+
+    
 
     /**
     * Returns a <code>BlenderPathSource</code> enum value from a Javascript object name.
