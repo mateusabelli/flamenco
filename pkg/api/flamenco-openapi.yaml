@@ -1539,6 +1539,8 @@ components:
         - path_envvar
         # The input path was used as-is, as it points to an existing binary.
         - input_path
+        # The input path was not provided, use whatever blender is available, without checking.
+        - default
 
     WorkerRegistration:
       type: object
