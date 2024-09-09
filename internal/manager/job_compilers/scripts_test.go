@@ -39,6 +39,7 @@ func TestLoadScriptsFrom_embedded(t *testing.T) {
 	expectKeys := map[string]bool{
 		"echo-sleep-test":       true,
 		"simple-blender-render": true,
+		"single-image-render":   true,
 	}
 	assert.Equal(t, expectKeys, keys(compilers))
 }
