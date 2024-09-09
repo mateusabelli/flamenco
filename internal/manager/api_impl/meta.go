@@ -21,6 +21,14 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
+var (
+	ErrSetupConfigUnusableSource       = errors.New("sources should not have the 'is_usable' field set to false")
+	ErrSetupConfigEmptyStorageLocation = errors.New("'storageLocation' field must not be empty")
+	ErrSetupConfigEmptyPath            = errors.New("'path' field must not be empty while using the 'file_association' source")
+	ErrSetupConfigEmptyPathOrInput     = errors.New("'path' or 'input' fields must not be empty while using the 'input_path' or 'path_envvar' sources")
+	ErrSetupConfigEmptySource          = errors.New("'source' field must not be empty")
+)
+
 func (f *Flamenco) GetVersion(e echo.Context) error {
 	return e.JSON(http.StatusOK, api.FlamencoVersion{
 		Version:      appinfo.ExtendedVersion(),
@@ -265,11 +273,9 @@ func (f *Flamenco) SaveSetupAssistantConfig(e echo.Context) error {
 
 	logger = logger.With().Interface("config", setupAssistantCfg).Logger()
 
-	if setupAssistantCfg.StorageLocation == "" ||
-		!setupAssistantCfg.BlenderExecutable.IsUsable ||
-		setupAssistantCfg.BlenderExecutable.Path == "" {
-		logger.Warn().Msg("setup assistant: configuration is incomplete, unable to accept")
-		return sendAPIError(e, http.StatusBadRequest, "configuration is incomplete")
+	if err := checkSetupAssistantConfig(setupAssistantCfg); err != nil {
+		logger.Error().AnErr("cause", err).Msg("setup assistant: configuration is incomplete")
+		return sendAPIError(e, http.StatusBadRequest, "configuration is incomplete: %v", err)
 	}
 
 	conf := f.config.Get()
@@ -277,7 +283,7 @@ func (f *Flamenco) SaveSetupAssistantConfig(e echo.Context) error {
 
 	var executable string
 	switch setupAssistantCfg.BlenderExecutable.Source {
-	case api.BlenderPathSourceFileAssociation:
+	case api.BlenderPathSourceFileAssociation, api.BlenderPathSourceDefault:
 		// The Worker will try to use the file association when the command is set
 		// to the string "blender".
 		executable = "blender"
@@ -335,4 +341,38 @@ func flamencoManagerDir() (string, error) {
 
 func commandNeedsQuoting(cmd string) bool {
 	return strings.ContainsAny(cmd, "\n\t;()")
+}
+
+func checkSetupAssistantConfig(config api.SetupAssistantConfig) error {
+	if config.StorageLocation == "" {
+		return ErrSetupConfigEmptyStorageLocation
+	}
+
+	if !config.BlenderExecutable.IsUsable {
+		return ErrSetupConfigUnusableSource
+	}
+
+	switch config.BlenderExecutable.Source {
+	case api.BlenderPathSourceDefault:
+		return nil
+
+	case api.BlenderPathSourceFileAssociation:
+		if config.BlenderExecutable.Path == "" {
+			return ErrSetupConfigEmptyPath
+		}
+
+	case api.BlenderPathSourceInputPath, api.BlenderPathSourcePathEnvvar:
+		if config.BlenderExecutable.Path == "" ||
+			config.BlenderExecutable.Input == "" {
+			return ErrSetupConfigEmptyPathOrInput
+		}
+
+	case "":
+		return ErrSetupConfigEmptySource
+
+	default:
+		return fmt.Errorf("unknown 'source' field value: %v", config.BlenderExecutable.Source)
+	}
+
+	return nil
 }

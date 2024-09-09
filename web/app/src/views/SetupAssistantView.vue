@@ -114,7 +114,7 @@
 
         <p v-else>Choose how a Worker should invoke the Blender command when performing a task:</p>
 
-        <fieldset v-if="autoFoundBlenders.length >= 1">
+        <fieldset>
           <label v-if="autoFoundBlenderPathEnvvar" for="blender-path_envvar">
             <div>
               <input
@@ -191,25 +191,19 @@
               </p>
             </div>
           </label>
+
+          <label for="blender-default">
+            <div>
+              <input
+                type="radio"
+                v-model="selectedBlender"
+                name="blender"
+                :value="blenderFromDefaultSource"
+                id="blender-default" />
+              {{ sourceLabels['default'] }}
+            </div>
+          </label>
         </fieldset>
-
-        <div v-if="autoFoundBlenders.length === 0">
-          <input
-            v-model="customBlenderExe"
-            @keyup.enter="nextStepAfterCheckBlenderExePath"
-            :class="{
-              'is-invalid': blenderExeCheckResult != null && !blenderExeCheckResult.is_usable,
-            }"
-            type="text"
-            placeholder="Path to Blender executable" />
-
-          <p v-if="isBlenderExeChecking" class="is-in-progress">Checking...</p>
-          <p
-            v-if="blenderExeCheckResult != null && !blenderExeCheckResult.is_usable"
-            class="check-failed">
-            {{ blenderExeCheckResult.cause }}
-          </p>
-        </div>
       </step-item>
 
       <step-item
@@ -239,6 +233,9 @@
             <dd v-if="selectedBlender.source == 'input_path'">
               The command you provided: "<code>{{ selectedBlender.path }}</code
               >"
+            </dd>
+            <dd v-if="selectedBlender.source == 'default'">
+              You have chosen to skip adding a blender path.
             </dd>
           </dl>
         </div>
@@ -291,7 +288,8 @@ export default {
     sourceLabels: {
       file_association: 'Blender that runs when you double-click a .blend file:',
       path_envvar: 'Blender found on the $PATH environment:',
-      input_path: 'Another Blender executable:',
+      input_path: 'Specify a Blender executable:',
+      default: 'Skip, let the Workers use whatever Blender is available.',
     },
     isConfirming: false,
     isConfirmed: false,
@@ -323,6 +321,15 @@ export default {
     },
     blenderFromInputPath() {
       return this.allBlenders.find((b) => b.source === 'input_path');
+    },
+    blenderFromDefaultSource() {
+      return {
+        input: '',
+        path: '',
+        source: 'default',
+        is_usable: true,
+        cause: '',
+      };
     },
     setupConfirmIsClickable() {
       if (this.isConfirming || this.isConfirmed) {

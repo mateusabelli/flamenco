@@ -363,6 +363,27 @@ func TestSaveSetupAssistantConfig(t *testing.T) {
 		assert.Equal(t, expectBlenderVar, savedConfig.Variables["blender"])
 		assert.Equal(t, defaultBlenderArgsVar, savedConfig.Variables["blenderArgs"])
 	}
+
+	// Test situation where adding a blender executable was skipped.
+	{
+		savedConfig := doTest(api.SetupAssistantConfig{
+			StorageLocation: mf.tempdir,
+			BlenderExecutable: api.BlenderPathCheckResult{
+				IsUsable: true,
+				Source:   api.BlenderPathSourceDefault,
+			},
+		})
+		assert.Equal(t, mf.tempdir, savedConfig.SharedStoragePath)
+		expectBlenderVar := config.Variable{
+			Values: config.VariableValues{
+				{Platform: "linux", Value: "blender"},
+				{Platform: "windows", Value: "blender"},
+				{Platform: "darwin", Value: "blender"},
+			},
+		}
+		assert.Equal(t, expectBlenderVar, savedConfig.Variables["blender"])
+		assert.Equal(t, defaultBlenderArgsVar, savedConfig.Variables["blenderArgs"])
+	}
 }
 
 func metaTestFixtures(t *testing.T) (mockedFlamenco, func()) {
