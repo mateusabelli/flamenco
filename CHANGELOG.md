@@ -14,6 +14,8 @@ bugs in actually-released versions.
   - [GO-2024-2937: Parsing a corrupt or malicious image with invalid color indices can cause a panic](https://pkg.go.dev/vuln/GO-2024-2937)
 - Web interface: list the job's worker tag in the job details.
 - Ensure the submitted scene is rendered in a multi-scene blend file.
+- Security updates of dependencies:
+  - [GO-2024-3106: Stack exhaustion in Decoder.Decode in encoding/gob](https://pkg.go.dev/vuln/GO-2024-3106)
 
 ## 3.5 - released 2024-04-16
 
