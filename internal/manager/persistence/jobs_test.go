@@ -255,7 +255,7 @@ func TestDeleteJobWithoutFK(t *testing.T) {
 	authJob.Name = "Job to delete"
 	persistAuthoredJob(t, ctx, db, authJob)
 
-	require.NoError(t, db.pragmaForeignKeys(false))
+	require.NoError(t, db.pragmaForeignKeys(ctx, false))
 
 	err := db.DeleteJob(ctx, authJob.JobID)
 	require.ErrorIs(t, err, ErrDeletingWithoutFK)

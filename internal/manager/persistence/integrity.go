@@ -74,7 +74,7 @@ func (db *DB) performIntegrityCheck(ctx context.Context) (ok bool) {
 
 	log.Debug().Msg("database: performing integrity check")
 
-	db.ensureForeignKeysEnabled()
+	db.ensureForeignKeysEnabled(checkCtx)
 
 	if !db.pragmaIntegrityCheck(checkCtx) {
 		return false
@@ -162,8 +162,8 @@ func (db *DB) pragmaForeignKeyCheck(ctx context.Context) (ok bool) {
 // connection to the low-level SQLite driver. Unfortunately the GORM-embedded
 // SQLite doesn't have an 'on-connect' callback function to always enable
 // foreign keys.
-func (db *DB) ensureForeignKeysEnabled() {
-	fkEnabled, err := db.areForeignKeysEnabled()
+func (db *DB) ensureForeignKeysEnabled(ctx context.Context) {
+	fkEnabled, err := db.areForeignKeysEnabled(ctx)
 
 	if err != nil {
 		log.Error().AnErr("cause", err).Msg("database: could not check whether foreign keys are enabled")
@@ -175,7 +175,7 @@ func (db *DB) ensureForeignKeysEnabled() {
 	}
 
 	log.Warn().Msg("database: foreign keys are disabled, re-enabling them")
-	if err := db.pragmaForeignKeys(true); err != nil {
+	if err := db.pragmaForeignKeys(ctx, true); err != nil {
 		log.Error().AnErr("cause", err).Msg("database: error re-enabling foreign keys")
 		return
 	}

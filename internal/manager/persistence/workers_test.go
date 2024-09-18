@@ -342,7 +342,7 @@ func TestDeleteWorkerNoForeignKeys(t *testing.T) {
 	require.NoError(t, db.CreateWorker(ctx, &w1))
 
 	// Try deleting with foreign key constraints disabled.
-	require.NoError(t, db.pragmaForeignKeys(false))
+	require.NoError(t, db.pragmaForeignKeys(ctx, false))
 	require.ErrorIs(t, ErrDeletingWithoutFK, db.DeleteWorker(ctx, w1.UUID))
 
 	// The worker should still exist.

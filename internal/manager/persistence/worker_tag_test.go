@@ -85,7 +85,7 @@ func TestDeleteTagsWithoutFK(t *testing.T) {
 	require.NoError(t, f.db.CreateWorkerTag(f.ctx, &secondTag))
 
 	// Try deleting with foreign key constraints disabled.
-	require.NoError(t, f.db.pragmaForeignKeys(false))
+	require.NoError(t, f.db.pragmaForeignKeys(f.ctx, false))
 	err = f.db.DeleteWorkerTag(f.ctx, f.tag.UUID)
 	require.ErrorIs(t, err, ErrDeletingWithoutFK)
 

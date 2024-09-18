@@ -134,7 +134,9 @@ func openDBWithConfig(dsn string, config *gorm.Config) (*DB, error) {
 	sqlDB.SetMaxOpenConns(1) // Max num of open connections to the database.
 
 	// Always enable foreign key checks, to make SQLite behave like a real database.
-	if err := db.pragmaForeignKeys(true); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := db.pragmaForeignKeys(ctx, true); err != nil {
 		return nil, err
 	}
 
@@ -237,29 +239,22 @@ func (db *DB) now() sql.NullTime {
 	}
 }
 
-func (db *DB) pragmaForeignKeys(enabled bool) error {
-	var (
-		value int
-		noun  string
-	)
+func (db *DB) pragmaForeignKeys(ctx context.Context, enabled bool) error {
+	var noun string
 	switch enabled {
 	case false:
-		value = 0
 		noun = "disabl"
 	case true:
-		value = 1
 		noun = "enabl"
 	}
 
 	log.Trace().Msgf("%sing SQLite foreign key checks", noun)
 
-	// SQLite doesn't seem to like SQL parameters for `PRAGMA`, so `PRAGMA foreign_keys = ?` doesn't work.
-	sql := fmt.Sprintf("PRAGMA foreign_keys = %d", value)
-
-	if tx := db.gormDB.Exec(sql); tx.Error != nil {
-		return fmt.Errorf("%sing foreign keys: %w", noun, tx.Error)
+	queries := db.queries()
+	if err := queries.PragmaForeignKeysSet(ctx, enabled); err != nil {
+		return fmt.Errorf("%sing foreign keys: %w", noun, err)
 	}
-	fkEnabled, err := db.areForeignKeysEnabled()
+	fkEnabled, err := db.areForeignKeysEnabled(ctx)
 	if err != nil {
 		return err
 	}
@@ -270,12 +265,13 @@ func (db *DB) pragmaForeignKeys(enabled bool) error {
 	return nil
 }
 
-func (db *DB) areForeignKeysEnabled() (bool, error) {
+func (db *DB) areForeignKeysEnabled(ctx context.Context) (bool, error) {
 	log.Trace().Msg("checking whether SQLite foreign key checks are enabled")
 
-	var fkEnabled int
-	if tx := db.gormDB.Raw("PRAGMA foreign_keys").Scan(&fkEnabled); tx.Error != nil {
-		return false, fmt.Errorf("checking whether the database has foreign key checks are enabled: %w", tx.Error)
+	queries := db.queries()
+	fkEnabled, err := queries.PragmaForeignKeysGet(ctx)
+	if err != nil {
+		return false, fmt.Errorf("checking whether the database has foreign key checks are enabled: %w", err)
 	}
-	return fkEnabled != 0, nil
+	return fkEnabled, nil
 }

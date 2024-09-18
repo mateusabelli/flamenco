@@ -73,11 +73,11 @@ func (db *DB) SaveWorkerTag(ctx context.Context, tag *WorkerTag) error {
 // DeleteWorkerTag deletes the given tag, after unassigning all workers from it.
 func (db *DB) DeleteWorkerTag(ctx context.Context, uuid string) error {
 	// As a safety measure, refuse to delete unless foreign key constraints are active.
-	fkEnabled, err := db.areForeignKeysEnabled()
-	if err != nil {
-		return fmt.Errorf("checking whether foreign keys are enabled: %w", err)
-	}
-	if !fkEnabled {
+	fkEnabled, err := db.areForeignKeysEnabled(ctx)
+	switch {
+	case err != nil:
+		return err
+	case !fkEnabled:
 		return ErrDeletingWithoutFK
 	}
 

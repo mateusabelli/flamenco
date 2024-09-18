@@ -41,7 +41,7 @@ func (db *DB) migrate(ctx context.Context) error {
 	// of data, foreign keys are disabled here instead of in the migration SQL
 	// files, so that it can't be forgotten.
 
-	if err := db.pragmaForeignKeys(false); err != nil {
+	if err := db.pragmaForeignKeys(ctx, false); err != nil {
 		log.Fatal().AnErr("cause", err).Msgf("could not disable foreign key constraints before performing database migrations, please report a bug at %s", website.BugReportURL)
 	}
 
@@ -52,7 +52,7 @@ func (db *DB) migrate(ctx context.Context) error {
 	}
 
 	// Re-enable foreign key checks.
-	if err := db.pragmaForeignKeys(true); err != nil {
+	if err := db.pragmaForeignKeys(ctx, true); err != nil {
 		log.Fatal().AnErr("cause", err).Msgf("could not re-enable foreign key constraints after performing database migrations, please report a bug at %s", website.BugReportURL)
 	}
 

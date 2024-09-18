@@ -38,3 +38,28 @@ func (q *Queries) PragmaIntegrityCheck(ctx context.Context) ([]PragmaIntegrityCh
 	}
 	return items, nil
 }
+
+// SQLite doesn't seem to like SQL parameters for `PRAGMA`, so `PRAGMA foreign_keys = ?` doesn't work.
+const pragmaForeignKeysEnable = `PRAGMA foreign_keys = 1`
+const pragmaForeignKeysDisable = `PRAGMA foreign_keys = 0`
+
+func (q *Queries) PragmaForeignKeysSet(ctx context.Context, enable bool) error {
+	var sql string
+	if enable {
+		sql = pragmaForeignKeysEnable
+	} else {
+		sql = pragmaForeignKeysDisable
+	}
+
+	_, err := q.db.ExecContext(ctx, sql)
+	return err
+}
+
+const pragmaForeignKeys = `PRAGMA foreign_keys`
+
+func (q *Queries) PragmaForeignKeysGet(ctx context.Context) (bool, error) {
+	row := q.db.QueryRowContext(ctx, pragmaForeignKeys)
+	var fkEnabled bool
+	err := row.Scan(&fkEnabled)
+	return fkEnabled, err
+}
