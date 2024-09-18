@@ -82,7 +82,7 @@ func (db *DB) CreateWorker(ctx context.Context, w *Worker) error {
 		Software:  w.Software,
 		Status:    string(w.Status),
 		LastSeenAt: sql.NullTime{
-			Time:  w.LastSeenAt,
+			Time:  w.LastSeenAt.UTC(),
 			Valid: !w.LastSeenAt.IsZero(),
 		},
 		StatusRequested:    string(w.StatusRequested),
@@ -133,7 +133,7 @@ func (db *DB) FetchWorker(ctx context.Context, uuid string) (*Worker, error) {
 		convertedWorker.Tags[index] = convertSqlcWorkerTag(workerTags[index])
 	}
 
-	return &convertedWorker, nil
+	return convertedWorker, nil
 }
 
 func (db *DB) DeleteWorker(ctx context.Context, uuid string) error {
@@ -171,8 +171,7 @@ func (db *DB) FetchWorkers(ctx context.Context) ([]*Worker, error) {
 
 	gormWorkers := make([]*Worker, len(workers))
 	for idx := range workers {
-		worker := convertSqlcWorker(workers[idx].Worker)
-		gormWorkers[idx] = &worker
+		gormWorkers[idx] = convertSqlcWorker(workers[idx].Worker)
 	}
 	return gormWorkers, nil
 }
@@ -309,8 +308,8 @@ func (db *DB) SummarizeWorkerStatuses(ctx context.Context) (WorkerStatusCount, e
 // expected by the rest of the code. This is mostly in place to aid in the GORM
 // to SQLC migration. It is intended that eventually the rest of the code will
 // use the same SQLC-generated model.
-func convertSqlcWorker(worker sqlc.Worker) Worker {
-	return Worker{
+func convertSqlcWorker(worker sqlc.Worker) *Worker {
+	return &Worker{
 		Model: Model{
 			ID:        uint(worker.ID),
 			CreatedAt: worker.CreatedAt,

@@ -152,3 +152,11 @@ WHERE id=@id;
 SELECT status, count(id) as status_count FROM workers
 WHERE deleted_at is NULL
 GROUP BY status;
+
+-- name: FetchTimedOutWorkers :many
+SELECT *
+FROM workers
+WHERE
+    last_seen_at <= @last_seen_before
+AND deleted_at IS NULL
+AND status NOT IN (sqlc.slice('worker_statuses_no_timeout'));

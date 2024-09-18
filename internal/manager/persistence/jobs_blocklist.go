@@ -65,9 +65,7 @@ func (db *DB) FetchJobBlocklist(ctx context.Context, jobUUID string) ([]JobBlock
 		entries[idx].TaskType = row.JobBlock.TaskType
 		entries[idx].JobID = uint(row.JobBlock.JobID)
 		entries[idx].WorkerID = uint(row.JobBlock.WorkerID)
-
-		worker := convertSqlcWorker(row.Worker)
-		entries[idx].Worker = &worker
+		entries[idx].Worker = convertSqlcWorker(row.Worker)
 	}
 
 	return entries, nil

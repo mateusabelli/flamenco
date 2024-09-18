@@ -4,8 +4,10 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -26,38 +28,50 @@ var workerStatusNoTimeout = []api.WorkerStatus{
 //
 // The returned tasks also have their `Job` and `Worker` fields set.
 func (db *DB) FetchTimedOutTasks(ctx context.Context, untouchedSince time.Time) ([]*Task, error) {
-	result := []*Task{}
-	tx := db.gormDB.WithContext(ctx).
-		Model(&Task{}).
-		Joins("Job").
-		Joins("Worker").
-		Where("tasks.status = ?", api.TaskStatusActive).
-		Where("tasks.last_touched_at <= ?", untouchedSince).
-		Scan(&result)
-	if tx.Error != nil {
-		return nil, taskError(tx.Error, "finding timed out tasks (untouched since %s)", untouchedSince.String())
+	queries := db.queries()
+
+	sqlcTasks, err := queries.FetchTimedOutTasks(ctx, sqlc.FetchTimedOutTasksParams{
+		TaskStatus:     string(api.TaskStatusActive),
+		UntouchedSince: sql.NullTime{Time: untouchedSince, Valid: true},
+	})
+
+	if err != nil {
+		return nil, taskError(err, "finding timed out tasks (untouched since %s)", untouchedSince.String())
 	}
 
-	// GORM apparently doesn't call the task's AfterFind() function for the above query.
-	for _, task := range result {
-		err := task.AfterFind(tx)
+	result := make([]*Task, len(sqlcTasks))
+	for index, task := range sqlcTasks {
+		gormTask, err := convertSqlTaskWithJobAndWorker(ctx, queries, task)
 		if err != nil {
-			return nil, taskError(tx.Error, "finding the job & worker UUIDs for task %s", task.UUID)
+			return nil, err
 		}
+		result[index] = gormTask
 	}
 
 	return result, nil
 }
 
 func (db *DB) FetchTimedOutWorkers(ctx context.Context, lastSeenBefore time.Time) ([]*Worker, error) {
-	result := []*Worker{}
-	tx := db.gormDB.WithContext(ctx).
-		Model(&Worker{}).
-		Where("workers.status not in ?", workerStatusNoTimeout).
-		Where("workers.last_seen_at <= ?", lastSeenBefore).
-		Scan(&result)
-	if tx.Error != nil {
-		return nil, workerError(tx.Error, "finding timed out workers (last seen before %s)", lastSeenBefore.String())
+	queries := db.queries()
+
+	statuses := make([]string, len(workerStatusNoTimeout))
+	for i, status := range workerStatusNoTimeout {
+		statuses[i] = string(status)
+	}
+
+	sqlcWorkers, err := queries.FetchTimedOutWorkers(ctx, sqlc.FetchTimedOutWorkersParams{
+		WorkerStatusesNoTimeout: statuses,
+		LastSeenBefore: sql.NullTime{
+			Time:  lastSeenBefore.UTC(),
+			Valid: true},
+	})
+	if err != nil {
+		return nil, workerError(err, "finding timed out workers (last seen before %s)", lastSeenBefore.String())
+	}
+
+	result := make([]*Worker, len(sqlcWorkers))
+	for index := range sqlcWorkers {
+		result[index] = convertSqlcWorker(sqlcWorkers[index])
 	}
 	return result, nil
 }

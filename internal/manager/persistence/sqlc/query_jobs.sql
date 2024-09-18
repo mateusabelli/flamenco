@@ -317,3 +317,10 @@ WHERE jobs.uuid=@job_uuid;
 -- name: SummarizeJobStatuses :many
 SELECT status, count(id) as status_count FROM jobs
 GROUP BY status;
+
+-- name: FetchTimedOutTasks :many
+SELECT *
+FROM tasks
+WHERE
+    status = @task_status
+AND last_touched_at <= @untouched_since;

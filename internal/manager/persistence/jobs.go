@@ -619,7 +619,7 @@ func convertSqlTaskWithJobAndWorker(
 		if err != nil {
 			return nil, taskError(err, "fetching worker assigned to task %s", task.UUID)
 		}
-		gormWorker = convertSqlcWorker(sqlcWorker)
+		gormWorker = *convertSqlcWorker(sqlcWorker)
 	}
 
 	// Convert the Task.
@@ -1051,8 +1051,7 @@ func (db *DB) FetchTaskFailureList(ctx context.Context, t *Task) ([]*Worker, err
 
 	workers := make([]*Worker, len(failureList))
 	for idx := range failureList {
-		worker := convertSqlcWorker(failureList[idx].Worker)
-		workers[idx] = &worker
+		workers[idx] = convertSqlcWorker(failureList[idx].Worker)
 	}
 	return workers, nil
 }

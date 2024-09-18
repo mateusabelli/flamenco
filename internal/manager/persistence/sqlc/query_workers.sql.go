@@ -182,6 +182,71 @@ func (q *Queries) FetchTagsOfWorker(ctx context.Context, uuid string) ([]WorkerT
 	return items, nil
 }
 
+const fetchTimedOutWorkers = `-- name: FetchTimedOutWorkers :many
+SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart
+FROM workers
+WHERE
+    last_seen_at <= ?1
+AND deleted_at IS NULL
+AND status NOT IN (/*SLICE:worker_statuses_no_timeout*/?)
+`
+
+type FetchTimedOutWorkersParams struct {
+	LastSeenBefore          sql.NullTime
+	WorkerStatusesNoTimeout []string
+}
+
+func (q *Queries) FetchTimedOutWorkers(ctx context.Context, arg FetchTimedOutWorkersParams) ([]Worker, error) {
+	query := fetchTimedOutWorkers
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.LastSeenBefore)
+	if len(arg.WorkerStatusesNoTimeout) > 0 {
+		for _, v := range arg.WorkerStatusesNoTimeout {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:worker_statuses_no_timeout*/?", strings.Repeat(",?", len(arg.WorkerStatusesNoTimeout))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:worker_statuses_no_timeout*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Worker
+	for rows.Next() {
+		var i Worker
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UUID,
+			&i.Secret,
+			&i.Name,
+			&i.Address,
+			&i.Platform,
+			&i.Software,
+			&i.Status,
+			&i.LastSeenAt,
+			&i.StatusRequested,
+			&i.LazyStatusRequest,
+			&i.SupportedTaskTypes,
+			&i.DeletedAt,
+			&i.CanRestart,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const fetchWorker = `-- name: FetchWorker :one
 SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart FROM workers WHERE workers.uuid = ?1 and deleted_at is NULL
 `

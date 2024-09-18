@@ -851,6 +851,56 @@ func (q *Queries) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, arg Fetch
 	return items, nil
 }
 
+const fetchTimedOutTasks = `-- name: FetchTimedOutTasks :many
+SELECT id, created_at, updated_at, uuid, name, type, job_id, priority, status, worker_id, last_touched_at, commands, activity
+FROM tasks
+WHERE
+    status = ?1
+AND last_touched_at <= ?2
+`
+
+type FetchTimedOutTasksParams struct {
+	TaskStatus     string
+	UntouchedSince sql.NullTime
+}
+
+func (q *Queries) FetchTimedOutTasks(ctx context.Context, arg FetchTimedOutTasksParams) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, fetchTimedOutTasks, arg.TaskStatus, arg.UntouchedSince)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UUID,
+			&i.Name,
+			&i.Type,
+			&i.JobID,
+			&i.Priority,
+			&i.Status,
+			&i.WorkerID,
+			&i.LastTouchedAt,
+			&i.Commands,
+			&i.Activity,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLastRenderedJobUUID = `-- name: GetLastRenderedJobUUID :one
 SELECT uuid FROM jobs
 INNER JOIN last_rendereds LR ON jobs.id = LR.job_id
