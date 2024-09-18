@@ -38,10 +38,7 @@ func (db *DB) AddWorkerToJobBlocklist(ctx context.Context, job *Job, worker *Wor
 		panic("Cannot add worker to job blocklist with empty task type")
 	}
 
-	queries, err := db.queries()
-	if err != nil {
-		return err
-	}
+	queries := db.queries()
 
 	return queries.AddWorkerToJobBlocklist(ctx, sqlc.AddWorkerToJobBlocklistParams{
 		CreatedAt: db.now().Time,
@@ -54,10 +51,7 @@ func (db *DB) AddWorkerToJobBlocklist(ctx context.Context, job *Job, worker *Wor
 // FetchJobBlocklist fetches the blocklist for the given job.
 // Workers are fetched too, and embedded in the returned list.
 func (db *DB) FetchJobBlocklist(ctx context.Context, jobUUID string) ([]JobBlock, error) {
-	queries, err := db.queries()
-	if err != nil {
-		return nil, err
-	}
+	queries := db.queries()
 
 	rows, err := queries.FetchJobBlocklist(ctx, jobUUID)
 	if err != nil {
@@ -81,18 +75,12 @@ func (db *DB) FetchJobBlocklist(ctx context.Context, jobUUID string) ([]JobBlock
 
 // ClearJobBlocklist removes the entire blocklist of this job.
 func (db *DB) ClearJobBlocklist(ctx context.Context, job *Job) error {
-	queries, err := db.queries()
-	if err != nil {
-		return err
-	}
+	queries := db.queries()
 	return queries.ClearJobBlocklist(ctx, job.UUID)
 }
 
 func (db *DB) RemoveFromJobBlocklist(ctx context.Context, jobUUID, workerUUID, taskType string) error {
-	queries, err := db.queries()
-	if err != nil {
-		return err
-	}
+	queries := db.queries()
 	return queries.RemoveFromJobBlocklist(ctx, sqlc.RemoveFromJobBlocklistParams{
 		JobUUID:    jobUUID,
 		WorkerUUID: workerUUID,

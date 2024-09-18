@@ -21,10 +21,7 @@ type LastRendered struct {
 
 // SetLastRendered sets this job as the one with the most recent rendered image.
 func (db *DB) SetLastRendered(ctx context.Context, j *Job) error {
-	queries, err := db.queries()
-	if err != nil {
-		return err
-	}
+	queries := db.queries()
 
 	now := db.now()
 	return queries.SetLastRendered(ctx, sqlc.SetLastRenderedParams{
@@ -36,10 +33,7 @@ func (db *DB) SetLastRendered(ctx context.Context, j *Job) error {
 
 // GetLastRendered returns the UUID of the job with the most recent rendered image.
 func (db *DB) GetLastRenderedJobUUID(ctx context.Context) (string, error) {
-	queries, err := db.queries()
-	if err != nil {
-		return "", err
-	}
+	queries := db.queries()
 
 	jobUUID, err := queries.GetLastRenderedJobUUID(ctx)
 	if errors.Is(err, sql.ErrNoRows) {

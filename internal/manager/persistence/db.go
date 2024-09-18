@@ -179,14 +179,19 @@ func (db *DB) Close() error {
 // queries returns the SQLC Queries struct, connected to this database.
 // It is intended that all GORM queries will be migrated to use this interface
 // instead.
-func (db *DB) queries() (*sqlc.Queries, error) {
+//
+// Note that this function does not return an error. Instead it just panics when
+// it cannot obtain the low-level GORM database interface. I have no idea when
+// this will ever fail, so I'm opting to simplify the use of this function
+// instead.
+func (db *DB) queries() *sqlc.Queries {
 	sqldb, err := db.gormDB.DB()
 	if err != nil {
-		return nil, fmt.Errorf("could not get low-level database driver: %w", err)
+		panic(fmt.Sprintf("could not get low-level database driver: %v", err))
 	}
 
 	loggingWrapper := LoggingDBConn{sqldb}
-	return sqlc.New(&loggingWrapper), nil
+	return sqlc.New(&loggingWrapper)
 }
 
 type queriesTX struct {
@@ -205,7 +210,7 @@ type queriesTX struct {
 func (db *DB) queriesWithTX() (*queriesTX, error) {
 	sqldb, err := db.gormDB.DB()
 	if err != nil {
-		return nil, fmt.Errorf("could not get low-level database driver: %w", err)
+		panic(fmt.Sprintf("could not get low-level database driver: %v", err))
 	}
 
 	tx, err := sqldb.Begin()

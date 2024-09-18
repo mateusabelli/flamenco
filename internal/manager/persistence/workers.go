@@ -69,10 +69,7 @@ func (w *Worker) StatusChangeClear() {
 }
 
 func (db *DB) CreateWorker(ctx context.Context, w *Worker) error {
-	queries, err := db.queries()
-	if err != nil {
-		return err
-	}
+	queries := db.queries()
 
 	now := db.now().Time
 	workerID, err := queries.CreateWorker(ctx, sqlc.CreateWorkerParams{
@@ -117,10 +114,7 @@ func (db *DB) CreateWorker(ctx context.Context, w *Worker) error {
 }
 
 func (db *DB) FetchWorker(ctx context.Context, uuid string) (*Worker, error) {
-	queries, err := db.queries()
-	if err != nil {
-		return nil, err
-	}
+	queries := db.queries()
 
 	worker, err := queries.FetchWorker(ctx, uuid)
 	if err != nil {
@@ -153,10 +147,7 @@ func (db *DB) DeleteWorker(ctx context.Context, uuid string) error {
 		return ErrDeletingWithoutFK
 	}
 
-	queries, err := db.queries()
-	if err != nil {
-		return err
-	}
+	queries := db.queries()
 
 	rowsAffected, err := queries.SoftDeleteWorker(ctx, sqlc.SoftDeleteWorkerParams{
 		DeletedAt: db.now(),
@@ -172,10 +163,7 @@ func (db *DB) DeleteWorker(ctx context.Context, uuid string) error {
 }
 
 func (db *DB) FetchWorkers(ctx context.Context) ([]*Worker, error) {
-	queries, err := db.queries()
-	if err != nil {
-		return nil, err
-	}
+	queries := db.queries()
 
 	workers, err := queries.FetchWorkers(ctx)
 	if err != nil {
@@ -192,10 +180,7 @@ func (db *DB) FetchWorkers(ctx context.Context) ([]*Worker, error) {
 
 // FetchWorkerTask returns the most recent task assigned to the given Worker.
 func (db *DB) FetchWorkerTask(ctx context.Context, worker *Worker) (*Task, error) {
-	queries, err := db.queries()
-	if err != nil {
-		return nil, err
-	}
+	queries := db.queries()
 
 	// Convert the WorkerID to a NullInt64. As task.worker_id can be NULL, this is
 	// what sqlc expects us to pass in.
@@ -238,12 +223,9 @@ func (db *DB) FetchWorkerTask(ctx context.Context, worker *Worker) (*Task, error
 }
 
 func (db *DB) SaveWorkerStatus(ctx context.Context, w *Worker) error {
-	queries, err := db.queries()
-	if err != nil {
-		return err
-	}
+	queries := db.queries()
 
-	err = queries.SaveWorkerStatus(ctx, sqlc.SaveWorkerStatusParams{
+	err := queries.SaveWorkerStatus(ctx, sqlc.SaveWorkerStatusParams{
 		UpdatedAt:         db.now(),
 		Status:            string(w.Status),
 		StatusRequested:   string(w.StatusRequested),
@@ -262,12 +244,9 @@ func (db *DB) SaveWorker(ctx context.Context, w *Worker) error {
 		return db.CreateWorker(ctx, w)
 	}
 
-	queries, err := db.queries()
-	if err != nil {
-		return err
-	}
+	queries := db.queries()
 
-	err = queries.SaveWorker(ctx, sqlc.SaveWorkerParams{
+	err := queries.SaveWorker(ctx, sqlc.SaveWorkerParams{
 		UpdatedAt:          db.now(),
 		UUID:               w.UUID,
 		Secret:             w.Secret,
@@ -291,13 +270,10 @@ func (db *DB) SaveWorker(ctx context.Context, w *Worker) error {
 
 // WorkerSeen marks the worker as 'seen' by this Manager. This is used for timeout detection.
 func (db *DB) WorkerSeen(ctx context.Context, w *Worker) error {
-	queries, err := db.queries()
-	if err != nil {
-		return err
-	}
+	queries := db.queries()
 
 	now := db.now()
-	err = queries.WorkerSeen(ctx, sqlc.WorkerSeenParams{
+	err := queries.WorkerSeen(ctx, sqlc.WorkerSeenParams{
 		UpdatedAt:  now,
 		LastSeenAt: now,
 		ID:         int64(w.ID),
@@ -315,10 +291,7 @@ func (db *DB) SummarizeWorkerStatuses(ctx context.Context) (WorkerStatusCount, e
 	logger := log.Ctx(ctx)
 	logger.Debug().Msg("database: summarizing worker statuses")
 
-	queries, err := db.queries()
-	if err != nil {
-		return nil, err
-	}
+	queries := db.queries()
 
 	rows, err := queries.SummarizeWorkerStatuses(ctx)
 	if err != nil {

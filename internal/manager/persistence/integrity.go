@@ -89,12 +89,7 @@ func (db *DB) performIntegrityCheck(ctx context.Context) (ok bool) {
 //
 // See https: //www.sqlite.org/pragma.html#pragma_integrity_check
 func (db *DB) pragmaIntegrityCheck(ctx context.Context) (ok bool) {
-	queries, err := db.queries()
-	if err != nil {
-		log.Error().Err(err).Msg("database: could not obtain queries object")
-		return false
-	}
-
+	queries := db.queries()
 	issues, err := queries.PragmaIntegrityCheck(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("database: error checking integrity")
