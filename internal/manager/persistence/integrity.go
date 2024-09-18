@@ -16,10 +16,6 @@ const (
 	integrityCheckTimeout = 10 * time.Second
 )
 
-type PragmaIntegrityCheckResult struct {
-	Description string `gorm:"column:integrity_check"`
-}
-
 type PragmaForeignKeyCheckResult struct {
 	Table  string `gorm:"column:table"`
 	RowID  int    `gorm:"column:rowid"`
@@ -93,13 +89,15 @@ func (db *DB) performIntegrityCheck(ctx context.Context) (ok bool) {
 //
 // See https: //www.sqlite.org/pragma.html#pragma_integrity_check
 func (db *DB) pragmaIntegrityCheck(ctx context.Context) (ok bool) {
-	var issues []PragmaIntegrityCheckResult
+	queries, err := db.queries()
+	if err != nil {
+		log.Error().Err(err).Msg("database: could not obtain queries object")
+		return false
+	}
 
-	tx := db.gormDB.WithContext(ctx).
-		Raw("PRAGMA integrity_check").
-		Scan(&issues)
-	if tx.Error != nil {
-		log.Error().Err(tx.Error).Msg("database: error checking integrity")
+	issues, err := queries.PragmaIntegrityCheck(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("database: error checking integrity")
 		return false
 	}
 
