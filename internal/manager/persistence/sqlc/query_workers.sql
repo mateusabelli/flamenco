@@ -160,3 +160,9 @@ WHERE
     last_seen_at <= @last_seen_before
 AND deleted_at IS NULL
 AND status NOT IN (sqlc.slice('worker_statuses_no_timeout'));
+
+-- name: FetchWorkerSleepSchedule :one
+SELECT sleep_schedules.*
+FROM sleep_schedules
+INNER JOIN workers on workers.id = sleep_schedules.worker_id
+WHERE workers.uuid = @workerUUID;

@@ -4,11 +4,14 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm/clause"
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 )
 
 // SleepSchedule belongs to a Worker, and determines when it's automatically
@@ -37,19 +40,17 @@ func (db *DB) FetchWorkerSleepSchedule(ctx context.Context, workerUUID string) (
 	logger := log.With().Str("worker", workerUUID).Logger()
 	logger.Trace().Msg("fetching worker sleep schedule")
 
-	var sched SleepSchedule
-	tx := db.gormDB.WithContext(ctx).
-		Joins("inner join workers on workers.id = sleep_schedules.worker_id").
-		Where("workers.uuid = ?", workerUUID).
-		// This is the same as First(&sched), except it doesn't cause an error if it doesn't exist:
-		Limit(1).Find(&sched)
-	if tx.Error != nil {
-		return nil, tx.Error
-	}
-	if sched.ID == 0 {
+	queries := db.queries()
+
+	sqlcSched, err := queries.FetchWorkerSleepSchedule(ctx, workerUUID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
+	case err != nil:
+		return nil, err
 	}
-	return &sched, nil
+
+	return convertSqlcSleepSchedule(sqlcSched)
 }
 
 func (db *DB) SetWorkerSleepSchedule(ctx context.Context, workerUUID string, schedule *SleepSchedule) error {
@@ -124,4 +125,29 @@ func (db *DB) FetchSleepSchedulesToCheck(ctx context.Context) ([]*SleepSchedule,
 		return nil, tx.Error
 	}
 	return schedules, nil
+}
+
+func convertSqlcSleepSchedule(sqlcSchedule sqlc.SleepSchedule) (*SleepSchedule, error) {
+	schedule := SleepSchedule{
+		Model: Model{
+			ID:        uint(sqlcSchedule.ID),
+			CreatedAt: sqlcSchedule.CreatedAt,
+			UpdatedAt: sqlcSchedule.UpdatedAt.Time,
+		},
+		WorkerID:   uint(sqlcSchedule.WorkerID),
+		IsActive:   sqlcSchedule.IsActive,
+		DaysOfWeek: sqlcSchedule.DaysOfWeek,
+	}
+
+	err := schedule.StartTime.Scan(sqlcSchedule.StartTime)
+	if err != nil {
+		return nil, fmt.Errorf("parsing schedule start time %q: %w", sqlcSchedule.StartTime, err)
+	}
+
+	err = schedule.EndTime.Scan(sqlcSchedule.EndTime)
+	if err != nil {
+		return nil, fmt.Errorf("parsing schedule end time %q: %w", sqlcSchedule.EndTime, err)
+	}
+
+	return &schedule, nil
 }

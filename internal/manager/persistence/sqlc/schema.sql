@@ -39,7 +39,7 @@ CREATE TABLE sleep_schedules (
   created_at datetime NOT NULL,
   updated_at datetime,
   worker_id integer UNIQUE DEFAULT 0 NOT NULL,
-  is_active numeric DEFAULT false NOT NULL,
+  is_active boolean DEFAULT false NOT NULL,
   days_of_week text DEFAULT '' NOT NULL,
   start_time text DEFAULT '' NOT NULL,
   end_time text DEFAULT '' NOT NULL,

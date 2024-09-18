@@ -47,7 +47,7 @@ type SleepSchedule struct {
 	CreatedAt  time.Time
 	UpdatedAt  sql.NullTime
 	WorkerID   int64
-	IsActive   float64
+	IsActive   bool
 	DaysOfWeek string
 	StartTime  string
 	EndTime    string

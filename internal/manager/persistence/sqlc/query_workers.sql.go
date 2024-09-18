@@ -276,6 +276,30 @@ func (q *Queries) FetchWorker(ctx context.Context, uuid string) (Worker, error) 
 	return i, err
 }
 
+const fetchWorkerSleepSchedule = `-- name: FetchWorkerSleepSchedule :one
+SELECT sleep_schedules.id, sleep_schedules.created_at, sleep_schedules.updated_at, sleep_schedules.worker_id, sleep_schedules.is_active, sleep_schedules.days_of_week, sleep_schedules.start_time, sleep_schedules.end_time, sleep_schedules.next_check
+FROM sleep_schedules
+INNER JOIN workers on workers.id = sleep_schedules.worker_id
+WHERE workers.uuid = ?1
+`
+
+func (q *Queries) FetchWorkerSleepSchedule(ctx context.Context, workeruuid string) (SleepSchedule, error) {
+	row := q.db.QueryRowContext(ctx, fetchWorkerSleepSchedule, workeruuid)
+	var i SleepSchedule
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.WorkerID,
+		&i.IsActive,
+		&i.DaysOfWeek,
+		&i.StartTime,
+		&i.EndTime,
+		&i.NextCheck,
+	)
+	return i, err
+}
+
 const fetchWorkerTagByID = `-- name: FetchWorkerTagByID :one
 SELECT id, created_at, updated_at, uuid, name, description
 FROM worker_tags
