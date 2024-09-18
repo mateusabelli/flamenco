@@ -59,17 +59,11 @@ func (f *Flamenco) FetchJob(e echo.Context, jobID string) error {
 	return e.JSON(http.StatusOK, apiJob)
 }
 
-func (f *Flamenco) QueryJobs(e echo.Context) error {
+func (f *Flamenco) FetchJobs(e echo.Context) error {
 	logger := requestLogger(e)
 
-	var jobsQuery api.QueryJobsJSONRequestBody
-	if err := e.Bind(&jobsQuery); err != nil {
-		logger.Warn().Err(err).Msg("bad request received")
-		return sendAPIError(e, http.StatusBadRequest, "invalid format")
-	}
-
 	ctx := e.Request().Context()
-	dbJobs, err := f.persist.QueryJobs(ctx, api.JobsQuery(jobsQuery))
+	dbJobs, err := f.persist.FetchJobs(ctx)
 	switch {
 	case errors.Is(err, context.Canceled):
 		logger.Debug().AnErr("cause", err).Msg("could not query for jobs, remote end probably closed the connection")

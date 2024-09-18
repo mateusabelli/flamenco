@@ -33,6 +33,8 @@ type PersistenceService interface {
 	StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.AuthoredJob) error
 	// FetchJob fetches a single job, without fetching its tasks.
 	FetchJob(ctx context.Context, jobID string) (*persistence.Job, error)
+	FetchJobs(ctx context.Context) ([]*persistence.Job, error)
+
 	SaveJobPriority(ctx context.Context, job *persistence.Job) error
 	// FetchTask fetches the given task and the accompanying job.
 	FetchTask(ctx context.Context, taskID string) (*persistence.Task, error)
@@ -81,7 +83,6 @@ type PersistenceService interface {
 	CountTaskFailuresOfWorker(ctx context.Context, job *persistence.Job, worker *persistence.Worker, taskType string) (int, error)
 
 	// Database queries.
-	QueryJobs(ctx context.Context, query api.JobsQuery) ([]*persistence.Job, error)
 	QueryJobTaskSummaries(ctx context.Context, jobUUID string) ([]*persistence.Task, error)
 
 	// SetLastRendered sets this job as the one with the most recent rendered image.

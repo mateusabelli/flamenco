@@ -13,7 +13,7 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
-func TestQueryJobs(t *testing.T) {
+func TestFetchJobs(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -48,10 +48,10 @@ func TestQueryJobs(t *testing.T) {
 
 	echoCtx := mf.prepareMockedRequest(nil)
 	ctx := echoCtx.Request().Context()
-	mf.persistence.EXPECT().QueryJobs(ctx, api.JobsQuery{}).
+	mf.persistence.EXPECT().FetchJobs(ctx).
 		Return([]*persistence.Job{&activeJob, &deletionQueuedJob}, nil)
 
-	err := mf.flamenco.QueryJobs(echoCtx)
+	err := mf.flamenco.FetchJobs(echoCtx)
 	require.NoError(t, err)
 
 	expectedJobs := api.JobsQueryResult{

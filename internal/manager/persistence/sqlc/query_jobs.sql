@@ -65,6 +65,10 @@ WHERE uuid = ? LIMIT 1;
 SELECT * FROM jobs
 WHERE id = ? LIMIT 1;
 
+-- name: FetchJobs :many
+-- Fetch all jobs in the database.
+SELECT * fRoM jobs;
+
 -- name: FetchJobShamanCheckoutID :one
 SELECT storage_shaman_checkout_id FROM jobs WHERE uuid=@uuid;
 

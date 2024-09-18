@@ -136,9 +136,8 @@ export default {
     },
     fetchAllJobs() {
       const jobsApi = new API.JobsApi(getAPIClient());
-      const jobsQuery = {};
       this.jobs.isJobless = false;
-      jobsApi.queryJobs(jobsQuery).then(this.onJobsFetched, function (error) {
+      jobsApi.fetchJobs().then(this.onJobsFetched, function (error) {
         // TODO: error handling.
         console.error(error);
       });

@@ -21,7 +21,6 @@ import (
 	"projects.blender.org/studio/flamenco/internal/appinfo"
 	"projects.blender.org/studio/flamenco/internal/manager/config"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
-	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
 func main() {
@@ -72,7 +71,7 @@ func main() {
 	defer persist.Close()
 
 	// Get all jobs from the database.
-	jobs, err := persist.QueryJobs(ctx, api.JobsQuery{})
+	jobs, err := persist.FetchJobs(ctx)
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to fetch jobs")
 	}

@@ -214,6 +214,21 @@ func (mr *MockPersistenceServiceMockRecorder) FetchJobBlocklist(arg0, arg1 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchJobBlocklist", reflect.TypeOf((*MockPersistenceService)(nil).FetchJobBlocklist), arg0, arg1)
 }
 
+// FetchJobs mocks base method.
+func (m *MockPersistenceService) FetchJobs(arg0 context.Context) ([]*persistence.Job, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchJobs", arg0)
+	ret0, _ := ret[0].([]*persistence.Job)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchJobs indicates an expected call of FetchJobs.
+func (mr *MockPersistenceServiceMockRecorder) FetchJobs(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchJobs", reflect.TypeOf((*MockPersistenceService)(nil).FetchJobs), arg0)
+}
+
 // FetchTask mocks base method.
 func (m *MockPersistenceService) FetchTask(arg0 context.Context, arg1 string) (*persistence.Task, error) {
 	m.ctrl.T.Helper()
@@ -362,21 +377,6 @@ func (m *MockPersistenceService) QueryJobTaskSummaries(arg0 context.Context, arg
 func (mr *MockPersistenceServiceMockRecorder) QueryJobTaskSummaries(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryJobTaskSummaries", reflect.TypeOf((*MockPersistenceService)(nil).QueryJobTaskSummaries), arg0, arg1)
-}
-
-// QueryJobs mocks base method.
-func (m *MockPersistenceService) QueryJobs(arg0 context.Context, arg1 api.JobsQuery) ([]*persistence.Job, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "QueryJobs", arg0, arg1)
-	ret0, _ := ret[0].([]*persistence.Job)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// QueryJobs indicates an expected call of QueryJobs.
-func (mr *MockPersistenceServiceMockRecorder) QueryJobs(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryJobs", reflect.TypeOf((*MockPersistenceService)(nil).QueryJobs), arg0, arg1)
 }
 
 // RemoveFromJobBlocklist mocks base method.

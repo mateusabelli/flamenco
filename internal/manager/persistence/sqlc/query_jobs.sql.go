@@ -398,6 +398,49 @@ func (q *Queries) FetchJobUUIDsUpdatedBefore(ctx context.Context, updatedAtMax s
 	return items, nil
 }
 
+const fetchJobs = `-- name: FetchJobs :many
+SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activity, settings, metadata, delete_requested_at, storage_shaman_checkout_id, worker_tag_id fRoM jobs
+`
+
+// Fetch all jobs in the database.
+func (q *Queries) FetchJobs(ctx context.Context) ([]Job, error) {
+	rows, err := q.db.QueryContext(ctx, fetchJobs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Job
+	for rows.Next() {
+		var i Job
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UUID,
+			&i.Name,
+			&i.JobType,
+			&i.Priority,
+			&i.Status,
+			&i.Activity,
+			&i.Settings,
+			&i.Metadata,
+			&i.DeleteRequestedAt,
+			&i.StorageShamanCheckoutID,
+			&i.WorkerTagID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const fetchJobsDeletionRequested = `-- name: FetchJobsDeletionRequested :many
 SELECT uuid FROM jobs
   WHERE delete_requested_at is not NULL

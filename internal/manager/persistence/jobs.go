@@ -371,6 +371,38 @@ func (db *DB) FetchJob(ctx context.Context, jobUUID string) (*Job, error) {
 	return &gormJob, nil
 }
 
+func (db *DB) FetchJobs(ctx context.Context) ([]*Job, error) {
+	queries := db.queries()
+
+	sqlcJobs, err := queries.FetchJobs(ctx)
+	if err != nil {
+		return nil, jobError(err, "fetching all jobs")
+	}
+
+	gormJobs := make([]*Job, len(sqlcJobs))
+	for index, sqlcJob := range sqlcJobs {
+		gormJob, err := convertSqlcJob(sqlcJob)
+		if err != nil {
+			return nil, err
+		}
+
+		if sqlcJob.WorkerTagID.Valid {
+			workerTag, err := fetchWorkerTagByID(db.gormDB, uint(sqlcJob.WorkerTagID.Int64))
+			switch {
+			case errors.Is(err, sql.ErrNoRows):
+				return nil, ErrWorkerTagNotFound
+			case err != nil:
+				return nil, workerTagError(err, "fetching worker tag of job")
+			}
+			gormJob.WorkerTag = workerTag
+		}
+
+		gormJobs[index] = &gormJob
+	}
+
+	return gormJobs, nil
+}
+
 // FetchJobShamanCheckoutID fetches the job's Shaman Checkout ID.
 func (db *DB) FetchJobShamanCheckoutID(ctx context.Context, jobUUID string) (string, error) {
 	queries := db.queries()
