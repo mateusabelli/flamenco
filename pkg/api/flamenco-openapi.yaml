@@ -744,7 +744,22 @@ paths:
               schema: { $ref: "#/components/schemas/AvailableJobType" }
 
   /api/v3/jobs:
-    summary: Job submission endpoint.
+    summary: Job submission and listing endpoint.
+    get:
+      operationId: fetchJobs
+      summary: List all jobs in the database.
+      tags: [jobs]
+      responses:
+        "200":
+          description: Normal query response, can be empty list if there are no jobs.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JobsQueryResult" }
+        default:
+          description: Error message
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
     post:
       operationId: submitJob
       summary: Submit a new job for Flamenco Manager to execute.
@@ -834,31 +849,6 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
-        default:
-          description: Error message
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Error" }
-
-  /api/v3/jobs/query:
-    summary: Obtain jobs with filtering and sorting.
-    post:
-      operationId: queryJobs
-      summary: Fetch list of jobs.
-      tags: [jobs]
-      requestBody:
-        description: Specification of which jobs to get.
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/JobsQuery"
-      responses:
-        "200":
-          description: Normal query response, can be empty list if nothing matched the query.
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/JobsQueryResult" }
         default:
           description: Error message
           content:
