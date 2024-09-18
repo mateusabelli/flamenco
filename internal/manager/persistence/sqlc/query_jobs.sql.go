@@ -84,6 +84,28 @@ func (q *Queries) ClearJobBlocklist(ctx context.Context, jobuuid string) error {
 	return err
 }
 
+const countTaskFailuresOfWorker = `-- name: CountTaskFailuresOfWorker :one
+SELECT count(TF.task_id) FROM task_failures TF
+INNER JOIN tasks T ON TF.task_id = T.id
+WHERE
+    TF.worker_id = ?1
+AND T.job_id = ?2
+AND T.type = ?3
+`
+
+type CountTaskFailuresOfWorkerParams struct {
+	WorkerID int64
+	JobID    int64
+	TaskType string
+}
+
+func (q *Queries) CountTaskFailuresOfWorker(ctx context.Context, arg CountTaskFailuresOfWorkerParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countTaskFailuresOfWorker, arg.WorkerID, arg.JobID, arg.TaskType)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countWorkersFailingTask = `-- name: CountWorkersFailingTask :one
 SELECT count(*) as num_failed FROM task_failures
 WHERE task_id=?1
@@ -1177,4 +1199,88 @@ type UpdateTaskStatusParams struct {
 func (q *Queries) UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusParams) error {
 	_, err := q.db.ExecContext(ctx, updateTaskStatus, arg.UpdatedAt, arg.Status, arg.ID)
 	return err
+}
+
+const workersLeftToRun = `-- name: WorkersLeftToRun :many
+SELECT workers.uuid FROM workers
+WHERE id NOT IN (
+  SELECT blocked_workers.id
+  FROM workers AS blocked_workers
+  INNER JOIN job_blocks JB on blocked_workers.id = JB.worker_id
+  WHERE
+      JB.job_id = ?1
+  AND JB.task_type = ?2
+)
+`
+
+type WorkersLeftToRunParams struct {
+	JobID    int64
+	TaskType string
+}
+
+func (q *Queries) WorkersLeftToRun(ctx context.Context, arg WorkersLeftToRunParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, workersLeftToRun, arg.JobID, arg.TaskType)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var uuid string
+		if err := rows.Scan(&uuid); err != nil {
+			return nil, err
+		}
+		items = append(items, uuid)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const workersLeftToRunWithWorkerTag = `-- name: WorkersLeftToRunWithWorkerTag :many
+SELECT workers.uuid
+FROM workers
+INNER JOIN worker_tag_membership WTM ON workers.id = WTM.worker_id
+WHERE id NOT IN (
+  SELECT blocked_workers.id
+  FROM workers AS blocked_workers
+  INNER JOIN job_blocks JB ON blocked_workers.id = JB.worker_id
+  WHERE
+      JB.job_id = ?1
+  AND JB.task_type = ?2
+)
+AND WTM.worker_tag_id = ?3
+`
+
+type WorkersLeftToRunWithWorkerTagParams struct {
+	JobID       int64
+	TaskType    string
+	WorkerTagID int64
+}
+
+func (q *Queries) WorkersLeftToRunWithWorkerTag(ctx context.Context, arg WorkersLeftToRunWithWorkerTagParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, workersLeftToRunWithWorkerTag, arg.JobID, arg.TaskType, arg.WorkerTagID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var uuid string
+		if err := rows.Scan(&uuid); err != nil {
+			return nil, err
+		}
+		items = append(items, uuid)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

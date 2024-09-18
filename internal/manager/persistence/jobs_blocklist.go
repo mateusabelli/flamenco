@@ -93,42 +93,33 @@ func (db *DB) RemoveFromJobBlocklist(ctx context.Context, jobUUID, workerUUID, t
 // NOTE: this does NOT consider the task failure list, which blocks individual
 // workers from individual tasks. This is ONLY concerning the job blocklist.
 func (db *DB) WorkersLeftToRun(ctx context.Context, job *Job, taskType string) (map[string]bool, error) {
-	// Find the IDs of the workers blocked on this job + tasktype combo.
-	blockedWorkers := db.gormDB.
-		Table("workers as blocked_workers").
-		Select("blocked_workers.id").
-		Joins("inner join job_blocks JB on blocked_workers.id = JB.worker_id").
-		Where("JB.job_id = ?", job.ID).
-		Where("JB.task_type = ?", taskType)
+	queries := db.queries()
 
-	query := db.gormDB.WithContext(ctx).
-		Model(&Worker{}).
-		Select("uuid").
-		Where("id not in (?)", blockedWorkers)
-
+	var (
+		workerUUIDs []string
+		err         error
+	)
 	if job.WorkerTagID == nil {
-		// Count all workers, so no extra restrictions are necessary.
+		workerUUIDs, err = queries.WorkersLeftToRun(ctx, sqlc.WorkersLeftToRunParams{
+			JobID:    int64(job.ID),
+			TaskType: taskType,
+		})
 	} else {
-		// Only count workers in the job's tag.
-		jobTag := db.gormDB.
-			Table("worker_tag_membership").
-			Select("worker_id").
-			Where("worker_tag_id = ?", *job.WorkerTagID)
-		query = query.
-			Where("id in (?)", jobTag)
+		workerUUIDs, err = queries.WorkersLeftToRunWithWorkerTag(ctx,
+			sqlc.WorkersLeftToRunWithWorkerTagParams{
+				JobID:       int64(job.ID),
+				TaskType:    taskType,
+				WorkerTagID: int64(*job.WorkerTagID),
+			})
+	}
+	if err != nil {
+		return nil, err
 	}
 
-	// Find the workers NOT blocked.
-	workers := []*Worker{}
-	tx := query.Scan(&workers)
-	if tx.Error != nil {
-		return nil, tx.Error
-	}
-
-	// From the list of workers, construct the map of UUIDs.
+	// Construct a map of UUIDs.
 	uuidMap := map[string]bool{}
-	for _, worker := range workers {
-		uuidMap[worker.UUID] = true
+	for _, uuid := range workerUUIDs {
+		uuidMap[uuid] = true
 	}
 
 	return uuidMap, nil
@@ -138,17 +129,16 @@ func (db *DB) WorkersLeftToRun(ctx context.Context, job *Job, taskType string) (
 func (db *DB) CountTaskFailuresOfWorker(ctx context.Context, job *Job, worker *Worker, taskType string) (int, error) {
 	var numFailures int64
 
-	tx := db.gormDB.WithContext(ctx).
-		Model(&TaskFailure{}).
-		Joins("inner join tasks T on task_failures.task_id = T.id").
-		Where("task_failures.worker_id = ?", worker.ID).
-		Where("T.job_id = ?", job.ID).
-		Where("T.type = ?", taskType).
-		Count(&numFailures)
+	queries := db.queries()
+	numFailures, err := queries.CountTaskFailuresOfWorker(ctx, sqlc.CountTaskFailuresOfWorkerParams{
+		JobID:    int64(job.ID),
+		WorkerID: int64(worker.ID),
+		TaskType: taskType,
+	})
 
 	if numFailures > math.MaxInt {
 		panic("overflow error in number of failures")
 	}
 
-	return int(numFailures), tx.Error
+	return int(numFailures), err
 }

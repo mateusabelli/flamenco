@@ -269,3 +269,36 @@ WHERE
     job_blocks.job_id in (SELECT jobs.id FROM jobs WHERE jobs.uuid=@jobuuid)
 AND job_blocks.worker_id in (SELECT workers.id FROM workers WHERE workers.uuid=@workeruuid)
 AND job_blocks.task_type = @task_type;
+
+-- name: WorkersLeftToRun :many
+SELECT workers.uuid FROM workers
+WHERE id NOT IN (
+  SELECT blocked_workers.id
+  FROM workers AS blocked_workers
+  INNER JOIN job_blocks JB on blocked_workers.id = JB.worker_id
+  WHERE
+      JB.job_id = @job_id
+  AND JB.task_type = @task_type
+);
+
+-- name: WorkersLeftToRunWithWorkerTag :many
+SELECT workers.uuid
+FROM workers
+INNER JOIN worker_tag_membership WTM ON workers.id = WTM.worker_id
+WHERE id NOT IN (
+  SELECT blocked_workers.id
+  FROM workers AS blocked_workers
+  INNER JOIN job_blocks JB ON blocked_workers.id = JB.worker_id
+  WHERE
+      JB.job_id = @job_id
+  AND JB.task_type = @task_type
+)
+AND WTM.worker_tag_id = @worker_tag_id;
+
+-- name: CountTaskFailuresOfWorker :one
+SELECT count(TF.task_id) FROM task_failures TF
+INNER JOIN tasks T ON TF.task_id = T.id
+WHERE
+    TF.worker_id = @worker_id
+AND T.job_id = @job_id
+AND T.type = @task_type;
