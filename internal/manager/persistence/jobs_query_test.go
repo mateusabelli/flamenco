@@ -100,7 +100,7 @@ func TestSummarizeJobStatusesTimeout(t *testing.T) {
 
 	// Force a timeout of the context. And yes, even when a nanosecond is quite
 	// short, it is still necessary to wait.
-	time.Sleep(2 * time.Nanosecond)
+	time.Sleep(2 * time.Millisecond)
 
 	summary, err := db.SummarizeJobStatuses(subCtx)
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
