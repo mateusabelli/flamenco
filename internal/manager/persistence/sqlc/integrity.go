@@ -63,3 +63,40 @@ func (q *Queries) PragmaForeignKeysGet(ctx context.Context) (bool, error) {
 	err := row.Scan(&fkEnabled)
 	return fkEnabled, err
 }
+
+const pragmaForeignKeyCheck = `PRAGMA foreign_key_check`
+
+type PragmaForeignKeyCheckResult struct {
+	Table  string
+	RowID  int
+	Parent string
+	FKID   int
+}
+
+func (q *Queries) PragmaForeignKeyCheck(ctx context.Context) ([]PragmaForeignKeyCheckResult, error) {
+	rows, err := q.db.QueryContext(ctx, pragmaForeignKeyCheck)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PragmaForeignKeyCheckResult
+	for rows.Next() {
+		var i PragmaForeignKeyCheckResult
+		if err := rows.Scan(
+			&i.Table,
+			&i.RowID,
+			&i.Parent,
+			&i.FKID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

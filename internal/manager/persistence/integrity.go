@@ -16,13 +16,6 @@ const (
 	integrityCheckTimeout = 10 * time.Second
 )
 
-type PragmaForeignKeyCheckResult struct {
-	Table  string `gorm:"column:table"`
-	RowID  int    `gorm:"column:rowid"`
-	Parent string `gorm:"column:parent"`
-	FKID   int    `gorm:"column:fkid"`
-}
-
 // PeriodicIntegrityCheck periodically checks the database integrity.
 // This function only returns when the context is done.
 func (db *DB) PeriodicIntegrityCheck(
@@ -127,13 +120,11 @@ func (db *DB) pragmaIntegrityCheck(ctx context.Context) (ok bool) {
 //
 // See https: //www.sqlite.org/pragma.html#pragma_foreign_key_check
 func (db *DB) pragmaForeignKeyCheck(ctx context.Context) (ok bool) {
-	var issues []PragmaForeignKeyCheckResult
+	queries := db.queries()
 
-	tx := db.gormDB.WithContext(ctx).
-		Raw("PRAGMA foreign_key_check").
-		Scan(&issues)
-	if tx.Error != nil {
-		log.Error().Err(tx.Error).Msg("database: error checking foreign keys")
+	issues, err := queries.PragmaForeignKeyCheck(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("database: error checking foreign keys")
 		return false
 	}
 
