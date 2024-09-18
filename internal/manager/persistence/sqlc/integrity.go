@@ -6,6 +6,8 @@ package sqlc
 
 import (
 	"context"
+	"fmt"
+	"time"
 )
 
 const pragmaIntegrityCheck = `PRAGMA integrity_check`
@@ -99,4 +101,10 @@ func (q *Queries) PragmaForeignKeyCheck(ctx context.Context) ([]PragmaForeignKey
 		return nil, err
 	}
 	return items, nil
+}
+
+func (q *Queries) PragmaBusyTimeout(ctx context.Context, busyTimeout time.Duration) error {
+	sql := fmt.Sprintf("PRAGMA busy_timeout = %d", busyTimeout.Milliseconds())
+	_, err := q.db.ExecContext(ctx, sql)
+	return err
 }

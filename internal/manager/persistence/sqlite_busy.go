@@ -2,12 +2,11 @@
 package persistence
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 var (
@@ -40,9 +39,11 @@ func isDatabaseBusyError(err error) bool {
 
 // setBusyTimeout sets the SQLite busy_timeout busy handler.
 // See https://sqlite.org/pragma.html#pragma_busy_timeout
-func setBusyTimeout(gormDB *gorm.DB, busyTimeout time.Duration) error {
-	if tx := gormDB.Exec(fmt.Sprintf("PRAGMA busy_timeout = %d", busyTimeout.Milliseconds())); tx.Error != nil {
-		return fmt.Errorf("setting busy_timeout: %w", tx.Error)
+func (db *DB) setBusyTimeout(ctx context.Context, busyTimeout time.Duration) error {
+	queries := db.queries()
+	err := queries.PragmaBusyTimeout(ctx, busyTimeout)
+	if err != nil {
+		return fmt.Errorf("setting busy_timeout: %w", err)
 	}
 	return nil
 }

@@ -54,7 +54,7 @@ func OpenDB(ctx context.Context, dsn string) (*DB, error) {
 		}
 	}()
 
-	if err := setBusyTimeout(db.gormDB, 5*time.Second); err != nil {
+	if err := db.setBusyTimeout(ctx, 5*time.Second); err != nil {
 		return nil, err
 	}
 
