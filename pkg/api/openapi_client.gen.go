@@ -122,6 +122,9 @@ type ClientInterface interface {
 	// GetVariables request
 	GetVariables(ctx context.Context, audience ManagerVariableAudience, platform string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// FetchJobs request
+	FetchJobs(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SubmitJob request with any body
 	SubmitJobWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -139,11 +142,6 @@ type ClientInterface interface {
 	DeleteJobMassWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	DeleteJobMass(ctx context.Context, body DeleteJobMassJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// QueryJobs request with any body
-	QueryJobsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	QueryJobs(ctx context.Context, body QueryJobsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetJobType request
 	GetJobType(ctx context.Context, typeName string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -434,6 +432,18 @@ func (c *Client) GetVariables(ctx context.Context, audience ManagerVariableAudie
 	return c.Client.Do(req)
 }
 
+func (c *Client) FetchJobs(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFetchJobsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) SubmitJobWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSubmitJobRequestWithBody(c.Server, contentType, body)
 	if err != nil {
@@ -508,30 +518,6 @@ func (c *Client) DeleteJobMassWithBody(ctx context.Context, contentType string, 
 
 func (c *Client) DeleteJobMass(ctx context.Context, body DeleteJobMassJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteJobMassRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) QueryJobsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewQueryJobsRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) QueryJobs(ctx context.Context, body QueryJobsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewQueryJobsRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1509,6 +1495,33 @@ func NewGetVariablesRequest(server string, audience ManagerVariableAudience, pla
 	return req, nil
 }
 
+// NewFetchJobsRequest generates requests for FetchJobs
+func NewFetchJobsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v3/jobs")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSubmitJobRequest calls the generic SubmitJob builder with application/json body
 func NewSubmitJobRequest(server string, body SubmitJobJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -1647,46 +1660,6 @@ func NewDeleteJobMassRequestWithBody(server string, contentType string, body io.
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewQueryJobsRequest calls the generic QueryJobs builder with application/json body
-func NewQueryJobsRequest(server string, body QueryJobsJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewQueryJobsRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewQueryJobsRequestWithBody generates requests for QueryJobs with any type of body
-func NewQueryJobsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v3/jobs/query")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -3334,6 +3307,9 @@ type ClientWithResponsesInterface interface {
 	// GetVariables request
 	GetVariablesWithResponse(ctx context.Context, audience ManagerVariableAudience, platform string, reqEditors ...RequestEditorFn) (*GetVariablesResponse, error)
 
+	// FetchJobs request
+	FetchJobsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*FetchJobsResponse, error)
+
 	// SubmitJob request with any body
 	SubmitJobWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SubmitJobResponse, error)
 
@@ -3351,11 +3327,6 @@ type ClientWithResponsesInterface interface {
 	DeleteJobMassWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeleteJobMassResponse, error)
 
 	DeleteJobMassWithResponse(ctx context.Context, body DeleteJobMassJSONRequestBody, reqEditors ...RequestEditorFn) (*DeleteJobMassResponse, error)
-
-	// QueryJobs request with any body
-	QueryJobsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*QueryJobsResponse, error)
-
-	QueryJobsWithResponse(ctx context.Context, body QueryJobsJSONRequestBody, reqEditors ...RequestEditorFn) (*QueryJobsResponse, error)
 
 	// GetJobType request
 	GetJobTypeWithResponse(ctx context.Context, typeName string, reqEditors ...RequestEditorFn) (*GetJobTypeResponse, error)
@@ -3696,6 +3667,29 @@ func (r GetVariablesResponse) StatusCode() int {
 	return 0
 }
 
+type FetchJobsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *JobsQueryResult
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r FetchJobsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FetchJobsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SubmitJobResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -3782,29 +3776,6 @@ func (r DeleteJobMassResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r DeleteJobMassResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type QueryJobsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *JobsQueryResult
-	JSONDefault  *Error
-}
-
-// Status returns HTTPResponse.Status
-func (r QueryJobsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r QueryJobsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4852,6 +4823,15 @@ func (c *ClientWithResponses) GetVariablesWithResponse(ctx context.Context, audi
 	return ParseGetVariablesResponse(rsp)
 }
 
+// FetchJobsWithResponse request returning *FetchJobsResponse
+func (c *ClientWithResponses) FetchJobsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*FetchJobsResponse, error) {
+	rsp, err := c.FetchJobs(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFetchJobsResponse(rsp)
+}
+
 // SubmitJobWithBodyWithResponse request with arbitrary body returning *SubmitJobResponse
 func (c *ClientWithResponses) SubmitJobWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SubmitJobResponse, error) {
 	rsp, err := c.SubmitJobWithBody(ctx, contentType, body, reqEditors...)
@@ -4910,23 +4890,6 @@ func (c *ClientWithResponses) DeleteJobMassWithResponse(ctx context.Context, bod
 		return nil, err
 	}
 	return ParseDeleteJobMassResponse(rsp)
-}
-
-// QueryJobsWithBodyWithResponse request with arbitrary body returning *QueryJobsResponse
-func (c *ClientWithResponses) QueryJobsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*QueryJobsResponse, error) {
-	rsp, err := c.QueryJobsWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseQueryJobsResponse(rsp)
-}
-
-func (c *ClientWithResponses) QueryJobsWithResponse(ctx context.Context, body QueryJobsJSONRequestBody, reqEditors ...RequestEditorFn) (*QueryJobsResponse, error) {
-	rsp, err := c.QueryJobs(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseQueryJobsResponse(rsp)
 }
 
 // GetJobTypeWithResponse request returning *GetJobTypeResponse
@@ -5665,6 +5628,39 @@ func ParseGetVariablesResponse(rsp *http.Response) (*GetVariablesResponse, error
 	return response, nil
 }
 
+// ParseFetchJobsResponse parses an HTTP response from a FetchJobsWithResponse call
+func ParseFetchJobsResponse(rsp *http.Response) (*FetchJobsResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FetchJobsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest JobsQueryResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseSubmitJobResponse parses an HTTP response from a SubmitJobWithResponse call
 func ParseSubmitJobResponse(rsp *http.Response) (*SubmitJobResponse, error) {
 	bodyBytes, err := ioutil.ReadAll(rsp.Body)
@@ -5784,39 +5780,6 @@ func ParseDeleteJobMassResponse(rsp *http.Response) (*DeleteJobMassResponse, err
 			return nil, err
 		}
 		response.JSON416 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseQueryJobsResponse parses an HTTP response from a QueryJobsWithResponse call
-func ParseQueryJobsResponse(rsp *http.Response) (*QueryJobsResponse, error) {
-	bodyBytes, err := ioutil.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &QueryJobsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest JobsQueryResult
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Error

@@ -37,6 +37,9 @@ type ServerInterface interface {
 	// Get the variables of this Manager. Used by the Blender add-on to recognise two-way variables, and for the web interface to do variable replacement based on the browser's platform.
 	// (GET /api/v3/configuration/variables/{audience}/{platform})
 	GetVariables(ctx echo.Context, audience ManagerVariableAudience, platform string) error
+	// List all jobs in the database.
+	// (GET /api/v3/jobs)
+	FetchJobs(ctx echo.Context) error
 	// Submit a new job for Flamenco Manager to execute.
 	// (POST /api/v3/jobs)
 	SubmitJob(ctx echo.Context) error
@@ -49,9 +52,6 @@ type ServerInterface interface {
 	// Mark jobs for deletion, based on certain criteria.
 	// (DELETE /api/v3/jobs/mass-delete)
 	DeleteJobMass(ctx echo.Context) error
-	// Fetch list of jobs.
-	// (POST /api/v3/jobs/query)
-	QueryJobs(ctx echo.Context) error
 	// Get single job type and its parameters.
 	// (GET /api/v3/jobs/type/{typeName})
 	GetJobType(ctx echo.Context, typeName string) error
@@ -288,6 +288,15 @@ func (w *ServerInterfaceWrapper) GetVariables(ctx echo.Context) error {
 	return err
 }
 
+// FetchJobs converts echo context to params.
+func (w *ServerInterfaceWrapper) FetchJobs(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.FetchJobs(ctx)
+	return err
+}
+
 // SubmitJob converts echo context to params.
 func (w *ServerInterfaceWrapper) SubmitJob(ctx echo.Context) error {
 	var err error
@@ -321,15 +330,6 @@ func (w *ServerInterfaceWrapper) DeleteJobMass(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.DeleteJobMass(ctx)
-	return err
-}
-
-// QueryJobs converts echo context to params.
-func (w *ServerInterfaceWrapper) QueryJobs(ctx echo.Context) error {
-	var err error
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.QueryJobs(ctx)
 	return err
 }
 
@@ -1010,11 +1010,11 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/api/v3/configuration/setup-assistant", wrapper.SaveSetupAssistantConfig)
 	router.GET(baseURL+"/api/v3/configuration/shared-storage/:audience/:platform", wrapper.GetSharedStorage)
 	router.GET(baseURL+"/api/v3/configuration/variables/:audience/:platform", wrapper.GetVariables)
+	router.GET(baseURL+"/api/v3/jobs", wrapper.FetchJobs)
 	router.POST(baseURL+"/api/v3/jobs", wrapper.SubmitJob)
 	router.POST(baseURL+"/api/v3/jobs/check", wrapper.SubmitJobCheck)
 	router.GET(baseURL+"/api/v3/jobs/last-rendered", wrapper.FetchGlobalLastRenderedInfo)
 	router.DELETE(baseURL+"/api/v3/jobs/mass-delete", wrapper.DeleteJobMass)
-	router.POST(baseURL+"/api/v3/jobs/query", wrapper.QueryJobs)
 	router.GET(baseURL+"/api/v3/jobs/type/:typeName", wrapper.GetJobType)
 	router.GET(baseURL+"/api/v3/jobs/types", wrapper.GetJobTypes)
 	router.DELETE(baseURL+"/api/v3/jobs/:job_id", wrapper.DeleteJob)

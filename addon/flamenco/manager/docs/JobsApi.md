@@ -12,12 +12,12 @@ Method | HTTP request | Description
 [**fetch_job_blocklist**](JobsApi.md#fetch_job_blocklist) | **GET** /api/v3/jobs/{job_id}/blocklist | Fetch the list of workers that are blocked from doing certain task types on this job.
 [**fetch_job_last_rendered_info**](JobsApi.md#fetch_job_last_rendered_info) | **GET** /api/v3/jobs/{job_id}/last-rendered | Get the URL that serves the last-rendered images of this job.
 [**fetch_job_tasks**](JobsApi.md#fetch_job_tasks) | **GET** /api/v3/jobs/{job_id}/tasks | Fetch a summary of all tasks of the given job.
+[**fetch_jobs**](JobsApi.md#fetch_jobs) | **GET** /api/v3/jobs | List all jobs in the database.
 [**fetch_task**](JobsApi.md#fetch_task) | **GET** /api/v3/tasks/{task_id} | Fetch a single task.
 [**fetch_task_log_info**](JobsApi.md#fetch_task_log_info) | **GET** /api/v3/tasks/{task_id}/log | Get the URL of the task log, and some more info.
 [**fetch_task_log_tail**](JobsApi.md#fetch_task_log_tail) | **GET** /api/v3/tasks/{task_id}/logtail | Fetch the last few lines of the task&#39;s log.
 [**get_job_type**](JobsApi.md#get_job_type) | **GET** /api/v3/jobs/type/{typeName} | Get single job type and its parameters.
 [**get_job_types**](JobsApi.md#get_job_types) | **GET** /api/v3/jobs/types | Get list of job types and their parameters.
-[**query_jobs**](JobsApi.md#query_jobs) | **POST** /api/v3/jobs/query | Fetch list of jobs.
 [**remove_job_blocklist**](JobsApi.md#remove_job_blocklist) | **DELETE** /api/v3/jobs/{job_id}/blocklist | Remove entries from a job blocklist.
 [**set_job_priority**](JobsApi.md#set_job_priority) | **POST** /api/v3/jobs/{job_id}/setpriority | 
 [**set_job_status**](JobsApi.md#set_job_status) | **POST** /api/v3/jobs/{job_id}/setstatus | 
@@ -552,6 +552,69 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **fetch_jobs**
+> JobsQueryResult fetch_jobs()
+
+List all jobs in the database.
+
+### Example
+
+
+```python
+import time
+import flamenco.manager
+from flamenco.manager.api import jobs_api
+from flamenco.manager.model.error import Error
+from flamenco.manager.model.jobs_query_result import JobsQueryResult
+from pprint import pprint
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = flamenco.manager.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with flamenco.manager.ApiClient() as api_client:
+    # Create an instance of the API class
+    api_instance = jobs_api.JobsApi(api_client)
+
+    # example, this endpoint has no required or optional parameters
+    try:
+        # List all jobs in the database.
+        api_response = api_instance.fetch_jobs()
+        pprint(api_response)
+    except flamenco.manager.ApiException as e:
+        print("Exception when calling JobsApi->fetch_jobs: %s\n" % e)
+```
+
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**JobsQueryResult**](JobsQueryResult.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Normal query response, can be empty list if there are no jobs. |  -  |
+**0** | Error message |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **fetch_task**
 > Task fetch_task(task_id)
 
@@ -877,87 +940,6 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Available job types |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **query_jobs**
-> JobsQueryResult query_jobs(jobs_query)
-
-Fetch list of jobs.
-
-### Example
-
-
-```python
-import time
-import flamenco.manager
-from flamenco.manager.api import jobs_api
-from flamenco.manager.model.error import Error
-from flamenco.manager.model.jobs_query import JobsQuery
-from flamenco.manager.model.jobs_query_result import JobsQueryResult
-from pprint import pprint
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = flamenco.manager.Configuration(
-    host = "http://localhost"
-)
-
-
-# Enter a context with an instance of the API client
-with flamenco.manager.ApiClient() as api_client:
-    # Create an instance of the API class
-    api_instance = jobs_api.JobsApi(api_client)
-    jobs_query = JobsQuery(
-        offset=0,
-        limit=1,
-        order_by=[
-            "order_by_example",
-        ],
-        status_in=[
-            JobStatus("active"),
-        ],
-        metadata={
-            "key": "key_example",
-        },
-        settings={},
-    ) # JobsQuery | Specification of which jobs to get.
-
-    # example passing only required values which don't have defaults set
-    try:
-        # Fetch list of jobs.
-        api_response = api_instance.query_jobs(jobs_query)
-        pprint(api_response)
-    except flamenco.manager.ApiException as e:
-        print("Exception when calling JobsApi->query_jobs: %s\n" % e)
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **jobs_query** | [**JobsQuery**](JobsQuery.md)| Specification of which jobs to get. |
-
-### Return type
-
-[**JobsQueryResult**](JobsQueryResult.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | Normal query response, can be empty list if nothing matched the query. |  -  |
-**0** | Error message |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

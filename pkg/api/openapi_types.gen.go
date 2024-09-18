@@ -935,9 +935,6 @@ type SubmitJobCheckJSONBody SubmittedJob
 // DeleteJobMassJSONBody defines parameters for DeleteJobMass.
 type DeleteJobMassJSONBody JobMassDeletionSelection
 
-// QueryJobsJSONBody defines parameters for QueryJobs.
-type QueryJobsJSONBody JobsQuery
-
 // RemoveJobBlocklistJSONBody defines parameters for RemoveJobBlocklist.
 type RemoveJobBlocklistJSONBody JobBlocklist
 
@@ -1009,9 +1006,6 @@ type SubmitJobCheckJSONRequestBody SubmitJobCheckJSONBody
 
 // DeleteJobMassJSONRequestBody defines body for DeleteJobMass for application/json ContentType.
 type DeleteJobMassJSONRequestBody DeleteJobMassJSONBody
-
-// QueryJobsJSONRequestBody defines body for QueryJobs for application/json ContentType.
-type QueryJobsJSONRequestBody QueryJobsJSONBody
 
 // RemoveJobBlocklistJSONRequestBody defines body for RemoveJobBlocklist for application/json ContentType.
 type RemoveJobBlocklistJSONRequestBody RemoveJobBlocklistJSONBody

@@ -376,6 +376,26 @@ func (mr *MockFlamencoClientMockRecorder) FetchJobWithResponse(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchJobWithResponse", reflect.TypeOf((*MockFlamencoClient)(nil).FetchJobWithResponse), varargs...)
 }
 
+// FetchJobsWithResponse mocks base method.
+func (m *MockFlamencoClient) FetchJobsWithResponse(arg0 context.Context, arg1 ...api.RequestEditorFn) (*api.FetchJobsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FetchJobsWithResponse", varargs...)
+	ret0, _ := ret[0].(*api.FetchJobsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchJobsWithResponse indicates an expected call of FetchJobsWithResponse.
+func (mr *MockFlamencoClientMockRecorder) FetchJobsWithResponse(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchJobsWithResponse", reflect.TypeOf((*MockFlamencoClient)(nil).FetchJobsWithResponse), varargs...)
+}
+
 // FetchTaskLogInfoWithResponse mocks base method.
 func (m *MockFlamencoClient) FetchTaskLogInfoWithResponse(arg0 context.Context, arg1 string, arg2 ...api.RequestEditorFn) (*api.FetchTaskLogInfoResponse, error) {
 	m.ctrl.T.Helper()
@@ -734,46 +754,6 @@ func (mr *MockFlamencoClientMockRecorder) MayWorkerRunWithResponse(arg0, arg1 in
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MayWorkerRunWithResponse", reflect.TypeOf((*MockFlamencoClient)(nil).MayWorkerRunWithResponse), varargs...)
-}
-
-// QueryJobsWithBodyWithResponse mocks base method.
-func (m *MockFlamencoClient) QueryJobsWithBodyWithResponse(arg0 context.Context, arg1 string, arg2 io.Reader, arg3 ...api.RequestEditorFn) (*api.QueryJobsResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1, arg2}
-	for _, a := range arg3 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "QueryJobsWithBodyWithResponse", varargs...)
-	ret0, _ := ret[0].(*api.QueryJobsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// QueryJobsWithBodyWithResponse indicates an expected call of QueryJobsWithBodyWithResponse.
-func (mr *MockFlamencoClientMockRecorder) QueryJobsWithBodyWithResponse(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryJobsWithBodyWithResponse", reflect.TypeOf((*MockFlamencoClient)(nil).QueryJobsWithBodyWithResponse), varargs...)
-}
-
-// QueryJobsWithResponse mocks base method.
-func (m *MockFlamencoClient) QueryJobsWithResponse(arg0 context.Context, arg1 api.QueryJobsJSONRequestBody, arg2 ...api.RequestEditorFn) (*api.QueryJobsResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "QueryJobsWithResponse", varargs...)
-	ret0, _ := ret[0].(*api.QueryJobsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// QueryJobsWithResponse indicates an expected call of QueryJobsWithResponse.
-func (mr *MockFlamencoClientMockRecorder) QueryJobsWithResponse(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryJobsWithResponse", reflect.TypeOf((*MockFlamencoClient)(nil).QueryJobsWithResponse), varargs...)
 }
 
 // RegisterWorkerWithBodyWithResponse mocks base method.
