@@ -916,6 +916,54 @@ func (q *Queries) JobCountTasksInStatus(ctx context.Context, arg JobCountTasksIn
 	return num_tasks, err
 }
 
+const queryJobTaskSummaries = `-- name: QueryJobTaskSummaries :many
+SELECT tasks.id, tasks.uuid, tasks.name, tasks.priority, tasks.status, tasks.type, tasks.updated_at
+FROM tasks
+LEFT JOIN jobs ON jobs.id = tasks.job_id
+WHERE jobs.uuid=?1
+`
+
+type QueryJobTaskSummariesRow struct {
+	ID        int64
+	UUID      string
+	Name      string
+	Priority  int64
+	Status    string
+	Type      string
+	UpdatedAt sql.NullTime
+}
+
+func (q *Queries) QueryJobTaskSummaries(ctx context.Context, jobUuid string) ([]QueryJobTaskSummariesRow, error) {
+	rows, err := q.db.QueryContext(ctx, queryJobTaskSummaries, jobUuid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []QueryJobTaskSummariesRow
+	for rows.Next() {
+		var i QueryJobTaskSummariesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UUID,
+			&i.Name,
+			&i.Priority,
+			&i.Status,
+			&i.Type,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const removeFromJobBlocklist = `-- name: RemoveFromJobBlocklist :exec
 DELETE FROM job_blocks
 WHERE
@@ -1066,6 +1114,39 @@ type StoreTaskDependencyParams struct {
 func (q *Queries) StoreTaskDependency(ctx context.Context, arg StoreTaskDependencyParams) error {
 	_, err := q.db.ExecContext(ctx, storeTaskDependency, arg.TaskID, arg.DependencyID)
 	return err
+}
+
+const summarizeJobStatuses = `-- name: SummarizeJobStatuses :many
+SELECT status, count(id) as status_count FROM jobs
+GROUP BY status
+`
+
+type SummarizeJobStatusesRow struct {
+	Status      string
+	StatusCount int64
+}
+
+func (q *Queries) SummarizeJobStatuses(ctx context.Context) ([]SummarizeJobStatusesRow, error) {
+	rows, err := q.db.QueryContext(ctx, summarizeJobStatuses)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SummarizeJobStatusesRow
+	for rows.Next() {
+		var i SummarizeJobStatusesRow
+		if err := rows.Scan(&i.Status, &i.StatusCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const taskAssignToWorker = `-- name: TaskAssignToWorker :exec

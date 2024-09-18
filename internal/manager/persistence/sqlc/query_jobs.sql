@@ -306,3 +306,14 @@ WHERE
     TF.worker_id = @worker_id
 AND T.job_id = @job_id
 AND T.type = @task_type;
+
+
+-- name: QueryJobTaskSummaries :many
+SELECT tasks.id, tasks.uuid, tasks.name, tasks.priority, tasks.status, tasks.type, tasks.updated_at
+FROM tasks
+LEFT JOIN jobs ON jobs.id = tasks.job_id
+WHERE jobs.uuid=@job_uuid;
+
+-- name: SummarizeJobStatuses :many
+SELECT status, count(id) as status_count FROM jobs
+GROUP BY status;

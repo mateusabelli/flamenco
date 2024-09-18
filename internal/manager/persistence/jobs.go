@@ -1129,8 +1129,7 @@ func convertSqlcTask(task sqlc.Task, jobUUID string, workerUUID string) (*Task, 
 	}
 
 	if err := json.Unmarshal(task.Commands, &dbTask.Commands); err != nil {
-		return nil, taskError(err, fmt.Sprintf("task %s of job %s has invalid commands: %v",
-			task.UUID, jobUUID, err))
+		return nil, taskError(err, "task %s of job %s has invalid commands: %v", task.UUID, jobUUID, err)
 	}
 
 	return &dbTask, nil

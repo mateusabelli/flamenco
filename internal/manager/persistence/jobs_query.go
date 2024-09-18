@@ -14,14 +14,32 @@ func (db *DB) QueryJobTaskSummaries(ctx context.Context, jobUUID string) ([]*Tas
 	logger := log.Ctx(ctx)
 	logger.Debug().Str("job", jobUUID).Msg("querying task summaries")
 
-	var result []*Task
-	tx := db.gormDB.WithContext(ctx).Model(&Task{}).
-		Select("tasks.id", "tasks.uuid", "tasks.name", "tasks.priority", "tasks.status", "tasks.type", "tasks.updated_at").
-		Joins("left join jobs on jobs.id = tasks.job_id").
-		Where("jobs.uuid=?", jobUUID).
-		Scan(&result)
+	queries := db.queries()
+	sqlcPartialTasks, err := queries.QueryJobTaskSummaries(ctx, jobUUID)
+	if err != nil {
+		return nil, err
+	}
 
-	return result, tx.Error
+	// Convert to partial GORM tasks.
+	gormTasks := make([]*Task, len(sqlcPartialTasks))
+	for index, task := range sqlcPartialTasks {
+		gormTask := Task{
+			Model: Model{
+				ID:        uint(task.ID),
+				UpdatedAt: task.UpdatedAt.Time,
+			},
+
+			UUID:     task.UUID,
+			Name:     task.Name,
+			Type:     task.Type,
+			Priority: int(task.Priority),
+			Status:   api.TaskStatus(task.Status),
+			JobUUID:  jobUUID,
+		}
+		gormTasks[index] = &gormTask
+	}
+
+	return gormTasks, nil
 }
 
 // JobStatusCount is a mapping from job status to the number of jobs in that status.
@@ -31,24 +49,16 @@ func (db *DB) SummarizeJobStatuses(ctx context.Context) (JobStatusCount, error) 
 	logger := log.Ctx(ctx)
 	logger.Debug().Msg("database: summarizing job statuses")
 
-	// Query the database using a data structure that's easy to handle in GORM.
-	type queryResult struct {
-		Status      api.JobStatus
-		StatusCount int
-	}
-	result := []*queryResult{}
-	tx := db.gormDB.WithContext(ctx).Model(&Job{}).
-		Select("status as Status", "count(id) as StatusCount").
-		Group("status").
-		Scan(&result)
-	if tx.Error != nil {
-		return nil, jobError(tx.Error, "summarizing job statuses")
+	queries := db.queries()
+	result, err := queries.SummarizeJobStatuses(ctx)
+	if err != nil {
+		return nil, jobError(err, "summarizing job statuses")
 	}
 
 	// Convert the array-of-structs to a map that's easier to handle by the caller.
 	statusCounts := make(JobStatusCount)
 	for _, singleStatusCount := range result {
-		statusCounts[singleStatusCount.Status] = singleStatusCount.StatusCount
+		statusCounts[api.JobStatus(singleStatusCount.Status)] = int(singleStatusCount.StatusCount)
 	}
 
 	return statusCounts, nil
