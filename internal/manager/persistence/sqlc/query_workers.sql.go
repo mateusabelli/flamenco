@@ -8,22 +8,19 @@ package sqlc
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 )
 
-const addWorkerTagMembership = `-- name: AddWorkerTagMembership :exec
-INSERT INTO worker_tag_membership (worker_tag_id, worker_id)
-VALUES (?1, ?2)
+const countWorkerTags = `-- name: CountWorkerTags :one
+SELECT count(id) as count FROM worker_tags
 `
 
-type AddWorkerTagMembershipParams struct {
-	WorkerTagID int64
-	WorkerID    int64
-}
-
-func (q *Queries) AddWorkerTagMembership(ctx context.Context, arg AddWorkerTagMembershipParams) error {
-	_, err := q.db.ExecContext(ctx, addWorkerTagMembership, arg.WorkerTagID, arg.WorkerID)
-	return err
+func (q *Queries) CountWorkerTags(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countWorkerTags)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const createWorker = `-- name: CreateWorker :one
@@ -100,6 +97,91 @@ func (q *Queries) CreateWorker(ctx context.Context, arg CreateWorkerParams) (int
 	return id, err
 }
 
+const createWorkerTag = `-- name: CreateWorkerTag :execlastid
+INSERT INTO worker_tags (
+  created_at,
+  uuid,
+  name,
+  description
+) VALUES (
+  ?1,
+  ?2,
+  ?3,
+  ?4
+)
+`
+
+type CreateWorkerTagParams struct {
+	CreatedAt   time.Time
+	UUID        string
+	Name        string
+	Description string
+}
+
+func (q *Queries) CreateWorkerTag(ctx context.Context, arg CreateWorkerTagParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, createWorkerTag,
+		arg.CreatedAt,
+		arg.UUID,
+		arg.Name,
+		arg.Description,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+const deleteWorkerTag = `-- name: DeleteWorkerTag :execrows
+DELETE FROM worker_tags
+WHERE uuid=?1
+`
+
+func (q *Queries) DeleteWorkerTag(ctx context.Context, uuid string) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteWorkerTag, uuid)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const fetchTagsOfWorker = `-- name: FetchTagsOfWorker :many
+SELECT worker_tags.id, worker_tags.created_at, worker_tags.updated_at, worker_tags.uuid, worker_tags.name, worker_tags.description
+FROM worker_tags
+LEFT JOIN worker_tag_membership m ON (m.worker_tag_id = worker_tags.id)
+LEFT JOIN workers on (m.worker_id = workers.id)
+WHERE workers.uuid = ?1
+`
+
+func (q *Queries) FetchTagsOfWorker(ctx context.Context, uuid string) ([]WorkerTag, error) {
+	rows, err := q.db.QueryContext(ctx, fetchTagsOfWorker, uuid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WorkerTag
+	for rows.Next() {
+		var i WorkerTag
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UUID,
+			&i.Name,
+			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const fetchWorker = `-- name: FetchWorker :one
 SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart FROM workers WHERE workers.uuid = ?1 and deleted_at is NULL
 `
@@ -129,40 +211,99 @@ func (q *Queries) FetchWorker(ctx context.Context, uuid string) (Worker, error) 
 	return i, err
 }
 
+const fetchWorkerTagByID = `-- name: FetchWorkerTagByID :one
+SELECT id, created_at, updated_at, uuid, name, description
+FROM worker_tags
+WHERE id=?1
+`
+
+func (q *Queries) FetchWorkerTagByID(ctx context.Context, workerTagID int64) (WorkerTag, error) {
+	row := q.db.QueryRowContext(ctx, fetchWorkerTagByID, workerTagID)
+	var i WorkerTag
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UUID,
+		&i.Name,
+		&i.Description,
+	)
+	return i, err
+}
+
 const fetchWorkerTagByUUID = `-- name: FetchWorkerTagByUUID :one
-SELECT worker_tags.id, worker_tags.created_at, worker_tags.updated_at, worker_tags.uuid, worker_tags.name, worker_tags.description
+SELECT id, created_at, updated_at, uuid, name, description
 FROM worker_tags
 WHERE worker_tags.uuid = ?1
 `
 
-type FetchWorkerTagByUUIDRow struct {
-	WorkerTag WorkerTag
-}
-
-func (q *Queries) FetchWorkerTagByUUID(ctx context.Context, uuid string) (FetchWorkerTagByUUIDRow, error) {
+func (q *Queries) FetchWorkerTagByUUID(ctx context.Context, uuid string) (WorkerTag, error) {
 	row := q.db.QueryRowContext(ctx, fetchWorkerTagByUUID, uuid)
-	var i FetchWorkerTagByUUIDRow
+	var i WorkerTag
 	err := row.Scan(
-		&i.WorkerTag.ID,
-		&i.WorkerTag.CreatedAt,
-		&i.WorkerTag.UpdatedAt,
-		&i.WorkerTag.UUID,
-		&i.WorkerTag.Name,
-		&i.WorkerTag.Description,
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UUID,
+		&i.Name,
+		&i.Description,
 	)
 	return i, err
 }
 
 const fetchWorkerTags = `-- name: FetchWorkerTags :many
-SELECT worker_tags.id, worker_tags.created_at, worker_tags.updated_at, worker_tags.uuid, worker_tags.name, worker_tags.description
+SELECT id, created_at, updated_at, uuid, name, description
 FROM worker_tags
-LEFT JOIN worker_tag_membership m ON (m.worker_tag_id = worker_tags.id)
-LEFT JOIN workers on (m.worker_id = workers.id)
-WHERE workers.uuid = ?1
 `
 
-func (q *Queries) FetchWorkerTags(ctx context.Context, uuid string) ([]WorkerTag, error) {
-	rows, err := q.db.QueryContext(ctx, fetchWorkerTags, uuid)
+func (q *Queries) FetchWorkerTags(ctx context.Context) ([]WorkerTag, error) {
+	rows, err := q.db.QueryContext(ctx, fetchWorkerTags)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WorkerTag
+	for rows.Next() {
+		var i WorkerTag
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UUID,
+			&i.Name,
+			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const fetchWorkerTagsByUUIDs = `-- name: FetchWorkerTagsByUUIDs :many
+SELECT id, created_at, updated_at, uuid, name, description
+FROM worker_tags
+WHERE uuid in (/*SLICE:uuids*/?)
+`
+
+func (q *Queries) FetchWorkerTagsByUUIDs(ctx context.Context, uuids []string) ([]WorkerTag, error) {
+	query := fetchWorkerTagsByUUIDs
+	var queryParams []interface{}
+	if len(uuids) > 0 {
+		for _, v := range uuids {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:uuids*/?", strings.Repeat(",?", len(uuids))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:uuids*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
 		return nil, err
 	}
@@ -381,6 +522,35 @@ func (q *Queries) SaveWorkerStatus(ctx context.Context, arg SaveWorkerStatusPara
 	return err
 }
 
+const saveWorkerTag = `-- name: SaveWorkerTag :exec
+UPDATE worker_tags
+SET
+  updated_at=?1,
+  uuid=?2,
+  name=?3,
+  description=?4
+WHERE id=?5
+`
+
+type SaveWorkerTagParams struct {
+	UpdatedAt   sql.NullTime
+	UUID        string
+	Name        string
+	Description string
+	WorkerTagID int64
+}
+
+func (q *Queries) SaveWorkerTag(ctx context.Context, arg SaveWorkerTagParams) error {
+	_, err := q.db.ExecContext(ctx, saveWorkerTag,
+		arg.UpdatedAt,
+		arg.UUID,
+		arg.Name,
+		arg.Description,
+		arg.WorkerTagID,
+	)
+	return err
+}
+
 const softDeleteWorker = `-- name: SoftDeleteWorker :execrows
 UPDATE workers SET deleted_at=?1
 WHERE uuid=?2
@@ -431,6 +601,32 @@ func (q *Queries) SummarizeWorkerStatuses(ctx context.Context) ([]SummarizeWorke
 		return nil, err
 	}
 	return items, nil
+}
+
+const workerAddTagMembership = `-- name: WorkerAddTagMembership :exec
+INSERT INTO worker_tag_membership (worker_tag_id, worker_id)
+VALUES (?1, ?2)
+`
+
+type WorkerAddTagMembershipParams struct {
+	WorkerTagID int64
+	WorkerID    int64
+}
+
+func (q *Queries) WorkerAddTagMembership(ctx context.Context, arg WorkerAddTagMembershipParams) error {
+	_, err := q.db.ExecContext(ctx, workerAddTagMembership, arg.WorkerTagID, arg.WorkerID)
+	return err
+}
+
+const workerRemoveTagMemberships = `-- name: WorkerRemoveTagMemberships :exec
+DELETE
+FROM worker_tag_membership
+WHERE worker_id=?1
+`
+
+func (q *Queries) WorkerRemoveTagMemberships(ctx context.Context, workerID int64) error {
+	_, err := q.db.ExecContext(ctx, workerRemoveTagMemberships, workerID)
+	return err
 }
 
 const workerSeen = `-- name: WorkerSeen :exec

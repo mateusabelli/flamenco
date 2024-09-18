@@ -179,14 +179,14 @@ func (db *DB) StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.Au
 	}
 
 	if authoredJob.WorkerTagUUID != "" {
-		dbTag, err := qtx.queries.FetchWorkerTagByUUID(ctx, authoredJob.WorkerTagUUID)
+		workerTag, err := qtx.queries.FetchWorkerTagByUUID(ctx, authoredJob.WorkerTagUUID)
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
 			return fmt.Errorf("no worker tag %q found", authoredJob.WorkerTagUUID)
 		case err != nil:
 			return fmt.Errorf("could not find worker tag %q: %w", authoredJob.WorkerTagUUID, err)
 		}
-		params.WorkerTagID = sql.NullInt64{Int64: dbTag.WorkerTag.ID, Valid: true}
+		params.WorkerTagID = sql.NullInt64{Int64: workerTag.ID, Valid: true}
 	}
 
 	log.Debug().
@@ -358,7 +358,7 @@ func (db *DB) FetchJob(ctx context.Context, jobUUID string) (*Job, error) {
 	}
 
 	if sqlcJob.WorkerTagID.Valid {
-		workerTag, err := fetchWorkerTagByID(db.gormDB, uint(sqlcJob.WorkerTagID.Int64))
+		workerTag, err := fetchWorkerTagByID(ctx, queries, sqlcJob.WorkerTagID.Int64)
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrWorkerTagNotFound
@@ -387,7 +387,7 @@ func (db *DB) FetchJobs(ctx context.Context) ([]*Job, error) {
 		}
 
 		if sqlcJob.WorkerTagID.Valid {
-			workerTag, err := fetchWorkerTagByID(db.gormDB, uint(sqlcJob.WorkerTagID.Int64))
+			workerTag, err := fetchWorkerTagByID(ctx, queries, sqlcJob.WorkerTagID.Int64)
 			switch {
 			case errors.Is(err, sql.ErrNoRows):
 				return nil, ErrWorkerTagNotFound

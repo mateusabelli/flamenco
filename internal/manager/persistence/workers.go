@@ -101,7 +101,7 @@ func (db *DB) CreateWorker(ctx context.Context, w *Worker) error {
 	// TODO: remove the create-with-tags functionality to a higher-level function.
 	// This code is just here to make this function work like the GORM code did.
 	for _, tag := range w.Tags {
-		err := queries.AddWorkerTagMembership(ctx, sqlc.AddWorkerTagMembershipParams{
+		err := queries.WorkerAddTagMembership(ctx, sqlc.WorkerAddTagMembershipParams{
 			WorkerTagID: int64(tag.ID),
 			WorkerID:    workerID,
 		})
@@ -122,7 +122,7 @@ func (db *DB) FetchWorker(ctx context.Context, uuid string) (*Worker, error) {
 	}
 
 	// TODO: remove this code, and let the caller fetch the tags when interested in them.
-	workerTags, err := queries.FetchWorkerTags(ctx, uuid)
+	workerTags, err := queries.FetchTagsOfWorker(ctx, uuid)
 	if err != nil {
 		return nil, workerTagError(err, "fetching tags of worker %s", uuid)
 	}
@@ -130,8 +130,7 @@ func (db *DB) FetchWorker(ctx context.Context, uuid string) (*Worker, error) {
 	convertedWorker := convertSqlcWorker(worker)
 	convertedWorker.Tags = make([]*WorkerTag, len(workerTags))
 	for index := range workerTags {
-		convertedTag := convertSqlcWorkerTag(workerTags[index])
-		convertedWorker.Tags[index] = &convertedTag
+		convertedWorker.Tags[index] = convertSqlcWorkerTag(workerTags[index])
 	}
 
 	return &convertedWorker, nil
@@ -338,8 +337,8 @@ func convertSqlcWorker(worker sqlc.Worker) Worker {
 // the model expected by the rest of the code. This is mostly in place to aid in
 // the GORM to SQLC migration. It is intended that eventually the rest of the
 // code will use the same SQLC-generated model.
-func convertSqlcWorkerTag(tag sqlc.WorkerTag) WorkerTag {
-	return WorkerTag{
+func convertSqlcWorkerTag(tag sqlc.WorkerTag) *WorkerTag {
+	return &WorkerTag{
 		Model: Model{
 			ID:        uint(tag.ID),
 			CreatedAt: tag.CreatedAt,

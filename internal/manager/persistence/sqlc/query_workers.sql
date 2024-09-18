@@ -33,9 +33,14 @@ INSERT INTO workers (
 )
 RETURNING id;
 
--- name: AddWorkerTagMembership :exec
+-- name: WorkerAddTagMembership :exec
 INSERT INTO worker_tag_membership (worker_tag_id, worker_id)
 VALUES (@worker_tag_id, @worker_id);
+
+-- name: WorkerRemoveTagMemberships :exec
+DELETE
+FROM worker_tag_membership
+WHERE worker_id=@worker_id;
 
 -- name: FetchWorkers :many
 SELECT sqlc.embed(workers) FROM workers
@@ -53,17 +58,60 @@ SELECT * FROM workers WHERE workers.uuid = @uuid;
 -- FetchWorkerUnconditional ignores soft-deletion status and just returns the worker.
 SELECT * FROM workers WHERE workers.id = @worker_id;
 
--- name: FetchWorkerTags :many
+-- name: FetchTagsOfWorker :many
 SELECT worker_tags.*
 FROM worker_tags
 LEFT JOIN worker_tag_membership m ON (m.worker_tag_id = worker_tags.id)
 LEFT JOIN workers on (m.worker_id = workers.id)
 WHERE workers.uuid = @uuid;
 
+-- name: FetchWorkerTags :many
+SELECT *
+FROM worker_tags;
+
 -- name: FetchWorkerTagByUUID :one
-SELECT sqlc.embed(worker_tags)
+SELECT *
 FROM worker_tags
 WHERE worker_tags.uuid = @uuid;
+
+-- name: FetchWorkerTagsByUUIDs :many
+SELECT *
+FROM worker_tags
+WHERE uuid in (sqlc.slice('uuids'));
+
+-- name: FetchWorkerTagByID :one
+SELECT *
+FROM worker_tags
+WHERE id=@worker_tag_id;
+
+-- name: SaveWorkerTag :exec
+UPDATE worker_tags
+SET
+  updated_at=@updated_at,
+  uuid=@uuid,
+  name=@name,
+  description=@description
+WHERE id=@worker_tag_id;
+
+-- name: DeleteWorkerTag :execrows
+DELETE FROM worker_tags
+WHERE uuid=@uuid;
+
+-- name: CreateWorkerTag :execlastid
+INSERT INTO worker_tags (
+  created_at,
+  uuid,
+  name,
+  description
+) VALUES (
+  @created_at,
+  @uuid,
+  @name,
+  @description
+);
+
+-- name: CountWorkerTags :one
+SELECT count(id) as count FROM worker_tags;
 
 -- name: SoftDeleteWorker :execrows
 UPDATE workers SET deleted_at=@deleted_at
