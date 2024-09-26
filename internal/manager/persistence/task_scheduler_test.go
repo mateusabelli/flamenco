@@ -4,6 +4,7 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/internal/uuid"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
@@ -509,9 +511,7 @@ func linuxWorker(t *testing.T, db *DB, updaters ...func(worker *Worker)) Worker 
 		updater(&w)
 	}
 
-	err := db.gormDB.Save(&w).Error
-	require.NoError(t, err, "cannot save Linux worker")
-
+	saveTestWorker(t, db, &w)
 	return w
 }
 
@@ -524,7 +524,31 @@ func windowsWorker(t *testing.T, db *DB) Worker {
 		SupportedTaskTypes: "blender,ffmpeg,file-management,misc",
 	}
 
-	err := db.gormDB.Save(&w).Error
-	require.NoError(t, err, "cannot save Windows worker")
+	saveTestWorker(t, db, &w)
 	return w
+}
+
+func saveTestWorker(t *testing.T, db *DB, worker *Worker) {
+	params := sqlc.CreateWorkerParams{
+		CreatedAt:          db.gormDB.NowFunc(),
+		UUID:               worker.UUID,
+		Secret:             worker.Secret,
+		Name:               worker.Name,
+		Address:            worker.Address,
+		Platform:           worker.Platform,
+		Software:           worker.Software,
+		Status:             string(worker.Status),
+		LastSeenAt:         sql.NullTime{Time: worker.LastSeenAt, Valid: !worker.LastSeenAt.IsZero()},
+		StatusRequested:    string(worker.StatusRequested),
+		LazyStatusRequest:  worker.LazyStatusRequest,
+		SupportedTaskTypes: worker.SupportedTaskTypes,
+		DeletedAt:          sql.NullTime(worker.DeletedAt),
+		CanRestart:         worker.CanRestart,
+	}
+
+	queries := db.queries()
+	id, err := queries.CreateWorker(context.TODO(), params)
+	require.NoError(t, err, "cannot save worker %q", worker.Name)
+
+	worker.ID = uint(id)
 }
