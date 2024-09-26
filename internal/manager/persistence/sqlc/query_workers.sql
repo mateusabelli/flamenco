@@ -50,6 +50,10 @@ WHERE deleted_at IS NULL;
 -- FetchWorker only returns the worker if it wasn't soft-deleted.
 SELECT * FROM workers WHERE workers.uuid = @uuid and deleted_at is NULL;
 
+-- name: FetchWorkerByID :one
+-- FetchWorkerByID only returns the worker if it wasn't soft-deleted.
+SELECT * FROM workers WHERE workers.id = @worker_id and deleted_at is NULL;
+
 -- name: FetchWorkerUnconditional :one
 -- FetchWorkerUnconditional ignores soft-deletion status and just returns the worker.
 SELECT * FROM workers WHERE workers.uuid = @uuid;
@@ -166,3 +170,60 @@ SELECT sleep_schedules.*
 FROM sleep_schedules
 INNER JOIN workers on workers.id = sleep_schedules.worker_id
 WHERE workers.uuid = @workerUUID;
+
+-- name: SetWorkerSleepSchedule :execlastid
+-- Note that the use of ?2 and ?3 in the SQL is not desirable, and should be
+-- replaced with @updated_at and @job_id as soon as sqlc issue #3334 is fixed.
+-- See https://github.com/sqlc-dev/sqlc/issues/3334 for more info.
+INSERT INTO sleep_schedules (
+  created_at,
+  updated_at,
+  worker_id,
+  is_active,
+  days_of_week,
+  start_time,
+  end_time,
+  next_check
+) VALUES (
+  @created_at,
+  @updated_at,
+  @worker_id,
+  @is_active,
+  @days_of_week,
+  @start_time,
+  @end_time,
+  @next_check
+)
+ON CONFLICT DO UPDATE
+  SET updated_at=?2, is_active=?4, days_of_week=?5, start_time=?6, end_time=?7, next_check=?8
+  WHERE worker_id=?3;
+
+-- name: SetWorkerSleepScheduleNextCheck :execrows
+UPDATE sleep_schedules
+SET next_check=@next_check
+WHERE ID=@schedule_id;
+
+
+-- name: FetchSleepSchedulesToCheck :many
+SELECT * FROM sleep_schedules
+WHERE is_active
+AND (next_check <= @next_check OR next_check IS NULL OR next_check = '');
+
+-- name: Test_CreateWorkerSleepSchedule :execlastid
+INSERT INTO sleep_schedules (
+  created_at,
+  worker_id,
+  is_active,
+  days_of_week,
+  start_time,
+  end_time,
+  next_check
+) VALUES (
+  @created_at,
+  @worker_id,
+  @is_active,
+  @days_of_week,
+  @start_time,
+  @end_time,
+  @next_check
+);

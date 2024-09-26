@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm/clause"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 )
 
@@ -69,13 +68,24 @@ func (db *DB) SetWorkerSleepSchedule(ctx context.Context, workerUUID string, sch
 		schedule.NextCheck = schedule.NextCheck.UTC()
 	}
 
-	tx := db.gormDB.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "worker_id"}},
-			UpdateAll: true,
-		}).
-		Create(&schedule)
-	return tx.Error
+	queries := db.queries()
+	params := sqlc.SetWorkerSleepScheduleParams{
+		CreatedAt:  db.gormDB.NowFunc(),
+		UpdatedAt:  db.now(),
+		WorkerID:   int64(schedule.WorkerID),
+		IsActive:   schedule.IsActive,
+		DaysOfWeek: schedule.DaysOfWeek,
+		StartTime:  schedule.StartTime.String(),
+		EndTime:    schedule.EndTime.String(),
+		NextCheck:  sql.NullTime{Time: schedule.NextCheck, Valid: !schedule.NextCheck.IsZero()},
+	}
+
+	id, err := queries.SetWorkerSleepSchedule(ctx, params)
+	if err != nil {
+		return fmt.Errorf("storing worker %q sleep schedule: %w", workerUUID, err)
+	}
+	schedule.ID = uint(id)
+	return nil
 }
 
 func (db *DB) SetWorkerSleepScheduleNextCheck(ctx context.Context, schedule *SleepSchedule) error {
@@ -84,47 +94,60 @@ func (db *DB) SetWorkerSleepScheduleNextCheck(ctx context.Context, schedule *Sle
 		schedule.NextCheck = schedule.NextCheck.UTC()
 	}
 
-	tx := db.gormDB.WithContext(ctx).
-		Select("next_check").
-		Updates(schedule)
-	return tx.Error
+	queries := db.queries()
+	numAffected, err := queries.SetWorkerSleepScheduleNextCheck(
+		ctx,
+		sqlc.SetWorkerSleepScheduleNextCheckParams{
+			ScheduleID: int64(schedule.ID),
+			NextCheck:  sql.NullTime{Time: schedule.NextCheck, Valid: !schedule.NextCheck.IsZero()},
+		})
+	if err != nil {
+		return fmt.Errorf("updating worker sleep schedule: %w", err)
+	}
+	if numAffected < 1 {
+		return fmt.Errorf("could not find worker sleep schedule ID %d", schedule.ID)
+	}
+	return nil
 }
 
 // FetchSleepScheduleWorker sets the given schedule's `Worker` pointer.
 func (db *DB) FetchSleepScheduleWorker(ctx context.Context, schedule *SleepSchedule) error {
-	var worker Worker
-	tx := db.gormDB.WithContext(ctx).Limit(1).Find(&worker, schedule.WorkerID)
-	if tx.Error != nil {
-		return workerError(tx.Error, "finding worker by their sleep schedule")
-	}
-	if worker.ID == 0 {
-		// Worker was not found. It could be that the worker was soft-deleted, which
-		// keeps the schedule around in the database.
+	queries := db.queries()
+
+	worker, err := queries.FetchWorkerByID(ctx, int64(schedule.WorkerID))
+	if err != nil {
 		schedule.Worker = nil
-		return ErrWorkerNotFound
+		return workerError(err, "finding worker by their sleep schedule")
 	}
-	schedule.Worker = &worker
+
+	schedule.Worker = convertSqlcWorker(worker)
 	return nil
 }
 
 // FetchSleepSchedulesToCheck returns the sleep schedules that are due for a check.
 func (db *DB) FetchSleepSchedulesToCheck(ctx context.Context) ([]*SleepSchedule, error) {
-	now := db.gormDB.NowFunc()
+	now := db.now()
 
 	log.Debug().
-		Str("timeout", now.String()).
+		Str("timeout", now.Time.String()).
 		Msg("fetching sleep schedules that need checking")
 
-	schedules := []*SleepSchedule{}
-	tx := db.gormDB.WithContext(ctx).
-		Model(&SleepSchedule{}).
-		Where("is_active = ?", true).
-		Where("next_check <= ? or next_check is NULL or next_check = ''", now).
-		Scan(&schedules)
-	if tx.Error != nil {
-		return nil, tx.Error
+	queries := db.queries()
+	schedules, err := queries.FetchSleepSchedulesToCheck(ctx, now)
+	if err != nil {
+		return nil, err
 	}
-	return schedules, nil
+
+	gormSchedules := make([]*SleepSchedule, len(schedules))
+	for index := range schedules {
+		gormSched, err := convertSqlcSleepSchedule(schedules[index])
+		if err != nil {
+			return nil, err
+		}
+		gormSchedules[index] = gormSched
+	}
+
+	return gormSchedules, nil
 }
 
 func convertSqlcSleepSchedule(sqlcSchedule sqlc.SleepSchedule) (*SleepSchedule, error) {

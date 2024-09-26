@@ -48,8 +48,8 @@ func TestFetchWorkerSleepSchedule(t *testing.T) {
 		StartTime:  TimeOfDay{18, 0},
 		EndTime:    TimeOfDay{9, 0},
 	}
-	tx := db.gormDB.Create(&created)
-	require.NoError(t, tx.Error)
+	err = db.SetWorkerSleepSchedule(ctx, linuxWorker.UUID, &created)
+	require.NoError(t, err)
 
 	fetched, err = db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
 	require.NoError(t, err)
@@ -82,8 +82,8 @@ func TestFetchSleepScheduleWorker(t *testing.T) {
 		StartTime:  TimeOfDay{18, 0},
 		EndTime:    TimeOfDay{9, 0},
 	}
-	tx := db.gormDB.Create(&created)
-	require.NoError(t, tx.Error)
+	err = db.SetWorkerSleepSchedule(ctx, linuxWorker.UUID, &created)
+	require.NoError(t, err)
 
 	dbSchedule, err := db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
 	require.NoError(t, err)
@@ -190,26 +190,24 @@ func TestSetWorkerSleepScheduleNextCheck(t *testing.T) {
 	ctx, finish, db := persistenceTestFixtures(1 * time.Second)
 	defer finish()
 
+	w := linuxWorker(t, db, func(worker *Worker) {
+		worker.Status = api.WorkerStatusAwake
+	})
+
 	schedule := SleepSchedule{
-		Worker: &Worker{
-			UUID:   "2b1f857a-fd64-484b-9c17-cf89bbe47be7",
-			Name:   "дрон 1",
-			Status: api.WorkerStatusAwake,
-		},
+		Worker:     &w,
 		IsActive:   true,
 		DaysOfWeek: "mo,tu,th,fr",
 		StartTime:  TimeOfDay{18, 0},
 		EndTime:    TimeOfDay{9, 0},
 	}
-	// Use GORM to create the worker and sleep schedule in one go.
-	if tx := db.gormDB.Create(&schedule); tx.Error != nil {
-		panic(tx.Error)
-	}
+	err := db.SetWorkerSleepSchedule(ctx, w.UUID, &schedule)
+	require.NoError(t, err)
 
 	future := db.gormDB.NowFunc().Add(5 * time.Hour)
 	schedule.NextCheck = future
 
-	err := db.SetWorkerSleepScheduleNextCheck(ctx, &schedule)
+	err = db.SetWorkerSleepScheduleNextCheck(ctx, &schedule)
 	require.NoError(t, err)
 
 	fetched, err := db.FetchWorkerSleepSchedule(ctx, schedule.Worker.UUID)
@@ -283,12 +281,12 @@ func TestFetchSleepSchedulesToCheck(t *testing.T) {
 		NextCheck: mockedPast, // next check in the past, so if active it would be checked.
 	}
 
-	// Use GORM to create the workers and sleep schedules in one go.
+	// Create the workers and sleep schedules.
 	scheds := []*SleepSchedule{&schedule0, &schedule1, &schedule2, &schedule3}
 	for idx := range scheds {
-		if tx := db.gormDB.Create(scheds[idx]); tx.Error != nil {
-			panic(tx.Error)
-		}
+		saveTestWorker(t, db, scheds[idx].Worker)
+		err := db.SetWorkerSleepSchedule(ctx, scheds[idx].Worker.UUID, scheds[idx])
+		require.NoError(t, err)
 	}
 
 	toCheck, err := db.FetchSleepSchedulesToCheck(ctx)

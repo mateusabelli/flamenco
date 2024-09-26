@@ -144,6 +144,45 @@ func (q *Queries) DeleteWorkerTag(ctx context.Context, uuid string) (int64, erro
 	return result.RowsAffected()
 }
 
+const fetchSleepSchedulesToCheck = `-- name: FetchSleepSchedulesToCheck :many
+SELECT id, created_at, updated_at, worker_id, is_active, days_of_week, start_time, end_time, next_check FROM sleep_schedules
+WHERE is_active
+AND (next_check <= ?1 OR next_check IS NULL OR next_check = '')
+`
+
+func (q *Queries) FetchSleepSchedulesToCheck(ctx context.Context, nextCheck sql.NullTime) ([]SleepSchedule, error) {
+	rows, err := q.db.QueryContext(ctx, fetchSleepSchedulesToCheck, nextCheck)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SleepSchedule
+	for rows.Next() {
+		var i SleepSchedule
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.WorkerID,
+			&i.IsActive,
+			&i.DaysOfWeek,
+			&i.StartTime,
+			&i.EndTime,
+			&i.NextCheck,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const fetchTagsOfWorker = `-- name: FetchTagsOfWorker :many
 SELECT worker_tags.id, worker_tags.created_at, worker_tags.updated_at, worker_tags.uuid, worker_tags.name, worker_tags.description
 FROM worker_tags
@@ -254,6 +293,35 @@ SELECT id, created_at, updated_at, uuid, secret, name, address, platform, softwa
 // FetchWorker only returns the worker if it wasn't soft-deleted.
 func (q *Queries) FetchWorker(ctx context.Context, uuid string) (Worker, error) {
 	row := q.db.QueryRowContext(ctx, fetchWorker, uuid)
+	var i Worker
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UUID,
+		&i.Secret,
+		&i.Name,
+		&i.Address,
+		&i.Platform,
+		&i.Software,
+		&i.Status,
+		&i.LastSeenAt,
+		&i.StatusRequested,
+		&i.LazyStatusRequest,
+		&i.SupportedTaskTypes,
+		&i.DeletedAt,
+		&i.CanRestart,
+	)
+	return i, err
+}
+
+const fetchWorkerByID = `-- name: FetchWorkerByID :one
+SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart FROM workers WHERE workers.id = ?1 and deleted_at is NULL
+`
+
+// FetchWorkerByID only returns the worker if it wasn't soft-deleted.
+func (q *Queries) FetchWorkerByID(ctx context.Context, workerID int64) (Worker, error) {
+	row := q.db.QueryRowContext(ctx, fetchWorkerByID, workerID)
 	var i Worker
 	err := row.Scan(
 		&i.ID,
@@ -640,6 +708,81 @@ func (q *Queries) SaveWorkerTag(ctx context.Context, arg SaveWorkerTagParams) er
 	return err
 }
 
+const setWorkerSleepSchedule = `-- name: SetWorkerSleepSchedule :execlastid
+INSERT INTO sleep_schedules (
+  created_at,
+  updated_at,
+  worker_id,
+  is_active,
+  days_of_week,
+  start_time,
+  end_time,
+  next_check
+) VALUES (
+  ?1,
+  ?2,
+  ?3,
+  ?4,
+  ?5,
+  ?6,
+  ?7,
+  ?8
+)
+ON CONFLICT DO UPDATE
+  SET updated_at=?2, is_active=?4, days_of_week=?5, start_time=?6, end_time=?7, next_check=?8
+  WHERE worker_id=?3
+`
+
+type SetWorkerSleepScheduleParams struct {
+	CreatedAt  time.Time
+	UpdatedAt  sql.NullTime
+	WorkerID   int64
+	IsActive   bool
+	DaysOfWeek string
+	StartTime  string
+	EndTime    string
+	NextCheck  sql.NullTime
+}
+
+// Note that the use of ?2 and ?3 in the SQL is not desirable, and should be
+// replaced with @updated_at and @job_id as soon as sqlc issue #3334 is fixed.
+// See https://github.com/sqlc-dev/sqlc/issues/3334 for more info.
+func (q *Queries) SetWorkerSleepSchedule(ctx context.Context, arg SetWorkerSleepScheduleParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setWorkerSleepSchedule,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+		arg.WorkerID,
+		arg.IsActive,
+		arg.DaysOfWeek,
+		arg.StartTime,
+		arg.EndTime,
+		arg.NextCheck,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+const setWorkerSleepScheduleNextCheck = `-- name: SetWorkerSleepScheduleNextCheck :execrows
+UPDATE sleep_schedules
+SET next_check=?1
+WHERE ID=?2
+`
+
+type SetWorkerSleepScheduleNextCheckParams struct {
+	NextCheck  sql.NullTime
+	ScheduleID int64
+}
+
+func (q *Queries) SetWorkerSleepScheduleNextCheck(ctx context.Context, arg SetWorkerSleepScheduleNextCheckParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setWorkerSleepScheduleNextCheck, arg.NextCheck, arg.ScheduleID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const softDeleteWorker = `-- name: SoftDeleteWorker :execrows
 UPDATE workers SET deleted_at=?1
 WHERE uuid=?2
@@ -690,6 +833,52 @@ func (q *Queries) SummarizeWorkerStatuses(ctx context.Context) ([]SummarizeWorke
 		return nil, err
 	}
 	return items, nil
+}
+
+const test_CreateWorkerSleepSchedule = `-- name: Test_CreateWorkerSleepSchedule :execlastid
+INSERT INTO sleep_schedules (
+  created_at,
+  worker_id,
+  is_active,
+  days_of_week,
+  start_time,
+  end_time,
+  next_check
+) VALUES (
+  ?1,
+  ?2,
+  ?3,
+  ?4,
+  ?5,
+  ?6,
+  ?7
+)
+`
+
+type Test_CreateWorkerSleepScheduleParams struct {
+	CreatedAt  time.Time
+	WorkerID   int64
+	IsActive   bool
+	DaysOfWeek string
+	StartTime  string
+	EndTime    string
+	NextCheck  sql.NullTime
+}
+
+func (q *Queries) Test_CreateWorkerSleepSchedule(ctx context.Context, arg Test_CreateWorkerSleepScheduleParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, test_CreateWorkerSleepSchedule,
+		arg.CreatedAt,
+		arg.WorkerID,
+		arg.IsActive,
+		arg.DaysOfWeek,
+		arg.StartTime,
+		arg.EndTime,
+		arg.NextCheck,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
 }
 
 const workerAddTagMembership = `-- name: WorkerAddTagMembership :exec
