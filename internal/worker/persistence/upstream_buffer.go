@@ -2,9 +2,12 @@ package persistence
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 
+	"projects.blender.org/studio/flamenco/internal/worker/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -12,10 +15,7 @@ import (
 
 // TaskUpdate is a queued task update.
 type TaskUpdate struct {
-	Model
-
-	TaskID  string `gorm:"type:varchar(36);default:''"`
-	Payload []byte `gorm:"type:BLOB"`
+	sqlc.TaskUpdate
 }
 
 func (t *TaskUpdate) Unmarshal() (*api.TaskUpdateJSONRequestBody, error) {
@@ -28,12 +28,11 @@ func (t *TaskUpdate) Unmarshal() (*api.TaskUpdateJSONRequestBody, error) {
 
 // UpstreamBufferQueueSize returns how many task updates are queued in the upstream buffer.
 func (db *DB) UpstreamBufferQueueSize(ctx context.Context) (int, error) {
-	var queueSize int64
-	tx := db.gormDB.WithContext(ctx).
-		Model(&TaskUpdate{}).
-		Count(&queueSize)
-	if tx.Error != nil {
-		return 0, fmt.Errorf("counting queued task updates: %w", tx.Error)
+	queries := db.queries()
+
+	queueSize, err := queries.CountTaskUpdates(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("counting queued task updates: %w", err)
 	}
 	return int(queueSize), nil
 }
@@ -45,36 +44,31 @@ func (db *DB) UpstreamBufferQueue(ctx context.Context, taskID string, apiTaskUpd
 		return fmt.Errorf("converting task update to JSON: %w", err)
 	}
 
-	taskUpdate := TaskUpdate{
-		TaskID:  taskID,
-		Payload: blob,
-	}
+	queries := db.queries()
+	err = queries.InsertTaskUpdate(ctx, sqlc.InsertTaskUpdateParams{
+		CreatedAt: db.now(),
+		TaskID:    taskID,
+		Payload:   blob,
+	})
 
-	tx := db.gormDB.WithContext(ctx).Create(&taskUpdate)
-	return tx.Error
+	return err
 }
 
 // UpstreamBufferFrontItem returns the first-queued item. The item remains queued.
 func (db *DB) UpstreamBufferFrontItem(ctx context.Context) (*TaskUpdate, error) {
-	taskUpdate := TaskUpdate{}
-
-	findResult := db.gormDB.WithContext(ctx).
-		Order("ID").
-		Limit(1).
-		Find(&taskUpdate)
-	if findResult.Error != nil {
-		return nil, findResult.Error
-	}
-	if taskUpdate.ID == 0 {
-		// No update fetched, which doesn't result in an error with Limt(1).Find(&task).
+	queries := db.queries()
+	result, err := queries.FirstTaskUpdate(ctx)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
+	case err != nil:
+		return nil, err
 	}
-
-	return &taskUpdate, nil
+	return &TaskUpdate{result}, err
 }
 
 // UpstreamBufferDiscard discards the queued task update with the given row ID.
 func (db *DB) UpstreamBufferDiscard(ctx context.Context, queuedTaskUpdate *TaskUpdate) error {
-	tx := db.gormDB.WithContext(ctx).Delete(queuedTaskUpdate)
-	return tx.Error
+	queries := db.queries()
+	return queries.DeleteTaskUpdate(ctx, queuedTaskUpdate.ID)
 }

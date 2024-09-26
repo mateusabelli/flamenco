@@ -25,12 +25,6 @@ func (db *DB) migrate(ctx context.Context) error {
 		log.Fatal().AnErr("cause", err).Msg("could not tell Goose to use sqlite3")
 	}
 
-	// Hook up Goose to the database.
-	lowLevelDB, err := db.gormDB.DB()
-	if err != nil {
-		log.Fatal().AnErr("cause", err).Msg("GORM would not give us its low-level interface")
-	}
-
 	// Disable foreign key constraints during the migrations. This is necessary
 	// for SQLite to do column renames / drops, as that requires creating a new
 	// table with the new schema, copying the data, dropping the old table, and
@@ -41,18 +35,18 @@ func (db *DB) migrate(ctx context.Context) error {
 	// of data, foreign keys are disabled here instead of in the migration SQL
 	// files, so that it can't be forgotten.
 
-	if err := db.pragmaForeignKeys(false); err != nil {
+	if err := db.pragmaForeignKeys(ctx, false); err != nil {
 		log.Fatal().AnErr("cause", err).Msgf("could not disable foreign key constraints before performing database migrations, please report a bug at %s", website.BugReportURL)
 	}
 
 	// Run Goose.
 	log.Debug().Msg("migrating database with Goose")
-	if err := goose.UpContext(ctx, lowLevelDB, "migrations"); err != nil {
+	if err := goose.UpContext(ctx, db.sqlDB, "migrations"); err != nil {
 		log.Fatal().AnErr("cause", err).Msg("could not migrate database to the latest version")
 	}
 
 	// Re-enable foreign key checks.
-	if err := db.pragmaForeignKeys(true); err != nil {
+	if err := db.pragmaForeignKeys(ctx, true); err != nil {
 		log.Fatal().AnErr("cause", err).Msgf("could not re-enable foreign key constraints after performing database migrations, please report a bug at %s", website.BugReportURL)
 	}
 

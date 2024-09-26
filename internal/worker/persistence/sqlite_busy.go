@@ -2,13 +2,11 @@
 package persistence
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
-
-	"github.com/glebarez/go-sqlite"
-	"gorm.io/gorm"
-	sqlite3 "modernc.org/sqlite/lib"
 )
 
 var (
@@ -25,15 +23,19 @@ func ErrIsDBBusy(err error) bool {
 // isDatabaseBusyError returns true when the error returned by GORM is a
 // SQLITE_BUSY error.
 func isDatabaseBusyError(err error) bool {
-	sqlErr, ok := err.(*sqlite.Error)
-	return ok && sqlErr.Code() == sqlite3.SQLITE_BUSY
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "SQLITE_BUSY")
 }
 
 // setBusyTimeout sets the SQLite busy_timeout busy handler.
 // See https://sqlite.org/pragma.html#pragma_busy_timeout
-func setBusyTimeout(gormDB *gorm.DB, busyTimeout time.Duration) error {
-	if tx := gormDB.Exec(fmt.Sprintf("PRAGMA busy_timeout = %d", busyTimeout.Milliseconds())); tx.Error != nil {
-		return fmt.Errorf("setting busy_timeout: %w", tx.Error)
+func (db *DB) setBusyTimeout(ctx context.Context, busyTimeout time.Duration) error {
+	queries := db.queries()
+	err := queries.PragmaBusyTimeout(ctx, busyTimeout)
+	if err != nil {
+		return fmt.Errorf("setting busy_timeout: %w", err)
 	}
 	return nil
 }

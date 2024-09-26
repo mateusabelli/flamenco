@@ -51,3 +51,20 @@ sql:
           jobuuid: "JobUUID"
           taskUUID: "TaskUUID"
           workeruuid: "WorkerUUID"
+  - engine: "sqlite"
+    schema: "internal/worker/persistence/sqlc/schema.sql"
+    queries: "internal/worker/persistence/sqlc/query.sql"
+    gen:
+      go:
+        out: "internal/worker/persistence/sqlc"
+        overrides:
+          - db_type: "jsonb"
+            go_type:
+              import: "encoding/json"
+              type: "RawMessage"
+        rename:
+          uuid: "UUID"
+          uuids: "UUIDs"
+          jobuuid: "JobUUID"
+          taskUUID: "TaskUUID"
+          workeruuid: "WorkerUUID"
