@@ -15,8 +15,8 @@ import (
 // This is used to show the global last-rendered image in the web interface.
 type LastRendered struct {
 	Model
-	JobID uint `gorm:"default:0"`
-	Job   *Job `gorm:"foreignkey:JobID;references:ID;constraint:OnDelete:CASCADE"`
+	JobID uint
+	Job   *Job
 }
 
 // SetLastRendered sets this job as the one with the most recent rendered image.

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
 
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
@@ -22,23 +21,23 @@ import (
 
 type Job struct {
 	Model
-	UUID string `gorm:"type:char(36);default:'';unique;index"`
+	UUID string
 
-	Name     string        `gorm:"type:varchar(64);default:''"`
-	JobType  string        `gorm:"type:varchar(32);default:''"`
-	Priority int           `gorm:"type:smallint;default:0"`
-	Status   api.JobStatus `gorm:"type:varchar(32);default:''"`
-	Activity string        `gorm:"type:varchar(255);default:''"`
+	Name     string
+	JobType  string
+	Priority int
+	Status   api.JobStatus
+	Activity string
 
-	Settings StringInterfaceMap `gorm:"type:jsonb"`
-	Metadata StringStringMap    `gorm:"type:jsonb"`
+	Settings StringInterfaceMap
+	Metadata StringStringMap
 
 	DeleteRequestedAt sql.NullTime
 
-	Storage JobStorageInfo `gorm:"embedded;embeddedPrefix:storage_"`
+	Storage JobStorageInfo
 
 	WorkerTagID *uint
-	WorkerTag   *WorkerTag `gorm:"foreignkey:WorkerTagID;references:ID;constraint:OnDelete:SET NULL"`
+	WorkerTag   *WorkerTag
 }
 
 type StringInterfaceMap map[string]interface{}
@@ -54,43 +53,32 @@ func (j *Job) DeleteRequested() bool {
 // files.
 type JobStorageInfo struct {
 	// ShamanCheckoutID is only set when the job was actually using Shaman storage.
-	ShamanCheckoutID string `gorm:"type:varchar(255);default:''"`
+	ShamanCheckoutID string
 }
 
 type Task struct {
 	Model
-	UUID string `gorm:"type:char(36);default:'';unique;index"`
+	UUID string
 
-	Name     string         `gorm:"type:varchar(64);default:''"`
-	Type     string         `gorm:"type:varchar(32);default:''"`
-	JobID    uint           `gorm:"default:0"`
-	Job      *Job           `gorm:"foreignkey:JobID;references:ID;constraint:OnDelete:CASCADE"`
-	JobUUID  string         `gorm:"-"` // Fetched by SQLC, handled by GORM in Task.AfterFind()
-	Priority int            `gorm:"type:smallint;default:50"`
-	Status   api.TaskStatus `gorm:"type:varchar(16);default:''"`
+	Name     string
+	Type     string
+	JobID    uint
+	Job      *Job
+	JobUUID  string // Fetched by SQLC, handled by GORM in Task.AfterFind()
+	Priority int
+	Status   api.TaskStatus
 
 	// Which worker is/was working on this.
 	WorkerID      *uint
-	Worker        *Worker   `gorm:"foreignkey:WorkerID;references:ID;constraint:OnDelete:SET NULL"`
-	WorkerUUID    string    `gorm:"-"`     // Fetched by SQLC, handled by GORM in Task.AfterFind()
-	LastTouchedAt time.Time `gorm:"index"` // Should contain UTC timestamps.
+	Worker        *Worker
+	WorkerUUID    string    // Fetched by SQLC, handled by GORM in Task.AfterFind()
+	LastTouchedAt time.Time // Should contain UTC timestamps.
 
 	// Dependencies are tasks that need to be completed before this one can run.
-	Dependencies []*Task `gorm:"many2many:task_dependencies;constraint:OnDelete:CASCADE"`
+	Dependencies []*Task
 
-	Commands Commands `gorm:"type:jsonb"`
-	Activity string   `gorm:"type:varchar(255);default:''"`
-}
-
-// AfterFind updates the task JobUUID and WorkerUUID fields from its job/worker, if known.
-func (t *Task) AfterFind(tx *gorm.DB) error {
-	if t.JobUUID == "" && t.Job != nil {
-		t.JobUUID = t.Job.UUID
-	}
-	if t.WorkerUUID == "" && t.Worker != nil {
-		t.WorkerUUID = t.Worker.UUID
-	}
-	return nil
+	Commands Commands
+	Activity string
 }
 
 type Commands []Command
@@ -138,10 +126,10 @@ type TaskFailure struct {
 	// Don't include the standard Gorm ID, UpdatedAt, or DeletedAt fields, as they're useless here.
 	// Entries will never be updated, and should never be soft-deleted but just purged from existence.
 	CreatedAt time.Time
-	TaskID    uint    `gorm:"primaryKey;autoIncrement:false"`
-	Task      *Task   `gorm:"foreignkey:TaskID;references:ID;constraint:OnDelete:CASCADE"`
-	WorkerID  uint    `gorm:"primaryKey;autoIncrement:false"`
-	Worker    *Worker `gorm:"foreignkey:WorkerID;references:ID;constraint:OnDelete:CASCADE"`
+	TaskID    uint
+	Task      *Task
+	WorkerID  uint
+	Worker    *Worker
 }
 
 // StoreJob stores an AuthoredJob and its tasks, and saves it to the database.

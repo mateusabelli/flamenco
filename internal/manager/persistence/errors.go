@@ -5,16 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-
-	"gorm.io/gorm"
 )
 
 var (
-	// TODO: let these errors wrap database/sql.ErrNoRows.
-	ErrJobNotFound       = PersistenceError{Message: "job not found", Err: gorm.ErrRecordNotFound}
-	ErrTaskNotFound      = PersistenceError{Message: "task not found", Err: gorm.ErrRecordNotFound}
-	ErrWorkerNotFound    = PersistenceError{Message: "worker not found", Err: gorm.ErrRecordNotFound}
-	ErrWorkerTagNotFound = PersistenceError{Message: "worker tag not found", Err: gorm.ErrRecordNotFound}
+	ErrJobNotFound       = PersistenceError{Message: "job not found", Err: sql.ErrNoRows}
+	ErrTaskNotFound      = PersistenceError{Message: "task not found", Err: sql.ErrNoRows}
+	ErrWorkerNotFound    = PersistenceError{Message: "worker not found", Err: sql.ErrNoRows}
+	ErrWorkerTagNotFound = PersistenceError{Message: "worker tag not found", Err: sql.ErrNoRows}
 
 	ErrDeletingWithoutFK = errors.New("refusing to delete a job when foreign keys are not enabled on the database")
 
@@ -80,9 +77,6 @@ func wrapError(errorToWrap error, message string, format ...interface{}) error {
 // This helps to keep Gorm as "implementation detail" of the persistence layer.
 func translateGormJobError(err error) error {
 	if errors.Is(err, sql.ErrNoRows) {
-		return ErrTaskNotFound
-	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return ErrJobNotFound
 	}
 	return err
@@ -94,9 +88,6 @@ func translateGormTaskError(err error) error {
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrTaskNotFound
 	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return ErrTaskNotFound
-	}
 	return err
 }
 
@@ -106,9 +97,6 @@ func translateGormWorkerError(err error) error {
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrWorkerNotFound
 	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return ErrWorkerNotFound
-	}
 	return err
 }
 
@@ -116,9 +104,6 @@ func translateGormWorkerError(err error) error {
 // This helps to keep Gorm as "implementation detail" of the persistence layer.
 func translateGormWorkerTagError(err error) error {
 	if errors.Is(err, sql.ErrNoRows) {
-		return ErrWorkerTagNotFound
-	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return ErrWorkerTagNotFound
 	}
 	return err

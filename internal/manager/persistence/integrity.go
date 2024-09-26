@@ -148,11 +148,6 @@ func (db *DB) pragmaForeignKeyCheck(ctx context.Context) (ok bool) {
 
 // ensureForeignKeysEnabled checks whether foreign keys are enabled, and if not,
 // tries to enable them.
-//
-// This is likely caused by either GORM or its embedded SQLite creating a new
-// connection to the low-level SQLite driver. Unfortunately the GORM-embedded
-// SQLite doesn't have an 'on-connect' callback function to always enable
-// foreign keys.
 func (db *DB) ensureForeignKeysEnabled(ctx context.Context) {
 	fkEnabled, err := db.areForeignKeysEnabled(ctx)
 

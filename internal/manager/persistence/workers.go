@@ -11,32 +11,31 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
 type Worker struct {
 	Model
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	DeletedAt sql.NullTime
 
-	UUID   string `gorm:"type:char(36);default:'';unique;index"`
-	Secret string `gorm:"type:varchar(255);default:''"`
-	Name   string `gorm:"type:varchar(64);default:''"`
+	UUID   string
+	Secret string
+	Name   string
 
-	Address    string           `gorm:"type:varchar(39);default:'';index"` // 39 = max length of IPv6 address.
-	Platform   string           `gorm:"type:varchar(16);default:''"`
-	Software   string           `gorm:"type:varchar(32);default:''"`
-	Status     api.WorkerStatus `gorm:"type:varchar(16);default:''"`
-	LastSeenAt time.Time        `gorm:"index"` // Should contain UTC timestamps.
-	CanRestart bool             `gorm:"type:smallint;default:false"`
+	Address    string // 39 = max length of IPv6 address.
+	Platform   string
+	Software   string
+	Status     api.WorkerStatus
+	LastSeenAt time.Time // Should contain UTC timestamps.
+	CanRestart bool
 
-	StatusRequested   api.WorkerStatus `gorm:"type:varchar(16);default:''"`
-	LazyStatusRequest bool             `gorm:"type:smallint;default:false"`
+	StatusRequested   api.WorkerStatus
+	LazyStatusRequest bool
 
-	SupportedTaskTypes string `gorm:"type:varchar(255);default:''"` // comma-separated list of task types.
+	SupportedTaskTypes string // comma-separated list of task types.
 
-	Tags []*WorkerTag `gorm:"many2many:worker_tag_membership;constraint:OnDelete:CASCADE"`
+	Tags []*WorkerTag
 }
 
 func (w *Worker) Identifier() string {
@@ -315,7 +314,7 @@ func convertSqlcWorker(worker sqlc.Worker) *Worker {
 			CreatedAt: worker.CreatedAt,
 			UpdatedAt: worker.UpdatedAt.Time,
 		},
-		DeletedAt: gorm.DeletedAt(worker.DeletedAt),
+		DeletedAt: worker.DeletedAt,
 
 		UUID:               worker.UUID,
 		Secret:             worker.Secret,

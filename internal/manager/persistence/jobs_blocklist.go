@@ -17,13 +17,13 @@ type JobBlock struct {
 	ID        uint
 	CreatedAt time.Time
 
-	JobID uint `gorm:"default:0;uniqueIndex:job_worker_tasktype"`
-	Job   *Job `gorm:"foreignkey:JobID;references:ID;constraint:OnDelete:CASCADE"`
+	JobID uint
+	Job   *Job
 
-	WorkerID uint    `gorm:"default:0;uniqueIndex:job_worker_tasktype"`
-	Worker   *Worker `gorm:"foreignkey:WorkerID;references:ID;constraint:OnDelete:CASCADE"`
+	WorkerID uint
+	Worker   *Worker
 
-	TaskType string `gorm:"uniqueIndex:job_worker_tasktype"`
+	TaskType string
 }
 
 // AddWorkerToJobBlocklist prevents this Worker of getting any task, of this type, on this job, from the task scheduler.

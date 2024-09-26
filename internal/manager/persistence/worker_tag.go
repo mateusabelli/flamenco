@@ -12,11 +12,11 @@ import (
 type WorkerTag struct {
 	Model
 
-	UUID        string `gorm:"type:char(36);default:'';unique;index"`
-	Name        string `gorm:"type:varchar(64);default:'';unique"`
-	Description string `gorm:"type:varchar(255);default:''"`
+	UUID        string
+	Name        string
+	Description string
 
-	Workers []*Worker `gorm:"many2many:worker_tag_membership;constraint:OnDelete:CASCADE"`
+	Workers []*Worker
 }
 
 func (db *DB) CreateWorkerTag(ctx context.Context, wc *WorkerTag) error {

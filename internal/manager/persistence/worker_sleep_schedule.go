@@ -18,16 +18,16 @@ import (
 type SleepSchedule struct {
 	Model
 
-	WorkerID uint    `gorm:"default:0;unique;index"`
-	Worker   *Worker `gorm:"foreignkey:WorkerID;references:ID;constraint:OnDelete:CASCADE"`
+	WorkerID uint
+	Worker   *Worker
 
-	IsActive bool `gorm:"default:false;index"`
+	IsActive bool
 
 	// Space-separated two-letter strings indicating days of week the schedule is
 	// active ("mo", "tu", etc.). Empty means "every day".
-	DaysOfWeek string    `gorm:"default:''"`
-	StartTime  TimeOfDay `gorm:"default:''"`
-	EndTime    TimeOfDay `gorm:"default:''"`
+	DaysOfWeek string
+	StartTime  TimeOfDay
+	EndTime    TimeOfDay
 
 	NextCheck time.Time
 }

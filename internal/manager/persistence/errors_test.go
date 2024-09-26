@@ -2,16 +2,16 @@
 package persistence
 
 import (
+	"database/sql"
 	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
 )
 
 func TestNotFoundErrors(t *testing.T) {
-	assert.ErrorIs(t, ErrJobNotFound, gorm.ErrRecordNotFound)
-	assert.ErrorIs(t, ErrTaskNotFound, gorm.ErrRecordNotFound)
+	assert.ErrorIs(t, ErrJobNotFound, sql.ErrNoRows)
+	assert.ErrorIs(t, ErrTaskNotFound, sql.ErrNoRows)
 
 	assert.Contains(t, ErrJobNotFound.Error(), "job")
 	assert.Contains(t, ErrTaskNotFound.Error(), "task")
@@ -19,7 +19,7 @@ func TestNotFoundErrors(t *testing.T) {
 
 func TestTranslateGormJobError(t *testing.T) {
 	assert.Nil(t, translateGormJobError(nil))
-	assert.Equal(t, ErrJobNotFound, translateGormJobError(gorm.ErrRecordNotFound))
+	assert.Equal(t, ErrJobNotFound, translateGormJobError(sql.ErrNoRows))
 
 	otherError := errors.New("this error is not special for this function")
 	assert.Equal(t, otherError, translateGormJobError(otherError))
@@ -27,7 +27,7 @@ func TestTranslateGormJobError(t *testing.T) {
 
 func TestTranslateGormTaskError(t *testing.T) {
 	assert.Nil(t, translateGormTaskError(nil))
-	assert.Equal(t, ErrTaskNotFound, translateGormTaskError(gorm.ErrRecordNotFound))
+	assert.Equal(t, ErrTaskNotFound, translateGormTaskError(sql.ErrNoRows))
 
 	otherError := errors.New("this error is not special for this function")
 	assert.Equal(t, otherError, translateGormTaskError(otherError))

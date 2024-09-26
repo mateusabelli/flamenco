@@ -29,7 +29,7 @@ type DB struct {
 // Soft deletion is not used by Flamenco. If it ever becomes necessary to
 // support soft-deletion, see https://gorm.io/docs/delete.html#Soft-Delete
 type Model struct {
-	ID        uint `gorm:"primarykey"`
+	ID        uint
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -167,8 +167,6 @@ type queriesTX struct {
 }
 
 // queries returns the SQLC Queries struct, connected to this database.
-// It is intended that all GORM queries will be migrated to use this interface
-// instead.
 //
 // After calling this function, all queries should use this transaction until it
 // is closed (either committed or rolled back). Otherwise SQLite will deadlock,
