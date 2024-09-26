@@ -1235,6 +1235,104 @@ func (q *Queries) TaskTouchedByWorker(ctx context.Context, arg TaskTouchedByWork
 	return err
 }
 
+const test_CountJobs = `-- name: Test_CountJobs :one
+SELECT count(*) AS count FROM jobs
+`
+
+// Count the number of jobs in the database. Only used in unit tests.
+func (q *Queries) Test_CountJobs(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, test_CountJobs)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const test_CountTaskFailures = `-- name: Test_CountTaskFailures :one
+SELECT count(*) AS count FROM task_failures
+`
+
+// Count the number of task failures in the database. Only used in unit tests.
+func (q *Queries) Test_CountTaskFailures(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, test_CountTaskFailures)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const test_CountTasks = `-- name: Test_CountTasks :one
+SELECT count(*) AS count FROM tasks
+`
+
+// Count the number of tasks in the database. Only used in unit tests.
+func (q *Queries) Test_CountTasks(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, test_CountTasks)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const test_FetchJobBlocklist = `-- name: Test_FetchJobBlocklist :many
+SELECT id, created_at, job_id, worker_id, task_type FROM job_blocks
+`
+
+// Fetch all job block list entries. Used only in unit tests.
+func (q *Queries) Test_FetchJobBlocklist(ctx context.Context) ([]JobBlock, error) {
+	rows, err := q.db.QueryContext(ctx, test_FetchJobBlocklist)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []JobBlock
+	for rows.Next() {
+		var i JobBlock
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.JobID,
+			&i.WorkerID,
+			&i.TaskType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const test_FetchTaskFailures = `-- name: Test_FetchTaskFailures :many
+SELECT created_at, task_id, worker_id FROM task_failures
+`
+
+// Fetch all task failures in the database. Only used in unit tests.
+func (q *Queries) Test_FetchTaskFailures(ctx context.Context) ([]TaskFailure, error) {
+	rows, err := q.db.QueryContext(ctx, test_FetchTaskFailures)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TaskFailure
+	for rows.Next() {
+		var i TaskFailure
+		if err := rows.Scan(&i.CreatedAt, &i.TaskID, &i.WorkerID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateJobsTaskStatuses = `-- name: UpdateJobsTaskStatuses :exec
 UPDATE tasks SET
   updated_at = ?1,

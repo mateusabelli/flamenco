@@ -19,6 +19,7 @@ import (
 func TestQueryJobTaskSummaries(t *testing.T) {
 	ctx, close, db, job, authoredJob := jobTasksTestFixtures(t)
 	defer close()
+	queries := db.queries()
 
 	expectTaskUUIDs := map[string]bool{}
 	for _, task := range authoredJob.Tasks {
@@ -37,9 +38,8 @@ func TestQueryJobTaskSummaries(t *testing.T) {
 	persistAuthoredJob(t, ctx, db, otherAuthoredJob)
 
 	// Sanity check for the above code, there should be 6 tasks overall, 3 per job.
-	var numTasks int64
-	tx := db.gormDB.Model(&Task{}).Count(&numTasks)
-	require.NoError(t, tx.Error)
+	numTasks, err := queries.Test_CountTasks(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, int64(6), numTasks)
 
 	// Get the task summaries of a particular job.

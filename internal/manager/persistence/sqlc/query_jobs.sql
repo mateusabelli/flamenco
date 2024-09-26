@@ -274,6 +274,10 @@ WHERE
 AND job_blocks.worker_id in (SELECT workers.id FROM workers WHERE workers.uuid=@workeruuid)
 AND job_blocks.task_type = @task_type;
 
+-- name: Test_FetchJobBlocklist :many
+-- Fetch all job block list entries. Used only in unit tests.
+SELECT * FROM job_blocks;
+
 -- name: WorkersLeftToRun :many
 SELECT workers.uuid FROM workers
 WHERE id NOT IN (
@@ -324,3 +328,19 @@ FROM tasks
 WHERE
     status = @task_status
 AND last_touched_at <= @untouched_since;
+
+-- name: Test_CountJobs :one
+-- Count the number of jobs in the database. Only used in unit tests.
+SELECT count(*) AS count FROM jobs;
+
+-- name: Test_CountTasks :one
+-- Count the number of tasks in the database. Only used in unit tests.
+SELECT count(*) AS count FROM tasks;
+
+-- name: Test_CountTaskFailures :one
+-- Count the number of task failures in the database. Only used in unit tests.
+SELECT count(*) AS count FROM task_failures;
+
+-- name: Test_FetchTaskFailures :many
+-- Fetch all task failures in the database. Only used in unit tests.
+SELECT * FROM task_failures;

@@ -21,6 +21,7 @@ import (
 func TestStoreAuthoredJob(t *testing.T) {
 	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
+	queries := db.queries()
 
 	job := createTestAuthoredJobWithTasks()
 	err := db.StoreAuthoredJob(ctx, job)
@@ -40,22 +41,18 @@ func TestStoreAuthoredJob(t *testing.T) {
 	assert.EqualValues(t, map[string]string(job.Metadata), fetchedJob.Metadata)
 	assert.Equal(t, "", fetchedJob.Storage.ShamanCheckoutID)
 
-	// Fetch tasks of job.
-	var dbJob Job
-	tx := db.gormDB.Where(&Job{UUID: job.JobID}).Find(&dbJob)
-	require.NoError(t, tx.Error)
-	var tasks []Task
-	tx = db.gormDB.Where("job_id = ?", dbJob.ID).Find(&tasks)
-	require.NoError(t, tx.Error)
+	// Fetch result of job.
+	result, err := queries.FetchTasksOfJob(ctx, int64(fetchedJob.ID))
+	require.NoError(t, err)
 
-	if len(tasks) != 3 {
-		t.Fatalf("expected 3 tasks, got %d", len(tasks))
+	if len(result) != 3 {
+		t.Fatalf("expected 3 tasks, got %d", len(result))
 	}
 
 	// TODO: test task contents.
-	assert.Equal(t, api.TaskStatusQueued, tasks[0].Status)
-	assert.Equal(t, api.TaskStatusQueued, tasks[1].Status)
-	assert.Equal(t, api.TaskStatusQueued, tasks[2].Status)
+	assert.Equal(t, api.TaskStatusQueued, api.TaskStatus(result[0].Task.Status))
+	assert.Equal(t, api.TaskStatusQueued, api.TaskStatus(result[1].Task.Status))
+	assert.Equal(t, api.TaskStatusQueued, api.TaskStatus(result[2].Task.Status))
 }
 
 func TestStoreAuthoredJobWithShamanCheckoutID(t *testing.T) {
@@ -180,6 +177,7 @@ func TestSaveJobPriority(t *testing.T) {
 func TestDeleteJob(t *testing.T) {
 	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
+	queries := db.queries()
 
 	authJob := createTestAuthoredJobWithTasks()
 	authJob.Name = "Job to delete"
@@ -199,16 +197,14 @@ func TestDeleteJob(t *testing.T) {
 	assert.ErrorIs(t, err, ErrJobNotFound, "deleted jobs should not be found")
 
 	// Test that the job is really gone.
-	var numJobs int64
-	tx := db.gormDB.Model(&Job{}).Count(&numJobs)
-	require.NoError(t, tx.Error)
+	numJobs, err := queries.Test_CountJobs(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, int64(1), numJobs,
 		"the job should have been deleted, and the other one should still be there")
 
 	// Test that the tasks are gone too.
-	var numTasks int64
-	tx = db.gormDB.Model(&Task{}).Count(&numTasks)
-	require.NoError(t, tx.Error)
+	numTasks, err := queries.Test_CountTasks(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, otherJobTaskCount, numTasks,
 		"tasks should have been deleted along with their job, and the other job's tasks should still be there")
 
@@ -218,9 +214,9 @@ func TestDeleteJob(t *testing.T) {
 	assert.Equal(t, otherJob.Name, dbOtherJob.Name)
 
 	// Test that all the remaining tasks belong to that particular job.
-	tx = db.gormDB.Model(&Task{}).Where(Task{JobID: dbOtherJob.ID}).Count(&numTasks)
-	require.NoError(t, tx.Error)
-	assert.Equal(t, otherJobTaskCount, numTasks,
+	tasksOfJob, err := queries.FetchTasksOfJob(ctx, int64(dbOtherJob.ID))
+	require.NoError(t, err)
+	assert.Equal(t, len(tasksOfJob), int(numTasks),
 		"all remaining tasks should belong to the other job")
 }
 
@@ -738,15 +734,13 @@ func TestAddWorkerToTaskFailedList(t *testing.T) {
 
 	// Deleting the task should also delete the failures.
 	require.NoError(t, db.DeleteJob(ctx, authoredJob.JobID))
-	var num int64
-	tx := db.gormDB.Model(&TaskFailure{}).Count(&num)
-	require.NoError(t, tx.Error)
-	assert.Zero(t, num)
+	assert.Zero(t, countTaskFailures(ctx, db))
 }
 
 func TestClearFailureListOfTask(t *testing.T) {
 	ctx, close, db, _, authoredJob := jobTasksTestFixtures(t)
 	defer close()
+	queries := db.queries()
 
 	task1, _ := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
 	task2, _ := db.FetchTask(ctx, authoredJob.Tasks[2].UUID)
@@ -769,18 +763,18 @@ func TestClearFailureListOfTask(t *testing.T) {
 
 	// Clearing should just update this one task.
 	require.NoError(t, db.ClearFailureListOfTask(ctx, task1))
-	var failures = []TaskFailure{}
-	tx := db.gormDB.Model(&TaskFailure{}).Scan(&failures)
-	require.NoError(t, tx.Error)
+	failures, err := queries.Test_FetchTaskFailures(ctx)
+	require.NoError(t, err)
 	if assert.Len(t, failures, 1) {
-		assert.Equal(t, task2.ID, failures[0].TaskID)
-		assert.Equal(t, worker1.ID, failures[0].WorkerID)
+		assert.Equal(t, int64(task2.ID), failures[0].TaskID)
+		assert.Equal(t, int64(worker1.ID), failures[0].WorkerID)
 	}
 }
 
 func TestClearFailureListOfJob(t *testing.T) {
 	ctx, close, db, dbJob1, authoredJob1 := jobTasksTestFixtures(t)
 	defer close()
+	queries := db.queries()
 
 	// Construct a cloned version of the job.
 	authoredJob2 := duplicateJobAndTasks(authoredJob1)
@@ -801,18 +795,17 @@ func TestClearFailureListOfJob(t *testing.T) {
 	_, _ = db.AddWorkerToTaskFailedList(ctx, task2_1, worker2)
 
 	// Sanity check: there should be 5 failures registered now.
-	assert.Equal(t, 5, countTaskFailures(db))
+	assert.Equal(t, 5, countTaskFailures(ctx, db))
 
 	// Clearing should be limited to the given job.
 	require.NoError(t, db.ClearFailureListOfJob(ctx, dbJob1))
-	var failures = []TaskFailure{}
-	tx := db.gormDB.Model(&TaskFailure{}).Scan(&failures)
-	require.NoError(t, tx.Error)
+	failures, err := queries.Test_FetchTaskFailures(ctx)
+	require.NoError(t, err)
 	if assert.Len(t, failures, 2) {
-		assert.Equal(t, task2_1.ID, failures[0].TaskID)
-		assert.Equal(t, worker1.ID, failures[0].WorkerID)
-		assert.Equal(t, task2_1.ID, failures[1].TaskID)
-		assert.Equal(t, worker2.ID, failures[1].WorkerID)
+		assert.Equal(t, int64(task2_1.ID), failures[0].TaskID)
+		assert.Equal(t, int64(worker1.ID), failures[0].WorkerID)
+		assert.Equal(t, int64(task2_1.ID), failures[1].TaskID)
+		assert.Equal(t, int64(worker2.ID), failures[1].WorkerID)
 	}
 }
 
@@ -1059,11 +1052,11 @@ func createWorkerFrom(ctx context.Context, t *testing.T, db *DB, worker Worker) 
 	return dbWorker
 }
 
-func countTaskFailures(db *DB) int {
-	var numFailures int64
-	tx := db.gormDB.Model(&TaskFailure{}).Count(&numFailures)
-	if tx.Error != nil {
-		panic(tx.Error)
+func countTaskFailures(ctx context.Context, db *DB) int {
+	queries := db.queries()
+	numFailures, err := queries.Test_CountTaskFailures(ctx)
+	if err != nil {
+		panic(err)
 	}
 
 	if numFailures > math.MaxInt {

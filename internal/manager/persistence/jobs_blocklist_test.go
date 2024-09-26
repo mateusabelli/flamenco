@@ -14,19 +14,19 @@ func TestAddWorkerToJobBlocklist(t *testing.T) {
 	defer close()
 
 	worker := createWorker(ctx, t, db)
+	queries := db.queries()
 
 	{
 		// Add a worker to the block list.
 		err := db.AddWorkerToJobBlocklist(ctx, job, worker, "blender")
 		require.NoError(t, err)
 
-		list := []JobBlock{}
-		tx := db.gormDB.Model(&JobBlock{}).Scan(&list)
-		require.NoError(t, tx.Error)
+		list, err := queries.Test_FetchJobBlocklist(ctx)
+		require.NoError(t, err)
 		if assert.Len(t, list, 1) {
 			entry := list[0]
-			assert.Equal(t, entry.JobID, job.ID)
-			assert.Equal(t, entry.WorkerID, worker.ID)
+			assert.Equal(t, entry.JobID, int64(job.ID))
+			assert.Equal(t, entry.WorkerID, int64(worker.ID))
 			assert.Equal(t, entry.TaskType, "blender")
 		}
 	}
@@ -36,9 +36,8 @@ func TestAddWorkerToJobBlocklist(t *testing.T) {
 		err := db.AddWorkerToJobBlocklist(ctx, job, worker, "blender")
 		require.NoError(t, err)
 
-		list := []JobBlock{}
-		tx := db.gormDB.Model(&JobBlock{}).Scan(&list)
-		require.NoError(t, tx.Error)
+		list, err := queries.Test_FetchJobBlocklist(ctx)
+		require.NoError(t, err)
 		assert.Len(t, list, 1, "No new entry should have been created")
 	}
 }
