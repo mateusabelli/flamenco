@@ -14,8 +14,6 @@ require (
 	github.com/fromkeith/gossdp v0.0.0-20180102154144-1b2c43f6886e
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/getkin/kin-openapi v0.88.0
-	github.com/glebarez/go-sqlite v1.22.0
-	github.com/glebarez/sqlite v1.10.0
 	github.com/golang/mock v1.6.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.5.0
@@ -33,7 +31,6 @@ require (
 	golang.org/x/net v0.25.0
 	golang.org/x/sys v0.20.0
 	gopkg.in/yaml.v2 v2.4.0
-	gorm.io/gorm v1.25.5
 	modernc.org/sqlite v1.28.0
 )
 
@@ -49,8 +46,6 @@ require (
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/mailru/easyjson v0.7.0 // indirect
