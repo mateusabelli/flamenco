@@ -9,16 +9,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/glebarez/sqlite"
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
+	_ "modernc.org/sqlite"
 
 	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 )
 
 // DB provides the database interface.
 type DB struct {
-	gormDB  *gorm.DB
+	sqlDB   *sql.DB
 	nowfunc func() time.Time
 
 	// See PeriodicIntegrityCheck().
@@ -64,7 +63,7 @@ func OpenDB(ctx context.Context, dsn string) (*DB, error) {
 		return nil, ErrIntegrity
 	}
 
-	db.vacuum()
+	db.vacuum(ctx)
 
 	if err := db.migrate(ctx); err != nil {
 		return nil, err
@@ -78,41 +77,18 @@ func OpenDB(ctx context.Context, dsn string) (*DB, error) {
 
 	// Perform another vacuum after database migration, as that may have copied a
 	// lot of data and then dropped another lot of data.
-	db.vacuum()
+	db.vacuum(ctx)
 
 	closeConnOnReturn = false
 	return db, nil
 }
 
 func openDB(ctx context.Context, dsn string) (*DB, error) {
-	globalLogLevel := log.Logger.GetLevel()
-	dblogger := NewDBLogger(log.Level(globalLogLevel))
-
-	config := gorm.Config{
-		Logger: dblogger,
-	}
-
-	return openDBWithConfig(dsn, &config)
-}
-
-func openDBWithConfig(dsn string, config *gorm.Config) (*DB, error) {
-	db := DB{
-		nowfunc: time.Now,
-
-		// Buffer one request, so that even when a consistency check is already
-		// running, another can be queued without blocking. Queueing more than one
-		// doesn't make sense, though.
-		consistencyCheckRequests: make(chan struct{}, 1),
-	}
-
-	config.NowFunc = db.now
-
-	dialector := sqlite.Open(dsn)
-	gormDB, err := gorm.Open(dialector, config)
+	// Connect to the database.
+	sqlDB, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
 	}
-	db.gormDB = gormDB
 
 	// Close the database connection if there was some error. This prevents
 	// leaking database connections & should remove any write-ahead-log files.
@@ -121,37 +97,44 @@ func openDBWithConfig(dsn string, config *gorm.Config) (*DB, error) {
 		if !closeConnOnReturn {
 			return
 		}
-		if err := db.Close(); err != nil {
+		if err := sqlDB.Close(); err != nil {
 			log.Debug().AnErr("cause", err).Msg("cannot close database connection")
 		}
 	}()
 
-	// Use the generic sql.DB interface to set some connection pool options.
-	sqlDB, err := gormDB.DB()
-	if err != nil {
-		return nil, err
-	}
 	// Only allow a single database connection, to avoid SQLITE_BUSY errors.
 	// It's not certain that this'll improve the situation, but it's worth a try.
 	sqlDB.SetMaxIdleConns(1) // Max num of connections in the idle connection pool.
 	sqlDB.SetMaxOpenConns(1) // Max num of open connections to the database.
 
+	db := DB{
+		sqlDB:   sqlDB,
+		nowfunc: func() time.Time { return time.Now().UTC() },
+
+		// Buffer one request, so that even when a consistency check is already
+		// running, another can be queued without blocking. Queueing more than one
+		// doesn't make sense, though.
+		consistencyCheckRequests: make(chan struct{}, 1),
+	}
+
 	// Always enable foreign key checks, to make SQLite behave like a real database.
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	pragmaCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	if err := db.pragmaForeignKeys(ctx, true); err != nil {
+	if err := db.pragmaForeignKeys(pragmaCtx, true); err != nil {
 		return nil, err
 	}
 
+	queries := db.queries()
+
 	// Write-ahead-log journal may improve writing speed.
 	log.Trace().Msg("enabling SQLite write-ahead-log journal mode")
-	if tx := gormDB.Exec("PRAGMA journal_mode = WAL"); tx.Error != nil {
-		return nil, fmt.Errorf("enabling SQLite write-ahead-log journal mode: %w", tx.Error)
+	if err := queries.PragmaJournalModeWAL(pragmaCtx); err != nil {
+		return nil, fmt.Errorf("enabling SQLite write-ahead-log journal mode: %w", err)
 	}
 	// Switching from 'full' (default) to 'normal' sync may improve writing speed.
 	log.Trace().Msg("enabling SQLite 'normal' synchronisation")
-	if tx := gormDB.Exec("PRAGMA synchronous = normal"); tx.Error != nil {
-		return nil, fmt.Errorf("enabling SQLite 'normal' sync mode: %w", tx.Error)
+	if err := queries.PragmaSynchronousNormal(pragmaCtx); err != nil {
+		return nil, fmt.Errorf("enabling SQLite 'normal' sync mode: %w", err)
 	}
 
 	closeConnOnReturn = false
@@ -159,37 +142,21 @@ func openDBWithConfig(dsn string, config *gorm.Config) (*DB, error) {
 }
 
 // vacuum executes the SQL "VACUUM" command, and logs any errors.
-func (db *DB) vacuum() {
-	tx := db.gormDB.Exec("vacuum")
-	if tx.Error != nil {
-		log.Error().Err(tx.Error).Msg("error vacuuming database")
+func (db *DB) vacuum(ctx context.Context) {
+	err := db.queries().Vacuum(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("error vacuuming database")
 	}
 }
 
 // Close closes the connection to the database.
 func (db *DB) Close() error {
-	sqldb, err := db.gormDB.DB()
-	if err != nil {
-		return err
-	}
-	return sqldb.Close()
+	return db.sqlDB.Close()
 }
 
 // queries returns the SQLC Queries struct, connected to this database.
-// It is intended that all GORM queries will be migrated to use this interface
-// instead.
-//
-// Note that this function does not return an error. Instead it just panics when
-// it cannot obtain the low-level GORM database interface. I have no idea when
-// this will ever fail, so I'm opting to simplify the use of this function
-// instead.
 func (db *DB) queries() *sqlc.Queries {
-	sqldb, err := db.gormDB.DB()
-	if err != nil {
-		panic(fmt.Sprintf("could not get low-level database driver: %v", err))
-	}
-
-	loggingWrapper := LoggingDBConn{sqldb}
+	loggingWrapper := LoggingDBConn{db.sqlDB}
 	return sqlc.New(&loggingWrapper)
 }
 
@@ -207,12 +174,7 @@ type queriesTX struct {
 // is closed (either committed or rolled back). Otherwise SQLite will deadlock,
 // as it will make any other query wait until this transaction is done.
 func (db *DB) queriesWithTX() (*queriesTX, error) {
-	sqldb, err := db.gormDB.DB()
-	if err != nil {
-		panic(fmt.Sprintf("could not get low-level database driver: %v", err))
-	}
-
-	tx, err := sqldb.Begin()
+	tx, err := db.sqlDB.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("could not begin database transaction: %w", err)
 	}
@@ -231,7 +193,7 @@ func (db *DB) queriesWithTX() (*queriesTX, error) {
 // now returns 'now' as reported by db.nowfunc.
 // It always converts the timestamp to UTC.
 func (db *DB) now() time.Time {
-	return db.nowfunc().UTC()
+	return db.nowfunc()
 }
 
 // nowNullable returns the result of `now()` wrapped in a sql.NullTime.

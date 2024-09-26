@@ -108,3 +108,24 @@ func (q *Queries) PragmaBusyTimeout(ctx context.Context, busyTimeout time.Durati
 	_, err := q.db.ExecContext(ctx, sql)
 	return err
 }
+
+const pragmaJournalModeWAL = `PRAGMA journal_mode = WAL`
+
+func (q *Queries) PragmaJournalModeWAL(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, pragmaJournalModeWAL)
+	return err
+}
+
+const pragmaSynchronousNormal = `PRAGMA synchronous = normal`
+
+func (q *Queries) PragmaSynchronousNormal(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, pragmaSynchronousNormal)
+	return err
+}
+
+const vacuum = `VACUUM`
+
+func (q *Queries) Vacuum(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, vacuum)
+	return err
+}

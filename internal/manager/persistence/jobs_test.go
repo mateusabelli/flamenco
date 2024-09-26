@@ -296,7 +296,7 @@ func TestRequestJobMassDeletion(t *testing.T) {
 	ctx, close, db, job1, authoredJob1 := jobTasksTestFixtures(t)
 	defer close()
 
-	origGormNow := db.gormDB.NowFunc
+	realNowFunc := db.nowfunc
 	now := db.now()
 
 	// Ensure different jobs get different timestamps.
@@ -313,12 +313,12 @@ func TestRequestJobMassDeletion(t *testing.T) {
 	job4 := persistAuthoredJob(t, ctx, db, authoredJob4)
 
 	// Request that "job3 and older" gets deleted.
-	timeOfDeleteRequest := origGormNow()
+	timeOfDeleteRequest := realNowFunc()
 	db.nowfunc = func() time.Time { return timeOfDeleteRequest }
 	uuids, err := db.RequestJobMassDeletion(ctx, job3.UpdatedAt)
 	require.NoError(t, err)
 
-	db.nowfunc = origGormNow
+	db.nowfunc = realNowFunc
 
 	// Only jobs 3 and 4 should be updated.
 	assert.Equal(t, []string{job3.UUID, job4.UUID}, uuids)

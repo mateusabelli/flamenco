@@ -5,17 +5,12 @@ package persistence
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/glebarez/sqlite"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -31,29 +26,16 @@ func CreateTestDB() (db *DB, closer func()) {
 		}
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
 	var err error
 
-	dblogger := NewDBLogger(log.Level(zerolog.TraceLevel).Output(os.Stdout))
-
-	// Open the database ourselves, so that we have a low-level connection that
-	// can be closed when the unit test is done running.
-	sqliteConn, err := sql.Open(sqlite.DriverName, TestDSN)
-	if err != nil {
-		panic(fmt.Sprintf("opening SQLite connection: %v", err))
-	}
-
-	config := gorm.Config{
-		Logger:   dblogger,
-		ConnPool: sqliteConn,
-	}
-
-	db, err = openDBWithConfig(TestDSN, &config)
+	db, err = openDB(ctx, TestDSN)
 	if err != nil {
 		panic(fmt.Sprintf("opening DB: %v", err))
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
 	err = db.migrate(ctx)
 	if err != nil {
 		panic(fmt.Sprintf("migrating DB: %v", err))
