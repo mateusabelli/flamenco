@@ -16,6 +16,7 @@ bugs in actually-released versions.
 - Ensure the submitted scene is rendered in a multi-scene blend file.
 - Security updates of dependencies:
   - [GO-2024-3106: Stack exhaustion in Decoder.Decode in encoding/gob](https://pkg.go.dev/vuln/GO-2024-3106)
+- Fix bug where database foreign key constraints could be deactivated ([#104305](https://projects.blender.org/studio/flamenco/issues/104305)).
 
 ## 3.5 - released 2024-04-16
 
