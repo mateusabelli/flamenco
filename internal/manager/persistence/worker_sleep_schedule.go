@@ -70,8 +70,8 @@ func (db *DB) SetWorkerSleepSchedule(ctx context.Context, workerUUID string, sch
 
 	queries := db.queries()
 	params := sqlc.SetWorkerSleepScheduleParams{
-		CreatedAt:  db.gormDB.NowFunc(),
-		UpdatedAt:  db.now(),
+		CreatedAt:  db.now(),
+		UpdatedAt:  db.nowNullable(),
 		WorkerID:   int64(schedule.WorkerID),
 		IsActive:   schedule.IsActive,
 		DaysOfWeek: schedule.DaysOfWeek,
@@ -126,7 +126,7 @@ func (db *DB) FetchSleepScheduleWorker(ctx context.Context, schedule *SleepSched
 
 // FetchSleepSchedulesToCheck returns the sleep schedules that are due for a check.
 func (db *DB) FetchSleepSchedulesToCheck(ctx context.Context) ([]*SleepSchedule, error) {
-	now := db.now()
+	now := db.nowNullable()
 
 	log.Debug().
 		Str("timeout", now.Time.String()).

@@ -23,7 +23,7 @@ type LastRendered struct {
 func (db *DB) SetLastRendered(ctx context.Context, j *Job) error {
 	queries := db.queries()
 
-	now := db.now()
+	now := db.nowNullable()
 	return queries.SetLastRendered(ctx, sqlc.SetLastRenderedParams{
 		CreatedAt: now.Time,
 		UpdatedAt: now,

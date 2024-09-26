@@ -18,7 +18,8 @@ import (
 
 // DB provides the database interface.
 type DB struct {
-	gormDB *gorm.DB
+	gormDB  *gorm.DB
+	nowfunc func() time.Time
 
 	// See PeriodicIntegrityCheck().
 	consistencyCheckRequests chan struct{}
@@ -88,28 +89,30 @@ func openDB(ctx context.Context, dsn string) (*DB, error) {
 	dblogger := NewDBLogger(log.Level(globalLogLevel))
 
 	config := gorm.Config{
-		Logger:  dblogger,
-		NowFunc: nowFunc,
+		Logger: dblogger,
 	}
 
 	return openDBWithConfig(dsn, &config)
 }
 
 func openDBWithConfig(dsn string, config *gorm.Config) (*DB, error) {
-	dialector := sqlite.Open(dsn)
-	gormDB, err := gorm.Open(dialector, config)
-	if err != nil {
-		return nil, err
-	}
-
 	db := DB{
-		gormDB: gormDB,
+		nowfunc: time.Now,
 
 		// Buffer one request, so that even when a consistency check is already
 		// running, another can be queued without blocking. Queueing more than one
 		// doesn't make sense, though.
 		consistencyCheckRequests: make(chan struct{}, 1),
 	}
+
+	config.NowFunc = db.now
+
+	dialector := sqlite.Open(dsn)
+	gormDB, err := gorm.Open(dialector, config)
+	if err != nil {
+		return nil, err
+	}
+	db.gormDB = gormDB
 
 	// Close the database connection if there was some error. This prevents
 	// leaking database connections & should remove any write-ahead-log files.
@@ -153,12 +156,6 @@ func openDBWithConfig(dsn string, config *gorm.Config) (*DB, error) {
 
 	closeConnOnReturn = false
 	return &db, nil
-}
-
-// nowFunc returns 'now' in UTC, so that GORM-managed times (createdAt,
-// deletedAt, updatedAt) are stored in UTC.
-func nowFunc() time.Time {
-	return time.Now().UTC()
 }
 
 // vacuum executes the SQL "VACUUM" command, and logs any errors.
@@ -231,10 +228,17 @@ func (db *DB) queriesWithTX() (*queriesTX, error) {
 	return &qtx, nil
 }
 
-// now returns the result of `nowFunc()` wrapped in a sql.NullTime.
-func (db *DB) now() sql.NullTime {
+// now returns 'now' as reported by db.nowfunc.
+// It always converts the timestamp to UTC.
+func (db *DB) now() time.Time {
+	return db.nowfunc().UTC()
+}
+
+// nowNullable returns the result of `now()` wrapped in a sql.NullTime.
+// It is nullable just for ease of use, it will never actually be null.
+func (db *DB) nowNullable() sql.NullTime {
 	return sql.NullTime{
-		Time:  db.gormDB.NowFunc(),
+		Time:  db.now(),
 		Valid: true,
 	}
 }

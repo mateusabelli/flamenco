@@ -22,7 +22,7 @@ type WorkerTag struct {
 func (db *DB) CreateWorkerTag(ctx context.Context, wc *WorkerTag) error {
 	queries := db.queries()
 
-	now := db.gormDB.NowFunc()
+	now := db.now()
 	dbID, err := queries.CreateWorkerTag(ctx, sqlc.CreateWorkerTagParams{
 		CreatedAt:   now,
 		UUID:        wc.UUID,
@@ -76,7 +76,7 @@ func (db *DB) SaveWorkerTag(ctx context.Context, tag *WorkerTag) error {
 	queries := db.queries()
 
 	err := queries.SaveWorkerTag(ctx, sqlc.SaveWorkerTagParams{
-		UpdatedAt:   db.now(),
+		UpdatedAt:   db.nowNullable(),
 		UUID:        tag.UUID,
 		Name:        tag.Name,
 		Description: tag.Description,

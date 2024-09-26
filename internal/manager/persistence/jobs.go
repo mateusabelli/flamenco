@@ -167,7 +167,7 @@ func (db *DB) StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.Au
 
 	// Create the job itself.
 	params := sqlc.CreateJobParams{
-		CreatedAt:               db.gormDB.NowFunc(),
+		CreatedAt:               db.now(),
 		UUID:                    authoredJob.JobID,
 		Name:                    authoredJob.Name,
 		JobType:                 authoredJob.JobType,
@@ -246,7 +246,7 @@ func (db *DB) storeAuthoredJobTaks(
 	}
 
 	// Give every task the same creation timestamp.
-	now := db.gormDB.NowFunc()
+	now := db.now()
 
 	uuidToTask := make(map[string]TaskInfo)
 	for _, authoredTask := range authoredJob.Tasks {
@@ -442,7 +442,7 @@ func (db *DB) RequestJobDeletion(ctx context.Context, j *Job) error {
 	queries := db.queries()
 
 	// Update the given job itself, so we don't have to re-fetch it from the database.
-	j.DeleteRequestedAt = db.now()
+	j.DeleteRequestedAt = db.nowNullable()
 
 	params := sqlc.RequestJobDeletionParams{
 		Now:   j.DeleteRequestedAt,
@@ -479,7 +479,7 @@ func (db *DB) RequestJobMassDeletion(ctx context.Context, lastUpdatedMax time.Ti
 
 	// Update the selected jobs.
 	params := sqlc.RequestMassJobDeletionParams{
-		Now:   db.now(),
+		Now:   db.nowNullable(),
 		UUIDs: uuids,
 	}
 	if err := queries.RequestMassJobDeletion(ctx, params); err != nil {
@@ -529,7 +529,7 @@ func (db *DB) SaveJobStatus(ctx context.Context, j *Job) error {
 	queries := db.queries()
 
 	params := sqlc.SaveJobStatusParams{
-		Now:      db.now(),
+		Now:      db.nowNullable(),
 		ID:       int64(j.ID),
 		Status:   string(j.Status),
 		Activity: j.Activity,
@@ -547,7 +547,7 @@ func (db *DB) SaveJobPriority(ctx context.Context, j *Job) error {
 	queries := db.queries()
 
 	params := sqlc.SaveJobPriorityParams{
-		Now:      db.now(),
+		Now:      db.nowNullable(),
 		ID:       int64(j.ID),
 		Priority: int64(j.Priority),
 	}
@@ -670,7 +670,7 @@ func (db *DB) SaveTask(ctx context.Context, t *Task) error {
 	}
 
 	param := sqlc.UpdateTaskParams{
-		UpdatedAt: db.now(),
+		UpdatedAt: db.nowNullable(),
 		Name:      t.Name,
 		Type:      t.Type,
 		Priority:  int64(t.Priority),
@@ -709,7 +709,7 @@ func (db *DB) SaveTaskStatus(ctx context.Context, t *Task) error {
 	queries := db.queries()
 
 	err := queries.UpdateTaskStatus(ctx, sqlc.UpdateTaskStatusParams{
-		UpdatedAt: db.now(),
+		UpdatedAt: db.nowNullable(),
 		Status:    string(t.Status),
 		ID:        int64(t.ID),
 	})
@@ -723,7 +723,7 @@ func (db *DB) SaveTaskActivity(ctx context.Context, t *Task) error {
 	queries := db.queries()
 
 	err := queries.UpdateTaskActivity(ctx, sqlc.UpdateTaskActivityParams{
-		UpdatedAt: db.now(),
+		UpdatedAt: db.nowNullable(),
 		Activity:  t.Activity,
 		ID:        int64(t.ID),
 	})
@@ -740,7 +740,7 @@ func (db *DB) TaskAssignToWorker(ctx context.Context, t *Task, w *Worker) error 
 	queries := db.queries()
 
 	err := queries.TaskAssignToWorker(ctx, sqlc.TaskAssignToWorkerParams{
-		UpdatedAt: db.now(),
+		UpdatedAt: db.nowNullable(),
 		WorkerID: sql.NullInt64{
 			Int64: int64(w.ID),
 			Valid: true,
@@ -935,7 +935,7 @@ func (db *DB) UpdateJobsTaskStatuses(ctx context.Context, job *Job,
 	queries := db.queries()
 
 	err := queries.UpdateJobsTaskStatuses(ctx, sqlc.UpdateJobsTaskStatusesParams{
-		UpdatedAt: db.now(),
+		UpdatedAt: db.nowNullable(),
 		Status:    string(taskStatus),
 		Activity:  activity,
 		JobID:     int64(job.ID),
@@ -959,7 +959,7 @@ func (db *DB) UpdateJobsTaskStatusesConditional(ctx context.Context, job *Job,
 	queries := db.queries()
 
 	err := queries.UpdateJobsTaskStatusesConditional(ctx, sqlc.UpdateJobsTaskStatusesConditionalParams{
-		UpdatedAt:        db.now(),
+		UpdatedAt:        db.nowNullable(),
 		Status:           string(taskStatus),
 		Activity:         activity,
 		JobID:            int64(job.ID),
@@ -976,7 +976,7 @@ func (db *DB) UpdateJobsTaskStatusesConditional(ctx context.Context, job *Job,
 func (db *DB) TaskTouchedByWorker(ctx context.Context, t *Task) error {
 	queries := db.queries()
 
-	now := db.now()
+	now := db.nowNullable()
 	err := queries.TaskTouchedByWorker(ctx, sqlc.TaskTouchedByWorkerParams{
 		UpdatedAt:     now,
 		LastTouchedAt: now,
@@ -1004,7 +1004,7 @@ func (db *DB) AddWorkerToTaskFailedList(ctx context.Context, t *Task, w *Worker)
 	queries := db.queries()
 
 	err = queries.AddWorkerToTaskFailedList(ctx, sqlc.AddWorkerToTaskFailedListParams{
-		CreatedAt: db.now().Time,
+		CreatedAt: db.nowNullable().Time,
 		TaskID:    int64(t.ID),
 		WorkerID:  int64(w.ID),
 	})

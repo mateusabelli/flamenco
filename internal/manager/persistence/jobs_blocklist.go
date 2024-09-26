@@ -41,7 +41,7 @@ func (db *DB) AddWorkerToJobBlocklist(ctx context.Context, job *Job, worker *Wor
 	queries := db.queries()
 
 	return queries.AddWorkerToJobBlocklist(ctx, sqlc.AddWorkerToJobBlocklistParams{
-		CreatedAt: db.now().Time,
+		CreatedAt: db.nowNullable().Time,
 		JobID:     int64(job.ID),
 		WorkerID:  int64(worker.ID),
 		TaskType:  taskType,

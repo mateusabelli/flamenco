@@ -18,7 +18,7 @@ func TestFetchTimedOutTasks(t *testing.T) {
 	tasks, err := db.FetchTasksOfJob(ctx, job)
 	require.NoError(t, err)
 
-	now := db.gormDB.NowFunc()
+	now := db.now()
 	deadline := now.Add(-5 * time.Minute)
 
 	// Mark the task as last touched before the deadline, i.e. old enough for a timeout.

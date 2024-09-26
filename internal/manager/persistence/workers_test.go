@@ -62,7 +62,7 @@ func TestFetchWorkerTask(t *testing.T) {
 
 	startTime := time.Date(2024, time.July, 2, 7, 56, 0, 0, time.UTC)
 	mockNow := startTime
-	db.gormDB.NowFunc = func() time.Time { return mockNow }
+	db.nowfunc = func() time.Time { return mockNow }
 
 	// Worker without task.
 	w := Worker{

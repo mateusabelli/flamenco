@@ -109,7 +109,7 @@ func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker
 	// Assign the task to the worker.
 	err = queries.AssignTaskToWorker(ctx, sqlc.AssignTaskToWorkerParams{
 		WorkerID: workerID,
-		Now:      db.now(),
+		Now:      db.nowNullable(),
 		TaskID:   task.ID,
 	})
 

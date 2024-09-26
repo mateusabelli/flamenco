@@ -45,7 +45,6 @@ func CreateTestDB() (db *DB, closer func()) {
 	config := gorm.Config{
 		Logger:   dblogger,
 		ConnPool: sqliteConn,
-		NowFunc:  nowFunc,
 	}
 
 	db, err = openDBWithConfig(TestDSN, &config)

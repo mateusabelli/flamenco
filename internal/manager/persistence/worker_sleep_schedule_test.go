@@ -204,7 +204,7 @@ func TestSetWorkerSleepScheduleNextCheck(t *testing.T) {
 	err := db.SetWorkerSleepSchedule(ctx, w.UUID, &schedule)
 	require.NoError(t, err)
 
-	future := db.gormDB.NowFunc().Add(5 * time.Hour)
+	future := db.now().Add(5 * time.Hour)
 	schedule.NextCheck = future
 
 	err = db.SetWorkerSleepScheduleNextCheck(ctx, &schedule)
@@ -223,7 +223,7 @@ func TestFetchSleepSchedulesToCheck(t *testing.T) {
 	mockedPast := mockedNow.Add(-10 * time.Second)
 	mockedFuture := mockedNow.Add(10 * time.Second)
 
-	db.gormDB.NowFunc = func() time.Time { return mockedNow }
+	db.nowfunc = func() time.Time { return mockedNow }
 
 	schedule0 := SleepSchedule{ // Next check in the past -> should be checked.
 		Worker: &Worker{

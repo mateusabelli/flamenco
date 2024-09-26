@@ -51,7 +51,7 @@ func TestOneJobOneTask(t *testing.T) {
 	assert.Equal(t, w.ID, *task.WorkerID, "task must be assigned to the requesting worker")
 
 	// Check the task in the database.
-	now := db.gormDB.NowFunc()
+	now := db.now()
 	dbTask, err := db.FetchTask(context.Background(), authTask.UUID)
 	require.NoError(t, err)
 	require.NotNil(t, dbTask)
@@ -530,7 +530,7 @@ func windowsWorker(t *testing.T, db *DB) Worker {
 
 func saveTestWorker(t *testing.T, db *DB, worker *Worker) {
 	params := sqlc.CreateWorkerParams{
-		CreatedAt:          db.gormDB.NowFunc(),
+		CreatedAt:          db.now(),
 		UUID:               worker.UUID,
 		Secret:             worker.Secret,
 		Name:               worker.Name,

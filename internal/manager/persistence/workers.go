@@ -71,7 +71,7 @@ func (w *Worker) StatusChangeClear() {
 func (db *DB) CreateWorker(ctx context.Context, w *Worker) error {
 	queries := db.queries()
 
-	now := db.now().Time
+	now := db.nowNullable().Time
 	workerID, err := queries.CreateWorker(ctx, sqlc.CreateWorkerParams{
 		CreatedAt: now,
 		UUID:      w.UUID,
@@ -149,7 +149,7 @@ func (db *DB) DeleteWorker(ctx context.Context, uuid string) error {
 	queries := db.queries()
 
 	rowsAffected, err := queries.SoftDeleteWorker(ctx, sqlc.SoftDeleteWorkerParams{
-		DeletedAt: db.now(),
+		DeletedAt: db.nowNullable(),
 		UUID:      uuid,
 	})
 	if err != nil {
@@ -224,7 +224,7 @@ func (db *DB) SaveWorkerStatus(ctx context.Context, w *Worker) error {
 	queries := db.queries()
 
 	err := queries.SaveWorkerStatus(ctx, sqlc.SaveWorkerStatusParams{
-		UpdatedAt:         db.now(),
+		UpdatedAt:         db.nowNullable(),
 		Status:            string(w.Status),
 		StatusRequested:   string(w.StatusRequested),
 		LazyStatusRequest: w.LazyStatusRequest,
@@ -245,7 +245,7 @@ func (db *DB) SaveWorker(ctx context.Context, w *Worker) error {
 	queries := db.queries()
 
 	err := queries.SaveWorker(ctx, sqlc.SaveWorkerParams{
-		UpdatedAt:          db.now(),
+		UpdatedAt:          db.nowNullable(),
 		UUID:               w.UUID,
 		Secret:             w.Secret,
 		Name:               w.Name,
@@ -270,7 +270,7 @@ func (db *DB) SaveWorker(ctx context.Context, w *Worker) error {
 func (db *DB) WorkerSeen(ctx context.Context, w *Worker) error {
 	queries := db.queries()
 
-	now := db.now()
+	now := db.nowNullable()
 	err := queries.WorkerSeen(ctx, sqlc.WorkerSeenParams{
 		UpdatedAt:  now,
 		LastSeenAt: now,

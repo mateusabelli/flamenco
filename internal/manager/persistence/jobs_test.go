@@ -125,7 +125,7 @@ func TestSaveJobStorageInfo(t *testing.T) {
 
 	startTime := time.Date(2023, time.February, 7, 15, 0, 0, 0, time.UTC)
 	mockNow := startTime
-	db.gormDB.NowFunc = func() time.Time { return mockNow }
+	db.nowfunc = func() time.Time { return mockNow }
 
 	authoredJob := createTestAuthoredJobWithTasks()
 	err := db.StoreAuthoredJob(ctx, authoredJob)
@@ -269,8 +269,8 @@ func TestRequestJobDeletion(t *testing.T) {
 	authoredJob2 := duplicateJobAndTasks(authoredJob1)
 	persistAuthoredJob(t, ctx, db, authoredJob2)
 
-	mockNow := time.Now()
-	db.gormDB.NowFunc = func() time.Time { return mockNow }
+	mockNow := time.Now().UTC()
+	db.nowfunc = func() time.Time { return mockNow }
 
 	err := db.RequestJobDeletion(ctx, job1)
 	require.NoError(t, err)
@@ -297,28 +297,28 @@ func TestRequestJobMassDeletion(t *testing.T) {
 	defer close()
 
 	origGormNow := db.gormDB.NowFunc
-	now := db.gormDB.NowFunc()
+	now := db.now()
 
 	// Ensure different jobs get different timestamps.
-	db.gormDB.NowFunc = func() time.Time { return now.Add(-3 * time.Second) }
+	db.nowfunc = func() time.Time { return now.Add(-3 * time.Second) }
 	authoredJob2 := duplicateJobAndTasks(authoredJob1)
 	job2 := persistAuthoredJob(t, ctx, db, authoredJob2)
 
-	db.gormDB.NowFunc = func() time.Time { return now.Add(-4 * time.Second) }
+	db.nowfunc = func() time.Time { return now.Add(-4 * time.Second) }
 	authoredJob3 := duplicateJobAndTasks(authoredJob1)
 	job3 := persistAuthoredJob(t, ctx, db, authoredJob3)
 
-	db.gormDB.NowFunc = func() time.Time { return now.Add(-5 * time.Second) }
+	db.nowfunc = func() time.Time { return now.Add(-5 * time.Second) }
 	authoredJob4 := duplicateJobAndTasks(authoredJob1)
 	job4 := persistAuthoredJob(t, ctx, db, authoredJob4)
 
 	// Request that "job3 and older" gets deleted.
 	timeOfDeleteRequest := origGormNow()
-	db.gormDB.NowFunc = func() time.Time { return timeOfDeleteRequest }
+	db.nowfunc = func() time.Time { return timeOfDeleteRequest }
 	uuids, err := db.RequestJobMassDeletion(ctx, job3.UpdatedAt)
 	require.NoError(t, err)
 
-	db.gormDB.NowFunc = origGormNow
+	db.nowfunc = origGormNow
 
 	// Only jobs 3 and 4 should be updated.
 	assert.Equal(t, []string{job3.UUID, job4.UUID}, uuids)
@@ -348,7 +348,7 @@ func TestRequestJobMassDeletion_noJobsFound(t *testing.T) {
 	defer close()
 
 	// Request deletion with a timestamp that doesn't match any jobs.
-	now := db.gormDB.NowFunc()
+	now := db.now()
 	uuids, err := db.RequestJobMassDeletion(ctx, now.Add(-24*time.Hour))
 	assert.ErrorIs(t, err, ErrJobNotFound)
 	assert.Zero(t, uuids)
@@ -364,7 +364,7 @@ func TestFetchJobsDeletionRequested(t *testing.T) {
 	defer close()
 
 	now := time.Now()
-	db.gormDB.NowFunc = func() time.Time { return now }
+	db.nowfunc = func() time.Time { return now }
 
 	authoredJob2 := duplicateJobAndTasks(authoredJob1)
 	job2 := persistAuthoredJob(t, ctx, db, authoredJob2)
@@ -382,7 +382,7 @@ func TestFetchJobsDeletionRequested(t *testing.T) {
 		now.Add(-5 * time.Second),
 	}
 	currentTimestampIndex := 0
-	db.gormDB.NowFunc = func() time.Time {
+	db.nowfunc = func() time.Time {
 		now := timestamps[currentTimestampIndex]
 		currentTimestampIndex++
 		return now
@@ -688,7 +688,7 @@ func TestTaskTouchedByWorker(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, task.LastTouchedAt.IsZero())
 
-	now := db.gormDB.NowFunc()
+	now := db.now()
 	err = db.TaskTouchedByWorker(ctx, task)
 	require.NoError(t, err)
 
