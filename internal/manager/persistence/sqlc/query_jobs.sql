@@ -344,3 +344,8 @@ SELECT count(*) AS count FROM task_failures;
 -- name: Test_FetchTaskFailures :many
 -- Fetch all task failures in the database. Only used in unit tests.
 SELECT * FROM task_failures;
+
+-- name: Test_FetchLastRendered :many
+-- Fetch all 'last rendered' in the database (even though there should only be
+-- one at most). Only used in unit tests.
+SELECT * FROM last_rendereds;

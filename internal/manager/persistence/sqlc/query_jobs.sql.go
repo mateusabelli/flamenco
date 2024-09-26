@@ -1305,6 +1305,40 @@ func (q *Queries) Test_FetchJobBlocklist(ctx context.Context) ([]JobBlock, error
 	return items, nil
 }
 
+const test_FetchLastRendered = `-- name: Test_FetchLastRendered :many
+SELECT id, created_at, updated_at, job_id FROM last_rendereds
+`
+
+// Fetch all 'last rendered' in the database (even though there should only be
+// one at most). Only used in unit tests.
+func (q *Queries) Test_FetchLastRendered(ctx context.Context) ([]LastRendered, error) {
+	rows, err := q.db.QueryContext(ctx, test_FetchLastRendered)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LastRendered
+	for rows.Next() {
+		var i LastRendered
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.JobID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const test_FetchTaskFailures = `-- name: Test_FetchTaskFailures :many
 SELECT created_at, task_id, worker_id FROM task_failures
 `
