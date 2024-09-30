@@ -194,7 +194,7 @@ with flamenco.manager.ApiClient() as api_client:
     filesize = 1 # int | Size of the file in bytes.
     body = open('/path/to/file', 'rb') # file_type | Contents of the file
     x_shaman_can_defer_upload = True # bool | The client indicates that it can defer uploading this file. The \"208\" response will not only be returned when the file is already fully known to the Shaman server, but also when someone else is currently uploading this file.  (optional)
-    x_shaman_original_filename = "X-Shaman-Original-Filename_example" # str | The original filename. If sent along with the request, it will be included in the server logs, which can aid in debugging.  (optional)
+    x_shaman_original_filename = "X-Shaman-Original-Filename_example" # str | The original filename. If sent along with the request, it will be included in the server logs, which can aid in debugging. MUST either be ASCII or encoded using RFC 2047 (aka MIME encoding). In the latter case the encoding MUST be UTF-8.  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -221,7 +221,7 @@ Name | Type | Description  | Notes
  **filesize** | **int**| Size of the file in bytes. |
  **body** | **file_type**| Contents of the file |
  **x_shaman_can_defer_upload** | **bool**| The client indicates that it can defer uploading this file. The \&quot;208\&quot; response will not only be returned when the file is already fully known to the Shaman server, but also when someone else is currently uploading this file.  | [optional]
- **x_shaman_original_filename** | **str**| The original filename. If sent along with the request, it will be included in the server logs, which can aid in debugging.  | [optional]
+ **x_shaman_original_filename** | **str**| The original filename. If sent along with the request, it will be included in the server logs, which can aid in debugging. MUST either be ASCII or encoded using RFC 2047 (aka MIME encoding). In the latter case the encoding MUST be UTF-8.  | [optional]
 
 ### Return type
 

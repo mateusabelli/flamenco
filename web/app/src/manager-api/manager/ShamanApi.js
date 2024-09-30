@@ -137,7 +137,7 @@ export default class ShamanApi {
      * @param {File} body Contents of the file
      * @param {Object} opts Optional parameters
      * @param {Boolean} opts.xShamanCanDeferUpload The client indicates that it can defer uploading this file. The \"208\" response will not only be returned when the file is already fully known to the Shaman server, but also when someone else is currently uploading this file. 
-     * @param {String} opts.xShamanOriginalFilename The original filename. If sent along with the request, it will be included in the server logs, which can aid in debugging. 
+     * @param {String} opts.xShamanOriginalFilename The original filename. If sent along with the request, it will be included in the server logs, which can aid in debugging. MUST either be ASCII or encoded using RFC 2047 (aka MIME encoding). In the latter case the encoding MUST be UTF-8. 
      * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing HTTP response
      */
     shamanFileStoreWithHttpInfo(checksum, filesize, body, opts) {
@@ -187,7 +187,7 @@ export default class ShamanApi {
      * @param {File} body Contents of the file
      * @param {Object} opts Optional parameters
      * @param {Boolean} opts.xShamanCanDeferUpload The client indicates that it can defer uploading this file. The \"208\" response will not only be returned when the file is already fully known to the Shaman server, but also when someone else is currently uploading this file. 
-     * @param {String} opts.xShamanOriginalFilename The original filename. If sent along with the request, it will be included in the server logs, which can aid in debugging. 
+     * @param {String} opts.xShamanOriginalFilename The original filename. If sent along with the request, it will be included in the server logs, which can aid in debugging. MUST either be ASCII or encoded using RFC 2047 (aka MIME encoding). In the latter case the encoding MUST be UTF-8. 
      * @return {Promise} a {@link https://www.promisejs.org/|Promise}
      */
     shamanFileStore(checksum, filesize, body, opts) {

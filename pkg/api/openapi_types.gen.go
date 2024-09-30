@@ -955,7 +955,7 @@ type ShamanFileStoreParams struct {
 	// The client indicates that it can defer uploading this file. The "208" response will not only be returned when the file is already fully known to the Shaman server, but also when someone else is currently uploading this file.
 	XShamanCanDeferUpload *bool `json:"X-Shaman-Can-Defer-Upload,omitempty"`
 
-	// The original filename. If sent along with the request, it will be included in the server logs, which can aid in debugging.
+	// The original filename. If sent along with the request, it will be included in the server logs, which can aid in debugging. MUST either be ASCII or encoded using RFC 2047 (aka MIME encoding). In the latter case the encoding MUST be UTF-8.
 	XShamanOriginalFilename *string `json:"X-Shaman-Original-Filename,omitempty"`
 }
 
