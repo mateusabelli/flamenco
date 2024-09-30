@@ -3,6 +3,7 @@ package api_impl
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import (
+	"mime"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -110,8 +111,22 @@ func (f *Flamenco) ShamanFileStore(e echo.Context, checksum string, filesize int
 		canDefer = *params.XShamanCanDeferUpload
 		logCtx = logCtx.Bool("canDefer", canDefer)
 	}
+
 	if params.XShamanOriginalFilename != nil {
-		origFilename = *params.XShamanOriginalFilename
+		rawHeadervalue := *params.XShamanOriginalFilename
+		decoder := mime.WordDecoder{}
+
+		var err error // origFilename has to be used from the outer scope.
+		origFilename, err = decoder.DecodeHeader(rawHeadervalue)
+		if err != nil {
+			logger := logCtx.Logger()
+			logger.Error().
+				Str("headerValue", rawHeadervalue).
+				Err(err).
+				Msg("shaman: received invalid X-Shaman-Original-Filename header")
+			return sendAPIError(e, http.StatusBadRequest, "invalid X-Shaman-Original-Filename header: %q", rawHeadervalue)
+		}
+
 		logCtx = logCtx.Str("originalFilename", origFilename)
 	}
 	logger := logCtx.Logger()

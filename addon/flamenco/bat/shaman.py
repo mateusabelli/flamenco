@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """BAT interface for sending files to the Manager via the Shaman API."""
 
+import email.header
 import logging
 import random
 import platform
@@ -366,6 +367,7 @@ class Transferrer(submodules.transfer.FileTransferer):  # type: ignore
             )
 
             local_filepath = self._rel_to_local_path[file_spec.path]
+            filename_header = _encode_original_filename_header(file_spec.path)
             try:
                 with local_filepath.open("rb") as file_reader:
                     self.shaman_api.shaman_file_store(
@@ -373,7 +375,7 @@ class Transferrer(submodules.transfer.FileTransferer):  # type: ignore
                         filesize=file_spec.size,
                         body=file_reader,
                         x_shaman_can_defer_upload=can_defer,
-                        x_shaman_original_filename=file_spec.path,
+                        x_shaman_original_filename=filename_header,
                     )
             except ApiException as ex:
                 if ex.status == 425:
@@ -527,3 +529,16 @@ def _root_path_strip(path: PurePath) -> PurePosixPath:
     if path.is_absolute():
         return PurePosixPath(*path.parts[1:])
     return PurePosixPath(path)
+
+
+def _encode_original_filename_header(filename: str) -> str:
+    """Encode the 'original filename' as valid HTTP Header.
+
+    See the specs for the X-Shaman-Original-Filename header in the OpenAPI
+    operation `shamanFileStore`, defined in flamenco-openapi.yaml.
+    """
+
+    # This is a no-op when the filename is already in ASCII.
+    fake_header = email.header.Header()
+    fake_header.append(filename, charset="utf-8")
+    return fake_header.encode()
