@@ -1324,7 +1324,9 @@ paths:
           schema: { type: string }
           description: >
             The original filename. If sent along with the request, it will be
-            included in the server logs, which can aid in debugging.
+            included in the server logs, which can aid in debugging. MUST either
+            be ASCII or encoded using RFC 2047 (aka MIME encoding). In the
+            latter case the encoding MUST be UTF-8.
       requestBody:
         description: Contents of the file
         required: true
