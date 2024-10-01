@@ -31,9 +31,9 @@ func main() {
 
 	var anyFileWasChanged bool
 	if cliArgs.updateMakefile {
-		anyFileWasChanged = anyFileWasChanged || updateMakefile()
+		anyFileWasChanged = updateMakefile() || anyFileWasChanged
 	}
-	anyFileWasChanged = anyFileWasChanged || updateAddon()
+	anyFileWasChanged = updateAddon() || anyFileWasChanged
 
 	if !anyFileWasChanged {
 		log.Warn().Msg("nothing changed")
