@@ -34,7 +34,6 @@ func main() {
 		anyFileWasChanged = anyFileWasChanged || updateMakefile()
 	}
 	anyFileWasChanged = anyFileWasChanged || updateAddon()
-	anyFileWasChanged = anyFileWasChanged || updateWebsite()
 
 	if !anyFileWasChanged {
 		log.Warn().Msg("nothing changed")
