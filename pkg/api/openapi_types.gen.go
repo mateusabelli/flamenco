@@ -55,6 +55,8 @@ const (
 	BlenderPathSourceInputPath BlenderPathSource = "input_path"
 
 	BlenderPathSourcePathEnvvar BlenderPathSource = "path_envvar"
+
+	BlenderPathSourceSystemLocation BlenderPathSource = "system_location"
 )
 
 // Defines values for FarmStatus.

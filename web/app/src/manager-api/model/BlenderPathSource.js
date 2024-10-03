@@ -34,6 +34,13 @@ export default class BlenderPathSource {
 
     
         /**
+         * value: "system_location"
+         * @const
+         */
+        "system_location" = "system_location";
+
+    
+        /**
          * value: "input_path"
          * @const
          */
