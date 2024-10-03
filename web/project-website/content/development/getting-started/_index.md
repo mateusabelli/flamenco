@@ -71,6 +71,7 @@ Install Node 18 via homebrew:
 
 ```
 brew install node@18
+brew link node@18
 ```
 
 Then install yarn:
