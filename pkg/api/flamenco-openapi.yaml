@@ -1529,6 +1529,8 @@ components:
         - file_association
         # The input path was interpreted as simple command, and found on $PATH.
         - path_envvar
+        # Blender was found at a platform-specific default location.
+        - system_location
         # The input path was used as-is, as it points to an existing binary.
         - input_path
         # The input path was not provided, use whatever blender is available, without checking.
