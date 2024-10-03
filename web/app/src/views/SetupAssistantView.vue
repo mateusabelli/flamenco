@@ -163,6 +163,30 @@
             </div>
           </label>
 
+          <label v-if="autoFoundBlenderSystemLocation" for="blender-default_location">
+            <div>
+              <input
+                v-model="selectedBlender"
+                :value="autoFoundBlenderSystemLocation"
+                id="blender-default_location"
+                name="blender"
+                type="radio" />
+              {{ sourceLabels[autoFoundBlenderSystemLocation.source] }}
+            </div>
+            <div class="setup-path-command">
+              <span class="path">
+                {{ autoFoundBlenderSystemLocation.path }}
+              </span>
+              <span
+                aria-label="Console output when running with --version"
+                class="command-preview"
+                data-microtip-position="top"
+                role="tooltip">
+                {{ autoFoundBlenderSystemLocation.cause }}
+              </span>
+            </div>
+          </label>
+
           <label for="blender-input_path">
             <div>
               <input
@@ -230,6 +254,9 @@
               >" as found on <code>$PATH</code> (currently "<code>{{ selectedBlender.path }}</code
               >")
             </dd>
+            <dd v-if="selectedBlender.source == 'system_location'">
+              Standard on your system: "<code>{{ selectedBlender.path }}</code>"
+            </dd>
             <dd v-if="selectedBlender.source == 'input_path'">
               The command you provided: "<code>{{ selectedBlender.path }}</code
               >"
@@ -289,6 +316,7 @@ export default {
       file_association: 'Blender that runs when you double-click a .blend file:',
       path_envvar: 'Blender found on the $PATH environment:',
       input_path: 'Specify a Blender executable:',
+      system_location: 'Standard location of Blender on your system:',
       default: 'Skip, let the Workers use whatever Blender is available.',
     },
     isConfirming: false,
@@ -319,6 +347,9 @@ export default {
     autoFoundBlenderFileAssociation() {
       return this.autoFoundBlenders.find((b) => b.source === 'file_association');
     },
+    autoFoundBlenderSystemLocation() {
+      return this.autoFoundBlenders.find((b) => b.source === 'system_location');
+    },
     blenderFromInputPath() {
       return this.allBlenders.find((b) => b.source === 'input_path');
     },
@@ -340,6 +371,7 @@ export default {
     },
   },
   mounted() {
+    window.assist = this;
     this.findBlenderExePath();
 
     document.body.classList.add('is-setup-assistant');

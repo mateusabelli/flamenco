@@ -361,7 +361,9 @@ func checkSetupAssistantConfig(config api.SetupAssistantConfig) error {
 			return ErrSetupConfigEmptyPath
 		}
 
-	case api.BlenderPathSourceInputPath, api.BlenderPathSourcePathEnvvar:
+	case api.BlenderPathSourceInputPath,
+		api.BlenderPathSourcePathEnvvar,
+		api.BlenderPathSourceSystemLocation:
 		if config.BlenderExecutable.Path == "" ||
 			config.BlenderExecutable.Input == "" {
 			return ErrSetupConfigEmptyPathOrInput

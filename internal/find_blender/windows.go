@@ -16,6 +16,12 @@ import (
 
 const blenderExeName = "blender.exe"
 
+// searchDefaultPaths search any available platform-specific default locations for Blender to be in.
+// Returns the path of the blender executable, or an empty string if nothing is found.
+func searchDefaultPaths() string {
+	return ""
+}
+
 // fileAssociation returns the full path of `blender.exe` associated with ".blend" files.
 func fileAssociation() (string, error) {
 	exe, err := getFileAssociation(".blend")

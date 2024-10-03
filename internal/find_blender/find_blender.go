@@ -56,8 +56,7 @@ func CheckBlender(ctx context.Context, exename string) (CheckBlenderResult, erro
 		fullPath, err := fileAssociation()
 		switch {
 		case errors.Is(err, ErrNotAvailable):
-			// Association finder not available, act as if "blender" was given as exename.
-			return CheckBlender(ctx, "blender")
+			break
 		case err != nil:
 			// Some other error occurred, better to report it.
 			return CheckBlenderResult{}, fmt.Errorf("finding .blend file association: %w", err)
@@ -65,6 +64,17 @@ func CheckBlender(ctx context.Context, exename string) (CheckBlenderResult, erro
 			// The full path was found, report the Blender version.
 			return getResultWithVersion(ctx, exename, fullPath, api.BlenderPathSourceFileAssociation)
 		}
+
+		// Try some platform-specific default directories.
+		fullPath = searchDefaultPaths()
+		if fullPath != "" {
+			result, err := CheckBlender(ctx, fullPath)
+			result.Source = api.BlenderPathSourceSystemLocation
+			return result, err
+		}
+
+		// Association finder not available, act as if "blender" was given as exename.
+		return CheckBlender(ctx, "blender")
 	}
 
 	if crosspath.Dir(exename) != "." {
@@ -77,6 +87,7 @@ func CheckBlender(ctx context.Context, exename string) (CheckBlenderResult, erro
 	if err != nil {
 		return CheckBlenderResult{}, err
 	}
+
 	return getResultWithVersion(ctx, exename, fullPath, api.BlenderPathSourcePathEnvvar)
 }
 
