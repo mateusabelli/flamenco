@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/mattn/go-colorable"
@@ -13,13 +14,18 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var cliArgs struct {
-	// Logging level flags.
-	quiet, debug, trace bool
+// Global variables used by the updateXXX() functions.
+var (
+	cliArgs struct {
+		// Logging level flags.
+		quiet, debug, trace bool
 
-	newVersion     string
-	updateMakefile bool
-}
+		newVersion     string
+		updateMakefile bool
+	}
+
+	releaseCycle string
+)
 
 func main() {
 	parseCliArgs()
@@ -29,11 +35,23 @@ func main() {
 
 	log.Info().Str("version", cliArgs.newVersion).Msg("updating Flamenco version")
 
+	switch {
+	case strings.Contains(cliArgs.newVersion, "alpha"), strings.Contains(cliArgs.newVersion, "dev"):
+		releaseCycle = "alpha"
+	case strings.Contains(cliArgs.newVersion, "beta"):
+		releaseCycle = "beta"
+	case strings.Contains(cliArgs.newVersion, "rc"):
+		releaseCycle = "rc"
+	default:
+		releaseCycle = "release"
+	}
+
 	var anyFileWasChanged bool
 	if cliArgs.updateMakefile {
 		anyFileWasChanged = updateMakefile() || anyFileWasChanged
 	}
 	anyFileWasChanged = updateAddon() || anyFileWasChanged
+	anyFileWasChanged = updateMagefiles() || anyFileWasChanged
 
 	if !anyFileWasChanged {
 		log.Warn().Msg("nothing changed")

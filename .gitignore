@@ -14,6 +14,7 @@
 /shaman-checkout-id-setter
 /stresser
 /job-creator
+/mage
 /addon-packer
 flamenco-manager.yaml
 flamenco-worker.yaml

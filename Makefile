@@ -23,10 +23,11 @@ ifeq (${GITHASH},dirty)
 GITHASH := $(shell git rev-parse --short=9 HEAD)
 endif
 
-LDFLAGS := ${LDFLAGS} -X ${PKG}/internal/appinfo.ApplicationVersion=${VERSION} \
-	-X ${PKG}/internal/appinfo.ApplicationGitHash=${GITHASH} \
-	-X ${PKG}/internal/appinfo.ReleaseCycle=${RELEASE_CYCLE}
-BUILD_FLAGS = -ldflags="${LDFLAGS}"
+BUILDTOOL := mage
+ifeq ($(OS),Windows_NT)
+	BUILDTOOL := $(BUILDTOOL).exe
+endif
+BUILDTOOL_PATH := ${PWD}/${BUILDTOOL}
 
 # Package name of the generated Python/JavaScript code for the Flamenco API.
 PY_API_PKG_NAME=flamenco.manager
@@ -48,28 +49,29 @@ export CGO_ENABLED=0
 all: application
 
 # Install generators and build the software.
-with-deps:
-	go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.9.0
-	go install github.com/golang/mock/mockgen@v1.6.0
+with-deps: buildtool
+	"${BUILDTOOL_PATH}" installGenerators
 	$(MAKE) application
 
-vet:
-	go vet ./...
-	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+vet: buildtool
+	"${BUILDTOOL_PATH}" vet
 
-application: webapp flamenco-manager flamenco-worker
+application: flamenco-manager flamenco-worker
 
-flamenco-manager:
-	$(MAKE) webapp-static
-	go build -v ${BUILD_FLAGS} ${PKG}/cmd/flamenco-manager
+flamenco-manager: buildtool
+	"${BUILDTOOL_PATH}" flamencoManager
 
-.PHONY: flamenco-manager-without-webapp
-flamenco-manager-without-webapp:
-	go build -v ${BUILD_FLAGS} ${PKG}/cmd/flamenco-manager
+flamenco-manager-without-webapp: buildtool
+	"${BUILDTOOL_PATH}" flamencoManagerWithoutWebapp
 
-flamenco-worker:
-	go build -v ${BUILD_FLAGS} ${PKG}/cmd/flamenco-worker
+flamenco-worker: buildtool
+	"${BUILDTOOL_PATH}" flamencoWorker
 
+# Builds the buildtool itself, for faster rebuilds of Skyfill.
+buildtool: ${BUILDTOOL}
+${BUILDTOOL}: mage.go $(wildcard magefiles/*.go) go.mod
+	@echo "Building build tool $@"
+	@go run mage.go -compile "${BUILDTOOL_PATH}"
 
 # NOTE: these database migration commands are just for reference / debugging /
 # development purposes. Flamenco Manager and Worker each perform their own
@@ -85,118 +87,20 @@ db-migrate-down:
 	goose -dir ./internal/manager/persistence/migrations/ sqlite3 flamenco-manager.sqlite down
 .PHONY: db-migrate-status db-migrate-up db-migrate-down
 
-.PHONY: stresser
-stresser:
-	go build -v ${BUILD_FLAGS} ${PKG}/cmd/stresser
+webapp-static: buildtool
+	"${BUILDTOOL_PATH}" webappStatic
 
-.PHONY: job-creator
-job-creator:
-	go build -v ${BUILD_FLAGS} ${PKG}/cmd/job-creator
+generate: buildtool
+	"${BUILDTOOL_PATH}" generate
 
-flamenco-addon.zip: addon-packer
-	./addon-packer -filename ./flamenco-addon.zip
+generate-go: buildtool
+	"${BUILDTOOL_PATH}" generateGo
 
-addon-packer: cmd/addon-packer/addon-packer.go
-	go build -v ${BUILD_FLAGS} ${PKG}/cmd/addon-packer
+generate-py: buildtool
+	"${BUILDTOOL_PATH}" generatePy
 
-flamenco-manager_race:
-	CGO_ENABLED=1 go build -race -o $@ -v ${BUILD_FLAGS} ${PKG}/cmd/flamenco-manager
-
-flamenco-worker_race:
-	CGO_ENABLED=1 go build -race -o $@ -v ${BUILD_FLAGS} ${PKG}/cmd/flamenco-worker
-
-.PHONY: shaman-checkout-id-setter
-shaman-checkout-id-setter:
-	go build -v ${BUILD_FLAGS} ${PKG}/cmd/shaman-checkout-id-setter
-
-webapp:
-	yarn --cwd web/app install
-
-webapp-static: addon-packer
-	$(MAKE) clean-webapp-static
-# When changing the base URL, also update the line
-# e.GET("/app/*", echo.WrapHandler(webAppHandler))
-# in `cmd/flamenco-manager/main.go`
-	MSYS2_ARG_CONV_EXCL="*" yarn --cwd web/app build --outDir ../static --base=/app/ --logLevel warn
-# yarn --cwd web/app build --outDir ../static --base=/app/ --minify false
-	./addon-packer -filename ${WEB_STATIC}/flamenco-addon.zip
-	@echo "Web app has been installed into ${WEB_STATIC}"
-
-generate:
-	$(MAKE) generate-go
-	$(MAKE) generate-py
-	$(MAKE) generate-js
-
-generate-go:
-	go generate ./pkg/api/...
-	go generate ./internal/...
-# The generators always produce UNIX line-ends. This creates false file
-# modifications with Git. Convert them to DOS line-ends to avoid this.
-ifeq ($(OS),Windows_NT)
-	git status --porcelain | grep '^ M .*.gen.go' | cut -d' ' -f3 | xargs unix2dos --keepdate
-endif
-
-generate-py:
-# The generator doesn't consistently overwrite existing files, nor does it
-# remove no-longer-generated files.
-	rm -rf addon/flamenco/manager
-
-# See https://openapi-generator.tech/docs/generators/python for the options.
-	java -jar addon/openapi-generator-cli.jar \
-		generate \
-		-i pkg/api/flamenco-openapi.yaml \
-		-g python \
-		-o addon/ \
-		--package-name "${PY_API_PKG_NAME}" \
-		--http-user-agent "Flamenco/${VERSION} (Blender add-on)" \
-		-p generateSourceCodeOnly=true \
-		-p projectName=Flamenco \
-		-p packageVersion="${VERSION}" > .openapi-generator-py.log
-
-# The generator outputs files so that we can write our own tests. We don't,
-# though, so it's better to just remove those placeholders.
-	rm -rf addon/flamenco/manager/test
-# The generators always produce UNIX line-ends. This creates false file
-# modifications with Git. Convert them to DOS line-ends to avoid this.
-ifeq ($(OS),Windows_NT)
-	git status --porcelain | grep '^ M addon/flamenco/manager' | cut -d' ' -f3 | xargs unix2dos --keepdate
-endif
-
-generate-js:
-# The generator doesn't consistently overwrite existing files, nor does it
-# remove no-longer-generated files.
-	rm -rf web/app/src/manager-api
-	rm -rf web/_tmp-manager-api-javascript
-
-# See https://openapi-generator.tech/docs/generators/javascript for the options.
-# Version '0.0.0' is used as NPM doesn't like Git hashes as versions.
-#
-# -p modelPropertyNaming=original is needed because otherwise the generator will
-# use original naming internally, but generate docs with camelCase, and then
-# things don't work properly.
-	java -jar addon/openapi-generator-cli.jar \
-		generate \
-		-i pkg/api/flamenco-openapi.yaml \
-		-g javascript \
-		-o web/_tmp-manager-api-javascript \
-		--http-user-agent "Flamenco/${VERSION} / webbrowser" \
-		-p projectName=flamenco-manager \
-		-p projectVersion="0.0.0" \
-		-p apiPackage="${JS_API_PKG_NAME}" \
-		-p disallowAdditionalPropertiesIfNotPresent=false \
-		-p usePromises=true \
-		-p moduleName=flamencoManager > .openapi-generator-js.log
-
-# Cherry-pick the generated sources, and remove everything else.
-# The only relevant bit is that the generated code depends on `superagent`,
-# which is listed in our `.
-	mv web/_tmp-manager-api-javascript/src web/app/src/manager-api
-	rm -rf web/_tmp-manager-api-javascript
-# The generators always produce UNIX line-ends. This creates false file
-# modifications with Git. Convert them to DOS line-ends to avoid this.
-ifeq ($(OS),Windows_NT)
-	git status --porcelain | grep '^ M web/app/src/manager-api' | cut -d' ' -f3 | xargs unix2dos --keepdate
-endif
+generate-js: buildtool
+	"${BUILDTOOL_PATH}" generateJS
 
 .PHONY:
 update-version:
@@ -213,6 +117,7 @@ update-version:
 		addon/flamenco/__init__.py \
 		addon/flamenco/manager \
 		addon/flamenco/manager_README.md \
+		magefiles/version.go \
 		web/app/src/manager-api \
 		web/project-website/data/flamenco.yaml
 	@echo 'git tag -a -m "Tagged version ${VERSION}" v${VERSION}'
@@ -237,28 +142,17 @@ swagger-ui:
 	@echo
 	@echo 'Now update pkg/api/static/swagger-ui/index.html to have url: "/api/openapi3.json",'
 
-test:
-# Ensure the web-static directory exists, so that `web/web_app.go` can embed something.
-	mkdir -p ${WEB_STATIC}
-	go test -short -failfast ./...
+test: buildtool
+	"${BUILDTOOL_PATH}" test
 
-clean:
-	@go clean -i -x
-	rm -f flamenco*-v* flamenco-manager flamenco-worker *.exe flamenco-*_race addon-packer stresser
-	$(MAKE) clean-webapp-static
-
-clean-webapp-static:
-# Start with `./` to avoid horrors when WEB_STATIC is absolute (like / or /home/yourname).
-	rm -rf ./${WEB_STATIC}
-# Make sure there is at least something to embed by Go, or it may cause some errors.
-	mkdir -p ./${WEB_STATIC}
-	touch ${WEB_STATIC}/emptyfile
+clean: buildtool
+	"${BUILDTOOL_PATH}" clean
 
 devserver-website:
 	go run ${HUGO_PKG} -s web/project-website serve
 
-devserver-webapp:
-	yarn --cwd web/app run dev --host
+devserver-webapp: buildtool
+	"${BUILDTOOL_PATH}" devServerWebapp
 
 deploy-website:
 	$(MAKE) -s check-environment
@@ -417,4 +311,4 @@ publish-release-packages:
 		${RELEASE_PACKAGE_LINUX} ${RELEASE_PACKAGE_DARWIN} ${RELEASE_PACKAGE_DARWIN_ARM64} ${RELEASE_PACKAGE_WINDOWS} ${RELEASE_PACKAGE_SHAFILE} \
 		${WEBSERVER_SSH}:${WEBSERVER_ROOT}/downloads/
 
-.PHONY: application version flamenco-manager flamenco-worker flamenco-manager_race flamenco-worker_race webapp webapp-static generate generate-go generate-py with-deps swagger-ui list-embedded test clean clean-webapp-static
+.PHONY: application version flamenco-manager flamenco-worker flamenco-manager_race flamenco-worker_race webapp webapp-static generate generate-go generate-py with-deps swagger-ui list-embedded test clean flamenco-manager-without-webapp
