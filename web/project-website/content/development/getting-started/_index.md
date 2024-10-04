@@ -112,14 +112,17 @@ TODO: write this documentation.
 
 ## 4. Your First Build
 
-Run `make with-deps` to install build-time dependencies and build the application.
-Subsequent builds can just run `make` without arguments.
+Run `go run mage.go installDeps` to install build-time dependencies. This is
+only necessary the first time you build Flamenco (or when these dependencies are
+upgraded, which is rare)
+
+Build the application with `go run mage.go build`.
 
 You should now have two executables: `flamenco-manager` and `flamenco-worker`.
 Both can be run with the `-help` CLI argument to see the available options.
 
-See [building][building] for more `make` targets, for example to run unit tests,
-enable the race condition checker, and all other kinds of useful things.
+See [building][building] for more `mage` targets, for example to run unit tests,
+enable the race condition checker, and ways to speed up the build process.
 
 [building]: {{< relref "../building/" >}}
 
