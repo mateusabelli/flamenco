@@ -58,7 +58,7 @@ func WebappStatic() error {
 		return err
 	}
 	if runInstall {
-		mg.SerialDeps(WebappInstallDeps)
+		mg.SerialDeps(InstallDepsWebapp)
 	}
 	if err := cleanWebappStatic(); err != nil {
 		return err
@@ -90,18 +90,6 @@ func WebappStatic() error {
 	// Build the add-on ZIP as it's part of the static web files.
 	zipPath := filepath.Join(webStatic, "flamenco3-addon.zip")
 	return packAddon(zipPath)
-}
-
-// Use Yarn to install the webapp's NodeJS dependencies
-func WebappInstallDeps() error {
-	env := map[string]string{
-		"MSYS2_ARG_CONV_EXCL": "*",
-	}
-	return sh.RunWithV(env,
-		"yarn",
-		"--cwd", "web/app",
-		"install",
-	)
 }
 
 func build(exePackage string) error {
