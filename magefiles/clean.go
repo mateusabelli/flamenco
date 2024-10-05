@@ -48,7 +48,7 @@ func cleanWebappStatic() error {
 	// errors. This is done in the 'clean' function so that the Go code can be
 	// built before building the webapp.
 	emptyfile := filepath.Join(webStatic, "emptyfile")
-	if err := os.WriteFile(emptyfile, []byte{}, os.ModePerm); err != nil {
+	if err := os.WriteFile(emptyfile, []byte{}, 0o644); err != nil {
 		return err
 	}
 	return nil
