@@ -2013,6 +2013,7 @@ components:
           format: date-time
           description: Timestamp of last update.
         "job_id": { type: string, format: uuid }
+        "index_in_job": { type: integer }
         "name": { type: string }
         "status": { $ref: "#/components/schemas/TaskStatus" }
         "priority": { type: integer }
@@ -2034,6 +2035,7 @@ components:
         - created
         - updated
         - job_id
+        - index_in_job
         - name
         - status
         - priority
@@ -2066,10 +2068,11 @@ components:
         id: { type: string, format: uuid }
         name: { type: string }
         status: { $ref: "#/components/schemas/TaskStatus" }
+        index_in_job: { type: integer }
         priority: { type: integer }
         task_type: { type: string }
         updated: { type: string, format: date-time }
-      required: [id, name, status, priority, task_type, updated]
+      required: [id, name, status, index_in_job, priority, task_type, updated]
 
     TaskLogInfo:
       type: object
