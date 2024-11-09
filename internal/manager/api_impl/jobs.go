@@ -708,7 +708,8 @@ func taskDBtoAPI(dbTask *persistence.Task) api.Task {
 		// TODO: convert this to just store dbTask.WorkerUUID.
 		Worker: workerToTaskWorker(dbTask.Worker),
 
-		JobId: dbTask.JobUUID,
+		JobId:      dbTask.JobUUID,
+		IndexInJob: dbTask.IndexInJob,
 	}
 
 	if dbTask.Job != nil {

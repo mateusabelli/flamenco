@@ -154,11 +154,12 @@ func (f *Flamenco) FetchTask(e echo.Context, taskID string) error {
 
 func taskDBtoSummary(task *persistence.Task) api.TaskSummary {
 	return api.TaskSummary{
-		Id:       task.UUID,
-		Name:     task.Name,
-		Priority: task.Priority,
-		Status:   task.Status,
-		TaskType: task.Type,
-		Updated:  task.UpdatedAt,
+		Id:         task.UUID,
+		Name:       task.Name,
+		IndexInJob: task.IndexInJob,
+		Priority:   task.Priority,
+		Status:     task.Status,
+		TaskType:   task.Type,
+		Updated:    task.UpdatedAt,
 	}
 }

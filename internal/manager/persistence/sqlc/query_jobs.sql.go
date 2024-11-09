@@ -192,6 +192,7 @@ INSERT INTO tasks (
   name,
   type,
   job_id,
+  index_in_job,
   priority,
   status,
   commands
@@ -204,19 +205,21 @@ INSERT INTO tasks (
   ?5,
   ?6,
   ?7,
-  ?8
+  ?8,
+  ?9
 )
 `
 
 type CreateTaskParams struct {
-	CreatedAt time.Time
-	UUID      string
-	Name      string
-	Type      string
-	JobID     int64
-	Priority  int64
-	Status    string
-	Commands  json.RawMessage
+	CreatedAt  time.Time
+	UUID       string
+	Name       string
+	Type       string
+	JobID      int64
+	IndexInJob int64
+	Priority   int64
+	Status     string
+	Commands   json.RawMessage
 }
 
 func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (int64, error) {
@@ -226,6 +229,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (int64, 
 		arg.Name,
 		arg.Type,
 		arg.JobID,
+		arg.IndexInJob,
 		arg.Priority,
 		arg.Status,
 		arg.Commands,
@@ -523,7 +527,7 @@ func (q *Queries) FetchJobsInStatus(ctx context.Context, statuses []string) ([]J
 }
 
 const fetchTask = `-- name: FetchTask :one
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, jobs.UUID as jobUUID, workers.UUID as workerUUID
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, jobs.UUID as jobUUID, workers.UUID as workerUUID
 FROM tasks
 LEFT JOIN jobs ON (tasks.job_id = jobs.id)
 LEFT JOIN workers ON (tasks.worker_id = workers.id)
@@ -547,6 +551,7 @@ func (q *Queries) FetchTask(ctx context.Context, uuid string) (FetchTaskRow, err
 		&i.Task.Name,
 		&i.Task.Type,
 		&i.Task.JobID,
+		&i.Task.IndexInJob,
 		&i.Task.Priority,
 		&i.Task.Status,
 		&i.Task.WorkerID,
@@ -624,7 +629,7 @@ func (q *Queries) FetchTaskJobUUID(ctx context.Context, uuid string) (sql.NullSt
 }
 
 const fetchTasksOfJob = `-- name: FetchTasksOfJob :many
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, workers.UUID as workerUUID
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, workers.UUID as workerUUID
 FROM tasks
 LEFT JOIN workers ON (tasks.worker_id = workers.id)
 WHERE tasks.job_id = ?1
@@ -652,6 +657,7 @@ func (q *Queries) FetchTasksOfJob(ctx context.Context, jobID int64) ([]FetchTask
 			&i.Task.Name,
 			&i.Task.Type,
 			&i.Task.JobID,
+			&i.Task.IndexInJob,
 			&i.Task.Priority,
 			&i.Task.Status,
 			&i.Task.WorkerID,
@@ -674,7 +680,7 @@ func (q *Queries) FetchTasksOfJob(ctx context.Context, jobID int64) ([]FetchTask
 }
 
 const fetchTasksOfJobInStatus = `-- name: FetchTasksOfJobInStatus :many
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, workers.UUID as workerUUID
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, workers.UUID as workerUUID
 FROM tasks
 LEFT JOIN workers ON (tasks.worker_id = workers.id)
 WHERE tasks.job_id = ?1
@@ -719,6 +725,7 @@ func (q *Queries) FetchTasksOfJobInStatus(ctx context.Context, arg FetchTasksOfJ
 			&i.Task.Name,
 			&i.Task.Type,
 			&i.Task.JobID,
+			&i.Task.IndexInJob,
 			&i.Task.Priority,
 			&i.Task.Status,
 			&i.Task.WorkerID,
@@ -741,7 +748,7 @@ func (q *Queries) FetchTasksOfJobInStatus(ctx context.Context, arg FetchTasksOfJ
 }
 
 const fetchTasksOfWorkerInStatus = `-- name: FetchTasksOfWorkerInStatus :many
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, jobs.UUID as jobUUID
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, jobs.UUID as jobUUID
 FROM tasks
 LEFT JOIN jobs ON (tasks.job_id = jobs.id)
 WHERE tasks.worker_id = ?1
@@ -775,6 +782,7 @@ func (q *Queries) FetchTasksOfWorkerInStatus(ctx context.Context, arg FetchTasks
 			&i.Task.Name,
 			&i.Task.Type,
 			&i.Task.JobID,
+			&i.Task.IndexInJob,
 			&i.Task.Priority,
 			&i.Task.Status,
 			&i.Task.WorkerID,
@@ -797,7 +805,7 @@ func (q *Queries) FetchTasksOfWorkerInStatus(ctx context.Context, arg FetchTasks
 }
 
 const fetchTasksOfWorkerInStatusOfJob = `-- name: FetchTasksOfWorkerInStatusOfJob :many
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity
 FROM tasks
 WHERE tasks.worker_id = ?1
   AND tasks.job_id = ?2
@@ -831,6 +839,7 @@ func (q *Queries) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, arg Fetch
 			&i.Task.Name,
 			&i.Task.Type,
 			&i.Task.JobID,
+			&i.Task.IndexInJob,
 			&i.Task.Priority,
 			&i.Task.Status,
 			&i.Task.WorkerID,
@@ -852,7 +861,7 @@ func (q *Queries) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, arg Fetch
 }
 
 const fetchTimedOutTasks = `-- name: FetchTimedOutTasks :many
-SELECT id, created_at, updated_at, uuid, name, type, job_id, priority, status, worker_id, last_touched_at, commands, activity
+SELECT id, created_at, updated_at, uuid, name, type, job_id, index_in_job, priority, status, worker_id, last_touched_at, commands, activity
 FROM tasks
 WHERE
     status = ?1
@@ -881,6 +890,7 @@ func (q *Queries) FetchTimedOutTasks(ctx context.Context, arg FetchTimedOutTasks
 			&i.Name,
 			&i.Type,
 			&i.JobID,
+			&i.IndexInJob,
 			&i.Priority,
 			&i.Status,
 			&i.WorkerID,
@@ -967,20 +977,21 @@ func (q *Queries) JobCountTasksInStatus(ctx context.Context, arg JobCountTasksIn
 }
 
 const queryJobTaskSummaries = `-- name: QueryJobTaskSummaries :many
-SELECT tasks.id, tasks.uuid, tasks.name, tasks.priority, tasks.status, tasks.type, tasks.updated_at
+SELECT tasks.id, tasks.uuid, tasks.name, tasks.index_in_job, tasks.priority, tasks.status, tasks.type, tasks.updated_at
 FROM tasks
 LEFT JOIN jobs ON jobs.id = tasks.job_id
 WHERE jobs.uuid=?1
 `
 
 type QueryJobTaskSummariesRow struct {
-	ID        int64
-	UUID      string
-	Name      string
-	Priority  int64
-	Status    string
-	Type      string
-	UpdatedAt sql.NullTime
+	ID         int64
+	UUID       string
+	Name       string
+	IndexInJob int64
+	Priority   int64
+	Status     string
+	Type       string
+	UpdatedAt  sql.NullTime
 }
 
 func (q *Queries) QueryJobTaskSummaries(ctx context.Context, jobUuid string) ([]QueryJobTaskSummariesRow, error) {
@@ -996,6 +1007,7 @@ func (q *Queries) QueryJobTaskSummaries(ctx context.Context, jobUuid string) ([]
 			&i.ID,
 			&i.UUID,
 			&i.Name,
+			&i.IndexInJob,
 			&i.Priority,
 			&i.Status,
 			&i.Type,

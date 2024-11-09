@@ -37,6 +37,7 @@ INSERT INTO tasks (
   name,
   type,
   job_id,
+  index_in_job,
   priority,
   status,
   commands
@@ -47,6 +48,7 @@ INSERT INTO tasks (
   @name,
   @type,
   @job_id,
+  @index_in_job,
   @priority,
   @status,
   @commands
@@ -313,7 +315,7 @@ AND T.type = @task_type;
 
 
 -- name: QueryJobTaskSummaries :many
-SELECT tasks.id, tasks.uuid, tasks.name, tasks.priority, tasks.status, tasks.type, tasks.updated_at
+SELECT tasks.id, tasks.uuid, tasks.name, tasks.index_in_job, tasks.priority, tasks.status, tasks.type, tasks.updated_at
 FROM tasks
 LEFT JOIN jobs ON jobs.id = tasks.job_id
 WHERE jobs.uuid=@job_uuid;

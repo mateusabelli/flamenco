@@ -52,8 +52,7 @@ export default {
     const options = {
       // See pkg/api/flamenco-openapi.yaml, schemas Task and TaskUpdate.
       columns: [
-        // Useful for debugging when there are many similar tasks:
-        // { title: "ID", field: "id", headerSort: false, formatter: (cell) => cell.getData().id.substr(0, 8), },
+        { title: 'Num', field: 'index_in_job' },
         {
           title: 'Status',
           field: 'status',

@@ -29,12 +29,13 @@ func (db *DB) QueryJobTaskSummaries(ctx context.Context, jobUUID string) ([]*Tas
 				UpdatedAt: task.UpdatedAt.Time,
 			},
 
-			UUID:     task.UUID,
-			Name:     task.Name,
-			Type:     task.Type,
-			Priority: int(task.Priority),
-			Status:   api.TaskStatus(task.Status),
-			JobUUID:  jobUUID,
+			UUID:       task.UUID,
+			Name:       task.Name,
+			Type:       task.Type,
+			IndexInJob: int(task.IndexInJob),
+			Priority:   int(task.Priority),
+			Status:     api.TaskStatus(task.Status),
+			JobUUID:    jobUUID,
 		}
 		gormTasks[index] = &gormTask
 	}

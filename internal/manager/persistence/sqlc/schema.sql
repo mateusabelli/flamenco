@@ -70,6 +70,7 @@ CREATE TABLE tasks (
   name varchar(64) DEFAULT '' NOT NULL,
   type varchar(32) DEFAULT '' NOT NULL,
   job_id integer DEFAULT 0 NOT NULL,
+  index_in_job integer DEFAULT 0 NOT NULL,
   priority smallint DEFAULT 50 NOT NULL,
   status varchar(16) DEFAULT '' NOT NULL,
   worker_id integer,
@@ -77,6 +78,7 @@ CREATE TABLE tasks (
   commands jsonb NOT NULL,
   activity varchar(255) DEFAULT '' NOT NULL,
   PRIMARY KEY (id),
+  UNIQUE(job_id, index_in_job),
   CONSTRAINT fk_tasks_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
   CONSTRAINT fk_tasks_worker FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE SET NULL
 );

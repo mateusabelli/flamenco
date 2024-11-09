@@ -29,7 +29,7 @@ func (q *Queries) AssignTaskToWorker(ctx context.Context, arg AssignTaskToWorker
 }
 
 const fetchAssignedAndRunnableTaskOfWorker = `-- name: FetchAssignedAndRunnableTaskOfWorker :one
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity
 FROM tasks
   INNER JOIN jobs ON tasks.job_id = jobs.id
 WHERE tasks.status=?1
@@ -72,6 +72,7 @@ func (q *Queries) FetchAssignedAndRunnableTaskOfWorker(ctx context.Context, arg 
 		&i.Task.Name,
 		&i.Task.Type,
 		&i.Task.JobID,
+		&i.Task.IndexInJob,
 		&i.Task.Priority,
 		&i.Task.Status,
 		&i.Task.WorkerID,
@@ -84,7 +85,7 @@ func (q *Queries) FetchAssignedAndRunnableTaskOfWorker(ctx context.Context, arg 
 
 const fetchWorkerTask = `-- name: FetchWorkerTask :one
 SELECT
-  tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity,
+  tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity,
   jobs.id, jobs.created_at, jobs.updated_at, jobs.uuid, jobs.name, jobs.job_type, jobs.priority, jobs.status, jobs.activity, jobs.settings, jobs.metadata, jobs.delete_requested_at, jobs.storage_shaman_checkout_id, jobs.worker_tag_id,
   (tasks.status = ?1 AND jobs.status = ?2) as is_active
 FROM tasks
@@ -121,6 +122,7 @@ func (q *Queries) FetchWorkerTask(ctx context.Context, arg FetchWorkerTaskParams
 		&i.Task.Name,
 		&i.Task.Type,
 		&i.Task.JobID,
+		&i.Task.IndexInJob,
 		&i.Task.Priority,
 		&i.Task.Status,
 		&i.Task.WorkerID,
@@ -147,7 +149,7 @@ func (q *Queries) FetchWorkerTask(ctx context.Context, arg FetchWorkerTaskParams
 }
 
 const findRunnableTask = `-- name: FindRunnableTask :one
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity
 FROM tasks
   INNER JOIN jobs ON tasks.job_id = jobs.id
   LEFT JOIN task_failures TF ON tasks.id = TF.task_id AND TF.worker_id=?1
@@ -244,6 +246,7 @@ func (q *Queries) FindRunnableTask(ctx context.Context, arg FindRunnableTaskPara
 		&i.Task.Name,
 		&i.Task.Type,
 		&i.Task.JobID,
+		&i.Task.IndexInJob,
 		&i.Task.Priority,
 		&i.Task.Status,
 		&i.Task.WorkerID,

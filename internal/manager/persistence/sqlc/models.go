@@ -62,6 +62,7 @@ type Task struct {
 	Name          string
 	Type          string
 	JobID         int64
+	IndexInJob    int64
 	Priority      int64
 	Status        string
 	WorkerID      sql.NullInt64

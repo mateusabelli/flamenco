@@ -60,13 +60,14 @@ type Task struct {
 	Model
 	UUID string
 
-	Name     string
-	Type     string
-	JobID    uint
-	Job      *Job
-	JobUUID  string // Fetched by SQLC, handled by GORM in Task.AfterFind()
-	Priority int
-	Status   api.TaskStatus
+	Name       string
+	Type       string
+	JobID      uint
+	Job        *Job
+	JobUUID    string // Fetched by SQLC, handled by GORM in Task.AfterFind()
+	IndexInJob int
+	Priority   int
+	Status     api.TaskStatus
 
 	// Which worker is/was working on this.
 	WorkerID      *uint
@@ -237,7 +238,7 @@ func (db *DB) storeAuthoredJobTaks(
 	now := db.now()
 
 	uuidToTask := make(map[string]TaskInfo)
-	for _, authoredTask := range authoredJob.Tasks {
+	for taskIndex, authoredTask := range authoredJob.Tasks {
 		// Marshal commands to JSON.
 		var commands []Command
 		for _, authoredCommand := range authoredTask.Commands {
@@ -253,14 +254,15 @@ func (db *DB) storeAuthoredJobTaks(
 		}
 
 		taskParams := sqlc.CreateTaskParams{
-			CreatedAt: now,
-			Name:      authoredTask.Name,
-			Type:      authoredTask.Type,
-			UUID:      authoredTask.UUID,
-			JobID:     jobID,
-			Priority:  int64(authoredTask.Priority),
-			Status:    string(api.TaskStatusQueued),
-			Commands:  commandsJSON,
+			CreatedAt:  now,
+			Name:       authoredTask.Name,
+			Type:       authoredTask.Type,
+			UUID:       authoredTask.UUID,
+			JobID:      jobID,
+			IndexInJob: int64(taskIndex + 1), // indexInJob is base-1.
+			Priority:   int64(authoredTask.Priority),
+			Status:     string(api.TaskStatusQueued),
+			Commands:   commandsJSON,
 			// dependencies are stored below.
 		}
 
@@ -1098,6 +1100,7 @@ func convertSqlcTask(task sqlc.Task, jobUUID string, workerUUID string) (*Task, 
 		UUID:          task.UUID,
 		Name:          task.Name,
 		Type:          task.Type,
+		IndexInJob:    int(task.IndexInJob),
 		Priority:      int(task.Priority),
 		Status:        api.TaskStatus(task.Status),
 		LastTouchedAt: task.LastTouchedAt.Time,
