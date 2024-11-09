@@ -95,6 +95,7 @@ class Task(ModelNormal):
             'created': (datetime,),  # noqa: E501
             'updated': (datetime,),  # noqa: E501
             'job_id': (str,),  # noqa: E501
+            'index_in_job': (int,),  # noqa: E501
             'name': (str,),  # noqa: E501
             'status': (TaskStatus,),  # noqa: E501
             'priority': (int,),  # noqa: E501
@@ -116,6 +117,7 @@ class Task(ModelNormal):
         'created': 'created',  # noqa: E501
         'updated': 'updated',  # noqa: E501
         'job_id': 'job_id',  # noqa: E501
+        'index_in_job': 'index_in_job',  # noqa: E501
         'name': 'name',  # noqa: E501
         'status': 'status',  # noqa: E501
         'priority': 'priority',  # noqa: E501
@@ -134,7 +136,7 @@ class Task(ModelNormal):
 
     @classmethod
     @convert_js_args_to_python_args
-    def _from_openapi_data(cls, id, created, updated, job_id, name, status, priority, task_type, activity, commands, *args, **kwargs):  # noqa: E501
+    def _from_openapi_data(cls, id, created, updated, job_id, index_in_job, name, status, priority, task_type, activity, commands, *args, **kwargs):  # noqa: E501
         """Task - a model defined in OpenAPI
 
         Args:
@@ -142,6 +144,7 @@ class Task(ModelNormal):
             created (datetime): Creation timestamp
             updated (datetime): Timestamp of last update.
             job_id (str):
+            index_in_job (int):
             name (str):
             status (TaskStatus):
             priority (int):
@@ -214,6 +217,7 @@ class Task(ModelNormal):
         self.created = created
         self.updated = updated
         self.job_id = job_id
+        self.index_in_job = index_in_job
         self.name = name
         self.status = status
         self.priority = priority
@@ -240,7 +244,7 @@ class Task(ModelNormal):
     ])
 
     @convert_js_args_to_python_args
-    def __init__(self, id, created, updated, job_id, name, status, priority, task_type, activity, commands, *args, **kwargs):  # noqa: E501
+    def __init__(self, id, created, updated, job_id, index_in_job, name, status, priority, task_type, activity, commands, *args, **kwargs):  # noqa: E501
         """Task - a model defined in OpenAPI
 
         Args:
@@ -248,6 +252,7 @@ class Task(ModelNormal):
             created (datetime): Creation timestamp
             updated (datetime): Timestamp of last update.
             job_id (str):
+            index_in_job (int):
             name (str):
             status (TaskStatus):
             priority (int):
@@ -318,6 +323,7 @@ class Task(ModelNormal):
         self.created = created
         self.updated = updated
         self.job_id = job_id
+        self.index_in_job = index_in_job
         self.name = name
         self.status = status
         self.priority = priority

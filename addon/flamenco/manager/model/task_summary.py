@@ -90,6 +90,7 @@ class TaskSummary(ModelNormal):
             'id': (str,),  # noqa: E501
             'name': (str,),  # noqa: E501
             'status': (TaskStatus,),  # noqa: E501
+            'index_in_job': (int,),  # noqa: E501
             'priority': (int,),  # noqa: E501
             'task_type': (str,),  # noqa: E501
             'updated': (datetime,),  # noqa: E501
@@ -104,6 +105,7 @@ class TaskSummary(ModelNormal):
         'id': 'id',  # noqa: E501
         'name': 'name',  # noqa: E501
         'status': 'status',  # noqa: E501
+        'index_in_job': 'index_in_job',  # noqa: E501
         'priority': 'priority',  # noqa: E501
         'task_type': 'task_type',  # noqa: E501
         'updated': 'updated',  # noqa: E501
@@ -116,13 +118,14 @@ class TaskSummary(ModelNormal):
 
     @classmethod
     @convert_js_args_to_python_args
-    def _from_openapi_data(cls, id, name, status, priority, task_type, updated, *args, **kwargs):  # noqa: E501
+    def _from_openapi_data(cls, id, name, status, index_in_job, priority, task_type, updated, *args, **kwargs):  # noqa: E501
         """TaskSummary - a model defined in OpenAPI
 
         Args:
             id (str):
             name (str):
             status (TaskStatus):
+            index_in_job (int):
             priority (int):
             task_type (str):
             updated (datetime):
@@ -188,6 +191,7 @@ class TaskSummary(ModelNormal):
         self.id = id
         self.name = name
         self.status = status
+        self.index_in_job = index_in_job
         self.priority = priority
         self.task_type = task_type
         self.updated = updated
@@ -211,13 +215,14 @@ class TaskSummary(ModelNormal):
     ])
 
     @convert_js_args_to_python_args
-    def __init__(self, id, name, status, priority, task_type, updated, *args, **kwargs):  # noqa: E501
+    def __init__(self, id, name, status, index_in_job, priority, task_type, updated, *args, **kwargs):  # noqa: E501
         """TaskSummary - a model defined in OpenAPI
 
         Args:
             id (str):
             name (str):
             status (TaskStatus):
+            index_in_job (int):
             priority (int):
             task_type (str):
             updated (datetime):
@@ -281,6 +286,7 @@ class TaskSummary(ModelNormal):
         self.id = id
         self.name = name
         self.status = status
+        self.index_in_job = index_in_job
         self.priority = priority
         self.task_type = task_type
         self.updated = updated

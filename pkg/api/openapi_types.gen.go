@@ -739,6 +739,7 @@ type Task struct {
 	Created         time.Time     `json:"created"`
 	FailedByWorkers *[]TaskWorker `json:"failed_by_workers,omitempty"`
 	Id              string        `json:"id"`
+	IndexInJob      int           `json:"index_in_job"`
 	JobId           string        `json:"job_id"`
 
 	// Timestamp of when any worker worked on this task.
@@ -779,12 +780,13 @@ type TaskStatusChange struct {
 
 // Just enough information about the task to show in the job's task list.
 type TaskSummary struct {
-	Id       string     `json:"id"`
-	Name     string     `json:"name"`
-	Priority int        `json:"priority"`
-	Status   TaskStatus `json:"status"`
-	TaskType string     `json:"task_type"`
-	Updated  time.Time  `json:"updated"`
+	Id         string     `json:"id"`
+	IndexInJob int        `json:"index_in_job"`
+	Name       string     `json:"name"`
+	Priority   int        `json:"priority"`
+	Status     TaskStatus `json:"status"`
+	TaskType   string     `json:"task_type"`
+	Updated    time.Time  `json:"updated"`
 }
 
 // TaskUpdate is sent by a Worker to update the status & logs of a task it's executing. All properties are optional; omitted properties are ignored (i.e. omitting `activity` will not erase the activity property of the task).

@@ -9,6 +9,7 @@ Name | Type | Description | Notes
 **created** | **datetime** | Creation timestamp | 
 **updated** | **datetime** | Timestamp of last update. | 
 **job_id** | **str** |  | 
+**index_in_job** | **int** |  | 
 **name** | **str** |  | 
 **status** | [**TaskStatus**](TaskStatus.md) |  | 
 **priority** | **int** |  | 

@@ -30,6 +30,7 @@ class Task {
      * @param created {Date} Creation timestamp
      * @param updated {Date} Timestamp of last update.
      * @param jobId {String} 
+     * @param indexInJob {Number} 
      * @param name {String} 
      * @param status {module:model/TaskStatus} 
      * @param priority {Number} 
@@ -37,9 +38,9 @@ class Task {
      * @param activity {String} 
      * @param commands {Array.<module:model/Command>} 
      */
-    constructor(id, created, updated, jobId, name, status, priority, taskType, activity, commands) { 
+    constructor(id, created, updated, jobId, indexInJob, name, status, priority, taskType, activity, commands) { 
         
-        Task.initialize(this, id, created, updated, jobId, name, status, priority, taskType, activity, commands);
+        Task.initialize(this, id, created, updated, jobId, indexInJob, name, status, priority, taskType, activity, commands);
     }
 
     /**
@@ -47,11 +48,12 @@ class Task {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, id, created, updated, jobId, name, status, priority, taskType, activity, commands) { 
+    static initialize(obj, id, created, updated, jobId, indexInJob, name, status, priority, taskType, activity, commands) { 
         obj['id'] = id;
         obj['created'] = created;
         obj['updated'] = updated;
         obj['job_id'] = jobId;
+        obj['index_in_job'] = indexInJob;
         obj['name'] = name;
         obj['status'] = status;
         obj['priority'] = priority;
@@ -82,6 +84,9 @@ class Task {
             }
             if (data.hasOwnProperty('job_id')) {
                 obj['job_id'] = ApiClient.convertToType(data['job_id'], 'String');
+            }
+            if (data.hasOwnProperty('index_in_job')) {
+                obj['index_in_job'] = ApiClient.convertToType(data['index_in_job'], 'Number');
             }
             if (data.hasOwnProperty('name')) {
                 obj['name'] = ApiClient.convertToType(data['name'], 'String');
@@ -138,6 +143,11 @@ Task.prototype['updated'] = undefined;
  * @member {String} job_id
  */
 Task.prototype['job_id'] = undefined;
+
+/**
+ * @member {Number} index_in_job
+ */
+Task.prototype['index_in_job'] = undefined;
 
 /**
  * @member {String} name

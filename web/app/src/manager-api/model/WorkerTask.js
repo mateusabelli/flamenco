@@ -31,14 +31,15 @@ class WorkerTask {
      * @param id {String} 
      * @param name {String} 
      * @param status {module:model/TaskStatus} 
+     * @param indexInJob {Number} 
      * @param priority {Number} 
      * @param taskType {String} 
      * @param updated {Date} 
      * @param jobId {String} 
      */
-    constructor(id, name, status, priority, taskType, updated, jobId) { 
-        TaskSummary.initialize(this, id, name, status, priority, taskType, updated);WorkerTaskAllOf.initialize(this, jobId);
-        WorkerTask.initialize(this, id, name, status, priority, taskType, updated, jobId);
+    constructor(id, name, status, indexInJob, priority, taskType, updated, jobId) { 
+        TaskSummary.initialize(this, id, name, status, indexInJob, priority, taskType, updated);WorkerTaskAllOf.initialize(this, jobId);
+        WorkerTask.initialize(this, id, name, status, indexInJob, priority, taskType, updated, jobId);
     }
 
     /**
@@ -46,10 +47,11 @@ class WorkerTask {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, id, name, status, priority, taskType, updated, jobId) { 
+    static initialize(obj, id, name, status, indexInJob, priority, taskType, updated, jobId) { 
         obj['id'] = id;
         obj['name'] = name;
         obj['status'] = status;
+        obj['index_in_job'] = indexInJob;
         obj['priority'] = priority;
         obj['task_type'] = taskType;
         obj['updated'] = updated;
@@ -77,6 +79,9 @@ class WorkerTask {
             }
             if (data.hasOwnProperty('status')) {
                 obj['status'] = TaskStatus.constructFromObject(data['status']);
+            }
+            if (data.hasOwnProperty('index_in_job')) {
+                obj['index_in_job'] = ApiClient.convertToType(data['index_in_job'], 'Number');
             }
             if (data.hasOwnProperty('priority')) {
                 obj['priority'] = ApiClient.convertToType(data['priority'], 'Number');
@@ -113,6 +118,11 @@ WorkerTask.prototype['name'] = undefined;
 WorkerTask.prototype['status'] = undefined;
 
 /**
+ * @member {Number} index_in_job
+ */
+WorkerTask.prototype['index_in_job'] = undefined;
+
+/**
  * @member {Number} priority
  */
 WorkerTask.prototype['priority'] = undefined;
@@ -146,6 +156,10 @@ TaskSummary.prototype['name'] = undefined;
  * @member {module:model/TaskStatus} status
  */
 TaskSummary.prototype['status'] = undefined;
+/**
+ * @member {Number} index_in_job
+ */
+TaskSummary.prototype['index_in_job'] = undefined;
 /**
  * @member {Number} priority
  */

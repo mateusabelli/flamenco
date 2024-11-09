@@ -94,6 +94,7 @@ class WorkerTask(ModelComposed):
             'id': (str,),  # noqa: E501
             'name': (str,),  # noqa: E501
             'status': (TaskStatus,),  # noqa: E501
+            'index_in_job': (int,),  # noqa: E501
             'priority': (int,),  # noqa: E501
             'task_type': (str,),  # noqa: E501
             'updated': (datetime,),  # noqa: E501
@@ -109,6 +110,7 @@ class WorkerTask(ModelComposed):
         'id': 'id',  # noqa: E501
         'name': 'name',  # noqa: E501
         'status': 'status',  # noqa: E501
+        'index_in_job': 'index_in_job',  # noqa: E501
         'priority': 'priority',  # noqa: E501
         'task_type': 'task_type',  # noqa: E501
         'updated': 'updated',  # noqa: E501
@@ -127,6 +129,7 @@ class WorkerTask(ModelComposed):
             id (str):
             name (str):
             status (TaskStatus):
+            index_in_job (int):
             priority (int):
             task_type (str):
             updated (datetime):
@@ -233,6 +236,7 @@ class WorkerTask(ModelComposed):
             id (str):
             name (str):
             status (TaskStatus):
+            index_in_job (int):
             priority (int):
             task_type (str):
             updated (datetime):

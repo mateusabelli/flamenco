@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **id** | **str** |  | 
 **name** | **str** |  | 
 **status** | [**TaskStatus**](TaskStatus.md) |  | 
+**index_in_job** | **int** |  | 
 **priority** | **int** |  | 
 **task_type** | **str** |  | 
 **updated** | **datetime** |  | 
