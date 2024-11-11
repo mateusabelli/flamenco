@@ -88,7 +88,7 @@ func WebappStatic() error {
 	fmt.Printf("Web app has been installed into %s\n", webStatic)
 
 	// Build the add-on ZIP as it's part of the static web files.
-	zipPath := filepath.Join(webStatic, "flamenco3-addon.zip")
+	zipPath := filepath.Join(webStatic, "flamenco-addon.zip")
 	return packAddon(zipPath)
 }
 
