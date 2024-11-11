@@ -10,4 +10,9 @@ import (
 	// Go code generators:
 	_ "github.com/deepmap/oapi-codegen/cmd/oapi-codegen"
 	_ "github.com/golang/mock/mockgen"
+
+	// Our build tool. Normally this isn't necessary, but it's needed to be able
+	// to build the tool when `go mod vendor` has been used to vendor the
+	// dependencies.
+	_ "github.com/magefile/mage/mage"
 )
