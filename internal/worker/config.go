@@ -89,6 +89,41 @@ func NewConfigWrangler() FileConfigWrangler {
 	return FileConfigWrangler{}
 }
 
+type WorkerConfigPaths struct {
+	Main        string
+	Credentials string
+}
+
+// ConfigPaths returns the absolute file paths Flamenco Worker will use to load
+// its configuration. If the path cannot be made absolute, an error will be
+// logged and a relative path will be returned instead.
+func (fcw *FileConfigWrangler) ConfigPaths() WorkerConfigPaths {
+	var err error
+	paths := WorkerConfigPaths{}
+
+	// configFilename is used as-is.
+	paths.Main, err = filepath.Abs(configFilename)
+	if err != nil {
+		log.Error().
+			AnErr("cause", err).
+			Str("filepath", configFilename).
+			Msg("could not make the main configuration file path an absolute path")
+		paths.Main = configFilename
+	}
+
+	// credentialsFilename is always looked up somewhere in the user's home dir.
+	paths.Credentials, err = fcw.credentialsAbsPath()
+	if err != nil {
+		log.Error().
+			AnErr("cause", err).
+			Str("filepath", credentialsFilename).
+			Msg("could not make the credentials configuration file path an absolute path")
+		paths.Credentials = credentialsFilename
+	}
+
+	return paths
+}
+
 // WorkerConfig returns the worker configuration, or the default config if
 // there is no config file. Configuration is only loaded from disk once;
 // subsequent calls return the same config.
@@ -150,7 +185,7 @@ func (fcw *FileConfigWrangler) WorkerCredentials() (WorkerCredentials, error) {
 func (fcw *FileConfigWrangler) SaveCredentials(creds WorkerCredentials) error {
 	fcw.creds = &creds
 
-	filepath, err := appinfo.InFlamencoHome(credentialsFilename)
+	filepath, err := fcw.credentialsAbsPath()
 	if err != nil {
 		return err
 	}
@@ -160,6 +195,11 @@ func (fcw *FileConfigWrangler) SaveCredentials(creds WorkerCredentials) error {
 		return fmt.Errorf("writing to %s: %w", filepath, err)
 	}
 	return nil
+}
+
+func (fcw *FileConfigWrangler) credentialsAbsPath() (string, error) {
+	filepath, err := appinfo.InFlamencoHome(credentialsFilename)
+	return filepath, err
 }
 
 // SetManagerURL overwrites the Manager URL in the cached configuration.

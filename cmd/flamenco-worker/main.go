@@ -95,6 +95,11 @@ func main() {
 
 	// Load configuration, and override things from the CLI arguments if necessary.
 	configWrangler := worker.NewConfigWrangler()
+	configPaths := configWrangler.ConfigPaths()
+	log.Info().
+		Str("main", configPaths.Main).
+		Str("credentials", configPaths.Credentials).
+		Msg("will load configuration from these paths")
 
 	// Before the config can be overridden, it has to be loaded.
 	if _, err := configWrangler.WorkerConfig(); err != nil {
