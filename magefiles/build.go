@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/magefile/mage/mg"
@@ -110,7 +111,7 @@ func buildFlags() ([]string, error) {
 		return nil, err
 	}
 
-	ldflags := "" +
+	ldflags := os.Getenv("LDFLAGS") +
 		fmt.Sprintf(" -X %s/internal/appinfo.ApplicationVersion=%s", goPkg, version) +
 		fmt.Sprintf(" -X %s/internal/appinfo.ApplicationGitHash=%s", goPkg, hash) +
 		fmt.Sprintf(" -X %s/internal/appinfo.ReleaseCycle=%s", goPkg, releaseCycle)
