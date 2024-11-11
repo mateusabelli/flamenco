@@ -48,7 +48,7 @@ func TestOneJobOneTask(t *testing.T) {
 	require.NotNil(t, task)
 	assert.Equal(t, job.ID, task.JobID)
 	require.NotNil(t, task.WorkerID, "no worker assigned to returned task")
-	assert.Equal(t, w.ID, *task.WorkerID, "task must be assigned to the requesting worker")
+	assert.Equal(t, w.ID, int64(*task.WorkerID), "task must be assigned to the requesting worker")
 
 	// Check the task in the database.
 	now := db.now()
@@ -57,7 +57,7 @@ func TestOneJobOneTask(t *testing.T) {
 	require.NotNil(t, dbTask)
 	require.NotNil(t, dbTask.WorkerID, "no worker assigned to task in database")
 
-	assert.Equal(t, w.ID, *dbTask.WorkerID, "task must be assigned to the requesting worker")
+	assert.Equal(t, w.ID, int64(*dbTask.WorkerID), "task must be assigned to the requesting worker")
 	assert.WithinDuration(t, now, dbTask.LastTouchedAt, time.Second, "task must be 'touched' by the worker after scheduling")
 }
 
@@ -259,7 +259,7 @@ func TestAlreadyAssigned(t *testing.T) {
 	// another, higher-prio task to be done.
 	dbTask3, err := db.FetchTask(ctx, att3.UUID)
 	require.NoError(t, err)
-	dbTask3.WorkerID = &w.ID
+	dbTask3.WorkerID = ptr(uint(w.ID))
 	dbTask3.Status = api.TaskStatusActive
 	err = db.SaveTask(ctx, dbTask3)
 	require.NoError(t, err)
@@ -292,7 +292,7 @@ func TestAssignedToOtherWorker(t *testing.T) {
 	// it shouldn't matter which worker it's assigned to.
 	dbTask2, err := db.FetchTask(ctx, att2.UUID)
 	require.NoError(t, err)
-	dbTask2.WorkerID = &w2.ID
+	dbTask2.WorkerID = ptr(uint(w2.ID))
 	dbTask2.Status = api.TaskStatusQueued
 	err = db.SaveTask(ctx, dbTask2)
 	require.NoError(t, err)
@@ -302,7 +302,7 @@ func TestAssignedToOtherWorker(t *testing.T) {
 	require.NotNil(t, task)
 
 	assert.Equal(t, att2.Name, task.Name, "the high-prio task should have been chosen")
-	assert.Equal(t, *task.WorkerID, w.ID, "the task should now be assigned to the worker it was scheduled for")
+	assert.Equal(t, int64(*task.WorkerID), w.ID, "the task should now be assigned to the worker it was scheduled for")
 }
 
 func TestPreviouslyFailed(t *testing.T) {
@@ -344,14 +344,12 @@ func TestWorkerTagJobWithTag(t *testing.T) {
 	require.NoError(t, db.CreateWorkerTag(ctx, &tag2))
 
 	// Create a worker in tag1:
-	workerC := linuxWorker(t, db, func(w *Worker) {
-		w.Tags = []*WorkerTag{&tag1}
-	})
+	workerC := linuxWorker(t, db)
+	require.NoError(t, db.WorkerSetTags(ctx, &workerC, []string{tag1.UUID}))
 
 	// Create a worker without tag:
 	workerNC := linuxWorker(t, db, func(w *Worker) {
 		w.UUID = "c53f8f68-4149-4790-991c-ba73a326551e"
-		w.Tags = nil
 	})
 
 	{ // Test job with different tag:
@@ -391,14 +389,12 @@ func TestWorkerTagJobWithoutTag(t *testing.T) {
 	require.NoError(t, db.CreateWorkerTag(ctx, &tag1))
 
 	// Create a worker in tag1:
-	workerC := linuxWorker(t, db, func(w *Worker) {
-		w.Tags = []*WorkerTag{&tag1}
-	})
+	workerC := linuxWorker(t, db)
+	require.NoError(t, db.WorkerSetTags(ctx, &workerC, []string{tag1.UUID}))
 
 	// Create a worker without tag:
 	workerNC := linuxWorker(t, db, func(w *Worker) {
 		w.UUID = "c53f8f68-4149-4790-991c-ba73a326551e"
-		w.Tags = nil
 	})
 
 	// Test tag-less job:
@@ -537,9 +533,9 @@ func saveTestWorker(t *testing.T, db *DB, worker *Worker) {
 		Address:            worker.Address,
 		Platform:           worker.Platform,
 		Software:           worker.Software,
-		Status:             string(worker.Status),
-		LastSeenAt:         sql.NullTime{Time: worker.LastSeenAt, Valid: !worker.LastSeenAt.IsZero()},
-		StatusRequested:    string(worker.StatusRequested),
+		Status:             worker.Status,
+		LastSeenAt:         nullTimeToUTC(worker.LastSeenAt),
+		StatusRequested:    worker.StatusRequested,
 		LazyStatusRequest:  worker.LazyStatusRequest,
 		SupportedTaskTypes: worker.SupportedTaskTypes,
 		DeletedAt:          sql.NullTime(worker.DeletedAt),
@@ -550,5 +546,6 @@ func saveTestWorker(t *testing.T, db *DB, worker *Worker) {
 	id, err := queries.CreateWorker(context.TODO(), params)
 	require.NoError(t, err, "cannot save worker %q", worker.Name)
 
-	worker.ID = uint(id)
+	worker.ID = id
+	worker.CreatedAt = params.CreatedAt
 }

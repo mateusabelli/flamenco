@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog"
 	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/internal/manager/task_state_machine"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
@@ -19,7 +20,7 @@ import (
 type PersistenceService interface {
 	FetchTimedOutTasks(ctx context.Context, untouchedSince time.Time) ([]*persistence.Task, error)
 	FetchTimedOutWorkers(ctx context.Context, lastSeenBefore time.Time) ([]*persistence.Worker, error)
-	SaveWorker(ctx context.Context, w *persistence.Worker) error
+	SaveWorker(ctx context.Context, w *sqlc.Worker) error
 }
 
 var _ PersistenceService = (*persistence.DB)(nil)

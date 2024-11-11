@@ -161,7 +161,7 @@ func (db *DB) StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.Au
 		Name:                    authoredJob.Name,
 		JobType:                 authoredJob.JobType,
 		Priority:                int64(authoredJob.Priority),
-		Status:                  string(authoredJob.Status),
+		Status:                  authoredJob.Status,
 		Settings:                settings,
 		Metadata:                metadata,
 		StorageShamanCheckoutID: authoredJob.Storage.ShamanCheckoutID,
@@ -182,7 +182,7 @@ func (db *DB) StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.Au
 		Str("job", params.UUID).
 		Str("type", params.JobType).
 		Str("name", params.Name).
-		Str("status", params.Status).
+		Str("status", string(params.Status)).
 		Msg("persistence: storing authored job")
 
 	jobID, err := qtx.queries.CreateJob(ctx, params)
@@ -261,7 +261,7 @@ func (db *DB) storeAuthoredJobTaks(
 			JobID:      jobID,
 			IndexInJob: int64(taskIndex + 1), // indexInJob is base-1.
 			Priority:   int64(authoredTask.Priority),
-			Status:     string(api.TaskStatusQueued),
+			Status:     api.TaskStatusQueued,
 			Commands:   commandsJSON,
 			// dependencies are stored below.
 		}
@@ -492,12 +492,7 @@ func (db *DB) FetchJobsDeletionRequested(ctx context.Context) ([]string, error) 
 func (db *DB) FetchJobsInStatus(ctx context.Context, jobStatuses ...api.JobStatus) ([]*Job, error) {
 	queries := db.queries()
 
-	statuses := []string{}
-	for _, status := range jobStatuses {
-		statuses = append(statuses, string(status))
-	}
-
-	sqlcJobs, err := queries.FetchJobsInStatus(ctx, statuses)
+	sqlcJobs, err := queries.FetchJobsInStatus(ctx, jobStatuses)
 	if err != nil {
 		return nil, jobError(err, "fetching jobs in status %q", jobStatuses)
 	}
@@ -521,7 +516,7 @@ func (db *DB) SaveJobStatus(ctx context.Context, j *Job) error {
 	params := sqlc.SaveJobStatusParams{
 		Now:      db.nowNullable(),
 		ID:       int64(j.ID),
-		Status:   string(j.Status),
+		Status:   j.Status,
 		Activity: j.Activity,
 	}
 
@@ -586,8 +581,9 @@ func convertSqlTaskWithJobAndWorker(
 	task sqlc.Task,
 ) (*Task, error) {
 	var (
-		gormJob    Job
-		gormWorker Worker
+		gormJob Job
+		worker  Worker
+		err     error
 	)
 
 	// Fetch & convert the Job.
@@ -603,17 +599,16 @@ func convertSqlTaskWithJobAndWorker(
 		}
 	}
 
-	// Fetch & convert the Worker.
+	// Fetch the Worker.
 	if task.WorkerID.Valid && task.WorkerID.Int64 > 0 {
-		sqlcWorker, err := queries.FetchWorkerUnconditionalByID(ctx, task.WorkerID.Int64)
+		worker, err = queries.FetchWorkerUnconditionalByID(ctx, task.WorkerID.Int64)
 		if err != nil {
 			return nil, taskError(err, "fetching worker assigned to task %s", task.UUID)
 		}
-		gormWorker = *convertSqlcWorker(sqlcWorker)
 	}
 
 	// Convert the Task.
-	gormTask, err := convertSqlcTask(task, gormJob.UUID, gormWorker.UUID)
+	gormTask, err := convertSqlcTask(task, gormJob.UUID, worker.UUID)
 	if err != nil {
 		return nil, err
 	}
@@ -623,9 +618,9 @@ func convertSqlTaskWithJobAndWorker(
 		gormTask.Job = &gormJob
 		gormTask.JobUUID = gormJob.UUID
 	}
-	if gormWorker.ID > 0 {
-		gormTask.Worker = &gormWorker
-		gormTask.WorkerUUID = gormWorker.UUID
+	if worker.ID > 0 {
+		gormTask.Worker = &worker
+		gormTask.WorkerUUID = worker.UUID
 	}
 
 	return gormTask, nil
@@ -664,7 +659,7 @@ func (db *DB) SaveTask(ctx context.Context, t *Task) error {
 		Name:      t.Name,
 		Type:      t.Type,
 		Priority:  int64(t.Priority),
-		Status:    string(t.Status),
+		Status:    t.Status,
 		Commands:  commandsJSON,
 		Activity:  t.Activity,
 		ID:        int64(t.ID),
@@ -700,7 +695,7 @@ func (db *DB) SaveTaskStatus(ctx context.Context, t *Task) error {
 
 	err := queries.UpdateTaskStatus(ctx, sqlc.UpdateTaskStatusParams{
 		UpdatedAt: db.nowNullable(),
-		Status:    string(t.Status),
+		Status:    t.Status,
 		ID:        int64(t.ID),
 	})
 	if err != nil {
@@ -743,7 +738,7 @@ func (db *DB) TaskAssignToWorker(ctx context.Context, t *Task, w *Worker) error 
 
 	// Update the task itself.
 	t.Worker = w
-	t.WorkerID = &w.ID
+	t.WorkerID = ptr(uint(w.ID))
 
 	return nil
 }
@@ -756,7 +751,7 @@ func (db *DB) FetchTasksOfWorkerInStatus(ctx context.Context, worker *Worker, ta
 			Int64: int64(worker.ID),
 			Valid: true,
 		},
-		TaskStatus: string(taskStatus),
+		TaskStatus: taskStatus,
 	})
 	if err != nil {
 		return nil, taskError(err, "finding tasks of worker %s in status %q", worker.UUID, taskStatus)
@@ -772,7 +767,7 @@ func (db *DB) FetchTasksOfWorkerInStatus(ctx context.Context, worker *Worker, ta
 			return nil, err
 		}
 		gormTask.Worker = worker
-		gormTask.WorkerID = &worker.ID
+		gormTask.WorkerID = ptr(uint(worker.ID))
 
 		// Fetch the job, either from the cache or from the database. This is done
 		// here because the task_state_machine functionality expects that task.Job
@@ -802,7 +797,7 @@ func (db *DB) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, worker *Worke
 			Valid: true,
 		},
 		JobID:      int64(job.ID),
-		TaskStatus: string(taskStatus),
+		TaskStatus: taskStatus,
 	})
 	if err != nil {
 		return nil, taskError(err, "finding tasks of worker %s in status %q and job %s", worker.UUID, taskStatus, job.UUID)
@@ -817,7 +812,7 @@ func (db *DB) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, worker *Worke
 		gormTask.Job = job
 		gormTask.JobID = job.ID
 		gormTask.Worker = worker
-		gormTask.WorkerID = &worker.ID
+		gormTask.WorkerID = ptr(uint(worker.ID))
 		result[i] = gormTask
 	}
 	return result, nil
@@ -828,7 +823,7 @@ func (db *DB) JobHasTasksInStatus(ctx context.Context, job *Job, taskStatus api.
 
 	count, err := queries.JobCountTasksInStatus(ctx, sqlc.JobCountTasksInStatusParams{
 		JobID:      int64(job.ID),
-		TaskStatus: string(taskStatus),
+		TaskStatus: taskStatus,
 	})
 	if err != nil {
 		return false, taskError(err, "counting tasks of job %s in status %q", job.UUID, taskStatus)
@@ -896,7 +891,7 @@ func (db *DB) FetchTasksOfJobInStatus(ctx context.Context, job *Job, taskStatuse
 
 	rows, err := queries.FetchTasksOfJobInStatus(ctx, sqlc.FetchTasksOfJobInStatusParams{
 		JobID:      int64(job.ID),
-		TaskStatus: convertTaskStatuses(taskStatuses),
+		TaskStatus: taskStatuses,
 	})
 	if err != nil {
 		return nil, taskError(err, "fetching tasks of job %s in status %q", job.UUID, taskStatuses)
@@ -926,7 +921,7 @@ func (db *DB) UpdateJobsTaskStatuses(ctx context.Context, job *Job,
 
 	err := queries.UpdateJobsTaskStatuses(ctx, sqlc.UpdateJobsTaskStatusesParams{
 		UpdatedAt: db.nowNullable(),
-		Status:    string(taskStatus),
+		Status:    taskStatus,
 		Activity:  activity,
 		JobID:     int64(job.ID),
 	})
@@ -950,10 +945,10 @@ func (db *DB) UpdateJobsTaskStatusesConditional(ctx context.Context, job *Job,
 
 	err := queries.UpdateJobsTaskStatusesConditional(ctx, sqlc.UpdateJobsTaskStatusesConditionalParams{
 		UpdatedAt:        db.nowNullable(),
-		Status:           string(taskStatus),
+		Status:           taskStatus,
 		Activity:         activity,
 		JobID:            int64(job.ID),
-		StatusesToUpdate: convertTaskStatuses(statusesToUpdate),
+		StatusesToUpdate: statusesToUpdate,
 	})
 
 	if err != nil {
@@ -1041,7 +1036,7 @@ func (db *DB) FetchTaskFailureList(ctx context.Context, t *Task) ([]*Worker, err
 
 	workers := make([]*Worker, len(failureList))
 	for idx := range failureList {
-		workers[idx] = convertSqlcWorker(failureList[idx].Worker)
+		workers[idx] = &failureList[idx].Worker
 	}
 	return workers, nil
 }
@@ -1123,22 +1118,4 @@ func convertSqlcTask(task sqlc.Task, jobUUID string, workerUUID string) (*Task, 
 	}
 
 	return &dbTask, nil
-}
-
-// convertTaskStatuses converts from []api.TaskStatus to []string for feeding to sqlc.
-func convertTaskStatuses(taskStatuses []api.TaskStatus) []string {
-	statusesAsStrings := make([]string, len(taskStatuses))
-	for index := range taskStatuses {
-		statusesAsStrings[index] = string(taskStatuses[index])
-	}
-	return statusesAsStrings
-}
-
-// convertJobStatuses converts from []api.JobStatus to []string for feeding to sqlc.
-func convertJobStatuses(jobStatuses []api.JobStatus) []string {
-	statusesAsStrings := make([]string, len(jobStatuses))
-	for index := range jobStatuses {
-		statusesAsStrings[index] = string(jobStatuses[index])
-	}
-	return statusesAsStrings
 }

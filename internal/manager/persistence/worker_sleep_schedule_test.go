@@ -40,7 +40,7 @@ func TestFetchWorkerSleepSchedule(t *testing.T) {
 
 	// Create a sleep schedule.
 	created := SleepSchedule{
-		WorkerID: linuxWorker.ID,
+		WorkerID: uint(linuxWorker.ID),
 		Worker:   &linuxWorker,
 
 		IsActive:   true,
@@ -53,7 +53,7 @@ func TestFetchWorkerSleepSchedule(t *testing.T) {
 
 	fetched, err = db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
 	require.NoError(t, err)
-	assertEqualSleepSchedule(t, linuxWorker.ID, created, *fetched)
+	assertEqualSleepSchedule(t, uint(linuxWorker.ID), created, *fetched)
 }
 
 func TestFetchSleepScheduleWorker(t *testing.T) {
@@ -74,7 +74,7 @@ func TestFetchSleepScheduleWorker(t *testing.T) {
 
 	// Create a sleep schedule.
 	created := SleepSchedule{
-		WorkerID: linuxWorker.ID,
+		WorkerID: uint(linuxWorker.ID),
 		Worker:   &linuxWorker,
 
 		IsActive:   true,
@@ -120,7 +120,7 @@ func TestSetWorkerSleepSchedule(t *testing.T) {
 	require.NoError(t, err)
 
 	schedule := SleepSchedule{
-		WorkerID: linuxWorker.ID,
+		WorkerID: uint(linuxWorker.ID),
 		Worker:   &linuxWorker,
 
 		IsActive:   true,
@@ -138,7 +138,7 @@ func TestSetWorkerSleepSchedule(t *testing.T) {
 	require.NoError(t, err)
 	fetched, err := db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
 	require.NoError(t, err)
-	assertEqualSleepSchedule(t, linuxWorker.ID, schedule, *fetched)
+	assertEqualSleepSchedule(t, uint(linuxWorker.ID), schedule, *fetched)
 
 	// Overwrite the schedule with one that already has a database ID.
 	newSchedule := schedule
@@ -150,11 +150,11 @@ func TestSetWorkerSleepSchedule(t *testing.T) {
 	require.NoError(t, err)
 	fetched, err = db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
 	require.NoError(t, err)
-	assertEqualSleepSchedule(t, linuxWorker.ID, newSchedule, *fetched)
+	assertEqualSleepSchedule(t, uint(linuxWorker.ID), newSchedule, *fetched)
 
 	// Overwrite the schedule with a freshly constructed one.
 	newerSchedule := SleepSchedule{
-		WorkerID: linuxWorker.ID,
+		WorkerID: uint(linuxWorker.ID),
 		Worker:   &linuxWorker,
 
 		IsActive:   true,
@@ -166,11 +166,11 @@ func TestSetWorkerSleepSchedule(t *testing.T) {
 	require.NoError(t, err)
 	fetched, err = db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
 	require.NoError(t, err)
-	assertEqualSleepSchedule(t, linuxWorker.ID, newerSchedule, *fetched)
+	assertEqualSleepSchedule(t, uint(linuxWorker.ID), newerSchedule, *fetched)
 
 	// Clear the sleep schedule.
 	emptySchedule := SleepSchedule{
-		WorkerID: linuxWorker.ID,
+		WorkerID: uint(linuxWorker.ID),
 		Worker:   &linuxWorker,
 
 		IsActive:   false,
@@ -182,7 +182,7 @@ func TestSetWorkerSleepSchedule(t *testing.T) {
 	require.NoError(t, err)
 	fetched, err = db.FetchWorkerSleepSchedule(ctx, linuxWorker.UUID)
 	require.NoError(t, err)
-	assertEqualSleepSchedule(t, linuxWorker.ID, emptySchedule, *fetched)
+	assertEqualSleepSchedule(t, uint(linuxWorker.ID), emptySchedule, *fetched)
 
 }
 
@@ -212,7 +212,7 @@ func TestSetWorkerSleepScheduleNextCheck(t *testing.T) {
 
 	fetched, err := db.FetchWorkerSleepSchedule(ctx, schedule.Worker.UUID)
 	require.NoError(t, err)
-	assertEqualSleepSchedule(t, schedule.Worker.ID, schedule, *fetched)
+	assertEqualSleepSchedule(t, uint(schedule.Worker.ID), schedule, *fetched)
 }
 
 func TestFetchSleepSchedulesToCheck(t *testing.T) {
@@ -293,9 +293,9 @@ func TestFetchSleepSchedulesToCheck(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, toCheck, 2)
 
-	assertEqualSleepSchedule(t, schedule0.Worker.ID, schedule0, *toCheck[0])
+	assertEqualSleepSchedule(t, uint(schedule0.Worker.ID), schedule0, *toCheck[0])
 	assert.Nil(t, toCheck[0].Worker, "the Worker should NOT be fetched")
-	assertEqualSleepSchedule(t, schedule2.Worker.ID, schedule1, *toCheck[1])
+	assertEqualSleepSchedule(t, uint(schedule2.Worker.ID), schedule1, *toCheck[1])
 	assert.Nil(t, toCheck[1].Worker, "the Worker should NOT be fetched")
 }
 

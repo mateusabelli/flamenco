@@ -76,6 +76,7 @@ type PersistenceService interface {
 	FetchWorkerTags(ctx context.Context) ([]*persistence.WorkerTag, error)
 	DeleteWorkerTag(ctx context.Context, uuid string) error
 	SaveWorkerTag(ctx context.Context, tag *persistence.WorkerTag) error
+	FetchTagsOfWorker(ctx context.Context, workerUUID string) ([]persistence.WorkerTag, error)
 
 	// WorkersLeftToRun returns a set of worker UUIDs that can run tasks of the given type on the given job.
 	WorkersLeftToRun(ctx context.Context, job *persistence.Job, taskType string) (map[string]bool, error)

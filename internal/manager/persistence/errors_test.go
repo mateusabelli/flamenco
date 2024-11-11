@@ -17,18 +17,18 @@ func TestNotFoundErrors(t *testing.T) {
 	assert.Contains(t, ErrTaskNotFound.Error(), "task")
 }
 
-func TestTranslateGormJobError(t *testing.T) {
-	assert.Nil(t, translateGormJobError(nil))
-	assert.Equal(t, ErrJobNotFound, translateGormJobError(sql.ErrNoRows))
+func TestTranslateJobError(t *testing.T) {
+	assert.Nil(t, translateJobError(nil))
+	assert.Equal(t, ErrJobNotFound, translateJobError(sql.ErrNoRows))
 
 	otherError := errors.New("this error is not special for this function")
-	assert.Equal(t, otherError, translateGormJobError(otherError))
+	assert.Equal(t, otherError, translateJobError(otherError))
 }
 
-func TestTranslateGormTaskError(t *testing.T) {
-	assert.Nil(t, translateGormTaskError(nil))
-	assert.Equal(t, ErrTaskNotFound, translateGormTaskError(sql.ErrNoRows))
+func TestTranslateTaskError(t *testing.T) {
+	assert.Nil(t, translateTaskError(nil))
+	assert.Equal(t, ErrTaskNotFound, translateTaskError(sql.ErrNoRows))
 
 	otherError := errors.New("this error is not special for this function")
-	assert.Equal(t, otherError, translateGormTaskError(otherError))
+	assert.Equal(t, otherError, translateTaskError(otherError))
 }

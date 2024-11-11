@@ -43,7 +43,7 @@ FROM worker_tag_membership
 WHERE worker_id=@worker_id;
 
 -- name: FetchWorkers :many
-SELECT sqlc.embed(workers) FROM workers
+SELECT * FROM workers
 WHERE deleted_at IS NULL;
 
 -- name: FetchWorker :one

@@ -77,8 +77,8 @@ func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker
 	// Worker, but since it's active that is unlikely.
 	{
 		row, err := queries.FetchAssignedAndRunnableTaskOfWorker(ctx, sqlc.FetchAssignedAndRunnableTaskOfWorkerParams{
-			ActiveTaskStatus:  string(api.TaskStatusActive),
-			ActiveJobStatuses: convertJobStatuses(schedulableJobStatuses),
+			ActiveTaskStatus:  api.TaskStatusActive,
+			ActiveJobStatuses: schedulableJobStatuses,
 			WorkerID:          workerID,
 		})
 
@@ -141,18 +141,22 @@ func findTaskForWorker(
 	w *Worker,
 ) (sqlc.Task, error) {
 
-	// Construct the list of worker tags to check.
-	workerTags := make([]sql.NullInt64, len(w.Tags))
-	for index, tag := range w.Tags {
-		workerTags[index] = sql.NullInt64{Int64: int64(tag.ID), Valid: true}
+	// Construct the list of worker tag IDs to check.
+	tags, err := queries.FetchTagsOfWorker(ctx, w.UUID)
+	if err != nil {
+		return sqlc.Task{}, err
+	}
+	workerTags := make([]sql.NullInt64, len(tags))
+	for index, tag := range tags {
+		workerTags[index] = sql.NullInt64{Int64: tag.ID, Valid: true}
 	}
 
 	row, err := queries.FindRunnableTask(ctx, sqlc.FindRunnableTaskParams{
 		WorkerID:                int64(w.ID),
-		SchedulableTaskStatuses: convertTaskStatuses(schedulableTaskStatuses),
-		SchedulableJobStatuses:  convertJobStatuses(schedulableJobStatuses),
+		SchedulableTaskStatuses: schedulableTaskStatuses,
+		SchedulableJobStatuses:  schedulableJobStatuses,
 		SupportedTaskTypes:      w.TaskTypes(),
-		TaskStatusCompleted:     string(api.TaskStatusCompleted),
+		TaskStatusCompleted:     api.TaskStatusCompleted,
 		WorkerTags:              workerTags,
 	})
 	if err != nil {

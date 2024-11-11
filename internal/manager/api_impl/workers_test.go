@@ -193,7 +193,7 @@ func TestWorkerSignOn(t *testing.T) {
 		Name:           "Lazy Boi",
 		PreviousStatus: &prevStatus,
 		Status:         api.WorkerStatusStarting,
-		Updated:        worker.UpdatedAt,
+		Updated:        worker.UpdatedAt.Time,
 		Version:        "3.0-testing",
 	})
 
@@ -249,7 +249,7 @@ func TestWorkerSignoffTaskRequeue(t *testing.T) {
 			IsLazy: false,
 			Status: api.WorkerStatusAwake,
 		},
-		Updated: worker.UpdatedAt,
+		Updated: worker.UpdatedAt.Time,
 		Version: worker.Software,
 	})
 
@@ -278,7 +278,7 @@ func TestWorkerRememberPreviousStatus(t *testing.T) {
 			IsLazy: false,
 			Status: api.WorkerStatusAwake,
 		},
-		Updated: worker.UpdatedAt,
+		Updated: worker.UpdatedAt.Time,
 		Version: worker.Software,
 	})
 
@@ -316,7 +316,7 @@ func TestWorkerDontRememberPreviousStatus(t *testing.T) {
 		PreviousStatus: ptr(api.WorkerStatusError),
 		Status:         api.WorkerStatusOffline,
 		StatusChange:   nil,
-		Updated:        worker.UpdatedAt,
+		Updated:        worker.UpdatedAt.Time,
 		Version:        worker.Software,
 	})
 
@@ -383,7 +383,7 @@ func TestWorkerStateChanged(t *testing.T) {
 		Name:           worker.Name,
 		PreviousStatus: &prevStatus,
 		Status:         api.WorkerStatusAsleep,
-		Updated:        worker.UpdatedAt,
+		Updated:        worker.UpdatedAt.Time,
 		Version:        worker.Software,
 	})
 
@@ -423,7 +423,7 @@ func TestWorkerStateChangedAfterChangeRequest(t *testing.T) {
 			Name:           worker.Name,
 			PreviousStatus: ptr(api.WorkerStatusOffline),
 			Status:         api.WorkerStatusStarting,
-			Updated:        worker.UpdatedAt,
+			Updated:        worker.UpdatedAt.Time,
 			Version:        worker.Software,
 			StatusChange: &api.WorkerStatusChangeRequest{
 				Status: api.WorkerStatusAsleep,
@@ -456,7 +456,7 @@ func TestWorkerStateChangedAfterChangeRequest(t *testing.T) {
 			Name:           worker.Name,
 			PreviousStatus: ptr(api.WorkerStatusStarting),
 			Status:         api.WorkerStatusAsleep,
-			Updated:        worker.UpdatedAt,
+			Updated:        worker.UpdatedAt.Time,
 			Version:        worker.Software,
 		})
 
@@ -526,7 +526,7 @@ func TestMayWorkerRun(t *testing.T) {
 		mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), &task).Return(nil)
 
 		echo := prepareRequest()
-		task.WorkerID = &worker.ID
+		task.WorkerID = ptr(uint(worker.ID))
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
 		require.NoError(t, err)
 		assertResponseJSON(t, echo, http.StatusOK, api.MayKeepRunning{
@@ -537,7 +537,7 @@ func TestMayWorkerRun(t *testing.T) {
 	// Test: unhappy, assigned but cancelled.
 	{
 		echo := prepareRequest()
-		task.WorkerID = &worker.ID
+		task.WorkerID = ptr(uint(worker.ID))
 		task.Status = api.TaskStatusCanceled
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
 		require.NoError(t, err)
@@ -551,7 +551,7 @@ func TestMayWorkerRun(t *testing.T) {
 	{
 		worker.StatusChangeRequest(api.WorkerStatusAsleep, false)
 		echo := prepareRequest()
-		task.WorkerID = &worker.ID
+		task.WorkerID = ptr(uint(worker.ID))
 		task.Status = api.TaskStatusActive
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
 		require.NoError(t, err)
@@ -569,7 +569,7 @@ func TestMayWorkerRun(t *testing.T) {
 
 		worker.StatusChangeRequest(api.WorkerStatusAsleep, true)
 		echo := prepareRequest()
-		task.WorkerID = &worker.ID
+		task.WorkerID = ptr(uint(worker.ID))
 		task.Status = api.TaskStatusActive
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
 		require.NoError(t, err)

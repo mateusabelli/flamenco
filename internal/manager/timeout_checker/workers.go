@@ -6,7 +6,7 @@ import (
 	"context"
 
 	"github.com/rs/zerolog/log"
-	"projects.blender.org/studio/flamenco/internal/manager/persistence"
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -37,11 +37,11 @@ func (ttc *TimeoutChecker) checkWorkers(ctx context.Context) {
 }
 
 // timeoutTask marks a task as 'failed' due to a timeout.
-func (ttc *TimeoutChecker) timeoutWorker(ctx context.Context, worker *persistence.Worker) {
+func (ttc *TimeoutChecker) timeoutWorker(ctx context.Context, worker *sqlc.Worker) {
 	logger := log.With().
 		Str("worker", worker.UUID).
 		Str("name", worker.Name).
-		Str("lastSeenAt", worker.LastSeenAt.String()).
+		Str("lastSeenAt", worker.LastSeenAt.Time.String()).
 		Logger()
 	logger.Warn().Msg("TimeoutChecker: worker timed out")
 
@@ -63,9 +63,13 @@ func (ttc *TimeoutChecker) timeoutWorker(ctx context.Context, worker *persistenc
 	ttc.broadcaster.BroadcastWorkerUpdate(api.EventWorkerUpdate{
 		Id:             worker.UUID,
 		Name:           worker.Name,
-		PreviousStatus: &prevStatus,
+		PreviousStatus: ptr(api.WorkerStatus(prevStatus)),
 		Status:         api.WorkerStatusError,
-		Updated:        worker.UpdatedAt,
+		Updated:        worker.UpdatedAt.Time,
 		Version:        worker.Software,
 	})
+}
+
+func ptr[T any](value T) *T {
+	return &value
 }

@@ -12,6 +12,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	zerolog "github.com/rs/zerolog"
 	persistence "projects.blender.org/studio/flamenco/internal/manager/persistence"
+	sqlc "projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	api "projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -54,10 +55,10 @@ func (mr *MockPersistenceServiceMockRecorder) FetchTimedOutTasks(arg0, arg1 inte
 }
 
 // FetchTimedOutWorkers mocks base method.
-func (m *MockPersistenceService) FetchTimedOutWorkers(arg0 context.Context, arg1 time.Time) ([]*persistence.Worker, error) {
+func (m *MockPersistenceService) FetchTimedOutWorkers(arg0 context.Context, arg1 time.Time) ([]*sqlc.Worker, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchTimedOutWorkers", arg0, arg1)
-	ret0, _ := ret[0].([]*persistence.Worker)
+	ret0, _ := ret[0].([]*sqlc.Worker)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -69,7 +70,7 @@ func (mr *MockPersistenceServiceMockRecorder) FetchTimedOutWorkers(arg0, arg1 in
 }
 
 // SaveWorker mocks base method.
-func (m *MockPersistenceService) SaveWorker(arg0 context.Context, arg1 *persistence.Worker) error {
+func (m *MockPersistenceService) SaveWorker(arg0 context.Context, arg1 *sqlc.Worker) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveWorker", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -106,7 +107,7 @@ func (m *MockTaskStateMachine) EXPECT() *MockTaskStateMachineMockRecorder {
 }
 
 // RequeueActiveTasksOfWorker mocks base method.
-func (m *MockTaskStateMachine) RequeueActiveTasksOfWorker(arg0 context.Context, arg1 *persistence.Worker, arg2 string) error {
+func (m *MockTaskStateMachine) RequeueActiveTasksOfWorker(arg0 context.Context, arg1 *sqlc.Worker, arg2 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RequeueActiveTasksOfWorker", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

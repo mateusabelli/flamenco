@@ -118,7 +118,7 @@ func TestApplySleepSchedule(t *testing.T) {
 	ss, mocks, ctx := testFixtures(t)
 
 	worker := persistence.Worker{
-		Model:  persistence.Model{ID: 5},
+		ID:     5,
 		UUID:   "74997de4-c530-4913-b89f-c489f14f7634",
 		Status: api.WorkerStatusOffline,
 	}
@@ -192,7 +192,7 @@ func TestApplySleepScheduleNoStatusChange(t *testing.T) {
 	ss, mocks, ctx := testFixtures(t)
 
 	worker := persistence.Worker{
-		Model:  persistence.Model{ID: 5},
+		ID:     5,
 		UUID:   "74997de4-c530-4913-b89f-c489f14f7634",
 		Status: api.WorkerStatusAsleep,
 	}

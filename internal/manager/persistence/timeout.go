@@ -31,7 +31,7 @@ func (db *DB) FetchTimedOutTasks(ctx context.Context, untouchedSince time.Time) 
 	queries := db.queries()
 
 	sqlcTasks, err := queries.FetchTimedOutTasks(ctx, sqlc.FetchTimedOutTasksParams{
-		TaskStatus:     string(api.TaskStatusActive),
+		TaskStatus:     api.TaskStatusActive,
 		UntouchedSince: sql.NullTime{Time: untouchedSince, Valid: true},
 	})
 
@@ -54,13 +54,8 @@ func (db *DB) FetchTimedOutTasks(ctx context.Context, untouchedSince time.Time) 
 func (db *DB) FetchTimedOutWorkers(ctx context.Context, lastSeenBefore time.Time) ([]*Worker, error) {
 	queries := db.queries()
 
-	statuses := make([]string, len(workerStatusNoTimeout))
-	for i, status := range workerStatusNoTimeout {
-		statuses[i] = string(status)
-	}
-
 	sqlcWorkers, err := queries.FetchTimedOutWorkers(ctx, sqlc.FetchTimedOutWorkersParams{
-		WorkerStatusesNoTimeout: statuses,
+		WorkerStatusesNoTimeout: workerStatusNoTimeout,
 		LastSeenBefore: sql.NullTime{
 			Time:  lastSeenBefore.UTC(),
 			Valid: true},
@@ -71,7 +66,7 @@ func (db *DB) FetchTimedOutWorkers(ctx context.Context, lastSeenBefore time.Time
 
 	result := make([]*Worker, len(sqlcWorkers))
 	for index := range sqlcWorkers {
-		result[index] = convertSqlcWorker(sqlcWorkers[index])
+		result[index] = &sqlcWorkers[index]
 	}
 	return result, nil
 }

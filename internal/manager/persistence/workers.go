@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -15,7 +14,9 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
-type Worker struct {
+type Worker = sqlc.Worker
+
+type Worker__gorm struct {
 	Model
 	DeletedAt sql.NullTime
 
@@ -38,76 +39,34 @@ type Worker struct {
 	Tags []*WorkerTag
 }
 
-func (w *Worker) Identifier() string {
-	// Avoid a panic when worker.Identifier() is called on a nil pointer.
-	if w == nil {
-		return "-nil worker-"
-	}
-	return fmt.Sprintf("%s (%s)", w.Name, w.UUID)
-}
-
-// TaskTypes returns the worker's supported task types as list of strings.
-func (w *Worker) TaskTypes() []string {
-	return strings.Split(w.SupportedTaskTypes, ",")
-}
-
-// StatusChangeRequest stores a requested status change on the Worker.
-// This just updates the Worker instance, but doesn't store the change in the
-// database.
-func (w *Worker) StatusChangeRequest(status api.WorkerStatus, isLazyRequest bool) {
-	w.StatusRequested = status
-	w.LazyStatusRequest = isLazyRequest
-}
-
-// StatusChangeClear clears the requested status change of the Worker.
-// This just updates the Worker instance, but doesn't store the change in the
-// database.
-func (w *Worker) StatusChangeClear() {
-	w.StatusRequested = ""
-	w.LazyStatusRequest = false
-}
-
 func (db *DB) CreateWorker(ctx context.Context, w *Worker) error {
 	queries := db.queries()
 
 	now := db.nowNullable().Time
-	workerID, err := queries.CreateWorker(ctx, sqlc.CreateWorkerParams{
-		CreatedAt: now,
-		UUID:      w.UUID,
-		Secret:    w.Secret,
-		Name:      w.Name,
-		Address:   w.Address,
-		Platform:  w.Platform,
-		Software:  w.Software,
-		Status:    string(w.Status),
-		LastSeenAt: sql.NullTime{
-			Time:  w.LastSeenAt.UTC(),
-			Valid: !w.LastSeenAt.IsZero(),
-		},
-		StatusRequested:    string(w.StatusRequested),
+	params := sqlc.CreateWorkerParams{
+		CreatedAt:          now,
+		UUID:               w.UUID,
+		Secret:             w.Secret,
+		Name:               w.Name,
+		Address:            w.Address,
+		Platform:           w.Platform,
+		Software:           w.Software,
+		Status:             w.Status,
+		LastSeenAt:         nullTimeToUTC(w.LastSeenAt),
+		StatusRequested:    w.StatusRequested,
 		LazyStatusRequest:  w.LazyStatusRequest,
 		SupportedTaskTypes: w.SupportedTaskTypes,
 		DeletedAt:          sql.NullTime(w.DeletedAt),
 		CanRestart:         w.CanRestart,
-	})
+	}
+
+	workerID, err := queries.CreateWorker(ctx, params)
 	if err != nil {
 		return fmt.Errorf("creating new worker: %w", err)
 	}
 
-	w.ID = uint(workerID)
-	w.CreatedAt = now
-
-	// TODO: remove the create-with-tags functionality to a higher-level function.
-	// This code is just here to make this function work like the GORM code did.
-	for _, tag := range w.Tags {
-		err := queries.WorkerAddTagMembership(ctx, sqlc.WorkerAddTagMembershipParams{
-			WorkerTagID: int64(tag.ID),
-			WorkerID:    workerID,
-		})
-		if err != nil {
-			return err
-		}
-	}
+	w.ID = workerID
+	w.CreatedAt = params.CreatedAt
 
 	return nil
 }
@@ -120,19 +79,7 @@ func (db *DB) FetchWorker(ctx context.Context, uuid string) (*Worker, error) {
 		return nil, workerError(err, "fetching worker %s", uuid)
 	}
 
-	// TODO: remove this code, and let the caller fetch the tags when interested in them.
-	workerTags, err := queries.FetchTagsOfWorker(ctx, uuid)
-	if err != nil {
-		return nil, workerTagError(err, "fetching tags of worker %s", uuid)
-	}
-
-	convertedWorker := convertSqlcWorker(worker)
-	convertedWorker.Tags = make([]*WorkerTag, len(workerTags))
-	for index := range workerTags {
-		convertedWorker.Tags[index] = convertSqlcWorkerTag(workerTags[index])
-	}
-
-	return convertedWorker, nil
+	return &worker, nil
 }
 
 func (db *DB) DeleteWorker(ctx context.Context, uuid string) error {
@@ -168,11 +115,11 @@ func (db *DB) FetchWorkers(ctx context.Context) ([]*Worker, error) {
 		return nil, workerError(err, "fetching all workers")
 	}
 
-	gormWorkers := make([]*Worker, len(workers))
+	workerPointers := make([]*Worker, len(workers))
 	for idx := range workers {
-		gormWorkers[idx] = convertSqlcWorker(workers[idx].Worker)
+		workerPointers[idx] = &workers[idx]
 	}
-	return gormWorkers, nil
+	return workerPointers, nil
 }
 
 // FetchWorkerTask returns the most recent task assigned to the given Worker.
@@ -184,8 +131,8 @@ func (db *DB) FetchWorkerTask(ctx context.Context, worker *Worker) (*Task, error
 	workerID := sql.NullInt64{Int64: int64(worker.ID), Valid: true}
 
 	row, err := queries.FetchWorkerTask(ctx, sqlc.FetchWorkerTaskParams{
-		TaskStatusActive: string(api.TaskStatusActive),
-		JobStatusActive:  string(api.JobStatusActive),
+		TaskStatusActive: api.TaskStatusActive,
+		JobStatusActive:  api.JobStatusActive,
 		WorkerID:         workerID,
 	})
 
@@ -224,10 +171,10 @@ func (db *DB) SaveWorkerStatus(ctx context.Context, w *Worker) error {
 
 	err := queries.SaveWorkerStatus(ctx, sqlc.SaveWorkerStatusParams{
 		UpdatedAt:         db.nowNullable(),
-		Status:            string(w.Status),
-		StatusRequested:   string(w.StatusRequested),
+		Status:            w.Status,
+		StatusRequested:   w.StatusRequested,
 		LazyStatusRequest: w.LazyStatusRequest,
-		ID:                int64(w.ID),
+		ID:                w.ID,
 	})
 	if err != nil {
 		return fmt.Errorf("saving worker status: %w", err)
@@ -235,10 +182,9 @@ func (db *DB) SaveWorkerStatus(ctx context.Context, w *Worker) error {
 	return nil
 }
 
-func (db *DB) SaveWorker(ctx context.Context, w *Worker) error {
-	// TODO: remove this code, and just let the caller call CreateWorker() directly.
+func (db *DB) SaveWorker(ctx context.Context, w *sqlc.Worker) error {
 	if w.ID == 0 {
-		return db.CreateWorker(ctx, w)
+		panic("Do not use SaveWorker() to create a new Worker, use CreateWorker() instead")
 	}
 
 	queries := db.queries()
@@ -251,13 +197,13 @@ func (db *DB) SaveWorker(ctx context.Context, w *Worker) error {
 		Address:            w.Address,
 		Platform:           w.Platform,
 		Software:           w.Software,
-		Status:             string(w.Status),
-		LastSeenAt:         sql.NullTime{Time: w.LastSeenAt, Valid: !w.LastSeenAt.IsZero()},
-		StatusRequested:    string(w.StatusRequested),
+		Status:             w.Status,
+		LastSeenAt:         w.LastSeenAt,
+		StatusRequested:    w.StatusRequested,
 		LazyStatusRequest:  w.LazyStatusRequest,
 		SupportedTaskTypes: w.SupportedTaskTypes,
 		CanRestart:         w.CanRestart,
-		ID:                 int64(w.ID),
+		ID:                 w.ID,
 	})
 	if err != nil {
 		return fmt.Errorf("saving worker: %w", err)
@@ -301,34 +247,6 @@ func (db *DB) SummarizeWorkerStatuses(ctx context.Context) (WorkerStatusCount, e
 	}
 
 	return statusCounts, nil
-}
-
-// convertSqlcWorker converts a worker from the SQLC-generated model to the model
-// expected by the rest of the code. This is mostly in place to aid in the GORM
-// to SQLC migration. It is intended that eventually the rest of the code will
-// use the same SQLC-generated model.
-func convertSqlcWorker(worker sqlc.Worker) *Worker {
-	return &Worker{
-		Model: Model{
-			ID:        uint(worker.ID),
-			CreatedAt: worker.CreatedAt,
-			UpdatedAt: worker.UpdatedAt.Time,
-		},
-		DeletedAt: worker.DeletedAt,
-
-		UUID:               worker.UUID,
-		Secret:             worker.Secret,
-		Name:               worker.Name,
-		Address:            worker.Address,
-		Platform:           worker.Platform,
-		Software:           worker.Software,
-		Status:             api.WorkerStatus(worker.Status),
-		LastSeenAt:         worker.LastSeenAt.Time,
-		CanRestart:         worker.CanRestart,
-		StatusRequested:    api.WorkerStatus(worker.StatusRequested),
-		LazyStatusRequest:  worker.LazyStatusRequest,
-		SupportedTaskTypes: worker.SupportedTaskTypes,
-	}
 }
 
 // convertSqlcWorkerTag converts a worker tag from the SQLC-generated model to

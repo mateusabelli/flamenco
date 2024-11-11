@@ -11,6 +11,8 @@ import (
 	"encoding/json"
 	"strings"
 	"time"
+
+	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
 const addWorkerToJobBlocklist = `-- name: AddWorkerToJobBlocklist :exec
@@ -156,7 +158,7 @@ type CreateJobParams struct {
 	Name                    string
 	JobType                 string
 	Priority                int64
-	Status                  string
+	Status                  api.JobStatus
 	Activity                string
 	Settings                json.RawMessage
 	Metadata                json.RawMessage
@@ -218,7 +220,7 @@ type CreateTaskParams struct {
 	JobID      int64
 	IndexInJob int64
 	Priority   int64
-	Status     string
+	Status     api.TaskStatus
 	Commands   json.RawMessage
 }
 
@@ -464,7 +466,7 @@ const fetchJobsInStatus = `-- name: FetchJobsInStatus :many
 SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activity, settings, metadata, delete_requested_at, storage_shaman_checkout_id, worker_tag_id FROM jobs WHERE status IN (/*SLICE:statuses*/?)
 `
 
-func (q *Queries) FetchJobsInStatus(ctx context.Context, statuses []string) ([]Job, error) {
+func (q *Queries) FetchJobsInStatus(ctx context.Context, statuses []api.JobStatus) ([]Job, error) {
 	query := fetchJobsInStatus
 	var queryParams []interface{}
 	if len(statuses) > 0 {
@@ -675,7 +677,7 @@ WHERE tasks.job_id = ?1
 
 type FetchTasksOfJobInStatusParams struct {
 	JobID      int64
-	TaskStatus []string
+	TaskStatus []api.TaskStatus
 }
 
 type FetchTasksOfJobInStatusRow struct {
@@ -743,7 +745,7 @@ WHERE tasks.worker_id = ?1
 
 type FetchTasksOfWorkerInStatusParams struct {
 	WorkerID   sql.NullInt64
-	TaskStatus string
+	TaskStatus api.TaskStatus
 }
 
 type FetchTasksOfWorkerInStatusRow struct {
@@ -801,7 +803,7 @@ WHERE tasks.worker_id = ?1
 type FetchTasksOfWorkerInStatusOfJobParams struct {
 	WorkerID   sql.NullInt64
 	JobID      int64
-	TaskStatus string
+	TaskStatus api.TaskStatus
 }
 
 type FetchTasksOfWorkerInStatusOfJobRow struct {
@@ -855,7 +857,7 @@ AND last_touched_at <= ?2
 `
 
 type FetchTimedOutTasksParams struct {
-	TaskStatus     string
+	TaskStatus     api.TaskStatus
 	UntouchedSince sql.NullTime
 }
 
@@ -916,7 +918,7 @@ GROUP BY status
 `
 
 type JobCountTaskStatusesRow struct {
-	Status   string
+	Status   api.TaskStatus
 	NumTasks int64
 }
 
@@ -951,7 +953,7 @@ WHERE job_id = ?1 AND status = ?2
 
 type JobCountTasksInStatusParams struct {
 	JobID      int64
-	TaskStatus string
+	TaskStatus api.TaskStatus
 }
 
 // Fetch number of tasks in the given status, of the given job.
@@ -975,7 +977,7 @@ type QueryJobTaskSummariesRow struct {
 	Name       string
 	IndexInJob int64
 	Priority   int64
-	Status     string
+	Status     api.TaskStatus
 	Type       string
 	UpdatedAt  sql.NullTime
 }
@@ -1097,7 +1099,7 @@ UPDATE jobs SET updated_at=?1, status=?2, activity=?3 WHERE id=?4
 
 type SaveJobStatusParams struct {
 	Now      sql.NullTime
-	Status   string
+	Status   api.JobStatus
 	Activity string
 	ID       int64
 }
@@ -1170,7 +1172,7 @@ GROUP BY status
 `
 
 type SummarizeJobStatusesRow struct {
-	Status      string
+	Status      api.JobStatus
 	StatusCount int64
 }
 
@@ -1375,7 +1377,7 @@ WHERE job_id = ?4
 
 type UpdateJobsTaskStatusesParams struct {
 	UpdatedAt sql.NullTime
-	Status    string
+	Status    api.TaskStatus
 	Activity  string
 	JobID     int64
 }
@@ -1400,10 +1402,10 @@ WHERE job_id = ?4 AND status in (/*SLICE:statuses_to_update*/?)
 
 type UpdateJobsTaskStatusesConditionalParams struct {
 	UpdatedAt        sql.NullTime
-	Status           string
+	Status           api.TaskStatus
 	Activity         string
 	JobID            int64
-	StatusesToUpdate []string
+	StatusesToUpdate []api.TaskStatus
 }
 
 func (q *Queries) UpdateJobsTaskStatusesConditional(ctx context.Context, arg UpdateJobsTaskStatusesConditionalParams) error {
@@ -1444,7 +1446,7 @@ type UpdateTaskParams struct {
 	Name          string
 	Type          string
 	Priority      int64
-	Status        string
+	Status        api.TaskStatus
 	WorkerID      sql.NullInt64
 	LastTouchedAt sql.NullTime
 	Commands      json.RawMessage
@@ -1496,7 +1498,7 @@ WHERE id=?3
 
 type UpdateTaskStatusParams struct {
 	UpdatedAt sql.NullTime
-	Status    string
+	Status    api.TaskStatus
 	ID        int64
 }
 

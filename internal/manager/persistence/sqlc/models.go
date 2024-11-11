@@ -8,6 +8,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"time"
+
+	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
 type Job struct {
@@ -18,7 +20,7 @@ type Job struct {
 	Name                    string
 	JobType                 string
 	Priority                int64
-	Status                  string
+	Status                  api.JobStatus
 	Activity                string
 	Settings                json.RawMessage
 	Metadata                json.RawMessage
@@ -64,7 +66,7 @@ type Task struct {
 	JobID         int64
 	IndexInJob    int64
 	Priority      int64
-	Status        string
+	Status        api.TaskStatus
 	WorkerID      sql.NullInt64
 	LastTouchedAt sql.NullTime
 	Commands      json.RawMessage
@@ -92,9 +94,9 @@ type Worker struct {
 	Address            string
 	Platform           string
 	Software           string
-	Status             string
+	Status             api.WorkerStatus
 	LastSeenAt         sql.NullTime
-	StatusRequested    string
+	StatusRequested    api.WorkerStatus
 	LazyStatusRequest  bool
 	SupportedTaskTypes string
 	DeletedAt          sql.NullTime

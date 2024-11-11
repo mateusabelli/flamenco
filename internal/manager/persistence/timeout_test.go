@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 
@@ -55,8 +56,8 @@ func TestFetchTimedOutWorkers(t *testing.T) {
 	defer cancel()
 
 	timeoutDeadline := mustParseTime("2022-06-07T11:14:47+02:00")
-	beforeDeadline := timeoutDeadline.Add(-10 * time.Second)
-	afterDeadline := timeoutDeadline.Add(10 * time.Second)
+	beforeDeadline := sql.NullTime{Time: timeoutDeadline.Add(-10 * time.Second), Valid: true}
+	afterDeadline := sql.NullTime{Time: timeoutDeadline.Add(10 * time.Second), Valid: true}
 
 	worker0 := Worker{ // Offline, so should not time out.
 		UUID:       "c7b4d1d5-0a96-4e19-993f-028786d3d2c1",

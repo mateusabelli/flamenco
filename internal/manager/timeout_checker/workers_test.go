@@ -3,6 +3,7 @@ package timeout_checker
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 
@@ -30,8 +31,8 @@ func TestWorkerTimeout(t *testing.T) {
 	worker := persistence.Worker{
 		UUID:            "WORKER-UUID",
 		Name:            "Tester",
-		Model:           persistence.Model{ID: 47},
-		LastSeenAt:      lastSeenAt,
+		ID:              47,
+		LastSeenAt:      sql.NullTime{Time: lastSeenAt, Valid: true},
 		Status:          api.WorkerStatusAsleep,
 		StatusRequested: api.WorkerStatusAwake,
 	}
@@ -58,7 +59,7 @@ func TestWorkerTimeout(t *testing.T) {
 		Name:           worker.Name,
 		PreviousStatus: &prevStatus,
 		Status:         api.WorkerStatusError,
-		Updated:        persistedWorker.UpdatedAt,
+		Updated:        persistedWorker.UpdatedAt.Time,
 		Version:        persistedWorker.Software,
 	})
 

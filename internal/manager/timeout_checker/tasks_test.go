@@ -111,9 +111,9 @@ func TestTaskTimeout(t *testing.T) {
 
 	job := persistence.Job{UUID: "JOB-UUID"}
 	worker := persistence.Worker{
-		UUID:  "WORKER-UUID",
-		Name:  "Tester",
-		Model: persistence.Model{ID: 47},
+		UUID: "WORKER-UUID",
+		Name: "Tester",
+		ID:   47,
 	}
 	taskUnassigned := persistence.Task{
 		UUID:          "TASK-UUID-UNASSIGNED",
@@ -124,13 +124,13 @@ func TestTaskTimeout(t *testing.T) {
 		UUID:          "TASK-UUID-UNKNOWN",
 		Job:           &job,
 		LastTouchedAt: lastTime,
-		WorkerID:      &worker.ID,
+		WorkerID:      ptr(uint(worker.ID)),
 	}
 	taskAssigned := persistence.Task{
 		UUID:          "TASK-UUID-ASSIGNED",
 		Job:           &job,
 		LastTouchedAt: lastTime,
-		WorkerID:      &worker.ID,
+		WorkerID:      ptr(uint(worker.ID)),
 		Worker:        &worker,
 	}
 

@@ -85,6 +85,15 @@ func TestFetchWorker(t *testing.T) {
 	require.NoError(t, err)
 	assertResponseAPIError(t, echo, http.StatusInternalServerError, "error fetching worker: some unknown error")
 
+	// Test database error fetching worker tags.
+	mf.persistence.EXPECT().FetchWorker(gomock.Any(), workerUUID).Return(&worker, nil)
+	mf.persistence.EXPECT().FetchTagsOfWorker(gomock.Any(), workerUUID).
+		Return(nil, errors.New("some tag fetching error"))
+	echo = mf.prepareMockedRequest(nil)
+	err = mf.flamenco.FetchWorker(echo, workerUUID)
+	require.NoError(t, err)
+	assertResponseAPIError(t, echo, http.StatusInternalServerError, "error fetching worker tags: some tag fetching error")
+
 	// Test with worker that does NOT have a status change requested, and DOES have an assigned task.
 	mf.persistence.EXPECT().FetchWorker(gomock.Any(), workerUUID).Return(&worker, nil)
 	assignedTask := persistence.Task{
@@ -93,6 +102,10 @@ func TestFetchWorker(t *testing.T) {
 		Job:    &persistence.Job{UUID: "f0e25ee4-0d13-4291-afc3-e9446b555aaf"},
 		Status: api.TaskStatusActive,
 	}
+	mf.persistence.EXPECT().FetchTagsOfWorker(gomock.Any(), workerUUID).Return([]persistence.WorkerTag{
+		{UUID: "0e701402-c4cc-49b0-8b8c-3eb8718d463a", Name: "EEVEE"},
+		{UUID: "59211f0a-81cc-4148-b0b7-32b3e2dcdb8f", Name: "Cycles"},
+	}, nil)
 	mf.persistence.EXPECT().FetchWorkerTask(gomock.Any(), &worker).Return(&assignedTask, nil)
 
 	echo = mf.prepareMockedRequest(nil)
@@ -116,12 +129,17 @@ func TestFetchWorker(t *testing.T) {
 			},
 			JobId: assignedTask.Job.UUID,
 		},
+		Tags: &[]api.WorkerTag{
+			{Id: ptr("0e701402-c4cc-49b0-8b8c-3eb8718d463a"), Name: "EEVEE"},
+			{Id: ptr("59211f0a-81cc-4148-b0b7-32b3e2dcdb8f"), Name: "Cycles"},
+		},
 	})
 
 	// Test with worker that does have a status change requested, but does NOT Have an assigned task.
 	requestedStatus := api.WorkerStatusAsleep
 	worker.StatusChangeRequest(requestedStatus, false)
 	mf.persistence.EXPECT().FetchWorker(gomock.Any(), workerUUID).Return(&worker, nil)
+	mf.persistence.EXPECT().FetchTagsOfWorker(gomock.Any(), workerUUID).Return([]persistence.WorkerTag{}, nil)
 	mf.persistence.EXPECT().FetchWorkerTask(gomock.Any(), &worker).Return(nil, nil)
 
 	echo = mf.prepareMockedRequest(nil)
@@ -170,7 +188,7 @@ func TestDeleteWorker(t *testing.T) {
 		Id:        worker.UUID,
 		Name:      worker.Name,
 		Status:    worker.Status,
-		Updated:   worker.UpdatedAt,
+		Updated:   worker.UpdatedAt.Time,
 		Version:   worker.Software,
 	})
 
@@ -201,7 +219,7 @@ func TestRequestWorkerStatusChange(t *testing.T) {
 		Id:      worker.UUID,
 		Name:    worker.Name,
 		Status:  prevStatus,
-		Updated: worker.UpdatedAt,
+		Updated: worker.UpdatedAt.Time,
 		Version: worker.Software,
 		StatusChange: &api.WorkerStatusChangeRequest{
 			Status: requestStatus,
@@ -245,7 +263,7 @@ func TestRequestWorkerStatusChangeRevert(t *testing.T) {
 		Id:           worker.UUID,
 		Name:         worker.Name,
 		Status:       currentStatus,
-		Updated:      worker.UpdatedAt,
+		Updated:      worker.UpdatedAt.Time,
 		Version:      worker.Software,
 		StatusChange: nil,
 	})

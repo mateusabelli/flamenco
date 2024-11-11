@@ -36,7 +36,7 @@ func TestTaskUpdate(t *testing.T) {
 	mockTask := persistence.Task{
 		UUID:     taskID,
 		Worker:   &worker,
-		WorkerID: &worker.ID,
+		WorkerID: ptr(uint(worker.ID)),
 		Job:      &mockJob,
 		Activity: "pre-update activity",
 	}
@@ -105,7 +105,7 @@ func TestTaskUpdateFailed(t *testing.T) {
 	mockTask := persistence.Task{
 		UUID:     taskID,
 		Worker:   &worker,
-		WorkerID: &worker.ID,
+		WorkerID: ptr(uint(worker.ID)),
 		Job:      &mockJob,
 		Activity: "pre-update activity",
 		Type:     "misc",
@@ -189,7 +189,7 @@ func TestBlockingAfterFailure(t *testing.T) {
 	mockTask := persistence.Task{
 		UUID:     taskID,
 		Worker:   &worker,
-		WorkerID: &worker.ID,
+		WorkerID: ptr(uint(worker.ID)),
 		Job:      &mockJob,
 		Activity: "pre-update activity",
 		Type:     "misc",
@@ -339,7 +339,7 @@ func TestJobFailureAfterWorkerTaskFailure(t *testing.T) {
 	mockTask := persistence.Task{
 		UUID:     taskID,
 		Worker:   &worker,
-		WorkerID: &worker.ID,
+		WorkerID: ptr(uint(worker.ID)),
 		Job:      &mockJob,
 		Activity: "pre-update activity",
 		Type:     "misc",

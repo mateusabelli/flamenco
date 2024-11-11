@@ -11,6 +11,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	zerolog "github.com/rs/zerolog"
 	persistence "projects.blender.org/studio/flamenco/internal/manager/persistence"
+	sqlc "projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	api "projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -79,7 +80,7 @@ func (mr *MockPersistenceServiceMockRecorder) FetchJobsInStatus(arg0 interface{}
 }
 
 // FetchTasksOfWorkerInStatus mocks base method.
-func (m *MockPersistenceService) FetchTasksOfWorkerInStatus(arg0 context.Context, arg1 *persistence.Worker, arg2 api.TaskStatus) ([]*persistence.Task, error) {
+func (m *MockPersistenceService) FetchTasksOfWorkerInStatus(arg0 context.Context, arg1 *sqlc.Worker, arg2 api.TaskStatus) ([]*persistence.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchTasksOfWorkerInStatus", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]*persistence.Task)
@@ -94,7 +95,7 @@ func (mr *MockPersistenceServiceMockRecorder) FetchTasksOfWorkerInStatus(arg0, a
 }
 
 // FetchTasksOfWorkerInStatusOfJob mocks base method.
-func (m *MockPersistenceService) FetchTasksOfWorkerInStatusOfJob(arg0 context.Context, arg1 *persistence.Worker, arg2 api.TaskStatus, arg3 *persistence.Job) ([]*persistence.Task, error) {
+func (m *MockPersistenceService) FetchTasksOfWorkerInStatusOfJob(arg0 context.Context, arg1 *sqlc.Worker, arg2 api.TaskStatus, arg3 *persistence.Job) ([]*persistence.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchTasksOfWorkerInStatusOfJob", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]*persistence.Task)

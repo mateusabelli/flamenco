@@ -236,7 +236,7 @@ func assertResponseNoBody(t *testing.T, echoCtx echo.Context, expectStatus int) 
 
 func testWorker() persistence.Worker {
 	return persistence.Worker{
-		Model:              persistence.Model{ID: 1},
+		ID:                 1,
 		UUID:               "e7632d62-c3b8-4af0-9e78-01752928952c",
 		Name:               "дрон",
 		Address:            "fe80::5054:ff:fede:2ad7",

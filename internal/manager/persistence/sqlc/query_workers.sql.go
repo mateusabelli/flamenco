@@ -10,6 +10,8 @@ import (
 	"database/sql"
 	"strings"
 	"time"
+
+	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
 const countWorkerTags = `-- name: CountWorkerTags :one
@@ -66,9 +68,9 @@ type CreateWorkerParams struct {
 	Address            string
 	Platform           string
 	Software           string
-	Status             string
+	Status             api.WorkerStatus
 	LastSeenAt         sql.NullTime
-	StatusRequested    string
+	StatusRequested    api.WorkerStatus
 	LazyStatusRequest  bool
 	SupportedTaskTypes string
 	DeletedAt          sql.NullTime
@@ -232,7 +234,7 @@ AND status NOT IN (/*SLICE:worker_statuses_no_timeout*/?)
 
 type FetchTimedOutWorkersParams struct {
 	LastSeenBefore          sql.NullTime
-	WorkerStatusesNoTimeout []string
+	WorkerStatusesNoTimeout []api.WorkerStatus
 }
 
 func (q *Queries) FetchTimedOutWorkers(ctx context.Context, arg FetchTimedOutWorkersParams) ([]Worker, error) {
@@ -548,40 +550,36 @@ func (q *Queries) FetchWorkerUnconditionalByID(ctx context.Context, workerID int
 }
 
 const fetchWorkers = `-- name: FetchWorkers :many
-SELECT workers.id, workers.created_at, workers.updated_at, workers.uuid, workers.secret, workers.name, workers.address, workers.platform, workers.software, workers.status, workers.last_seen_at, workers.status_requested, workers.lazy_status_request, workers.supported_task_types, workers.deleted_at, workers.can_restart FROM workers
+SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart FROM workers
 WHERE deleted_at IS NULL
 `
 
-type FetchWorkersRow struct {
-	Worker Worker
-}
-
-func (q *Queries) FetchWorkers(ctx context.Context) ([]FetchWorkersRow, error) {
+func (q *Queries) FetchWorkers(ctx context.Context) ([]Worker, error) {
 	rows, err := q.db.QueryContext(ctx, fetchWorkers)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []FetchWorkersRow
+	var items []Worker
 	for rows.Next() {
-		var i FetchWorkersRow
+		var i Worker
 		if err := rows.Scan(
-			&i.Worker.ID,
-			&i.Worker.CreatedAt,
-			&i.Worker.UpdatedAt,
-			&i.Worker.UUID,
-			&i.Worker.Secret,
-			&i.Worker.Name,
-			&i.Worker.Address,
-			&i.Worker.Platform,
-			&i.Worker.Software,
-			&i.Worker.Status,
-			&i.Worker.LastSeenAt,
-			&i.Worker.StatusRequested,
-			&i.Worker.LazyStatusRequest,
-			&i.Worker.SupportedTaskTypes,
-			&i.Worker.DeletedAt,
-			&i.Worker.CanRestart,
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UUID,
+			&i.Secret,
+			&i.Name,
+			&i.Address,
+			&i.Platform,
+			&i.Software,
+			&i.Status,
+			&i.LastSeenAt,
+			&i.StatusRequested,
+			&i.LazyStatusRequest,
+			&i.SupportedTaskTypes,
+			&i.DeletedAt,
+			&i.CanRestart,
 		); err != nil {
 			return nil, err
 		}
@@ -622,9 +620,9 @@ type SaveWorkerParams struct {
 	Address            string
 	Platform           string
 	Software           string
-	Status             string
+	Status             api.WorkerStatus
 	LastSeenAt         sql.NullTime
-	StatusRequested    string
+	StatusRequested    api.WorkerStatus
 	LazyStatusRequest  bool
 	SupportedTaskTypes string
 	CanRestart         bool
@@ -662,8 +660,8 @@ WHERE id=?5
 
 type SaveWorkerStatusParams struct {
 	UpdatedAt         sql.NullTime
-	Status            string
-	StatusRequested   string
+	Status            api.WorkerStatus
+	StatusRequested   api.WorkerStatus
 	LazyStatusRequest bool
 	ID                int64
 }
@@ -808,7 +806,7 @@ GROUP BY status
 `
 
 type SummarizeWorkerStatusesRow struct {
-	Status      string
+	Status      api.WorkerStatus
 	StatusCount int64
 }
 

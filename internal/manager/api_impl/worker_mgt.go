@@ -57,6 +57,15 @@ func (f *Flamenco) FetchWorker(e echo.Context, workerUUID string) error {
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching worker: %v", err)
 	}
 
+	workerTags, err := f.persist.FetchTagsOfWorker(ctx, workerUUID)
+	switch {
+	case errors.Is(err, context.Canceled):
+		return handleConnectionClosed(e, logger, "fetching worker tags")
+	case err != nil:
+		logger.Error().AnErr("cause", err).Msg("fetching worker tags")
+		return sendAPIError(e, http.StatusInternalServerError, "error fetching worker tags: %v", err)
+	}
+
 	dbTask, err := f.persist.FetchWorkerTask(ctx, dbWorker)
 	switch {
 	case errors.Is(err, context.Canceled):
@@ -75,6 +84,20 @@ func (f *Flamenco) FetchWorker(e echo.Context, workerUUID string) error {
 			JobId:       dbTask.Job.UUID,
 		}
 		apiWorker.Task = &apiWorkerTask
+	}
+
+	// TODO: see which API calls actually need the worker tags, and whether it's
+	// better to just call a specific API operation in those cases.
+	if len(workerTags) > 0 {
+		apiTags := make([]api.WorkerTag, len(workerTags))
+		for index, tag := range workerTags {
+			apiTags[index].Id = &tag.UUID
+			apiTags[index].Name = tag.Name
+			if tag.Description != "" {
+				apiTags[index].Description = &tag.Description
+			}
+		}
+		apiWorker.Tags = &apiTags
 	}
 
 	return e.JSON(http.StatusOK, apiWorker)
@@ -464,8 +487,8 @@ func workerSummary(w persistence.Worker) api.WorkerSummary {
 		}
 	}
 
-	if !w.LastSeenAt.IsZero() {
-		summary.LastSeen = &w.LastSeenAt
+	if w.LastSeenAt.Valid {
+		summary.LastSeen = &w.LastSeenAt.Time
 	}
 
 	return summary
@@ -478,15 +501,6 @@ func workerDBtoAPI(w persistence.Worker) api.Worker {
 		Platform:           w.Platform,
 		SupportedTaskTypes: w.TaskTypes(),
 	}
-
-	if len(w.Tags) > 0 {
-		tags := []api.WorkerTag{}
-		for i := range w.Tags {
-			tags = append(tags, *workerTagDBtoAPI(w.Tags[i]))
-		}
-		apiWorker.Tags = &tags
-	}
-
 	return apiWorker
 }
 

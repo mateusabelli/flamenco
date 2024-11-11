@@ -173,3 +173,17 @@ func (db *DB) WorkerSetTags(ctx context.Context, worker *Worker, tagUUIDs []stri
 
 	return qtx.commit()
 }
+
+func (db *DB) FetchTagsOfWorker(ctx context.Context, workerUUID string) ([]WorkerTag, error) {
+	queries := db.queries()
+	tags, err := queries.FetchTagsOfWorker(ctx, workerUUID)
+	if err != nil {
+		return nil, workerTagError(err, "fetching tags of worker %s", workerUUID)
+	}
+
+	gormTags := make([]WorkerTag, len(tags))
+	for index, tag := range tags {
+		gormTags[index] = *convertSqlcWorkerTag(tag)
+	}
+	return gormTags, nil
+}

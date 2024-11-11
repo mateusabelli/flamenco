@@ -52,7 +52,7 @@ func (f *Flamenco) TaskUpdate(e echo.Context, taskID string) error {
 			Msg("worker trying to update task that's not assigned to any worker")
 		return sendAPIError(e, http.StatusConflict, "task %+v is not assigned to any worker, so also not to you", taskID)
 	}
-	if *dbTask.WorkerID != worker.ID {
+	if *dbTask.WorkerID != uint(worker.ID) {
 		logger.Warn().Msg("worker trying to update task that's assigned to another worker")
 		return sendAPIError(e, http.StatusConflict, "task %+v is not assigned to you", taskID)
 	}

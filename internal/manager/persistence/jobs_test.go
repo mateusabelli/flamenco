@@ -14,6 +14,7 @@ import (
 	"golang.org/x/net/context"
 
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/internal/uuid"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
@@ -581,7 +582,7 @@ func TestTaskAssignToWorker(t *testing.T) {
 	if task.WorkerID == nil {
 		t.Error("task.WorkerID == nil")
 	} else {
-		assert.Equal(t, w.ID, *task.WorkerID)
+		assert.Equal(t, w.ID, int64(*task.WorkerID))
 	}
 }
 
@@ -713,7 +714,7 @@ func TestAddWorkerToTaskFailedList(t *testing.T) {
 	newWorker.ID = 0
 	newWorker.UUID = "89ed2b02-b51b-4cd4-b44a-4a1c8d01db85"
 	newWorker.Name = "Worker 2"
-	require.NoError(t, db.SaveWorker(ctx, &newWorker))
+	require.NoError(t, db.CreateWorker(ctx, &newWorker))
 	worker2, err := db.FetchWorker(ctx, newWorker.UUID)
 	require.NoError(t, err)
 
@@ -752,7 +753,7 @@ func TestClearFailureListOfTask(t *testing.T) {
 	newWorker.ID = 0
 	newWorker.UUID = "89ed2b02-b51b-4cd4-b44a-4a1c8d01db85"
 	newWorker.Name = "Worker 2"
-	require.NoError(t, db.SaveWorker(ctx, &newWorker))
+	require.NoError(t, db.CreateWorker(ctx, &newWorker))
 	worker2, err := db.FetchWorker(ctx, newWorker.UUID)
 	require.NoError(t, err)
 
@@ -1020,7 +1021,6 @@ func createWorker(ctx context.Context, t *testing.T, db *DB, updaters ...func(*W
 		Software:           "3.0",
 		Status:             api.WorkerStatusAwake,
 		SupportedTaskTypes: "blender,ffmpeg,file-management",
-		Tags:               nil,
 	}
 
 	for _, updater := range updaters {
@@ -1039,14 +1039,26 @@ func createWorker(ctx context.Context, t *testing.T, db *DB, updaters ...func(*W
 
 // createWorkerFrom duplicates the given worker, ensuring new UUIDs.
 func createWorkerFrom(ctx context.Context, t *testing.T, db *DB, worker Worker) *Worker {
-	worker.ID = 0
-	worker.UUID = uuid.New()
-	worker.Name += " (copy)"
+	newWorker := sqlc.Worker{
+		UUID:               uuid.New(),
+		Secret:             worker.Secret,
+		Name:               worker.Name + " (copy)",
+		Address:            worker.Address,
+		Platform:           worker.Platform,
+		Software:           worker.Software,
+		Status:             worker.Status,
+		LastSeenAt:         nullTimeToUTC(worker.LastSeenAt),
+		StatusRequested:    worker.StatusRequested,
+		LazyStatusRequest:  worker.LazyStatusRequest,
+		SupportedTaskTypes: worker.SupportedTaskTypes,
+		DeletedAt:          worker.DeletedAt,
+		CanRestart:         worker.CanRestart,
+	}
 
-	err := db.SaveWorker(ctx, &worker)
+	err := db.CreateWorker(ctx, &newWorker)
 	require.NoError(t, err)
 
-	dbWorker, err := db.FetchWorker(ctx, worker.UUID)
+	dbWorker, err := db.FetchWorker(ctx, newWorker.UUID)
 	require.NoError(t, err)
 
 	return dbWorker

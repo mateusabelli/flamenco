@@ -119,7 +119,9 @@ func TestWorkersLeftToRun(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, left)
 
-	worker1 := createWorker(ctx, t, db)
+	worker1 := createWorker(ctx, t, db, func(w *Worker) {
+		w.UUID = "11111111-0000-1111-2222-333333333333"
+	})
 	worker2 := createWorkerFrom(ctx, t, db, *worker1)
 
 	// Create one worker tag. It will not be used by this job, but one of the
@@ -129,8 +131,8 @@ func TestWorkersLeftToRun(t *testing.T) {
 	require.NoError(t, db.CreateWorkerTag(ctx, &tag1))
 	workerC1 := createWorker(ctx, t, db, func(w *Worker) {
 		w.UUID = "c1c1c1c1-0000-1111-2222-333333333333"
-		w.Tags = []*WorkerTag{&tag1}
 	})
+	require.NoError(t, db.WorkerSetTags(ctx, workerC1, []string{tag1.UUID}))
 
 	uuidMap := func(workers ...*Worker) map[string]bool {
 		theMap := map[string]bool{}
@@ -185,23 +187,25 @@ func TestWorkersLeftToRunWithTags(t *testing.T) {
 	// Tags 1 + 3
 	workerC13 := createWorker(ctx, t, db, func(w *Worker) {
 		w.UUID = "c13c1313-0000-1111-2222-333333333333"
-		w.Tags = []*WorkerTag{&tag1, &tag3}
 	})
+	require.NoError(t, db.WorkerSetTags(ctx, workerC13, []string{tag1.UUID, tag3.UUID}))
+
 	// Tag 1
 	workerC1 := createWorker(ctx, t, db, func(w *Worker) {
 		w.UUID = "c1c1c1c1-0000-1111-2222-333333333333"
-		w.Tags = []*WorkerTag{&tag1}
 	})
+	require.NoError(t, db.WorkerSetTags(ctx, workerC1, []string{tag1.UUID}))
+
 	// Tag 2 worker, this one should never appear.
-	createWorker(ctx, t, db, func(w *Worker) {
+	workerC2 := createWorker(ctx, t, db, func(w *Worker) {
 		w.UUID = "c2c2c2c2-0000-1111-2222-333333333333"
-		w.Tags = []*WorkerTag{&tag2}
 	})
+	require.NoError(t, db.WorkerSetTags(ctx, workerC2, []string{tag2.UUID}))
+
 	// No tags, so should be able to run only tagless jobs. Which is none
 	// in this test.
 	createWorker(ctx, t, db, func(w *Worker) {
 		w.UUID = "00000000-0000-1111-2222-333333333333"
-		w.Tags = nil
 	})
 
 	uuidMap := func(workers ...*Worker) map[string]bool {

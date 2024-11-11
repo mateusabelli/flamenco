@@ -178,7 +178,7 @@ func (ss *SleepScheduler) updateWorkerStatus(
 			IsLazy: false,
 			Status: worker.StatusRequested,
 		},
-		Updated: worker.UpdatedAt,
+		Updated: worker.UpdatedAt.Time,
 		Version: worker.Software,
 	})
 

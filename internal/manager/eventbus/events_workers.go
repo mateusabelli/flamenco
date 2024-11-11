@@ -18,7 +18,7 @@ func NewWorkerUpdate(worker *persistence.Worker) api.EventWorkerUpdate {
 		Name:       worker.Name,
 		Status:     worker.Status,
 		Version:    worker.Software,
-		Updated:    worker.UpdatedAt,
+		Updated:    worker.UpdatedAt.Time,
 		CanRestart: worker.CanRestart,
 	}
 
@@ -29,8 +29,8 @@ func NewWorkerUpdate(worker *persistence.Worker) api.EventWorkerUpdate {
 		}
 	}
 
-	if !worker.LastSeenAt.IsZero() {
-		workerUpdate.LastSeen = &worker.LastSeenAt
+	if worker.LastSeenAt.Valid {
+		workerUpdate.LastSeen = &worker.LastSeenAt.Time
 	}
 
 	// TODO: add tag IDs.

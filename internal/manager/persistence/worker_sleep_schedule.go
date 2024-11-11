@@ -60,7 +60,7 @@ func (db *DB) SetWorkerSleepSchedule(ctx context.Context, workerUUID string, sch
 	if err != nil {
 		return fmt.Errorf("fetching worker %q: %w", workerUUID, err)
 	}
-	schedule.WorkerID = worker.ID
+	schedule.WorkerID = uint(worker.ID)
 	schedule.Worker = worker
 
 	// Only store timestamps in UTC.
@@ -120,7 +120,7 @@ func (db *DB) FetchSleepScheduleWorker(ctx context.Context, schedule *SleepSched
 		return workerError(err, "finding worker by their sleep schedule")
 	}
 
-	schedule.Worker = convertSqlcWorker(worker)
+	schedule.Worker = &worker
 	return nil
 }
 

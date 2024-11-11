@@ -101,8 +101,11 @@ func TestAssignUnassignWorkerTags(t *testing.T) {
 		w, err := f.db.FetchWorker(f.ctx, f.worker.UUID)
 		require.NoError(t, err)
 
+		tags, err := f.db.queries().FetchTagsOfWorker(f.ctx, w.UUID)
+		require.NoError(t, err)
+
 		// Catch doubly-reported tags, as the maps below would hide those cases.
-		assert.Len(t, w.Tags, len(tagUUIDs), msgLabel)
+		assert.Len(t, tags, len(tagUUIDs), msgLabel)
 
 		expectTags := make(map[string]bool)
 		for _, cid := range tagUUIDs {
@@ -110,8 +113,8 @@ func TestAssignUnassignWorkerTags(t *testing.T) {
 		}
 
 		actualTags := make(map[string]bool)
-		for _, c := range w.Tags {
-			actualTags[c.UUID] = true
+		for _, tag := range tags {
+			actualTags[tag.UUID] = true
 		}
 
 		assert.Equal(t, expectTags, actualTags, msgLabel)
@@ -171,9 +174,9 @@ func TestDeleteWorkerTagWithWorkersAssigned(t *testing.T) {
 	require.NoError(t, f.db.DeleteWorkerTag(f.ctx, f.tag.UUID))
 
 	// Check the Worker has been unassigned from the tag.
-	w, err := f.db.FetchWorker(f.ctx, f.worker.UUID)
+	tags, err := f.db.queries().FetchTagsOfWorker(f.ctx, f.worker.UUID)
 	require.NoError(t, err)
-	assert.Empty(t, w.Tags)
+	assert.Empty(t, tags)
 }
 
 func assertTagsMatch(t *testing.T, f WorkerTestFixture, expectUUIDs ...string) {

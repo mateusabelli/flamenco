@@ -11,6 +11,14 @@ sql:
             go_type:
               import: "encoding/json"
               type: "RawMessage"
+          - column: jobs.status
+            go_type: { type: "JobStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: tasks.status
+            go_type: { type: "TaskStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: workers.status
+            go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: workers.status_requested
+            go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
         rename:
           uuid: "UUID"
           uuids: "UUIDs"
@@ -28,6 +36,14 @@ sql:
             go_type:
               import: "encoding/json"
               type: "RawMessage"
+          - column: jobs.status
+            go_type: { type: "JobStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: tasks.status
+            go_type: { type: "TaskStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: workers.status
+            go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: workers.status_requested
+            go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
         rename:
           uuid: "UUID"
           uuids: "UUIDs"
@@ -45,6 +61,14 @@ sql:
             go_type:
               import: "encoding/json"
               type: "RawMessage"
+          - column: jobs.status
+            go_type: { type: "JobStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: tasks.status
+            go_type: { type: "TaskStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: workers.status
+            go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: workers.status_requested
+            go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
         rename:
           uuid: "UUID"
           uuids: "UUIDs"
@@ -62,6 +86,14 @@ sql:
             go_type:
               import: "encoding/json"
               type: "RawMessage"
+          - column: jobs.status
+            go_type: { type: "JobStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: tasks.status
+            go_type: { type: "TaskStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: workers.status
+            go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: workers.status_requested
+            go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
         rename:
           uuid: "UUID"
           uuids: "UUIDs"

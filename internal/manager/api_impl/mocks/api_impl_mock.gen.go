@@ -44,7 +44,7 @@ func (m *MockPersistenceService) EXPECT() *MockPersistenceServiceMockRecorder {
 }
 
 // AddWorkerToJobBlocklist mocks base method.
-func (m *MockPersistenceService) AddWorkerToJobBlocklist(arg0 context.Context, arg1 *persistence.Job, arg2 *persistence.Worker, arg3 string) error {
+func (m *MockPersistenceService) AddWorkerToJobBlocklist(arg0 context.Context, arg1 *persistence.Job, arg2 *sqlc.Worker, arg3 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddWorkerToJobBlocklist", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
@@ -58,7 +58,7 @@ func (mr *MockPersistenceServiceMockRecorder) AddWorkerToJobBlocklist(arg0, arg1
 }
 
 // AddWorkerToTaskFailedList mocks base method.
-func (m *MockPersistenceService) AddWorkerToTaskFailedList(arg0 context.Context, arg1 *persistence.Task, arg2 *persistence.Worker) (int, error) {
+func (m *MockPersistenceService) AddWorkerToTaskFailedList(arg0 context.Context, arg1 *persistence.Task, arg2 *sqlc.Worker) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddWorkerToTaskFailedList", arg0, arg1, arg2)
 	ret0, _ := ret[0].(int)
@@ -115,7 +115,7 @@ func (mr *MockPersistenceServiceMockRecorder) ClearJobBlocklist(arg0, arg1 inter
 }
 
 // CountTaskFailuresOfWorker mocks base method.
-func (m *MockPersistenceService) CountTaskFailuresOfWorker(arg0 context.Context, arg1 *persistence.Job, arg2 *persistence.Worker, arg3 string) (int, error) {
+func (m *MockPersistenceService) CountTaskFailuresOfWorker(arg0 context.Context, arg1 *persistence.Job, arg2 *sqlc.Worker, arg3 string) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CountTaskFailuresOfWorker", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(int)
@@ -130,7 +130,7 @@ func (mr *MockPersistenceServiceMockRecorder) CountTaskFailuresOfWorker(arg0, ar
 }
 
 // CreateWorker mocks base method.
-func (m *MockPersistenceService) CreateWorker(arg0 context.Context, arg1 *persistence.Worker) error {
+func (m *MockPersistenceService) CreateWorker(arg0 context.Context, arg1 *sqlc.Worker) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateWorker", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -230,6 +230,21 @@ func (mr *MockPersistenceServiceMockRecorder) FetchJobs(arg0 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchJobs", reflect.TypeOf((*MockPersistenceService)(nil).FetchJobs), arg0)
 }
 
+// FetchTagsOfWorker mocks base method.
+func (m *MockPersistenceService) FetchTagsOfWorker(arg0 context.Context, arg1 string) ([]persistence.WorkerTag, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchTagsOfWorker", arg0, arg1)
+	ret0, _ := ret[0].([]persistence.WorkerTag)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchTagsOfWorker indicates an expected call of FetchTagsOfWorker.
+func (mr *MockPersistenceServiceMockRecorder) FetchTagsOfWorker(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchTagsOfWorker", reflect.TypeOf((*MockPersistenceService)(nil).FetchTagsOfWorker), arg0, arg1)
+}
+
 // FetchTask mocks base method.
 func (m *MockPersistenceService) FetchTask(arg0 context.Context, arg1 string) (*persistence.Task, error) {
 	m.ctrl.T.Helper()
@@ -246,10 +261,10 @@ func (mr *MockPersistenceServiceMockRecorder) FetchTask(arg0, arg1 interface{}) 
 }
 
 // FetchTaskFailureList mocks base method.
-func (m *MockPersistenceService) FetchTaskFailureList(arg0 context.Context, arg1 *persistence.Task) ([]*persistence.Worker, error) {
+func (m *MockPersistenceService) FetchTaskFailureList(arg0 context.Context, arg1 *persistence.Task) ([]*sqlc.Worker, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchTaskFailureList", arg0, arg1)
-	ret0, _ := ret[0].([]*persistence.Worker)
+	ret0, _ := ret[0].([]*sqlc.Worker)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -276,10 +291,10 @@ func (mr *MockPersistenceServiceMockRecorder) FetchTaskJobUUID(arg0, arg1 interf
 }
 
 // FetchWorker mocks base method.
-func (m *MockPersistenceService) FetchWorker(arg0 context.Context, arg1 string) (*persistence.Worker, error) {
+func (m *MockPersistenceService) FetchWorker(arg0 context.Context, arg1 string) (*sqlc.Worker, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchWorker", arg0, arg1)
-	ret0, _ := ret[0].(*persistence.Worker)
+	ret0, _ := ret[0].(*sqlc.Worker)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -321,7 +336,7 @@ func (mr *MockPersistenceServiceMockRecorder) FetchWorkerTags(arg0 interface{}) 
 }
 
 // FetchWorkerTask mocks base method.
-func (m *MockPersistenceService) FetchWorkerTask(arg0 context.Context, arg1 *persistence.Worker) (*persistence.Task, error) {
+func (m *MockPersistenceService) FetchWorkerTask(arg0 context.Context, arg1 *sqlc.Worker) (*persistence.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchWorkerTask", arg0, arg1)
 	ret0, _ := ret[0].(*persistence.Task)
@@ -336,10 +351,10 @@ func (mr *MockPersistenceServiceMockRecorder) FetchWorkerTask(arg0, arg1 interfa
 }
 
 // FetchWorkers mocks base method.
-func (m *MockPersistenceService) FetchWorkers(arg0 context.Context) ([]*persistence.Worker, error) {
+func (m *MockPersistenceService) FetchWorkers(arg0 context.Context) ([]*sqlc.Worker, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchWorkers", arg0)
-	ret0, _ := ret[0].([]*persistence.Worker)
+	ret0, _ := ret[0].([]*sqlc.Worker)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -423,7 +438,7 @@ func (mr *MockPersistenceServiceMockRecorder) SaveTaskActivity(arg0, arg1 interf
 }
 
 // SaveWorker mocks base method.
-func (m *MockPersistenceService) SaveWorker(arg0 context.Context, arg1 *persistence.Worker) error {
+func (m *MockPersistenceService) SaveWorker(arg0 context.Context, arg1 *sqlc.Worker) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveWorker", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -437,7 +452,7 @@ func (mr *MockPersistenceServiceMockRecorder) SaveWorker(arg0, arg1 interface{})
 }
 
 // SaveWorkerStatus mocks base method.
-func (m *MockPersistenceService) SaveWorkerStatus(arg0 context.Context, arg1 *persistence.Worker) error {
+func (m *MockPersistenceService) SaveWorkerStatus(arg0 context.Context, arg1 *sqlc.Worker) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveWorkerStatus", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -465,7 +480,7 @@ func (mr *MockPersistenceServiceMockRecorder) SaveWorkerTag(arg0, arg1 interface
 }
 
 // ScheduleTask mocks base method.
-func (m *MockPersistenceService) ScheduleTask(arg0 context.Context, arg1 *persistence.Worker) (*persistence.Task, error) {
+func (m *MockPersistenceService) ScheduleTask(arg0 context.Context, arg1 *sqlc.Worker) (*persistence.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ScheduleTask", arg0, arg1)
 	ret0, _ := ret[0].(*persistence.Task)
@@ -522,7 +537,7 @@ func (mr *MockPersistenceServiceMockRecorder) TaskTouchedByWorker(arg0, arg1 int
 }
 
 // WorkerSeen mocks base method.
-func (m *MockPersistenceService) WorkerSeen(arg0 context.Context, arg1 *persistence.Worker) error {
+func (m *MockPersistenceService) WorkerSeen(arg0 context.Context, arg1 *sqlc.Worker) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WorkerSeen", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -536,7 +551,7 @@ func (mr *MockPersistenceServiceMockRecorder) WorkerSeen(arg0, arg1 interface{})
 }
 
 // WorkerSetTags mocks base method.
-func (m *MockPersistenceService) WorkerSetTags(arg0 context.Context, arg1 *persistence.Worker, arg2 []string) error {
+func (m *MockPersistenceService) WorkerSetTags(arg0 context.Context, arg1 *sqlc.Worker, arg2 []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WorkerSetTags", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
@@ -1017,7 +1032,7 @@ func (mr *MockTaskStateMachineMockRecorder) JobStatusChange(arg0, arg1, arg2, ar
 }
 
 // RequeueActiveTasksOfWorker mocks base method.
-func (m *MockTaskStateMachine) RequeueActiveTasksOfWorker(arg0 context.Context, arg1 *persistence.Worker, arg2 string) error {
+func (m *MockTaskStateMachine) RequeueActiveTasksOfWorker(arg0 context.Context, arg1 *sqlc.Worker, arg2 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RequeueActiveTasksOfWorker", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
@@ -1031,7 +1046,7 @@ func (mr *MockTaskStateMachineMockRecorder) RequeueActiveTasksOfWorker(arg0, arg
 }
 
 // RequeueFailedTasksOfWorkerOfJob mocks base method.
-func (m *MockTaskStateMachine) RequeueFailedTasksOfWorkerOfJob(arg0 context.Context, arg1 *persistence.Worker, arg2 *persistence.Job, arg3 string) error {
+func (m *MockTaskStateMachine) RequeueFailedTasksOfWorkerOfJob(arg0 context.Context, arg1 *sqlc.Worker, arg2 *persistence.Job, arg3 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RequeueFailedTasksOfWorkerOfJob", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)

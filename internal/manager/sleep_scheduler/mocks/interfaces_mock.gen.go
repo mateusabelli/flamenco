@@ -10,6 +10,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	persistence "projects.blender.org/studio/flamenco/internal/manager/persistence"
+	sqlc "projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	api "projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -81,7 +82,7 @@ func (mr *MockPersistenceServiceMockRecorder) FetchWorkerSleepSchedule(arg0, arg
 }
 
 // SaveWorkerStatus mocks base method.
-func (m *MockPersistenceService) SaveWorkerStatus(arg0 context.Context, arg1 *persistence.Worker) error {
+func (m *MockPersistenceService) SaveWorkerStatus(arg0 context.Context, arg1 *sqlc.Worker) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveWorkerStatus", arg0, arg1)
 	ret0, _ := ret[0].(error)

@@ -9,6 +9,8 @@ import (
 	"context"
 	"database/sql"
 	"strings"
+
+	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
 const assignTaskToWorker = `-- name: AssignTaskToWorker :exec
@@ -39,9 +41,9 @@ LIMIT 1
 `
 
 type FetchAssignedAndRunnableTaskOfWorkerParams struct {
-	ActiveTaskStatus  string
+	ActiveTaskStatus  api.TaskStatus
 	WorkerID          sql.NullInt64
-	ActiveJobStatuses []string
+	ActiveJobStatuses []api.JobStatus
 }
 
 type FetchAssignedAndRunnableTaskOfWorkerRow struct {
@@ -99,8 +101,8 @@ LIMIT 1
 `
 
 type FetchWorkerTaskParams struct {
-	TaskStatusActive string
-	JobStatusActive  string
+	TaskStatusActive api.TaskStatus
+	JobStatusActive  api.JobStatus
 	WorkerID         sql.NullInt64
 }
 
@@ -179,10 +181,10 @@ ORDER BY jobs.priority DESC, tasks.priority DESC
 
 type FindRunnableTaskParams struct {
 	WorkerID                int64
-	TaskStatusCompleted     string
+	TaskStatusCompleted     api.TaskStatus
 	WorkerTags              []sql.NullInt64
-	SchedulableTaskStatuses []string
-	SchedulableJobStatuses  []string
+	SchedulableTaskStatuses []api.TaskStatus
+	SchedulableJobStatuses  []api.JobStatus
 	SupportedTaskTypes      []string
 }
 

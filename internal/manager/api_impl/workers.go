@@ -582,7 +582,7 @@ func mayWorkerRun(worker *persistence.Worker, dbTask *persistence.Task) api.MayK
 			StatusChangeRequested: true,
 		}
 	}
-	if dbTask.WorkerID == nil || *dbTask.WorkerID != worker.ID {
+	if dbTask.WorkerID == nil || *dbTask.WorkerID != uint(worker.ID) {
 		return api.MayKeepRunning{Reason: "task not assigned to this worker"}
 	}
 	if !task_state_machine.IsRunnableTaskStatus(dbTask.Status) {
