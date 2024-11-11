@@ -330,7 +330,7 @@ func TestSubmitJobWithWorkerTag(t *testing.T) {
 
 	workerTagUUID := "04435762-9dc8-4f13-80b7-643a6fa5b6fd"
 	tag := persistence.WorkerTag{
-		Model:       persistence.Model{ID: 47},
+		ID:          47,
 		UUID:        workerTagUUID,
 		Name:        "first tag",
 		Description: "my first tag",
@@ -383,7 +383,7 @@ func TestSubmitJobWithWorkerTag(t *testing.T) {
 		Settings: persistence.StringInterfaceMap{},
 		Metadata: persistence.StringStringMap{},
 
-		WorkerTagID: &tag.ID,
+		WorkerTagID: ptr(uint(tag.ID)),
 		WorkerTag:   &tag,
 	}
 	mf.persistence.EXPECT().FetchJob(gomock.Any(), queuedJob.JobID).Return(&dbJob, nil)

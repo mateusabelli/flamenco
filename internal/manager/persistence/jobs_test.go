@@ -97,7 +97,7 @@ func TestStoreAuthoredJobWithWorkerTag(t *testing.T) {
 	require.NotNil(t, fetchedJob)
 
 	require.NotNil(t, fetchedJob.WorkerTagID)
-	assert.Equal(t, *fetchedJob.WorkerTagID, workerTag.ID)
+	assert.Equal(t, int64(*fetchedJob.WorkerTagID), workerTag.ID)
 
 	require.NotNil(t, fetchedJob.WorkerTag)
 	assert.Equal(t, fetchedJob.WorkerTag.Name, workerTag.Name)

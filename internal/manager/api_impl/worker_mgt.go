@@ -336,9 +336,6 @@ func (f *Flamenco) FetchWorkerTag(e echo.Context, tagUUID string) error {
 		logger.Error().Err(err).Msg("fetching worker tag")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching worker tag: %v", err)
 	}
-	if tag == nil {
-		panic("Could fetch a worker tag without error, but then the returned tag was still nil")
-	}
 
 	return e.JSON(http.StatusOK, workerTagDBtoAPI(tag))
 }
@@ -388,7 +385,7 @@ func (f *Flamenco) UpdateWorkerTag(e echo.Context, tagUUID string) error {
 	}
 	logger = logCtx.Logger()
 
-	if err := f.persist.SaveWorkerTag(ctx, dbTag); err != nil {
+	if err := f.persist.SaveWorkerTag(ctx, &dbTag); err != nil {
 		logger.Error().Err(err).Msg("saving worker tag")
 		return sendAPIError(e, http.StatusInternalServerError, "error saving worker tag")
 	}
@@ -414,7 +411,7 @@ func (f *Flamenco) FetchWorkerTags(e echo.Context) error {
 	apiTags := []api.WorkerTag{}
 	for _, dbTag := range dbTags {
 		apiTag := workerTagDBtoAPI(dbTag)
-		apiTags = append(apiTags, *apiTag)
+		apiTags = append(apiTags, apiTag)
 	}
 
 	tagList := api.WorkerTagList{
@@ -466,10 +463,10 @@ func (f *Flamenco) CreateWorkerTag(e echo.Context) error {
 	logger.Info().Msg("created new worker tag")
 
 	// SocketIO broadcast of tag creation.
-	sioUpdate := eventbus.NewWorkerTagUpdate(&dbTag)
+	sioUpdate := eventbus.NewWorkerTagUpdate(dbTag)
 	f.broadcaster.BroadcastNewWorkerTag(sioUpdate)
 
-	return e.JSON(http.StatusOK, workerTagDBtoAPI(&dbTag))
+	return e.JSON(http.StatusOK, workerTagDBtoAPI(dbTag))
 }
 
 func workerSummary(w persistence.Worker) api.WorkerSummary {
@@ -504,11 +501,7 @@ func workerDBtoAPI(w persistence.Worker) api.Worker {
 	return apiWorker
 }
 
-func workerTagDBtoAPI(wc *persistence.WorkerTag) *api.WorkerTag {
-	if wc == nil {
-		return nil
-	}
-
+func workerTagDBtoAPI(wc persistence.WorkerTag) api.WorkerTag {
 	uuid := wc.UUID // Take a copy for safety.
 
 	apiTag := api.WorkerTag{
@@ -518,5 +511,5 @@ func workerTagDBtoAPI(wc *persistence.WorkerTag) *api.WorkerTag {
 	if len(wc.Description) > 0 {
 		apiTag.Description = &wc.Description
 	}
-	return &apiTag
+	return apiTag
 }

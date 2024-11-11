@@ -72,8 +72,8 @@ type PersistenceService interface {
 	// Worker tag management.
 	WorkerSetTags(ctx context.Context, worker *persistence.Worker, tagUUIDs []string) error
 	CreateWorkerTag(ctx context.Context, tag *persistence.WorkerTag) error
-	FetchWorkerTag(ctx context.Context, uuid string) (*persistence.WorkerTag, error)
-	FetchWorkerTags(ctx context.Context) ([]*persistence.WorkerTag, error)
+	FetchWorkerTag(ctx context.Context, uuid string) (persistence.WorkerTag, error)
+	FetchWorkerTags(ctx context.Context) ([]persistence.WorkerTag, error)
 	DeleteWorkerTag(ctx context.Context, uuid string) error
 	SaveWorkerTag(ctx context.Context, tag *persistence.WorkerTag) error
 	FetchTagsOfWorker(ctx context.Context, workerUUID string) ([]persistence.WorkerTag, error)

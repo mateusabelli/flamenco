@@ -144,7 +144,7 @@ func (mr *MockPersistenceServiceMockRecorder) CreateWorker(arg0, arg1 interface{
 }
 
 // CreateWorkerTag mocks base method.
-func (m *MockPersistenceService) CreateWorkerTag(arg0 context.Context, arg1 *persistence.WorkerTag) error {
+func (m *MockPersistenceService) CreateWorkerTag(arg0 context.Context, arg1 *sqlc.WorkerTag) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateWorkerTag", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -231,10 +231,10 @@ func (mr *MockPersistenceServiceMockRecorder) FetchJobs(arg0 interface{}) *gomoc
 }
 
 // FetchTagsOfWorker mocks base method.
-func (m *MockPersistenceService) FetchTagsOfWorker(arg0 context.Context, arg1 string) ([]persistence.WorkerTag, error) {
+func (m *MockPersistenceService) FetchTagsOfWorker(arg0 context.Context, arg1 string) ([]sqlc.WorkerTag, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchTagsOfWorker", arg0, arg1)
-	ret0, _ := ret[0].([]persistence.WorkerTag)
+	ret0, _ := ret[0].([]sqlc.WorkerTag)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -306,10 +306,10 @@ func (mr *MockPersistenceServiceMockRecorder) FetchWorker(arg0, arg1 interface{}
 }
 
 // FetchWorkerTag mocks base method.
-func (m *MockPersistenceService) FetchWorkerTag(arg0 context.Context, arg1 string) (*persistence.WorkerTag, error) {
+func (m *MockPersistenceService) FetchWorkerTag(arg0 context.Context, arg1 string) (sqlc.WorkerTag, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchWorkerTag", arg0, arg1)
-	ret0, _ := ret[0].(*persistence.WorkerTag)
+	ret0, _ := ret[0].(sqlc.WorkerTag)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -321,10 +321,10 @@ func (mr *MockPersistenceServiceMockRecorder) FetchWorkerTag(arg0, arg1 interfac
 }
 
 // FetchWorkerTags mocks base method.
-func (m *MockPersistenceService) FetchWorkerTags(arg0 context.Context) ([]*persistence.WorkerTag, error) {
+func (m *MockPersistenceService) FetchWorkerTags(arg0 context.Context) ([]sqlc.WorkerTag, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchWorkerTags", arg0)
-	ret0, _ := ret[0].([]*persistence.WorkerTag)
+	ret0, _ := ret[0].([]sqlc.WorkerTag)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -466,7 +466,7 @@ func (mr *MockPersistenceServiceMockRecorder) SaveWorkerStatus(arg0, arg1 interf
 }
 
 // SaveWorkerTag mocks base method.
-func (m *MockPersistenceService) SaveWorkerTag(arg0 context.Context, arg1 *persistence.WorkerTag) error {
+func (m *MockPersistenceService) SaveWorkerTag(arg0 context.Context, arg1 *sqlc.WorkerTag) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveWorkerTag", arg0, arg1)
 	ret0, _ := ret[0].(error)

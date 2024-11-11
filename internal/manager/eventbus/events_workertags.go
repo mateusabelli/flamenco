@@ -11,7 +11,7 @@ import (
 // NewWorkerTagUpdate returns a partial EventWorkerTagUpdate struct for the
 // given worker tag. It only fills in the fields that represent the current
 // state of the tag.
-func NewWorkerTagUpdate(tag *persistence.WorkerTag) api.EventWorkerTagUpdate {
+func NewWorkerTagUpdate(tag persistence.WorkerTag) api.EventWorkerTagUpdate {
 	tagUpdate := api.EventWorkerTagUpdate{
 		Tag: api.WorkerTag{
 			Id:          &tag.UUID,

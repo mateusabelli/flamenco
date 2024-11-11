@@ -355,7 +355,7 @@ func (db *DB) FetchJob(ctx context.Context, jobUUID string) (*Job, error) {
 		case err != nil:
 			return nil, workerTagError(err, "fetching worker tag of job")
 		}
-		gormJob.WorkerTag = workerTag
+		gormJob.WorkerTag = &workerTag
 	}
 
 	return &gormJob, nil
@@ -384,7 +384,7 @@ func (db *DB) FetchJobs(ctx context.Context) ([]*Job, error) {
 			case err != nil:
 				return nil, workerTagError(err, "fetching worker tag of job")
 			}
-			gormJob.WorkerTag = workerTag
+			gormJob.WorkerTag = &workerTag
 		}
 
 		gormJobs[index] = &gormJob

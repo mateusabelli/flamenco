@@ -307,7 +307,7 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 	assertResponseJSON(t, echo, http.StatusOK, &apiTag)
 
 	// Fetch the tag
-	mf.persistence.EXPECT().FetchWorkerTag(gomock.Any(), UUID).Return(&expectDBTag, nil)
+	mf.persistence.EXPECT().FetchWorkerTag(gomock.Any(), UUID).Return(expectDBTag, nil)
 	echo = mf.prepareMockedRequest(nil)
 	require.NoError(t, mf.flamenco.FetchWorkerTag(echo, UUID))
 	assertResponseJSON(t, echo, http.StatusOK, &apiTag)
@@ -330,7 +330,7 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 			Description: apiTag.Description,
 		},
 	})
-	mf.persistence.EXPECT().FetchWorkerTag(gomock.Any(), UUID).Return(&expectDBTag, nil)
+	mf.persistence.EXPECT().FetchWorkerTag(gomock.Any(), UUID).Return(expectDBTag, nil)
 	mf.persistence.EXPECT().SaveWorkerTag(gomock.Any(), &expectNewDBTag)
 	echo = mf.prepareMockedJSONRequest(newAPITag)
 	require.NoError(t, mf.flamenco.UpdateWorkerTag(echo, UUID))
@@ -353,7 +353,7 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 			Description: newAPITag.Description,
 		},
 	})
-	mf.persistence.EXPECT().FetchWorkerTag(gomock.Any(), UUID).Return(&expectDBTag, nil)
+	mf.persistence.EXPECT().FetchWorkerTag(gomock.Any(), UUID).Return(expectDBTag, nil)
 	mf.persistence.EXPECT().SaveWorkerTag(gomock.Any(), &expectNewDBTag)
 	echo = mf.prepareMockedJSONRequest(newAPITag)
 	require.NoError(t, mf.flamenco.UpdateWorkerTag(echo, UUID))
@@ -376,14 +376,14 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 			Description: newAPITag.Description,
 		},
 	})
-	mf.persistence.EXPECT().FetchWorkerTag(gomock.Any(), UUID).Return(&expectDBTag, nil)
+	mf.persistence.EXPECT().FetchWorkerTag(gomock.Any(), UUID).Return(expectDBTag, nil)
 	mf.persistence.EXPECT().SaveWorkerTag(gomock.Any(), &expectNewDBTag)
 	echo = mf.prepareMockedJSONRequest(newAPITag)
 	require.NoError(t, mf.flamenco.UpdateWorkerTag(echo, UUID))
 	assertResponseNoContent(t, echo)
 
 	// Delete.
-	mf.persistence.EXPECT().FetchWorkerTag(gomock.Any(), UUID).Return(&expectDBTag, nil)
+	mf.persistence.EXPECT().FetchWorkerTag(gomock.Any(), UUID).Return(expectDBTag, nil)
 	mf.persistence.EXPECT().DeleteWorkerTag(gomock.Any(), UUID)
 	mf.broadcaster.EXPECT().BroadcastWorkerTagUpdate(api.EventWorkerTagUpdate{
 		Tag:        api.WorkerTag{Id: &UUID},

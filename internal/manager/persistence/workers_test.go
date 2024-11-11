@@ -362,11 +362,6 @@ func TestDeleteWorkerWithTagAssigned(t *testing.T) {
 
 	// Delete the Worker.
 	require.NoError(t, f.db.DeleteWorker(f.ctx, f.worker.UUID))
-
-	// Check the Worker has been unassigned from the tag.
-	tag, err := f.db.FetchWorkerTag(f.ctx, f.tag.UUID)
-	require.NoError(t, err)
-	assert.Empty(t, tag.Workers)
 }
 
 func TestSummarizeWorkerStatuses(t *testing.T) {

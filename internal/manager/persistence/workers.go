@@ -248,20 +248,3 @@ func (db *DB) SummarizeWorkerStatuses(ctx context.Context) (WorkerStatusCount, e
 
 	return statusCounts, nil
 }
-
-// convertSqlcWorkerTag converts a worker tag from the SQLC-generated model to
-// the model expected by the rest of the code. This is mostly in place to aid in
-// the GORM to SQLC migration. It is intended that eventually the rest of the
-// code will use the same SQLC-generated model.
-func convertSqlcWorkerTag(tag sqlc.WorkerTag) *WorkerTag {
-	return &WorkerTag{
-		Model: Model{
-			ID:        uint(tag.ID),
-			CreatedAt: tag.CreatedAt,
-			UpdatedAt: tag.UpdatedAt.Time,
-		},
-		UUID:        tag.UUID,
-		Name:        tag.Name,
-		Description: tag.Description,
-	}
-}

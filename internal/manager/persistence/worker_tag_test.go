@@ -19,7 +19,7 @@ func TestCreateFetchTag(t *testing.T) {
 	// Test fetching non-existent tag
 	fetchedTag, err := f.db.FetchWorkerTag(f.ctx, "7ee21bc8-ff1a-42d2-a6b6-cc4b529b189f")
 	assert.ErrorIs(t, err, ErrWorkerTagNotFound)
-	assert.Nil(t, fetchedTag)
+	assert.Zero(t, fetchedTag)
 
 	// New tag creation is already done in the workerTestFixtures() call.
 	assert.NotNil(t, f.tag)
@@ -32,7 +32,6 @@ func TestCreateFetchTag(t *testing.T) {
 	assert.Equal(t, f.tag.UUID, fetchedTag.UUID)
 	assert.Equal(t, f.tag.Name, fetchedTag.Name)
 	assert.Equal(t, f.tag.Description, fetchedTag.Description)
-	assert.Zero(t, fetchedTag.Workers)
 }
 
 func TestFetchDeleteTags(t *testing.T) {
