@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"projects.blender.org/studio/flamenco/pkg/api"
+	"projects.blender.org/studio/flamenco/pkg/time_of_day"
 )
 
 type Job struct {
@@ -51,8 +52,8 @@ type SleepSchedule struct {
 	WorkerID   int64
 	IsActive   bool
 	DaysOfWeek string
-	StartTime  string
-	EndTime    string
+	StartTime  time_of_day.TimeOfDay
+	EndTime    time_of_day.TimeOfDay
 	NextCheck  sql.NullTime
 }
 

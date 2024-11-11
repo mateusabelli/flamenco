@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/rs/zerolog/log"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
@@ -15,29 +14,6 @@ import (
 )
 
 type Worker = sqlc.Worker
-
-type Worker__gorm struct {
-	Model
-	DeletedAt sql.NullTime
-
-	UUID   string
-	Secret string
-	Name   string
-
-	Address    string // 39 = max length of IPv6 address.
-	Platform   string
-	Software   string
-	Status     api.WorkerStatus
-	LastSeenAt time.Time // Should contain UTC timestamps.
-	CanRestart bool
-
-	StatusRequested   api.WorkerStatus
-	LazyStatusRequest bool
-
-	SupportedTaskTypes string // comma-separated list of task types.
-
-	Tags []*WorkerTag
-}
 
 func (db *DB) CreateWorker(ctx context.Context, w *Worker) error {
 	queries := db.queries()
@@ -56,7 +32,7 @@ func (db *DB) CreateWorker(ctx context.Context, w *Worker) error {
 		StatusRequested:    w.StatusRequested,
 		LazyStatusRequest:  w.LazyStatusRequest,
 		SupportedTaskTypes: w.SupportedTaskTypes,
-		DeletedAt:          sql.NullTime(w.DeletedAt),
+		DeletedAt:          w.DeletedAt,
 		CanRestart:         w.CanRestart,
 	}
 

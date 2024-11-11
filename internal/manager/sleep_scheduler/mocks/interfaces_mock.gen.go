@@ -37,12 +37,27 @@ func (m *MockPersistenceService) EXPECT() *MockPersistenceServiceMockRecorder {
 	return m.recorder
 }
 
-// FetchSleepScheduleWorker mocks base method.
-func (m *MockPersistenceService) FetchSleepScheduleWorker(arg0 context.Context, arg1 *persistence.SleepSchedule) error {
+// CreateWorker mocks base method.
+func (m *MockPersistenceService) CreateWorker(arg0 context.Context, arg1 *sqlc.Worker) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchSleepScheduleWorker", arg0, arg1)
+	ret := m.ctrl.Call(m, "CreateWorker", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
+}
+
+// CreateWorker indicates an expected call of CreateWorker.
+func (mr *MockPersistenceServiceMockRecorder) CreateWorker(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWorker", reflect.TypeOf((*MockPersistenceService)(nil).CreateWorker), arg0, arg1)
+}
+
+// FetchSleepScheduleWorker mocks base method.
+func (m *MockPersistenceService) FetchSleepScheduleWorker(arg0 context.Context, arg1 sqlc.SleepSchedule) (*sqlc.Worker, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchSleepScheduleWorker", arg0, arg1)
+	ret0, _ := ret[0].(*sqlc.Worker)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // FetchSleepScheduleWorker indicates an expected call of FetchSleepScheduleWorker.
@@ -52,10 +67,10 @@ func (mr *MockPersistenceServiceMockRecorder) FetchSleepScheduleWorker(arg0, arg
 }
 
 // FetchSleepSchedulesToCheck mocks base method.
-func (m *MockPersistenceService) FetchSleepSchedulesToCheck(arg0 context.Context) ([]*persistence.SleepSchedule, error) {
+func (m *MockPersistenceService) FetchSleepSchedulesToCheck(arg0 context.Context) ([]persistence.SleepScheduleOwned, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchSleepSchedulesToCheck", arg0)
-	ret0, _ := ret[0].([]*persistence.SleepSchedule)
+	ret0, _ := ret[0].([]persistence.SleepScheduleOwned)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -67,10 +82,10 @@ func (mr *MockPersistenceServiceMockRecorder) FetchSleepSchedulesToCheck(arg0 in
 }
 
 // FetchWorkerSleepSchedule mocks base method.
-func (m *MockPersistenceService) FetchWorkerSleepSchedule(arg0 context.Context, arg1 string) (*persistence.SleepSchedule, error) {
+func (m *MockPersistenceService) FetchWorkerSleepSchedule(arg0 context.Context, arg1 string) (*sqlc.SleepSchedule, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchWorkerSleepSchedule", arg0, arg1)
-	ret0, _ := ret[0].(*persistence.SleepSchedule)
+	ret0, _ := ret[0].(*sqlc.SleepSchedule)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -96,7 +111,7 @@ func (mr *MockPersistenceServiceMockRecorder) SaveWorkerStatus(arg0, arg1 interf
 }
 
 // SetWorkerSleepSchedule mocks base method.
-func (m *MockPersistenceService) SetWorkerSleepSchedule(arg0 context.Context, arg1 string, arg2 *persistence.SleepSchedule) error {
+func (m *MockPersistenceService) SetWorkerSleepSchedule(arg0 context.Context, arg1 string, arg2 *sqlc.SleepSchedule) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetWorkerSleepSchedule", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
@@ -110,7 +125,7 @@ func (mr *MockPersistenceServiceMockRecorder) SetWorkerSleepSchedule(arg0, arg1,
 }
 
 // SetWorkerSleepScheduleNextCheck mocks base method.
-func (m *MockPersistenceService) SetWorkerSleepScheduleNextCheck(arg0 context.Context, arg1 *persistence.SleepSchedule) error {
+func (m *MockPersistenceService) SetWorkerSleepScheduleNextCheck(arg0 context.Context, arg1 sqlc.SleepSchedule) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetWorkerSleepScheduleNextCheck", arg0, arg1)
 	ret0, _ := ret[0].(error)

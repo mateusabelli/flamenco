@@ -205,7 +205,9 @@ WHERE ID=@schedule_id;
 
 
 -- name: FetchSleepSchedulesToCheck :many
-SELECT * FROM sleep_schedules
+SELECT sqlc.embed(sleep_schedules), workers.uuid as workeruuid, workers.name as worker_name
+FROM sleep_schedules
+LEFT JOIN workers ON workers.id = sleep_schedules.worker_id
 WHERE is_active
 AND (next_check <= @next_check OR next_check IS NULL OR next_check = '');
 

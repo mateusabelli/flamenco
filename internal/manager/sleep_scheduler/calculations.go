@@ -8,6 +8,7 @@ import (
 
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/pkg/api"
+	"projects.blender.org/studio/flamenco/pkg/time_of_day"
 )
 
 // scheduledWorkerStatus returns the expected worker status at the given date/time.
@@ -17,7 +18,7 @@ func scheduledWorkerStatus(now time.Time, sched *persistence.SleepSchedule) api.
 		return api.WorkerStatusAwake
 	}
 
-	tod := persistence.MakeTimeOfDay(now)
+	tod := time_of_day.MakeTimeOfDay(now)
 
 	if !sched.IsActive {
 		return api.WorkerStatusAwake
@@ -56,10 +57,10 @@ func cleanupDaysOfWeek(daysOfWeek string) string {
 }
 
 // Return a timestamp when the next scheck for this schedule is due.
-func calculateNextCheck(now time.Time, schedule *persistence.SleepSchedule) time.Time {
+func calculateNextCheck(now time.Time, schedule persistence.SleepSchedule) time.Time {
 	// calcNext returns the given time of day on "today" if that hasn't passed
 	// yet, otherwise on "tomorrow".
-	calcNext := func(tod persistence.TimeOfDay) time.Time {
+	calcNext := func(tod time_of_day.TimeOfDay) time.Time {
 		nextCheck := tod.OnDate(now).In(time.Local)
 		if nextCheck.Before(now) {
 			nextCheck = nextCheck.AddDate(0, 0, 1)

@@ -1323,10 +1323,10 @@ func (m *MockWorkerSleepScheduler) EXPECT() *MockWorkerSleepSchedulerMockRecorde
 }
 
 // FetchSchedule mocks base method.
-func (m *MockWorkerSleepScheduler) FetchSchedule(arg0 context.Context, arg1 string) (*persistence.SleepSchedule, error) {
+func (m *MockWorkerSleepScheduler) FetchSchedule(arg0 context.Context, arg1 string) (*sqlc.SleepSchedule, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchSchedule", arg0, arg1)
-	ret0, _ := ret[0].(*persistence.SleepSchedule)
+	ret0, _ := ret[0].(*sqlc.SleepSchedule)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1338,7 +1338,7 @@ func (mr *MockWorkerSleepSchedulerMockRecorder) FetchSchedule(arg0, arg1 interfa
 }
 
 // SetSchedule mocks base method.
-func (m *MockWorkerSleepScheduler) SetSchedule(arg0 context.Context, arg1 string, arg2 *persistence.SleepSchedule) error {
+func (m *MockWorkerSleepScheduler) SetSchedule(arg0 context.Context, arg1 string, arg2 sqlc.SleepSchedule) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetSchedule", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

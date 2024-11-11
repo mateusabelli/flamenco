@@ -66,7 +66,7 @@ func (ss *SleepScheduler) FetchSchedule(ctx context.Context, workerUUID string) 
 
 // SetSleepSchedule stores the given schedule as the worker's new sleep schedule.
 // The new schedule is immediately applied to the Worker.
-func (ss *SleepScheduler) SetSchedule(ctx context.Context, workerUUID string, schedule *persistence.SleepSchedule) error {
+func (ss *SleepScheduler) SetSchedule(ctx context.Context, workerUUID string, schedule persistence.SleepSchedule) error {
 	// Ensure 'start' actually preceeds 'end'.
 	if schedule.StartTime.HasValue() &&
 		schedule.EndTime.HasValue() &&
@@ -75,15 +75,15 @@ func (ss *SleepScheduler) SetSchedule(ctx context.Context, workerUUID string, sc
 	}
 
 	schedule.DaysOfWeek = cleanupDaysOfWeek(schedule.DaysOfWeek)
-	schedule.NextCheck = ss.calculateNextCheck(schedule)
+	schedule.SetNextCheck(ss.calculateNextCheck(schedule))
 
-	if err := ss.persist.SetWorkerSleepSchedule(ctx, workerUUID, schedule); err != nil {
+	if err := ss.persist.SetWorkerSleepSchedule(ctx, workerUUID, &schedule); err != nil {
 		return fmt.Errorf("persisting sleep schedule of worker %s: %w", workerUUID, err)
 	}
 
-	logger := addLoggerFields(zerolog.Ctx(ctx), schedule)
+	logger := addLoggerFields(zerolog.Ctx(ctx), schedule, workerUUID, "")
 	logger.Info().
-		Str("worker", schedule.Worker.Identifier()).
+		Str("worker", workerUUID).
 		Msg("sleep scheduler: new schedule for worker")
 
 	return ss.ApplySleepSchedule(ctx, schedule)
@@ -106,28 +106,24 @@ func (ss *SleepScheduler) scheduledWorkerStatus(sched *persistence.SleepSchedule
 }
 
 // Return a timestamp when the next scheck for this schedule is due.
-func (ss *SleepScheduler) calculateNextCheck(schedule *persistence.SleepSchedule) time.Time {
+func (ss *SleepScheduler) calculateNextCheck(schedule persistence.SleepSchedule) time.Time {
 	now := ss.clock.Now()
 	return calculateNextCheck(now, schedule)
 }
 
 // ApplySleepSchedule sets worker.StatusRequested if the scheduler demands a status change.
-func (ss *SleepScheduler) ApplySleepSchedule(ctx context.Context, schedule *persistence.SleepSchedule) error {
+func (ss *SleepScheduler) ApplySleepSchedule(ctx context.Context, schedule persistence.SleepSchedule) error {
 	// Find the Worker managed by this schedule.
-	worker := schedule.Worker
-	if worker == nil {
-		err := ss.persist.FetchSleepScheduleWorker(ctx, schedule)
-		if err != nil {
-			return err
-		}
-		worker = schedule.Worker
+	worker, err := ss.persist.FetchSleepScheduleWorker(ctx, schedule)
+	if err != nil {
+		return err
 	}
 
 	if !ss.mayUpdateWorker(worker) {
 		return nil
 	}
 
-	scheduled := ss.scheduledWorkerStatus(schedule)
+	scheduled := ss.scheduledWorkerStatus(&schedule)
 	if scheduled == "" ||
 		(worker.StatusRequested == scheduled && !worker.LazyStatusRequest) ||
 		(worker.Status == scheduled && worker.StatusRequested == "") {
@@ -204,9 +200,11 @@ func (ss *SleepScheduler) CheckSchedules(ctx context.Context) {
 	}
 }
 
-func (ss *SleepScheduler) checkSchedule(ctx context.Context, schedule *persistence.SleepSchedule) {
+func (ss *SleepScheduler) checkSchedule(ctx context.Context, ownedSchedule persistence.SleepScheduleOwned) {
 	// Compute the next time to check.
-	schedule.NextCheck = ss.calculateNextCheck(schedule)
+	schedule := ownedSchedule.SleepSchedule
+	schedule.SetNextCheck(ss.calculateNextCheck(schedule))
+
 	err := ss.persist.SetWorkerSleepScheduleNextCheck(ctx, schedule)
 	switch {
 	case errors.Is(ctx.Err(), context.Canceled):
@@ -215,7 +213,8 @@ func (ss *SleepScheduler) checkSchedule(ctx context.Context, schedule *persisten
 	case err != nil:
 		log.Error().
 			Err(err).
-			Str("worker", schedule.Worker.Identifier()).
+			Str("workerName", ownedSchedule.WorkerName).
+			Str("workerUUID", ownedSchedule.WorkerUUID).
 			Msg("sleep scheduler: error refreshing worker's sleep schedule")
 		return
 	}
@@ -230,12 +229,13 @@ func (ss *SleepScheduler) checkSchedule(ctx context.Context, schedule *persisten
 		// soft-deleted (and thus foreign key constraints don't trigger deletion of
 		// the sleep schedule).
 		log.Debug().
-			Uint("worker", schedule.WorkerID).
+			Int64("worker", schedule.WorkerID).
 			Msg("sleep scheduler: sleep schedule's owning worker cannot be found; not applying the schedule")
 	case err != nil:
 		log.Error().
 			Err(err).
-			Str("worker", schedule.Worker.Identifier()).
+			Str("workerName", ownedSchedule.WorkerName).
+			Str("workerUUID", ownedSchedule.WorkerUUID).
 			Msg("sleep scheduler: error applying worker's sleep schedule")
 	}
 }
@@ -246,11 +246,14 @@ func (ss *SleepScheduler) mayUpdateWorker(worker *persistence.Worker) bool {
 	return !shouldSkip
 }
 
-func addLoggerFields(logger *zerolog.Logger, schedule *persistence.SleepSchedule) zerolog.Logger {
+func addLoggerFields(logger *zerolog.Logger, schedule persistence.SleepSchedule, workerUUID, workerName string) zerolog.Logger {
 	logCtx := logger.With()
 
-	if schedule.Worker != nil {
-		logCtx = logCtx.Str("worker", schedule.Worker.Identifier())
+	if workerUUID != "" {
+		logCtx = logCtx.Str("workerUUID", workerUUID)
+	}
+	if workerName != "" {
+		logCtx = logCtx.Str("workerName", workerName)
 	}
 
 	logCtx = logCtx.

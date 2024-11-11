@@ -19,6 +19,10 @@ sql:
             go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
           - column: workers.status_requested
             go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: sleep_schedules.start_time
+            go_type: { type: "TimeOfDay", import: "projects.blender.org/studio/flamenco/pkg/time_of_day" }
+          - column: sleep_schedules.end_time
+            go_type: { type: "TimeOfDay", import: "projects.blender.org/studio/flamenco/pkg/time_of_day" }
         rename:
           uuid: "UUID"
           uuids: "UUIDs"
@@ -44,6 +48,10 @@ sql:
             go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
           - column: workers.status_requested
             go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: sleep_schedules.start_time
+            go_type: { type: "TimeOfDay", import: "projects.blender.org/studio/flamenco/pkg/time_of_day" }
+          - column: sleep_schedules.end_time
+            go_type: { type: "TimeOfDay", import: "projects.blender.org/studio/flamenco/pkg/time_of_day" }
         rename:
           uuid: "UUID"
           uuids: "UUIDs"
@@ -69,6 +77,10 @@ sql:
             go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
           - column: workers.status_requested
             go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: sleep_schedules.start_time
+            go_type: { type: "TimeOfDay", import: "projects.blender.org/studio/flamenco/pkg/time_of_day" }
+          - column: sleep_schedules.end_time
+            go_type: { type: "TimeOfDay", import: "projects.blender.org/studio/flamenco/pkg/time_of_day" }
         rename:
           uuid: "UUID"
           uuids: "UUIDs"
@@ -94,6 +106,10 @@ sql:
             go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
           - column: workers.status_requested
             go_type: { type: "WorkerStatus", import: "projects.blender.org/studio/flamenco/pkg/api" }
+          - column: sleep_schedules.start_time
+            go_type: { type: "TimeOfDay", import: "projects.blender.org/studio/flamenco/pkg/time_of_day" }
+          - column: sleep_schedules.end_time
+            go_type: { type: "TimeOfDay", import: "projects.blender.org/studio/flamenco/pkg/time_of_day" }
         rename:
           uuid: "UUID"
           uuids: "UUIDs"

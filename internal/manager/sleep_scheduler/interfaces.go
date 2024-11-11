@@ -16,11 +16,10 @@ import (
 type PersistenceService interface {
 	FetchWorkerSleepSchedule(ctx context.Context, workerUUID string) (*persistence.SleepSchedule, error)
 	SetWorkerSleepSchedule(ctx context.Context, workerUUID string, schedule *persistence.SleepSchedule) error
-	// FetchSleepScheduleWorker sets the given schedule's `Worker` pointer.
-	FetchSleepScheduleWorker(ctx context.Context, schedule *persistence.SleepSchedule) error
-	FetchSleepSchedulesToCheck(ctx context.Context) ([]*persistence.SleepSchedule, error)
+	FetchSleepScheduleWorker(ctx context.Context, schedule persistence.SleepSchedule) (*persistence.Worker, error)
+	FetchSleepSchedulesToCheck(ctx context.Context) ([]persistence.SleepScheduleOwned, error)
 
-	SetWorkerSleepScheduleNextCheck(ctx context.Context, schedule *persistence.SleepSchedule) error
+	SetWorkerSleepScheduleNextCheck(ctx context.Context, schedule persistence.SleepSchedule) error
 
 	SaveWorkerStatus(ctx context.Context, w *persistence.Worker) error
 }

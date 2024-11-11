@@ -1,4 +1,4 @@
-package persistence
+package time_of_day
 
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -27,14 +27,22 @@ type TimeOfDay struct {
 	Minute int
 }
 
+// New returns a new TimeOfDay.
+func New(Hour, Minute int) TimeOfDay {
+	return TimeOfDay{
+		Hour:   Hour,
+		Minute: Minute,
+	}
+}
+
 // MakeTimeOfDay converts a time.Time into a TimeOfDay.
 func MakeTimeOfDay(someTime time.Time) TimeOfDay {
 	return TimeOfDay{someTime.Hour(), someTime.Minute()}
 }
 
-// EmptyTimeOfDay returns a TimeOfDay struct with no value.
+// Empty returns a TimeOfDay struct with no value.
 // See `TimeOfDay.HasValue()`.
-func EmptyTimeOfDay() TimeOfDay {
+func Empty() TimeOfDay {
 	return TimeOfDay{Hour: timeOfDayNoValue, Minute: timeOfDayNoValue}
 }
 

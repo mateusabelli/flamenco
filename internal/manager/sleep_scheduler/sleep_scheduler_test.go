@@ -4,6 +4,7 @@ package sleep_scheduler
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/internal/manager/sleep_scheduler/mocks"
 	"projects.blender.org/studio/flamenco/pkg/api"
+	"projects.blender.org/studio/flamenco/pkg/time_of_day"
 )
 
 func TestFetchSchedule(t *testing.T) {
@@ -33,22 +35,24 @@ func TestSetSchedule(t *testing.T) {
 	ss, mocks, ctx := testFixtures(t)
 
 	workerUUID := "aeb49d8a-6903-41b3-b545-77b7a1c0ca19"
+	worker := persistence.Worker{
+		UUID:   workerUUID,
+		Status: api.WorkerStatusAwake,
+	}
 
 	sched := persistence.SleepSchedule{
 		IsActive:   true,
 		DaysOfWeek: " mo  tu  we",
-		StartTime:  mkToD(9, 0),
-		EndTime:    mkToD(18, 0),
-
-		Worker: &persistence.Worker{
-			UUID:   workerUUID,
-			Status: api.WorkerStatusAwake,
-		},
+		StartTime:  time_of_day.New(9, 0),
+		EndTime:    time_of_day.New(18, 0),
+		WorkerID:   worker.ID,
 	}
 	expectSavedSchedule := sched
 	expectSavedSchedule.DaysOfWeek = "mo tu we" // Expect a cleanup
 	expectNextCheck := mocks.todayAt(18, 0)     // "now" is at 11:14:47, expect a check at the end time.
-	expectSavedSchedule.NextCheck = expectNextCheck
+	expectSavedSchedule.SetNextCheck(expectNextCheck)
+
+	mocks.persist.EXPECT().FetchSleepScheduleWorker(ctx, expectSavedSchedule).Return(&worker, nil)
 
 	// Expect the new schedule to be saved.
 	mocks.persist.EXPECT().SetWorkerSleepSchedule(ctx, workerUUID, &expectSavedSchedule)
@@ -58,40 +62,41 @@ func TestSetSchedule(t *testing.T) {
 	mocks.persist.EXPECT().SaveWorkerStatus(ctx, gomock.Any())
 	mocks.broadcaster.EXPECT().BroadcastWorkerUpdate(gomock.Any())
 
-	err := ss.SetSchedule(ctx, workerUUID, &sched)
+	err := ss.SetSchedule(ctx, workerUUID, sched)
 	require.NoError(t, err)
 }
 
 func TestSetScheduleSwappedStartEnd(t *testing.T) {
 	ss, mocks, ctx := testFixtures(t)
 
-	workerUUID := "aeb49d8a-6903-41b3-b545-77b7a1c0ca19"
-
+	// Worker already in the right state, so no saving/broadcasting expected.
+	worker := persistence.Worker{
+		ID:     47,
+		UUID:   "aeb49d8a-6903-41b3-b545-77b7a1c0ca19",
+		Name:   "test worker",
+		Status: api.WorkerStatusAsleep,
+	}
 	sched := persistence.SleepSchedule{
 		IsActive:   true,
 		DaysOfWeek: "mo tu we",
-		StartTime:  mkToD(18, 0),
-		EndTime:    mkToD(9, 0),
-
-		// Worker already in the right state, so no saving/broadcasting expected.
-		Worker: &persistence.Worker{
-			UUID:   workerUUID,
-			Status: api.WorkerStatusAsleep,
-		},
+		StartTime:  time_of_day.New(18, 0),
+		EndTime:    time_of_day.New(9, 0),
+		WorkerID:   worker.ID,
 	}
 
 	expectSavedSchedule := persistence.SleepSchedule{
 		IsActive:   true,
 		DaysOfWeek: "mo tu we",
-		StartTime:  mkToD(9, 0), // Expect start and end time to be corrected.
-		EndTime:    mkToD(18, 0),
-		NextCheck:  mocks.todayAt(18, 0), // "now" is at 11:14:47, expect a check at the end time.
-		Worker:     sched.Worker,
+		StartTime:  time_of_day.New(9, 0), // Expect start and end time to be corrected.
+		EndTime:    time_of_day.New(18, 0),
+		NextCheck:  sql.NullTime{Time: mocks.todayAt(18, 0), Valid: true}, // "now" is at 11:14:47, expect a check at the end time.
+		WorkerID:   worker.ID,
 	}
 
-	mocks.persist.EXPECT().SetWorkerSleepSchedule(ctx, workerUUID, &expectSavedSchedule)
+	mocks.persist.EXPECT().FetchSleepScheduleWorker(ctx, expectSavedSchedule).Return(&worker, nil)
+	mocks.persist.EXPECT().SetWorkerSleepSchedule(ctx, worker.UUID, &expectSavedSchedule)
 
-	err := ss.SetSchedule(ctx, workerUUID, &sched)
+	err := ss.SetSchedule(ctx, worker.UUID, sched)
 	require.NoError(t, err)
 }
 
@@ -99,19 +104,36 @@ func TestSetScheduleSwappedStartEnd(t *testing.T) {
 func TestCheckSleepScheduleAtShutdown(t *testing.T) {
 	ss, mocks, _ := testFixtures(t)
 
+	worker := persistence.Worker{
+		ID:     47,
+		UUID:   "aeb49d8a-6903-41b3-b545-77b7a1c0ca19",
+		Name:   "test worker",
+		Status: api.WorkerStatusAsleep,
+	}
+
 	sched := persistence.SleepSchedule{
 		IsActive:   true,
 		DaysOfWeek: "mo tu we",
-		StartTime:  mkToD(18, 0),
-		EndTime:    mkToD(9, 0),
-		Worker:     nil,
+		StartTime:  time_of_day.New(18, 0),
+		EndTime:    time_of_day.New(9, 0),
+	}
+
+	// Construct the updated-and-about-to-be-saved schedule.
+	updatedSched := sched
+	updatedSched.NextCheck = sql.NullTime{
+		Time:  sched.StartTime.OnDate(mocks.clock.Now()),
+		Valid: true,
 	}
 
 	// Cancel the context to mimick the Manager shutting down.
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	mocks.persist.EXPECT().SetWorkerSleepScheduleNextCheck(ctx, &sched).Return(context.Canceled)
-	ss.checkSchedule(ctx, &sched)
+	mocks.persist.EXPECT().SetWorkerSleepScheduleNextCheck(ctx, updatedSched).Return(context.Canceled)
+	ss.checkSchedule(ctx, persistence.SleepScheduleOwned{
+		SleepSchedule: sched,
+		WorkerName:    worker.Name,
+		WorkerUUID:    worker.UUID,
+	})
 }
 
 func TestApplySleepSchedule(t *testing.T) {
@@ -126,8 +148,8 @@ func TestApplySleepSchedule(t *testing.T) {
 	sched := persistence.SleepSchedule{
 		IsActive:   true,
 		DaysOfWeek: "mo tu we",
-		StartTime:  mkToD(9, 0),
-		EndTime:    mkToD(18, 0),
+		StartTime:  time_of_day.New(9, 0),
+		EndTime:    time_of_day.New(18, 0),
 	}
 
 	testForExpectedStatus := func(expectedNewStatus api.WorkerStatus) {
@@ -136,11 +158,7 @@ func TestApplySleepSchedule(t *testing.T) {
 		testWorker := worker
 
 		// Expect the Worker to be fetched.
-		mocks.persist.EXPECT().FetchSleepScheduleWorker(ctx, &testSchedule).DoAndReturn(
-			func(ctx context.Context, schedule *persistence.SleepSchedule) error {
-				schedule.Worker = &testWorker
-				return nil
-			})
+		mocks.persist.EXPECT().FetchSleepScheduleWorker(ctx, testSchedule).Return(&testWorker, nil)
 
 		// Construct the worker as we expect it to be saved to the database.
 		savedWorker := testWorker
@@ -156,7 +174,7 @@ func TestApplySleepSchedule(t *testing.T) {
 			})
 
 		// Actually apply the sleep schedule.
-		err := ss.ApplySleepSchedule(ctx, &testSchedule)
+		err := ss.ApplySleepSchedule(ctx, testSchedule)
 		require.NoError(t, err)
 
 		// Check the SocketIO broadcast.
@@ -200,8 +218,8 @@ func TestApplySleepScheduleNoStatusChange(t *testing.T) {
 	sched := persistence.SleepSchedule{
 		IsActive:   true,
 		DaysOfWeek: "mo tu we",
-		StartTime:  mkToD(9, 0),
-		EndTime:    mkToD(18, 0),
+		StartTime:  time_of_day.New(9, 0),
+		EndTime:    time_of_day.New(18, 0),
 	}
 
 	runTest := func() {
@@ -210,14 +228,10 @@ func TestApplySleepScheduleNoStatusChange(t *testing.T) {
 		testWorker := worker
 
 		// Expect the Worker to be fetched.
-		mocks.persist.EXPECT().FetchSleepScheduleWorker(ctx, &testSchedule).DoAndReturn(
-			func(ctx context.Context, schedule *persistence.SleepSchedule) error {
-				schedule.Worker = &testWorker
-				return nil
-			})
+		mocks.persist.EXPECT().FetchSleepScheduleWorker(ctx, testSchedule).Return(&testWorker, nil)
 
 		// Apply the sleep schedule. This should not trigger any persistence or broadcasts.
-		err := ss.ApplySleepSchedule(ctx, &testSchedule)
+		err := ss.ApplySleepSchedule(ctx, testSchedule)
 		require.NoError(t, err)
 	}
 
@@ -284,6 +298,16 @@ func testFixtures(t *testing.T) (*SleepScheduler, TestMocks, context.Context) {
 	return ss, mocks, ctx
 }
 
-func mkToD(hour, minute int) persistence.TimeOfDay {
-	return persistence.TimeOfDay{Hour: hour, Minute: minute}
+func createTestWorker(updaters ...func(*persistence.Worker)) persistence.Worker {
+	w := persistence.Worker{
+		ID:   47,
+		UUID: "4f2d3755-c365-429f-8017-44356427c069",
+		Name: "schedule test worker",
+	}
+
+	for _, updater := range updaters {
+		updater(&w)
+	}
+
+	return w
 }

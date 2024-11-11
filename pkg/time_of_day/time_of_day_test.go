@@ -1,4 +1,4 @@
-package persistence
+package time_of_day
 
 // SPDX-License-Identifier: GPL-3.0-or-later
 

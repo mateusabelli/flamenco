@@ -74,7 +74,7 @@ func (f *Flamenco) SetWorkerSleepSchedule(e echo.Context, workerUUID string) err
 	}
 
 	// Send the sleep schedule to the scheduler.
-	err = f.sleepScheduler.SetSchedule(ctx, workerUUID, &dbSchedule)
+	err = f.sleepScheduler.SetSchedule(ctx, workerUUID, dbSchedule)
 	switch {
 	case errors.Is(err, persistence.ErrWorkerNotFound):
 		logger.Warn().Msg("SetWorkerSleepSchedule: worker does not exist")

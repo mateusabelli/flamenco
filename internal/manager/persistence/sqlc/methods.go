@@ -3,13 +3,22 @@
 package sqlc
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
 // SPDX-License-Identifier: GPL-3.0-or-later
+
+func (ss *SleepSchedule) SetNextCheck(nextCheck time.Time) {
+	ss.NextCheck = sql.NullTime{
+		Time:  nextCheck,
+		Valid: true,
+	}
+}
 
 func (w *Worker) Identifier() string {
 	// Avoid a panic when worker.Identifier() is called on a nil pointer.

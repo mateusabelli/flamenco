@@ -9,48 +9,49 @@ import (
 
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/pkg/api"
+	"projects.blender.org/studio/flamenco/pkg/time_of_day"
 )
 
 func TestCalculateNextCheck(t *testing.T) {
 	_, mocks, _ := testFixtures(t)
 
 	var sched persistence.SleepSchedule
-	empty := persistence.EmptyTimeOfDay()
+	empty := time_of_day.Empty()
 
 	// Below, S, N, and E respectively mean Start, Now, and End times.
 	// Their order shows their relation to "Now". Lower-case letters mean "no value".
 	// Note that N can never be before 's' or after 'e'.
 
 	// S N E -> E
-	sched = persistence.SleepSchedule{StartTime: mkToD(9, 0), EndTime: mkToD(18, 0)}
-	assert.Equal(t, mocks.todayAt(18, 0), calculateNextCheck(mocks.todayAt(11, 16), &sched))
+	sched = persistence.SleepSchedule{StartTime: time_of_day.New(9, 0), EndTime: time_of_day.New(18, 0)}
+	assert.Equal(t, mocks.todayAt(18, 0), calculateNextCheck(mocks.todayAt(11, 16), sched))
 
 	// S E N -> end of day
-	sched = persistence.SleepSchedule{StartTime: mkToD(9, 0), EndTime: mkToD(18, 0)}
-	assert.Equal(t, mocks.endOfDay(), calculateNextCheck(mocks.todayAt(19, 16), &sched))
+	sched = persistence.SleepSchedule{StartTime: time_of_day.New(9, 0), EndTime: time_of_day.New(18, 0)}
+	assert.Equal(t, mocks.endOfDay(), calculateNextCheck(mocks.todayAt(19, 16), sched))
 
 	// N S E -> S
-	sched = persistence.SleepSchedule{StartTime: mkToD(9, 0), EndTime: mkToD(18, 0)}
-	assert.Equal(t, mocks.todayAt(9, 0), calculateNextCheck(mocks.todayAt(8, 47), &sched))
+	sched = persistence.SleepSchedule{StartTime: time_of_day.New(9, 0), EndTime: time_of_day.New(18, 0)}
+	assert.Equal(t, mocks.todayAt(9, 0), calculateNextCheck(mocks.todayAt(8, 47), sched))
 
 	// s N e -> end of day
 	sched = persistence.SleepSchedule{StartTime: empty, EndTime: empty}
-	assert.Equal(t, mocks.endOfDay(), calculateNextCheck(mocks.todayAt(7, 47), &sched))
+	assert.Equal(t, mocks.endOfDay(), calculateNextCheck(mocks.todayAt(7, 47), sched))
 
 	// S N e -> end of day
-	sched = persistence.SleepSchedule{StartTime: mkToD(9, 0), EndTime: empty}
-	assert.Equal(t, mocks.endOfDay(), calculateNextCheck(mocks.todayAt(10, 47), &sched))
+	sched = persistence.SleepSchedule{StartTime: time_of_day.New(9, 0), EndTime: empty}
+	assert.Equal(t, mocks.endOfDay(), calculateNextCheck(mocks.todayAt(10, 47), sched))
 
 	// s N E -> E
-	sched = persistence.SleepSchedule{StartTime: empty, EndTime: mkToD(18, 0)}
-	assert.Equal(t, mocks.todayAt(18, 0), calculateNextCheck(mocks.todayAt(7, 47), &sched))
+	sched = persistence.SleepSchedule{StartTime: empty, EndTime: time_of_day.New(18, 0)}
+	assert.Equal(t, mocks.todayAt(18, 0), calculateNextCheck(mocks.todayAt(7, 47), sched))
 }
 
 func TestScheduledWorkerStatus(t *testing.T) {
 	_, mocks, _ := testFixtures(t)
 
 	var sched persistence.SleepSchedule
-	empty := persistence.EmptyTimeOfDay()
+	empty := time_of_day.Empty()
 
 	// No schedule means 'awake'.
 	assert.Equal(t, api.WorkerStatusAwake, scheduledWorkerStatus(mocks.todayAt(11, 16), nil))
@@ -63,7 +64,7 @@ func TestScheduledWorkerStatus(t *testing.T) {
 	// to each day.
 
 	// S N E -> asleep
-	sched = persistence.SleepSchedule{StartTime: mkToD(9, 0), EndTime: mkToD(18, 0), IsActive: true}
+	sched = persistence.SleepSchedule{StartTime: time_of_day.New(9, 0), EndTime: time_of_day.New(18, 0), IsActive: true}
 	assert.Equal(t, api.WorkerStatusAsleep, scheduledWorkerStatus(mocks.todayAt(11, 16), &sched))
 
 	// S E N -> awake
@@ -77,11 +78,11 @@ func TestScheduledWorkerStatus(t *testing.T) {
 	assert.Equal(t, api.WorkerStatusAsleep, scheduledWorkerStatus(mocks.todayAt(7, 47), &sched))
 
 	// S N e -> asleep
-	sched = persistence.SleepSchedule{StartTime: mkToD(9, 0), EndTime: empty, IsActive: true}
+	sched = persistence.SleepSchedule{StartTime: time_of_day.New(9, 0), EndTime: empty, IsActive: true}
 	assert.Equal(t, api.WorkerStatusAsleep, scheduledWorkerStatus(mocks.todayAt(10, 47), &sched))
 
 	// s N E -> asleep
-	sched = persistence.SleepSchedule{StartTime: empty, EndTime: mkToD(18, 0), IsActive: true}
+	sched = persistence.SleepSchedule{StartTime: empty, EndTime: time_of_day.New(18, 0), IsActive: true}
 	assert.Equal(t, api.WorkerStatusAsleep, scheduledWorkerStatus(mocks.todayAt(7, 47), &sched))
 
 	// Test DaysOfWeek logic, but only with explicit start & end times. The logic
@@ -89,7 +90,7 @@ func TestScheduledWorkerStatus(t *testing.T) {
 	// The mocked "today" is a Tuesday.
 
 	// S N E unmentioned day -> awake
-	sched = persistence.SleepSchedule{DaysOfWeek: "mo we", StartTime: mkToD(9, 0), EndTime: mkToD(18, 0), IsActive: true}
+	sched = persistence.SleepSchedule{DaysOfWeek: "mo we", StartTime: time_of_day.New(9, 0), EndTime: time_of_day.New(18, 0), IsActive: true}
 	assert.Equal(t, api.WorkerStatusAwake, scheduledWorkerStatus(mocks.todayAt(11, 16), &sched))
 
 	// S E N unmentioned day -> awake
@@ -99,7 +100,7 @@ func TestScheduledWorkerStatus(t *testing.T) {
 	assert.Equal(t, api.WorkerStatusAwake, scheduledWorkerStatus(mocks.todayAt(8, 47), &sched))
 
 	// S N E mentioned day -> asleep
-	sched = persistence.SleepSchedule{DaysOfWeek: "tu th fr", StartTime: mkToD(9, 0), EndTime: mkToD(18, 0), IsActive: true}
+	sched = persistence.SleepSchedule{DaysOfWeek: "tu th fr", StartTime: time_of_day.New(9, 0), EndTime: time_of_day.New(18, 0), IsActive: true}
 	assert.Equal(t, api.WorkerStatusAsleep, scheduledWorkerStatus(mocks.todayAt(11, 16), &sched))
 
 	// S E N mentioned day -> awake

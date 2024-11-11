@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"projects.blender.org/studio/flamenco/pkg/api"
+	"projects.blender.org/studio/flamenco/pkg/time_of_day"
 )
 
 const countWorkerTags = `-- name: CountWorkerTags :one
@@ -147,30 +148,40 @@ func (q *Queries) DeleteWorkerTag(ctx context.Context, uuid string) (int64, erro
 }
 
 const fetchSleepSchedulesToCheck = `-- name: FetchSleepSchedulesToCheck :many
-SELECT id, created_at, updated_at, worker_id, is_active, days_of_week, start_time, end_time, next_check FROM sleep_schedules
+SELECT sleep_schedules.id, sleep_schedules.created_at, sleep_schedules.updated_at, sleep_schedules.worker_id, sleep_schedules.is_active, sleep_schedules.days_of_week, sleep_schedules.start_time, sleep_schedules.end_time, sleep_schedules.next_check, workers.uuid as workeruuid, workers.name as worker_name
+FROM sleep_schedules
+LEFT JOIN workers ON workers.id = sleep_schedules.worker_id
 WHERE is_active
 AND (next_check <= ?1 OR next_check IS NULL OR next_check = '')
 `
 
-func (q *Queries) FetchSleepSchedulesToCheck(ctx context.Context, nextCheck sql.NullTime) ([]SleepSchedule, error) {
+type FetchSleepSchedulesToCheckRow struct {
+	SleepSchedule SleepSchedule
+	WorkerUUID    sql.NullString
+	WorkerName    sql.NullString
+}
+
+func (q *Queries) FetchSleepSchedulesToCheck(ctx context.Context, nextCheck sql.NullTime) ([]FetchSleepSchedulesToCheckRow, error) {
 	rows, err := q.db.QueryContext(ctx, fetchSleepSchedulesToCheck, nextCheck)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []SleepSchedule
+	var items []FetchSleepSchedulesToCheckRow
 	for rows.Next() {
-		var i SleepSchedule
+		var i FetchSleepSchedulesToCheckRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.WorkerID,
-			&i.IsActive,
-			&i.DaysOfWeek,
-			&i.StartTime,
-			&i.EndTime,
-			&i.NextCheck,
+			&i.SleepSchedule.ID,
+			&i.SleepSchedule.CreatedAt,
+			&i.SleepSchedule.UpdatedAt,
+			&i.SleepSchedule.WorkerID,
+			&i.SleepSchedule.IsActive,
+			&i.SleepSchedule.DaysOfWeek,
+			&i.SleepSchedule.StartTime,
+			&i.SleepSchedule.EndTime,
+			&i.SleepSchedule.NextCheck,
+			&i.WorkerUUID,
+			&i.WorkerName,
 		); err != nil {
 			return nil, err
 		}
@@ -737,8 +748,8 @@ type SetWorkerSleepScheduleParams struct {
 	WorkerID   int64
 	IsActive   bool
 	DaysOfWeek string
-	StartTime  string
-	EndTime    string
+	StartTime  time_of_day.TimeOfDay
+	EndTime    time_of_day.TimeOfDay
 	NextCheck  sql.NullTime
 }
 
@@ -858,8 +869,8 @@ type Test_CreateWorkerSleepScheduleParams struct {
 	WorkerID   int64
 	IsActive   bool
 	DaysOfWeek string
-	StartTime  string
-	EndTime    string
+	StartTime  time_of_day.TimeOfDay
+	EndTime    time_of_day.TimeOfDay
 	NextCheck  sql.NullTime
 }
 
