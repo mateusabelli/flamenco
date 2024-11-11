@@ -56,9 +56,9 @@ func TestFetchJobBlocklist(t *testing.T) {
 
 	if assert.Len(t, list, 1) {
 		entry := list[0]
-		assert.Equal(t, entry.JobID, job.ID)
-		assert.Equal(t, entry.WorkerID, worker.ID)
-		assert.Equal(t, entry.TaskType, "blender")
+		assert.Equal(t, job.ID, entry.JobID)
+		assert.Equal(t, worker.ID, entry.WorkerID)
+		assert.Equal(t, "blender", entry.TaskType)
 
 		assert.Nil(t, entry.Job, "should NOT fetch the entire job")
 		assert.NotNil(t, entry.Worker, "SHOULD fetch the entire worker")
@@ -107,9 +107,9 @@ func TestRemoveFromJobBlocklist(t *testing.T) {
 
 	if assert.Len(t, list, 1) {
 		entry := list[0]
-		assert.Equal(t, entry.JobID, job.ID)
-		assert.Equal(t, entry.WorkerID, worker.ID)
-		assert.Equal(t, entry.TaskType, "blender")
+		assert.Equal(t, job.ID, entry.JobID)
+		assert.Equal(t, worker.ID, entry.WorkerID)
+		assert.Equal(t, "blender", entry.TaskType)
 	}
 }
 
