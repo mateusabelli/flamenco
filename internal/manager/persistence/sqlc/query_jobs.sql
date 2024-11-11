@@ -258,7 +258,8 @@ VALUES (@created_at, @job_id, @worker_id, @task_type)
 ON CONFLICT DO NOTHING;
 
 -- name: FetchJobBlocklist :many
-SELECT sqlc.embed(job_blocks), sqlc.embed(workers)
+-- Fetch the blocklist of a specific job.
+SELECT job_blocks.id, job_blocks.task_type, workers.uuid as workeruuid, workers.name as worker_name
 FROM job_blocks
 INNER JOIN jobs ON jobs.id = job_blocks.job_id
 INNER JOIN workers on workers.id = job_blocks.worker_id

@@ -65,7 +65,7 @@ type PersistenceService interface {
 
 	// AddWorkerToJobBlocklist prevents this Worker of getting any task, of this type, on this job, from the task scheduler.
 	AddWorkerToJobBlocklist(ctx context.Context, job *persistence.Job, worker *persistence.Worker, taskType string) error
-	FetchJobBlocklist(ctx context.Context, jobUUID string) ([]persistence.JobBlock, error)
+	FetchJobBlocklist(ctx context.Context, jobUUID string) ([]persistence.JobBlockListEntry, error)
 	RemoveFromJobBlocklist(ctx context.Context, jobUUID, workerUUID, taskType string) error
 	ClearJobBlocklist(ctx context.Context, job *persistence.Job) error
 

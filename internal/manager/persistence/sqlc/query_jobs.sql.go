@@ -278,7 +278,7 @@ func (q *Queries) FetchJob(ctx context.Context, uuid string) (Job, error) {
 }
 
 const fetchJobBlocklist = `-- name: FetchJobBlocklist :many
-SELECT job_blocks.id, job_blocks.created_at, job_blocks.job_id, job_blocks.worker_id, job_blocks.task_type, workers.id, workers.created_at, workers.updated_at, workers.uuid, workers.secret, workers.name, workers.address, workers.platform, workers.software, workers.status, workers.last_seen_at, workers.status_requested, workers.lazy_status_request, workers.supported_task_types, workers.deleted_at, workers.can_restart
+SELECT job_blocks.id, job_blocks.task_type, workers.uuid as workeruuid, workers.name as worker_name
 FROM job_blocks
 INNER JOIN jobs ON jobs.id = job_blocks.job_id
 INNER JOIN workers on workers.id = job_blocks.worker_id
@@ -287,10 +287,13 @@ ORDER BY workers.name
 `
 
 type FetchJobBlocklistRow struct {
-	JobBlock JobBlock
-	Worker   Worker
+	ID         int64
+	TaskType   string
+	WorkerUUID string
+	WorkerName string
 }
 
+// Fetch the blocklist of a specific job.
 func (q *Queries) FetchJobBlocklist(ctx context.Context, jobuuid string) ([]FetchJobBlocklistRow, error) {
 	rows, err := q.db.QueryContext(ctx, fetchJobBlocklist, jobuuid)
 	if err != nil {
@@ -301,27 +304,10 @@ func (q *Queries) FetchJobBlocklist(ctx context.Context, jobuuid string) ([]Fetc
 	for rows.Next() {
 		var i FetchJobBlocklistRow
 		if err := rows.Scan(
-			&i.JobBlock.ID,
-			&i.JobBlock.CreatedAt,
-			&i.JobBlock.JobID,
-			&i.JobBlock.WorkerID,
-			&i.JobBlock.TaskType,
-			&i.Worker.ID,
-			&i.Worker.CreatedAt,
-			&i.Worker.UpdatedAt,
-			&i.Worker.UUID,
-			&i.Worker.Secret,
-			&i.Worker.Name,
-			&i.Worker.Address,
-			&i.Worker.Platform,
-			&i.Worker.Software,
-			&i.Worker.Status,
-			&i.Worker.LastSeenAt,
-			&i.Worker.StatusRequested,
-			&i.Worker.LazyStatusRequest,
-			&i.Worker.SupportedTaskTypes,
-			&i.Worker.DeletedAt,
-			&i.Worker.CanRestart,
+			&i.ID,
+			&i.TaskType,
+			&i.WorkerUUID,
+			&i.WorkerName,
 		); err != nil {
 			return nil, err
 		}

@@ -25,9 +25,9 @@ func TestAddWorkerToJobBlocklist(t *testing.T) {
 		require.NoError(t, err)
 		if assert.Len(t, list, 1) {
 			entry := list[0]
-			assert.Equal(t, entry.JobID, int64(job.ID))
-			assert.Equal(t, entry.WorkerID, int64(worker.ID))
-			assert.Equal(t, entry.TaskType, "blender")
+			assert.Equal(t, int64(job.ID), entry.JobID)
+			assert.Equal(t, int64(worker.ID), entry.WorkerID)
+			assert.Equal(t, "blender", entry.TaskType)
 		}
 	}
 
@@ -56,12 +56,9 @@ func TestFetchJobBlocklist(t *testing.T) {
 
 	if assert.Len(t, list, 1) {
 		entry := list[0]
-		assert.Equal(t, job.ID, entry.JobID)
-		assert.Equal(t, worker.ID, entry.WorkerID)
+		assert.Equal(t, worker.Name, entry.WorkerName)
+		assert.Equal(t, worker.UUID, entry.WorkerUUID)
 		assert.Equal(t, "blender", entry.TaskType)
-
-		assert.Nil(t, entry.Job, "should NOT fetch the entire job")
-		assert.NotNil(t, entry.Worker, "SHOULD fetch the entire worker")
 	}
 }
 
@@ -107,8 +104,8 @@ func TestRemoveFromJobBlocklist(t *testing.T) {
 
 	if assert.Len(t, list, 1) {
 		entry := list[0]
-		assert.Equal(t, job.ID, entry.JobID)
-		assert.Equal(t, worker.ID, entry.WorkerID)
+		assert.Equal(t, worker.UUID, entry.WorkerUUID)
+		assert.Equal(t, worker.Name, entry.WorkerName)
 		assert.Equal(t, "blender", entry.TaskType)
 	}
 }

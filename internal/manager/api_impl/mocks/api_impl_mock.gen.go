@@ -16,6 +16,7 @@ import (
 	job_compilers "projects.blender.org/studio/flamenco/internal/manager/job_compilers"
 	last_rendered "projects.blender.org/studio/flamenco/internal/manager/last_rendered"
 	persistence "projects.blender.org/studio/flamenco/internal/manager/persistence"
+	sqlc "projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	api "projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -200,10 +201,10 @@ func (mr *MockPersistenceServiceMockRecorder) FetchJob(arg0, arg1 interface{}) *
 }
 
 // FetchJobBlocklist mocks base method.
-func (m *MockPersistenceService) FetchJobBlocklist(arg0 context.Context, arg1 string) ([]persistence.JobBlock, error) {
+func (m *MockPersistenceService) FetchJobBlocklist(arg0 context.Context, arg1 string) ([]sqlc.FetchJobBlocklistRow, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchJobBlocklist", arg0, arg1)
-	ret0, _ := ret[0].([]persistence.JobBlock)
+	ret0, _ := ret[0].([]sqlc.FetchJobBlocklistRow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

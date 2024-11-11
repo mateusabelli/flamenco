@@ -552,8 +552,8 @@ func (f *Flamenco) FetchJobBlocklist(e echo.Context, jobID string) error {
 	for _, item := range list {
 		apiList = append(apiList, api.JobBlocklistEntry{
 			TaskType:   item.TaskType,
-			WorkerId:   item.Worker.UUID,
-			WorkerName: &item.Worker.Name,
+			WorkerId:   item.WorkerUUID,
+			WorkerName: &item.WorkerName,
 		})
 	}
 

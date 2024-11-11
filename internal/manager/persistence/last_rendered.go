@@ -13,11 +13,6 @@ import (
 // LastRendered only has one entry in its database table, to indicate the job
 // that was the last to receive a "last rendered image" from a Worker.
 // This is used to show the global last-rendered image in the web interface.
-type LastRendered struct {
-	Model
-	JobID uint
-	Job   *Job
-}
 
 // SetLastRendered sets this job as the one with the most recent rendered image.
 func (db *DB) SetLastRendered(ctx context.Context, j *Job) error {

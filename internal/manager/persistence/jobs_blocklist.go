@@ -5,26 +5,12 @@ package persistence
 import (
 	"context"
 	"math"
-	"time"
 
 	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 )
 
-// JobBlock keeps track of which Worker is not allowed to run which task type on which job.
-type JobBlock struct {
-	// Don't include the standard Gorm UpdatedAt or DeletedAt fields, as they're useless here.
-	// Entries will never be updated, and should never be soft-deleted but just purged from existence.
-	ID        uint
-	CreatedAt time.Time
-
-	JobID uint
-	Job   *Job
-
-	WorkerID uint
-	Worker   *Worker
-
-	TaskType string
-}
+// JobBlockListEntry keeps track of which Worker is not allowed to run which task type on a given job.
+type JobBlockListEntry = sqlc.FetchJobBlocklistRow
 
 // AddWorkerToJobBlocklist prevents this Worker of getting any task, of this type, on this job, from the task scheduler.
 func (db *DB) AddWorkerToJobBlocklist(ctx context.Context, job *Job, worker *Worker, taskType string) error {
@@ -50,25 +36,14 @@ func (db *DB) AddWorkerToJobBlocklist(ctx context.Context, job *Job, worker *Wor
 
 // FetchJobBlocklist fetches the blocklist for the given job.
 // Workers are fetched too, and embedded in the returned list.
-func (db *DB) FetchJobBlocklist(ctx context.Context, jobUUID string) ([]JobBlock, error) {
+func (db *DB) FetchJobBlocklist(ctx context.Context, jobUUID string) ([]JobBlockListEntry, error) {
 	queries := db.queries()
 
 	rows, err := queries.FetchJobBlocklist(ctx, jobUUID)
 	if err != nil {
 		return nil, err
 	}
-
-	entries := make([]JobBlock, len(rows))
-	for idx, row := range rows {
-		entries[idx].ID = uint(row.JobBlock.ID)
-		entries[idx].CreatedAt = row.JobBlock.CreatedAt
-		entries[idx].TaskType = row.JobBlock.TaskType
-		entries[idx].JobID = uint(row.JobBlock.JobID)
-		entries[idx].WorkerID = uint(row.JobBlock.WorkerID)
-		entries[idx].Worker = convertSqlcWorker(row.Worker)
-	}
-
-	return entries, nil
+	return rows, err
 }
 
 // ClearJobBlocklist removes the entire blocklist of this job.
