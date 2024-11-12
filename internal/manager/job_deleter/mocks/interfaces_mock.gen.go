@@ -10,7 +10,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	persistence "projects.blender.org/studio/flamenco/internal/manager/persistence"
+	sqlc "projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	api "projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -52,10 +52,10 @@ func (mr *MockPersistenceServiceMockRecorder) DeleteJob(arg0, arg1 interface{}) 
 }
 
 // FetchJob mocks base method.
-func (m *MockPersistenceService) FetchJob(arg0 context.Context, arg1 string) (*persistence.Job, error) {
+func (m *MockPersistenceService) FetchJob(arg0 context.Context, arg1 string) (*sqlc.Job, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchJob", arg0, arg1)
-	ret0, _ := ret[0].(*persistence.Job)
+	ret0, _ := ret[0].(*sqlc.Job)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -109,7 +109,7 @@ func (mr *MockPersistenceServiceMockRecorder) RequestIntegrityCheck() *gomock.Ca
 }
 
 // RequestJobDeletion mocks base method.
-func (m *MockPersistenceService) RequestJobDeletion(arg0 context.Context, arg1 *persistence.Job) error {
+func (m *MockPersistenceService) RequestJobDeletion(arg0 context.Context, arg1 *sqlc.Job) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RequestJobDeletion", arg0, arg1)
 	ret0, _ := ret[0].(error)

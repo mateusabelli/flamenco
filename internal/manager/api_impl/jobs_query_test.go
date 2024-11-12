@@ -25,12 +25,8 @@ func TestFetchJobs(t *testing.T) {
 		JobType:  "test",
 		Priority: 50,
 		Status:   api.JobStatusActive,
-		Settings: persistence.StringInterfaceMap{
-			"result": "/render/frames/exploding.kittens",
-		},
-		Metadata: persistence.StringStringMap{
-			"project": "/projects/exploding-kittens",
-		},
+		Settings: []byte(`{"result": "/render/frames/exploding.kittens"}`),
+		Metadata: []byte(`{"project": "/projects/exploding-kittens"}`),
 	}
 
 	deletionRequestedAt := time.Now()
@@ -76,8 +72,6 @@ func TestFetchJobs(t *testing.T) {
 					Name:     "уходить",
 					Type:     "test",
 					Priority: 75,
-					Settings: &api.JobSettings{},
-					Metadata: &api.JobMetadata{},
 				},
 				Id:                "d912ac69-de48-48ba-8028-35d82cb41451",
 				Status:            api.JobStatusCompleted,
@@ -96,26 +90,25 @@ func TestFetchJob(t *testing.T) {
 	mf := newMockedFlamenco(mockCtrl)
 
 	dbJob := persistence.Job{
-		UUID:     "afc47568-bd9d-4368-8016-e91d945db36d",
-		Name:     "работа",
-		JobType:  "test",
-		Priority: 50,
-		Status:   api.JobStatusActive,
-		Settings: persistence.StringInterfaceMap{
-			"result": "/render/frames/exploding.kittens",
-		},
-		Metadata: persistence.StringStringMap{
-			"project": "/projects/exploding-kittens",
-		},
-		WorkerTag: &persistence.WorkerTag{
-			UUID:        "d86e1b84-5ee2-4784-a178-65963eeb484b",
-			Name:        "Tikkie terug Kees!",
-			Description: "",
-		},
+		UUID:        "afc47568-bd9d-4368-8016-e91d945db36d",
+		Name:        "работа",
+		JobType:     "test",
+		Priority:    50,
+		Status:      api.JobStatusActive,
+		Settings:    []byte(`{"result": "/render/frames/exploding.kittens"}`),
+		Metadata:    []byte(`{"project": "/projects/exploding-kittens"}`),
+		WorkerTagID: sql.NullInt64{Int64: 4477, Valid: true},
+	}
+
+	tag := persistence.WorkerTag{
+		UUID:        "d86e1b84-5ee2-4784-a178-65963eeb484b",
+		Name:        "Tikkie terug Kees!",
+		Description: "",
 	}
 
 	echoCtx := mf.prepareMockedRequest(nil)
 	mf.persistence.EXPECT().FetchJob(gomock.Any(), dbJob.UUID).Return(&dbJob, nil)
+	mf.persistence.EXPECT().FetchWorkerTagByID(gomock.Any(), dbJob.WorkerTagID.Int64).Return(tag, nil)
 
 	require.NoError(t, mf.flamenco.FetchJob(echoCtx, dbJob.UUID))
 
@@ -152,30 +145,27 @@ func TestFetchTask(t *testing.T) {
 	taskWorker := persistence.Worker{UUID: workerUUID, Name: "Radnik", Address: "Slapić"}
 
 	dbTask := persistence.Task{
-		Model: persistence.Model{
-			ID:        327,
-			CreatedAt: mf.clock.Now().Add(-30 * time.Second),
-			UpdatedAt: mf.clock.Now(),
-		},
-		UUID:         taskUUID,
-		Name:         "симпатичная задача",
-		Type:         "misc",
-		JobID:        0,
-		Job:          &persistence.Job{UUID: jobUUID},
-		Priority:     47,
-		Status:       api.TaskStatusQueued,
-		WorkerID:     new(uint),
-		Worker:       &taskWorker,
-		Dependencies: []*persistence.Task{},
-		Activity:     "used in unit test",
+		ID:        327,
+		CreatedAt: mf.clock.Now().Add(-30 * time.Second),
+		UpdatedAt: sql.NullTime{Time: mf.clock.Now(), Valid: true},
+		UUID:      taskUUID,
+		Name:      "симпатичная задача",
+		Type:      "misc",
+		JobID:     332277,
+		Priority:  47,
+		Status:    api.TaskStatusQueued,
+		WorkerID:  sql.NullInt64{Int64: taskWorker.ID, Valid: true},
+		Activity:  "used in unit test",
 
-		Commands: []persistence.Command{
-			{Name: "move-directory",
-				Parameters: map[string]interface{}{
+		Commands: []byte(`[
+			{
+				"name": "move-directory",
+				"parameters": {
 					"dest": "/render/_flamenco/tests/renders/2022-04-29 Weekly/2022-04-29_140531",
-					"src":  "/render/_flamenco/tests/renders/2022-04-29 Weekly/2022-04-29_140531__intermediate-2022-04-29_140531",
-				}},
-		},
+					"src":  "/render/_flamenco/tests/renders/2022-04-29 Weekly/2022-04-29_140531__intermediate-2022-04-29_140531"
+				}
+			}
+		]`),
 	}
 
 	expectAPITask := api.Task{
@@ -187,7 +177,7 @@ func TestFetchTask(t *testing.T) {
 		Priority: 47,
 		Status:   api.TaskStatusQueued,
 		TaskType: "misc",
-		Updated:  dbTask.UpdatedAt,
+		Updated:  dbTask.UpdatedAt.Time,
 		Worker:   &api.TaskWorker{Id: workerUUID, Name: "Radnik", Address: "Slapić"},
 
 		Commands: []api.Command{
@@ -203,11 +193,18 @@ func TestFetchTask(t *testing.T) {
 		}),
 	}
 
+	taskJobWorker := persistence.TaskJobWorker{
+		Task:       dbTask,
+		JobUUID:    jobUUID,
+		WorkerUUID: workerUUID,
+	}
+
 	echoCtx := mf.prepareMockedRequest(nil)
 	ctx := echoCtx.Request().Context()
-	mf.persistence.EXPECT().FetchTask(ctx, taskUUID).Return(&dbTask, nil)
+	mf.persistence.EXPECT().FetchTask(ctx, taskUUID).Return(taskJobWorker, nil)
 	mf.persistence.EXPECT().FetchTaskFailureList(ctx, &dbTask).
 		Return([]*persistence.Worker{&taskWorker}, nil)
+	mf.persistence.EXPECT().FetchWorker(ctx, workerUUID).Return(&taskWorker, nil)
 
 	err := mf.flamenco.FetchTask(echoCtx, taskUUID)
 	require.NoError(t, err)

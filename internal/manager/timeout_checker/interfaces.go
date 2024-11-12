@@ -9,7 +9,6 @@ import (
 	"github.com/rs/zerolog"
 	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
-	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/internal/manager/task_state_machine"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
@@ -18,9 +17,11 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/interfaces_mock.gen.go -package mocks projects.blender.org/studio/flamenco/internal/manager/timeout_checker PersistenceService,TaskStateMachine,LogStorage,ChangeBroadcaster
 
 type PersistenceService interface {
-	FetchTimedOutTasks(ctx context.Context, untouchedSince time.Time) ([]*persistence.Task, error)
+	FetchTimedOutTasks(ctx context.Context, untouchedSince time.Time) ([]persistence.TimedOutTaskInfo, error)
 	FetchTimedOutWorkers(ctx context.Context, lastSeenBefore time.Time) ([]*persistence.Worker, error)
-	SaveWorker(ctx context.Context, w *sqlc.Worker) error
+	FetchWorker(ctx context.Context, workerUUID string) (*persistence.Worker, error)
+	SaveWorker(ctx context.Context, w *persistence.Worker) error
+	FetchJob(ctx context.Context, jobUUID string) (*persistence.Job, error)
 }
 
 var _ PersistenceService = (*persistence.DB)(nil)

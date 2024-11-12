@@ -20,6 +20,11 @@ func (ss *SleepSchedule) SetNextCheck(nextCheck time.Time) {
 	}
 }
 
+// DeleteRequested returns whether deletion of this job was requested.
+func (j *Job) DeleteRequested() bool {
+	return j.DeleteRequestedAt.Valid
+}
+
 func (w *Worker) Identifier() string {
 	// Avoid a panic when worker.Identifier() is called on a nil pointer.
 	if w == nil {

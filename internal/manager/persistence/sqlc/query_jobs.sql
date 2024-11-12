@@ -117,18 +117,19 @@ LEFT JOIN workers ON (tasks.worker_id = workers.id)
 WHERE tasks.uuid = @uuid;
 
 -- name: FetchTasksOfWorkerInStatus :many
-SELECT sqlc.embed(tasks), jobs.UUID as jobUUID
+SELECT sqlc.embed(tasks), jobs.uuid as jobuuid
 FROM tasks
-LEFT JOIN jobs ON (tasks.job_id = jobs.id)
+INNER JOIN jobs ON (tasks.job_id = jobs.id)
 WHERE tasks.worker_id = @worker_id
   AND tasks.status = @task_status;
 
 -- name: FetchTasksOfWorkerInStatusOfJob :many
 SELECT sqlc.embed(tasks)
 FROM tasks
+LEFT JOIN jobs ON (tasks.job_id = jobs.id)
 WHERE tasks.worker_id = @worker_id
-  AND tasks.job_id = @job_id
-  AND tasks.status = @task_status;
+  AND tasks.status = @task_status
+  AND jobs.uuid = @jobuuid;
 
 -- name: FetchTasksOfJob :many
 SELECT sqlc.embed(tasks), workers.UUID as workerUUID
@@ -199,7 +200,7 @@ WHERE id=@id;
 UPDATE tasks SET
   updated_at = @updated_at,
   last_touched_at = @last_touched_at
-WHERE id=@id;
+WHERE uuid=@uuid;
 
 -- name: JobCountTasksInStatus :one
 -- Fetch number of tasks in the given status, of the given job.
@@ -234,6 +235,13 @@ WHERE task_id in (SELECT id FROM tasks WHERE job_id=@job_id);
 SELECT sqlc.embed(workers) FROM workers
 INNER JOIN task_failures TF on TF.worker_id=workers.id
 WHERE TF.task_id=@task_id;
+
+-- name: FetchJobIDFromUUID :one
+-- Fetch the job's database ID by its UUID.
+--
+-- This query is here to keep the SetLastRendered query below simpler,
+-- mostly because that query is alread hitting a limitation of sqlc.
+SELECT id FROM jobs WHERE uuid=@jobuuid;
 
 -- name: SetLastRendered :exec
 -- Set the 'last rendered' job info.
@@ -309,9 +317,10 @@ AND WTM.worker_tag_id = @worker_tag_id;
 -- name: CountTaskFailuresOfWorker :one
 SELECT count(TF.task_id) FROM task_failures TF
 INNER JOIN tasks T ON TF.task_id = T.id
+INNER JOIN jobs J ON T.job_id = J.id
 WHERE
     TF.worker_id = @worker_id
-AND T.job_id = @job_id
+AND J.uuid = @jobuuid
 AND T.type = @task_type;
 
 
@@ -326,11 +335,17 @@ SELECT status, count(id) as status_count FROM jobs
 GROUP BY status;
 
 -- name: FetchTimedOutTasks :many
-SELECT *
+SELECT sqlc.embed(tasks),
+  -- Cast to remove nullability from the generated structs.
+  CAST(jobs.uuid AS VARCHAR(36)) as jobuuid,
+  CAST(workers.name AS VARCHAR(64)) as worker_name,
+  CAST(workers.uuid AS VARCHAR(36)) as workeruuid
 FROM tasks
+LEFT JOIN jobs ON jobs.id = tasks.job_id
+LEFT JOIN workers ON workers.id = tasks.worker_id
 WHERE
-    status = @task_status
-AND last_touched_at <= @untouched_since;
+    tasks.status = @task_status
+AND tasks.last_touched_at <= @untouched_since;
 
 -- name: Test_CountJobs :one
 -- Count the number of jobs in the database. Only used in unit tests.

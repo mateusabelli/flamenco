@@ -54,6 +54,11 @@ func (db *DB) FetchWorkerTag(ctx context.Context, uuid string) (WorkerTag, error
 	return workerTag, nil
 }
 
+func (db *DB) FetchWorkerTagByID(ctx context.Context, id int64) (WorkerTag, error) {
+	queries := db.queries()
+	return fetchWorkerTagByID(ctx, queries, id)
+}
+
 // fetchWorkerTagByID fetches the worker tag using the given database instance.
 func fetchWorkerTagByID(ctx context.Context, queries *sqlc.Queries, id int64) (WorkerTag, error) {
 	workerTag, err := queries.FetchWorkerTagByID(ctx, id)

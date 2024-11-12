@@ -4,6 +4,7 @@ package api_impl
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -32,17 +33,21 @@ func TestTaskUpdate(t *testing.T) {
 	// Construct the task that's supposed to be updated.
 	taskID := "181eab68-1123-4790-93b1-94309a899411"
 	jobID := "e4719398-7cfa-4877-9bab-97c2d6c158b5"
-	mockJob := persistence.Job{UUID: jobID}
+	mockJob := persistence.Job{ID: 1234, UUID: jobID}
 	mockTask := persistence.Task{
 		UUID:     taskID,
-		Worker:   &worker,
-		WorkerID: ptr(uint(worker.ID)),
-		Job:      &mockJob,
+		WorkerID: sql.NullInt64{Int64: worker.ID, Valid: true},
+		JobID:    mockJob.ID,
 		Activity: "pre-update activity",
 	}
 
 	// Expect the task to be fetched.
-	mf.persistence.EXPECT().FetchTask(gomock.Any(), taskID).Return(&mockTask, nil)
+	taskJobWorker := persistence.TaskJobWorker{
+		Task:       mockTask,
+		JobUUID:    jobID,
+		WorkerUUID: worker.UUID,
+	}
+	mf.persistence.EXPECT().FetchTask(gomock.Any(), taskID).Return(taskJobWorker, nil)
 
 	// Expect the task status change to be handed to the state machine.
 	var statusChangedtask persistence.Task
@@ -64,10 +69,10 @@ func TestTaskUpdate(t *testing.T) {
 	mf.logStorage.EXPECT().Write(gomock.Any(), jobID, taskID, "line1\nline2\n")
 
 	// Expect a 'touch' of the task.
-	var touchedTask persistence.Task
+	var touchedTaskUUID string
 	mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, task *persistence.Task) error {
-			touchedTask = *task
+		func(ctx context.Context, taskUUID string) error {
+			touchedTaskUUID = taskUUID
 			return nil
 		})
 	mf.persistence.EXPECT().WorkerSeen(gomock.Any(), &worker)
@@ -81,7 +86,7 @@ func TestTaskUpdate(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, mockTask.UUID, statusChangedtask.UUID)
 	assert.Equal(t, mockTask.UUID, actUpdatedTask.UUID)
-	assert.Equal(t, mockTask.UUID, touchedTask.UUID)
+	assert.Equal(t, mockTask.UUID, touchedTaskUUID)
 	assert.Equal(t, "testing", statusChangedtask.Activity)
 	assert.Equal(t, "testing", actUpdatedTask.Activity)
 }
@@ -101,12 +106,11 @@ func TestTaskUpdateFailed(t *testing.T) {
 	// Construct the task that's supposed to be updated.
 	taskID := "181eab68-1123-4790-93b1-94309a899411"
 	jobID := "e4719398-7cfa-4877-9bab-97c2d6c158b5"
-	mockJob := persistence.Job{UUID: jobID}
+	mockJob := persistence.Job{ID: 1234, UUID: jobID}
 	mockTask := persistence.Task{
 		UUID:     taskID,
-		Worker:   &worker,
-		WorkerID: ptr(uint(worker.ID)),
-		Job:      &mockJob,
+		WorkerID: sql.NullInt64{Int64: worker.ID, Valid: true},
+		JobID:    mockJob.ID,
 		Activity: "pre-update activity",
 		Type:     "misc",
 	}
@@ -121,20 +125,26 @@ func TestTaskUpdateFailed(t *testing.T) {
 
 	const numSubTests = 2
 	// Expect the task to be fetched for each sub-test:
-	mf.persistence.EXPECT().FetchTask(gomock.Any(), taskID).Return(&mockTask, nil).Times(numSubTests)
+	taskJobWorker := persistence.TaskJobWorker{
+		Task:       mockTask,
+		JobUUID:    jobID,
+		WorkerUUID: worker.UUID,
+	}
+	mf.persistence.EXPECT().FetchTask(gomock.Any(), taskID).Return(taskJobWorker, nil).Times(numSubTests)
 
 	// Expect a 'touch' of the task for each sub-test:
-	mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), &mockTask).Times(numSubTests)
+	mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), taskID).Times(numSubTests)
 	mf.persistence.EXPECT().WorkerSeen(gomock.Any(), &worker).Times(numSubTests)
 
 	// Mimick that this is always first failure of this worker/job/tasktype combo:
-	mf.persistence.EXPECT().CountTaskFailuresOfWorker(gomock.Any(), &mockJob, &worker, "misc").Return(0, nil).Times(numSubTests)
+	mf.persistence.EXPECT().CountTaskFailuresOfWorker(gomock.Any(), jobID, worker.ID, "misc").Return(0, nil).Times(numSubTests)
 
 	{
 		// Expect the Worker to be added to the list of failed workers.
 		// This returns 1, which is less than the failure threshold -> soft failure expected.
 		mf.persistence.EXPECT().AddWorkerToTaskFailedList(gomock.Any(), &mockTask, &worker).Return(1, nil)
 
+		mf.persistence.EXPECT().FetchJobByID(gomock.Any(), mockTask.JobID).Return(&mockJob, nil)
 		mf.persistence.EXPECT().WorkersLeftToRun(gomock.Any(), &mockJob, "misc").
 			Return(map[string]bool{"60453eec-5a26-43e9-9da2-d00506d492cc": true, "ce312357-29cd-4389-81ab-4d43e30945f8": true}, nil)
 		mf.persistence.EXPECT().FetchTaskFailureList(gomock.Any(), &mockTask).
@@ -185,12 +195,11 @@ func TestBlockingAfterFailure(t *testing.T) {
 	// Construct the task that's supposed to be updated.
 	taskID := "181eab68-1123-4790-93b1-94309a899411"
 	jobID := "e4719398-7cfa-4877-9bab-97c2d6c158b5"
-	mockJob := persistence.Job{UUID: jobID}
+	mockJob := persistence.Job{ID: 1234, UUID: jobID}
 	mockTask := persistence.Task{
 		UUID:     taskID,
-		Worker:   &worker,
-		WorkerID: ptr(uint(worker.ID)),
-		Job:      &mockJob,
+		WorkerID: sql.NullInt64{Int64: worker.ID, Valid: true},
+		JobID:    mockJob.ID,
 		Activity: "pre-update activity",
 		Type:     "misc",
 	}
@@ -205,26 +214,32 @@ func TestBlockingAfterFailure(t *testing.T) {
 
 	const numSubTests = 3
 	// Expect the task to be fetched for each sub-test:
-	mf.persistence.EXPECT().FetchTask(gomock.Any(), taskID).Return(&mockTask, nil).Times(numSubTests)
+	taskJobWorker := persistence.TaskJobWorker{
+		Task:       mockTask,
+		JobUUID:    jobID,
+		WorkerUUID: worker.UUID,
+	}
+	mf.persistence.EXPECT().FetchTask(gomock.Any(), taskID).Return(taskJobWorker, nil).Times(numSubTests)
 
 	// Expect a 'touch' of the task for each sub-test:
-	mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), &mockTask).Times(numSubTests)
+	mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), taskID).Times(numSubTests)
 	mf.persistence.EXPECT().WorkerSeen(gomock.Any(), &worker).Times(numSubTests)
 
 	// Mimick that this is the 3rd of this worker/job/tasktype combo, and thus should trigger a block.
 	// Returns 2 because there have been 2 previous failures.
 	mf.persistence.EXPECT().
-		CountTaskFailuresOfWorker(gomock.Any(), &mockJob, &worker, "misc").
+		CountTaskFailuresOfWorker(gomock.Any(), jobID, worker.ID, "misc").
 		Return(2, nil).
 		Times(numSubTests)
 
 	// Expect the worker to be blocked.
 	mf.persistence.EXPECT().
-		AddWorkerToJobBlocklist(gomock.Any(), &mockJob, &worker, "misc").
+		AddWorkerToJobBlocklist(gomock.Any(), mockJob.ID, worker.ID, "misc").
 		Times(numSubTests)
 
 	{
 		// Mimick that there is another worker to work on this task, so the job should continue happily.
+		mf.persistence.EXPECT().FetchJobByID(gomock.Any(), mockTask.JobID).Return(&mockJob, nil).Times(2)
 		mf.persistence.EXPECT().WorkersLeftToRun(gomock.Any(), &mockJob, "misc").
 			Return(map[string]bool{"60453eec-5a26-43e9-9da2-d00506d492cc": true, "ce312357-29cd-4389-81ab-4d43e30945f8": true}, nil).Times(2)
 		mf.persistence.EXPECT().FetchTaskFailureList(gomock.Any(), &mockTask).
@@ -242,7 +257,7 @@ func TestBlockingAfterFailure(t *testing.T) {
 		// Because the job didn't fail in its entirety, the tasks previously failed
 		// by the Worker should be requeued so they can be picked up by another.
 		mf.stateMachine.EXPECT().RequeueFailedTasksOfWorkerOfJob(
-			gomock.Any(), &worker, &mockJob,
+			gomock.Any(), &worker, jobID,
 			"worker дрон was blocked from tasks of type \"misc\"")
 
 		// Do the call.
@@ -255,6 +270,7 @@ func TestBlockingAfterFailure(t *testing.T) {
 
 	{
 		// Test without any workers left to run these tasks on this job due to blocklisting. This should fail the entire job.
+		mf.persistence.EXPECT().FetchJobByID(gomock.Any(), mockTask.JobID).Return(&mockJob, nil)
 		mf.persistence.EXPECT().WorkersLeftToRun(gomock.Any(), &mockJob, "misc").
 			Return(map[string]bool{}, nil)
 		mf.persistence.EXPECT().FetchTaskFailureList(gomock.Any(), &mockTask).
@@ -272,7 +288,7 @@ func TestBlockingAfterFailure(t *testing.T) {
 
 		// Expect failure of the job.
 		mf.stateMachine.EXPECT().
-			JobStatusChange(gomock.Any(), &mockJob, api.JobStatusFailed, "no more workers left to run tasks of type \"misc\"")
+			JobStatusChange(gomock.Any(), jobID, api.JobStatusFailed, "no more workers left to run tasks of type \"misc\"")
 
 		// Because the job failed, there is no need to re-queue any tasks previously failed by this worker.
 
@@ -290,6 +306,7 @@ func TestBlockingAfterFailure(t *testing.T) {
 		theOtherFailingWorker := persistence.Worker{
 			UUID: "ce312357-29cd-4389-81ab-4d43e30945f8",
 		}
+		mf.persistence.EXPECT().FetchJobByID(gomock.Any(), mockTask.JobID).Return(&mockJob, nil)
 		mf.persistence.EXPECT().WorkersLeftToRun(gomock.Any(), &mockJob, "misc").
 			Return(map[string]bool{theOtherFailingWorker.UUID: true}, nil)
 		mf.persistence.EXPECT().FetchTaskFailureList(gomock.Any(), &mockTask).
@@ -307,7 +324,7 @@ func TestBlockingAfterFailure(t *testing.T) {
 
 		// Expect failure of the job.
 		mf.stateMachine.EXPECT().
-			JobStatusChange(gomock.Any(), &mockJob, api.JobStatusFailed, "no more workers left to run tasks of type \"misc\"")
+			JobStatusChange(gomock.Any(), jobID, api.JobStatusFailed, "no more workers left to run tasks of type \"misc\"")
 
 		// Because the job failed, there is no need to re-queue any tasks previously failed by this worker.
 
@@ -335,12 +352,11 @@ func TestJobFailureAfterWorkerTaskFailure(t *testing.T) {
 	// Construct the task that's supposed to be updated.
 	taskID := "181eab68-1123-4790-93b1-94309a899411"
 	jobID := "e4719398-7cfa-4877-9bab-97c2d6c158b5"
-	mockJob := persistence.Job{UUID: jobID}
+	mockJob := persistence.Job{ID: 1234, UUID: jobID}
 	mockTask := persistence.Task{
 		UUID:     taskID,
-		Worker:   &worker,
-		WorkerID: ptr(uint(worker.ID)),
-		Job:      &mockJob,
+		WorkerID: sql.NullInt64{Int64: worker.ID, Valid: true},
+		JobID:    mockJob.ID,
 		Activity: "pre-update activity",
 		Type:     "misc",
 	}
@@ -354,15 +370,21 @@ func TestJobFailureAfterWorkerTaskFailure(t *testing.T) {
 
 	mf.config.EXPECT().Get().Return(&conf).Times(2)
 
-	mf.persistence.EXPECT().FetchTask(gomock.Any(), taskID).Return(&mockTask, nil)
+	taskJobWorker := persistence.TaskJobWorker{
+		Task:       mockTask,
+		JobUUID:    jobID,
+		WorkerUUID: worker.UUID,
+	}
+	mf.persistence.EXPECT().FetchTask(gomock.Any(), taskID).Return(taskJobWorker, nil)
 
-	mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), &mockTask)
+	mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), taskID)
 	mf.persistence.EXPECT().WorkerSeen(gomock.Any(), &worker)
 
-	mf.persistence.EXPECT().CountTaskFailuresOfWorker(gomock.Any(), &mockJob, &worker, "misc").Return(0, nil)
+	mf.persistence.EXPECT().CountTaskFailuresOfWorker(gomock.Any(), jobID, worker.ID, "misc").Return(0, nil)
 
 	mf.persistence.EXPECT().AddWorkerToTaskFailedList(gomock.Any(), &mockTask, &worker).Return(1, nil)
 
+	mf.persistence.EXPECT().FetchJobByID(gomock.Any(), mockTask.JobID).Return(&mockJob, nil)
 	mf.persistence.EXPECT().WorkersLeftToRun(gomock.Any(), &mockJob, "misc").
 		Return(map[string]bool{"e7632d62-c3b8-4af0-9e78-01752928952c": true}, nil)
 	mf.persistence.EXPECT().FetchTaskFailureList(gomock.Any(), &mockTask).
@@ -376,7 +398,7 @@ func TestJobFailureAfterWorkerTaskFailure(t *testing.T) {
 
 	// Expect failure of the job.
 	mf.stateMachine.EXPECT().
-		JobStatusChange(gomock.Any(), &mockJob, api.JobStatusFailed, "no more workers left to run tasks of type \"misc\"")
+		JobStatusChange(gomock.Any(), jobID, api.JobStatusFailed, "no more workers left to run tasks of type \"misc\"")
 
 	// Do the call
 	echoCtx := mf.prepareMockedJSONRequest(taskUpdate)

@@ -5,42 +5,39 @@ import (
 	"context"
 
 	"github.com/rs/zerolog/log"
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
+type TaskSummary = sqlc.QueryJobTaskSummariesRow
+
 // QueryJobTaskSummaries retrieves all tasks of the job, but not all fields of those tasks.
 // Fields are synchronised with api.TaskSummary.
-func (db *DB) QueryJobTaskSummaries(ctx context.Context, jobUUID string) ([]*Task, error) {
+func (db *DB) QueryJobTaskSummaries(ctx context.Context, jobUUID string) ([]TaskSummary, error) {
 	logger := log.Ctx(ctx)
 	logger.Debug().Str("job", jobUUID).Msg("querying task summaries")
 
 	queries := db.queries()
-	sqlcPartialTasks, err := queries.QueryJobTaskSummaries(ctx, jobUUID)
+	summaries, err := queries.QueryJobTaskSummaries(ctx, jobUUID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert to partial GORM tasks.
-	gormTasks := make([]*Task, len(sqlcPartialTasks))
-	for index, task := range sqlcPartialTasks {
-		gormTask := Task{
-			Model: Model{
-				ID:        uint(task.ID),
-				UpdatedAt: task.UpdatedAt.Time,
-			},
-
+	result := make([]TaskSummary, len(summaries))
+	for index, task := range summaries {
+		result[index] = TaskSummary{
+			ID:         task.ID,
+			UpdatedAt:  task.UpdatedAt,
 			UUID:       task.UUID,
 			Name:       task.Name,
 			Type:       task.Type,
-			IndexInJob: int(task.IndexInJob),
-			Priority:   int(task.Priority),
+			IndexInJob: task.IndexInJob,
+			Priority:   task.Priority,
 			Status:     api.TaskStatus(task.Status),
-			JobUUID:    jobUUID,
 		}
-		gormTasks[index] = &gormTask
 	}
 
-	return gormTasks, nil
+	return result, nil
 }
 
 // JobStatusCount is a mapping from job status to the number of jobs in that status.

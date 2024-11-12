@@ -11,7 +11,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	zerolog "github.com/rs/zerolog"
-	persistence "projects.blender.org/studio/flamenco/internal/manager/persistence"
 	sqlc "projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	api "projects.blender.org/studio/flamenco/pkg/api"
 )
@@ -39,11 +38,26 @@ func (m *MockPersistenceService) EXPECT() *MockPersistenceServiceMockRecorder {
 	return m.recorder
 }
 
+// FetchJob mocks base method.
+func (m *MockPersistenceService) FetchJob(arg0 context.Context, arg1 string) (*sqlc.Job, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchJob", arg0, arg1)
+	ret0, _ := ret[0].(*sqlc.Job)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchJob indicates an expected call of FetchJob.
+func (mr *MockPersistenceServiceMockRecorder) FetchJob(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchJob", reflect.TypeOf((*MockPersistenceService)(nil).FetchJob), arg0, arg1)
+}
+
 // FetchTimedOutTasks mocks base method.
-func (m *MockPersistenceService) FetchTimedOutTasks(arg0 context.Context, arg1 time.Time) ([]*persistence.Task, error) {
+func (m *MockPersistenceService) FetchTimedOutTasks(arg0 context.Context, arg1 time.Time) ([]sqlc.FetchTimedOutTasksRow, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchTimedOutTasks", arg0, arg1)
-	ret0, _ := ret[0].([]*persistence.Task)
+	ret0, _ := ret[0].([]sqlc.FetchTimedOutTasksRow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -67,6 +81,21 @@ func (m *MockPersistenceService) FetchTimedOutWorkers(arg0 context.Context, arg1
 func (mr *MockPersistenceServiceMockRecorder) FetchTimedOutWorkers(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchTimedOutWorkers", reflect.TypeOf((*MockPersistenceService)(nil).FetchTimedOutWorkers), arg0, arg1)
+}
+
+// FetchWorker mocks base method.
+func (m *MockPersistenceService) FetchWorker(arg0 context.Context, arg1 string) (*sqlc.Worker, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchWorker", arg0, arg1)
+	ret0, _ := ret[0].(*sqlc.Worker)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchWorker indicates an expected call of FetchWorker.
+func (mr *MockPersistenceServiceMockRecorder) FetchWorker(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchWorker", reflect.TypeOf((*MockPersistenceService)(nil).FetchWorker), arg0, arg1)
 }
 
 // SaveWorker mocks base method.
@@ -121,7 +150,7 @@ func (mr *MockTaskStateMachineMockRecorder) RequeueActiveTasksOfWorker(arg0, arg
 }
 
 // TaskStatusChange mocks base method.
-func (m *MockTaskStateMachine) TaskStatusChange(arg0 context.Context, arg1 *persistence.Task, arg2 api.TaskStatus) error {
+func (m *MockTaskStateMachine) TaskStatusChange(arg0 context.Context, arg1 *sqlc.Task, arg2 api.TaskStatus) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TaskStatusChange", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

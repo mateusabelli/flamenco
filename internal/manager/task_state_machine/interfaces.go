@@ -33,9 +33,11 @@ type PersistenceService interface {
 	UpdateJobsTaskStatusesConditional(ctx context.Context, job *persistence.Job,
 		statusesToUpdate []api.TaskStatus, taskStatus api.TaskStatus, activity string) error
 
+	FetchJob(ctx context.Context, jobUUID string) (*persistence.Job, error)
+	FetchJobByID(ctx context.Context, jobID int64) (*persistence.Job, error)
 	FetchJobsInStatus(ctx context.Context, jobStatuses ...api.JobStatus) ([]*persistence.Job, error)
-	FetchTasksOfWorkerInStatus(context.Context, *persistence.Worker, api.TaskStatus) ([]*persistence.Task, error)
-	FetchTasksOfWorkerInStatusOfJob(context.Context, *persistence.Worker, api.TaskStatus, *persistence.Job) ([]*persistence.Task, error)
+	FetchTasksOfWorkerInStatus(context.Context, *persistence.Worker, api.TaskStatus) ([]persistence.TaskJob, error)
+	FetchTasksOfWorkerInStatusOfJob(ctx context.Context, worker *persistence.Worker, status api.TaskStatus, jobUUID string) ([]*persistence.Task, error)
 }
 
 // PersistenceService should be a subset of persistence.DB

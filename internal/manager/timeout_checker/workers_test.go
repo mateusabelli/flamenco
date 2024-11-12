@@ -38,7 +38,7 @@ func TestWorkerTimeout(t *testing.T) {
 	}
 
 	// No tasks are timing out in this test.
-	mocks.persist.EXPECT().FetchTimedOutTasks(mocks.ctx, gomock.Any()).Return([]*persistence.Task{}, nil)
+	mocks.persist.EXPECT().FetchTimedOutTasks(mocks.ctx, gomock.Any()).Return([]persistence.TimedOutTaskInfo{}, nil)
 
 	mocks.persist.EXPECT().FetchTimedOutWorkers(mocks.ctx, gomock.Any()).
 		Return([]*persistence.Worker{&worker}, nil)

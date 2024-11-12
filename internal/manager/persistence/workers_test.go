@@ -95,26 +95,29 @@ func TestFetchWorkerTask(t *testing.T) {
 
 	assignedTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	require.Equal(t, assignedTask.UUID, authTask1.UUID)
+	require.Equal(t, authTask1.UUID, assignedTask.Task.UUID)
+	require.Equal(t, jobUUID, assignedTask.JobUUID)
+	require.Equal(t, atj.JobType, assignedTask.JobType)
+	require.Equal(t, atj.Priority, int(assignedTask.JobPriority))
 
 	{ // Assigned task should be returned.
 		foundTask, err := db.FetchWorkerTask(ctx, &w)
 		require.NoError(t, err)
 		require.NotNil(t, foundTask)
-		assert.Equal(t, assignedTask.UUID, foundTask.UUID)
-		assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
+		assert.Equal(t, assignedTask.Task.UUID, foundTask.Task.UUID)
+		assert.Equal(t, assignedTask.JobUUID, foundTask.JobUUID, "the job UUID should be returned as well")
 	}
 
 	// Set the task to 'completed'.
-	assignedTask.Status = api.TaskStatusCompleted
-	require.NoError(t, db.SaveTaskStatus(ctx, assignedTask))
+	assignedTask.Task.Status = api.TaskStatusCompleted
+	require.NoError(t, db.SaveTaskStatus(ctx, &assignedTask.Task))
 
 	{ // Completed-but-last-assigned task should be returned.
 		foundTask, err := db.FetchWorkerTask(ctx, &w)
 		require.NoError(t, err)
 		require.NotNil(t, foundTask)
-		assert.Equal(t, assignedTask.UUID, foundTask.UUID)
-		assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
+		assert.Equal(t, assignedTask.Task.UUID, foundTask.Task.UUID)
+		assert.Equal(t, jobUUID, foundTask.JobUUID, "the job UUID should be returned as well")
 	}
 
 	// Assign another task. Since the remainder of this test depends on the order
@@ -125,26 +128,26 @@ func TestFetchWorkerTask(t *testing.T) {
 	newlyAssignedTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
 	require.NotNil(t, newlyAssignedTask)
-	require.Equal(t, newlyAssignedTask.UUID, authTask2.UUID)
+	require.Equal(t, newlyAssignedTask.Task.UUID, authTask2.UUID)
 
 	{ // Newly assigned task should be returned.
 		foundTask, err := db.FetchWorkerTask(ctx, &w)
 		require.NoError(t, err)
 		require.NotNil(t, foundTask)
-		assert.Equal(t, newlyAssignedTask.UUID, foundTask.UUID)
-		assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
+		assert.Equal(t, newlyAssignedTask.Task.UUID, foundTask.Task.UUID)
+		assert.Equal(t, jobUUID, foundTask.JobUUID, "the job UUID should be returned as well")
 	}
 
 	// Set the new task to 'completed'.
-	newlyAssignedTask.Status = api.TaskStatusCompleted
-	require.NoError(t, db.SaveTaskStatus(ctx, newlyAssignedTask))
+	newlyAssignedTask.Task.Status = api.TaskStatusCompleted
+	require.NoError(t, db.SaveTaskStatus(ctx, &newlyAssignedTask.Task))
 
 	{ // Completed-but-last-assigned task should be returned.
 		foundTask, err := db.FetchWorkerTask(ctx, &w)
 		require.NoError(t, err)
 		require.NotNil(t, foundTask)
-		assert.Equal(t, newlyAssignedTask.UUID, foundTask.UUID)
-		assert.Equal(t, jobUUID, foundTask.Job.UUID, "the job UUID should be returned as well")
+		assert.Equal(t, newlyAssignedTask.Task.UUID, foundTask.Task.UUID)
+		assert.Equal(t, jobUUID, foundTask.JobUUID, "the job UUID should be returned as well")
 	}
 
 }
@@ -309,10 +312,9 @@ func TestDeleteWorker(t *testing.T) {
 	persistAuthoredJob(t, ctx, db, authJob)
 	taskUUID := authJob.Tasks[0].UUID
 	{
-		task, err := db.FetchTask(ctx, taskUUID)
+		taskJobWorker, err := db.FetchTask(ctx, taskUUID)
 		require.NoError(t, err)
-		task.Worker = &w1
-		require.NoError(t, db.SaveTask(ctx, task))
+		require.NoError(t, db.TaskAssignToWorker(ctx, &taskJobWorker.Task, &w1))
 	}
 
 	// Delete the worker.
@@ -320,12 +322,11 @@ func TestDeleteWorker(t *testing.T) {
 
 	// Check the task after deletion of the Worker.
 	{
-		fetchedTask, err := db.FetchTask(ctx, taskUUID)
+		taskJobWorker, err := db.FetchTask(ctx, taskUUID)
 		require.NoError(t, err)
-		assert.Equal(t, taskUUID, fetchedTask.UUID)
-		assert.Equal(t, w1.UUID, fetchedTask.Worker.UUID)
-		assert.NotZero(t, fetchedTask.Worker.DeletedAt.Time)
-		assert.True(t, fetchedTask.Worker.DeletedAt.Valid)
+		assert.Equal(t, taskUUID, taskJobWorker.Task.UUID)
+		assert.Equal(t, w1.UUID, taskJobWorker.WorkerUUID)
+		assert.Equal(t, authJob.JobID, taskJobWorker.JobUUID)
 	}
 }
 

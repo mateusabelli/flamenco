@@ -32,23 +32,24 @@ import (
 type PersistenceService interface {
 	StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.AuthoredJob) error
 	// FetchJob fetches a single job, without fetching its tasks.
-	FetchJob(ctx context.Context, jobID string) (*persistence.Job, error)
+	FetchJob(ctx context.Context, jobUUID string) (*persistence.Job, error)
 	FetchJobs(ctx context.Context) ([]*persistence.Job, error)
+	FetchJobByID(ctx context.Context, jobID int64) (*persistence.Job, error)
 
 	SaveJobPriority(ctx context.Context, job *persistence.Job) error
 	// FetchTask fetches the given task and the accompanying job.
-	FetchTask(ctx context.Context, taskID string) (*persistence.Task, error)
+	FetchTask(ctx context.Context, taskID string) (persistence.TaskJobWorker, error)
 	// FetchTaskJobUUID fetches the UUID of the job this task belongs to.
 	FetchTaskJobUUID(ctx context.Context, taskID string) (string, error)
 	FetchTaskFailureList(context.Context, *persistence.Task) ([]*persistence.Worker, error)
 	SaveTaskActivity(ctx context.Context, t *persistence.Task) error
 	// TaskTouchedByWorker marks the task as 'touched' by a worker. This is used for timeout detection.
-	TaskTouchedByWorker(context.Context, *persistence.Task) error
+	TaskTouchedByWorker(ctx context.Context, taskUUID string) error
 
 	CreateWorker(ctx context.Context, w *persistence.Worker) error
 	FetchWorker(ctx context.Context, uuid string) (*persistence.Worker, error)
 	FetchWorkers(ctx context.Context) ([]*persistence.Worker, error)
-	FetchWorkerTask(context.Context, *persistence.Worker) (*persistence.Task, error)
+	FetchWorkerTask(context.Context, *persistence.Worker) (*persistence.TaskJob, error)
 	SaveWorker(ctx context.Context, w *persistence.Worker) error
 	SaveWorkerStatus(ctx context.Context, w *persistence.Worker) error
 	WorkerSeen(ctx context.Context, w *persistence.Worker) error
@@ -56,7 +57,7 @@ type PersistenceService interface {
 
 	// ScheduleTask finds a task to execute by the given worker, and assigns it to that worker.
 	// If no task is available, (nil, nil) is returned, as this is not an error situation.
-	ScheduleTask(ctx context.Context, w *persistence.Worker) (*persistence.Task, error)
+	ScheduleTask(ctx context.Context, w *persistence.Worker) (*persistence.ScheduledTask, error)
 	AddWorkerToTaskFailedList(context.Context, *persistence.Task, *persistence.Worker) (numFailed int, err error)
 	// ClearFailureListOfTask clears the list of workers that failed this task.
 	ClearFailureListOfTask(context.Context, *persistence.Task) error
@@ -64,7 +65,7 @@ type PersistenceService interface {
 	ClearFailureListOfJob(context.Context, *persistence.Job) error
 
 	// AddWorkerToJobBlocklist prevents this Worker of getting any task, of this type, on this job, from the task scheduler.
-	AddWorkerToJobBlocklist(ctx context.Context, job *persistence.Job, worker *persistence.Worker, taskType string) error
+	AddWorkerToJobBlocklist(ctx context.Context, jobID int64, workerID int64, taskType string) error
 	FetchJobBlocklist(ctx context.Context, jobUUID string) ([]persistence.JobBlockListEntry, error)
 	RemoveFromJobBlocklist(ctx context.Context, jobUUID, workerUUID, taskType string) error
 	ClearJobBlocklist(ctx context.Context, job *persistence.Job) error
@@ -73,6 +74,7 @@ type PersistenceService interface {
 	WorkerSetTags(ctx context.Context, worker *persistence.Worker, tagUUIDs []string) error
 	CreateWorkerTag(ctx context.Context, tag *persistence.WorkerTag) error
 	FetchWorkerTag(ctx context.Context, uuid string) (persistence.WorkerTag, error)
+	FetchWorkerTagByID(ctx context.Context, id int64) (persistence.WorkerTag, error)
 	FetchWorkerTags(ctx context.Context) ([]persistence.WorkerTag, error)
 	DeleteWorkerTag(ctx context.Context, uuid string) error
 	SaveWorkerTag(ctx context.Context, tag *persistence.WorkerTag) error
@@ -81,13 +83,13 @@ type PersistenceService interface {
 	// WorkersLeftToRun returns a set of worker UUIDs that can run tasks of the given type on the given job.
 	WorkersLeftToRun(ctx context.Context, job *persistence.Job, taskType string) (map[string]bool, error)
 	// CountTaskFailuresOfWorker returns the number of task failures of this worker, on this particular job and task type.
-	CountTaskFailuresOfWorker(ctx context.Context, job *persistence.Job, worker *persistence.Worker, taskType string) (int, error)
+	CountTaskFailuresOfWorker(ctx context.Context, jobUUID string, workerID int64, taskType string) (int, error)
 
 	// Database queries.
-	QueryJobTaskSummaries(ctx context.Context, jobUUID string) ([]*persistence.Task, error)
+	QueryJobTaskSummaries(ctx context.Context, jobUUID string) ([]persistence.TaskSummary, error)
 
 	// SetLastRendered sets this job as the one with the most recent rendered image.
-	SetLastRendered(ctx context.Context, j *persistence.Job) error
+	SetLastRendered(ctx context.Context, jobUUID string) error
 	// GetLastRendered returns the UUID of the job with the most recent rendered image.
 	GetLastRenderedJobUUID(ctx context.Context) (string, error)
 }
@@ -99,10 +101,10 @@ type TaskStateMachine interface {
 	TaskStatusChange(ctx context.Context, task *persistence.Task, newStatus api.TaskStatus) error
 
 	// JobStatusChange gives a Job a new status, and handles the resulting status changes on its tasks.
-	JobStatusChange(ctx context.Context, job *persistence.Job, newJobStatus api.JobStatus, reason string) error
+	JobStatusChange(ctx context.Context, jobUUID string, newJobStatus api.JobStatus, reason string) error
 
 	RequeueActiveTasksOfWorker(ctx context.Context, worker *persistence.Worker, reason string) error
-	RequeueFailedTasksOfWorkerOfJob(ctx context.Context, worker *persistence.Worker, job *persistence.Job, reason string) error
+	RequeueFailedTasksOfWorkerOfJob(ctx context.Context, worker *persistence.Worker, jobUUID string, reason string) error
 }
 
 // TaskStateMachine should be a subset of task_state_machine.StateMachine.
@@ -140,12 +142,12 @@ type JobCompiler interface {
 
 // LogStorage handles incoming task logs.
 type LogStorage interface {
-	Write(logger zerolog.Logger, jobID, taskID string, logText string) error
-	WriteTimestamped(logger zerolog.Logger, jobID, taskID string, logText string) error
-	RotateFile(logger zerolog.Logger, jobID, taskID string)
-	Tail(jobID, taskID string) (string, error)
-	TaskLogSize(jobID, taskID string) (int64, error)
-	Filepath(jobID, taskID string) string
+	Write(logger zerolog.Logger, jobUUID, taskUUID string, logText string) error
+	WriteTimestamped(logger zerolog.Logger, jobUUID, taskUUID string, logText string) error
+	RotateFile(logger zerolog.Logger, jobUUID, taskUUID string)
+	Tail(jobID, taskUUID string) (string, error)
+	TaskLogSize(jobUUID, taskUUID string) (int64, error)
+	Filepath(jobUUID, taskUUID string) string
 }
 
 // LastRendered processes the "last rendered" images.

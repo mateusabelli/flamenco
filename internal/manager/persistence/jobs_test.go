@@ -4,6 +4,8 @@ package persistence
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math"
 	"testing"
@@ -36,11 +38,17 @@ func TestStoreAuthoredJob(t *testing.T) {
 	assert.Equal(t, job.JobID, fetchedJob.UUID)
 	assert.Equal(t, job.Name, fetchedJob.Name)
 	assert.Equal(t, job.JobType, fetchedJob.JobType)
-	assert.Equal(t, job.Priority, fetchedJob.Priority)
+	assert.Equal(t, job.Priority, int(fetchedJob.Priority))
 	assert.Equal(t, api.JobStatusUnderConstruction, fetchedJob.Status)
-	assert.EqualValues(t, map[string]interface{}(job.Settings), fetchedJob.Settings)
-	assert.EqualValues(t, map[string]string(job.Metadata), fetchedJob.Metadata)
-	assert.Equal(t, "", fetchedJob.Storage.ShamanCheckoutID)
+	assert.Equal(t, "", fetchedJob.StorageShamanCheckoutID)
+
+	var parsedSettings map[string]interface{}
+	assert.NoError(t, json.Unmarshal(fetchedJob.Settings, &parsedSettings))
+	assert.EqualValues(t, map[string]interface{}(job.Settings), parsedSettings)
+
+	var parsedMetadata map[string]string
+	assert.NoError(t, json.Unmarshal(fetchedJob.Metadata, &parsedMetadata))
+	assert.EqualValues(t, map[string]string(job.Metadata), parsedMetadata)
 
 	// Fetch result of job.
 	result, err := queries.FetchTasksOfJob(ctx, int64(fetchedJob.ID))
@@ -70,7 +78,7 @@ func TestStoreAuthoredJobWithShamanCheckoutID(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, fetchedJob)
 
-	assert.Equal(t, job.Storage.ShamanCheckoutID, fetchedJob.Storage.ShamanCheckoutID)
+	assert.Equal(t, job.Storage.ShamanCheckoutID, fetchedJob.StorageShamanCheckoutID)
 }
 
 func TestStoreAuthoredJobWithWorkerTag(t *testing.T) {
@@ -97,12 +105,8 @@ func TestStoreAuthoredJobWithWorkerTag(t *testing.T) {
 	require.NotNil(t, fetchedJob)
 
 	require.NotNil(t, fetchedJob.WorkerTagID)
-	assert.Equal(t, int64(*fetchedJob.WorkerTagID), workerTag.ID)
-
-	require.NotNil(t, fetchedJob.WorkerTag)
-	assert.Equal(t, fetchedJob.WorkerTag.Name, workerTag.Name)
-	assert.Equal(t, fetchedJob.WorkerTag.Description, workerTag.Description)
-	assert.Equal(t, fetchedJob.WorkerTag.UUID, workerTagUUID)
+	assert.Equal(t, fetchedJob.WorkerTagID.Int64, workerTag.ID)
+	assert.True(t, fetchedJob.WorkerTagID.Valid)
 }
 
 func TestFetchTaskJobUUID(t *testing.T) {
@@ -135,20 +139,20 @@ func TestSaveJobStorageInfo(t *testing.T) {
 	dbJob, err := db.FetchJob(ctx, authoredJob.JobID)
 	require.NoError(t, err)
 	assert.NotNil(t, dbJob)
-	assert.EqualValues(t, startTime, dbJob.UpdatedAt)
+	assert.EqualValues(t, startTime, dbJob.UpdatedAt.Time)
 
 	// Move the clock forward.
 	updateTime := time.Date(2023, time.February, 7, 15, 10, 0, 0, time.UTC)
 	mockNow = updateTime
 
 	// Save the storage info.
-	dbJob.Storage.ShamanCheckoutID = "shaman/checkout/id"
+	dbJob.StorageShamanCheckoutID = "shaman/checkout/id"
 	require.NoError(t, db.SaveJobStorageInfo(ctx, dbJob))
 
 	// Check that the UpdatedAt field wasn't touched.
 	updatedJob, err := db.FetchJob(ctx, authoredJob.JobID)
 	require.NoError(t, err)
-	assert.Equal(t, startTime, updatedJob.UpdatedAt, "SaveJobStorageInfo should not touch UpdatedAt")
+	assert.Equal(t, startTime, updatedJob.UpdatedAt.Time, "SaveJobStorageInfo should not touch UpdatedAt")
 }
 
 func TestSaveJobPriority(t *testing.T) {
@@ -161,7 +165,7 @@ func TestSaveJobPriority(t *testing.T) {
 	require.NoError(t, err)
 
 	// Set a new priority.
-	newPriority := 47
+	newPriority := int64(47)
 	dbJob, err := db.FetchJob(ctx, authoredJob.JobID)
 	require.NoError(t, err)
 	require.NotEqual(t, newPriority, dbJob.Priority,
@@ -316,7 +320,7 @@ func TestRequestJobMassDeletion(t *testing.T) {
 	// Request that "job3 and older" gets deleted.
 	timeOfDeleteRequest := realNowFunc()
 	db.nowfunc = func() time.Time { return timeOfDeleteRequest }
-	uuids, err := db.RequestJobMassDeletion(ctx, job3.UpdatedAt)
+	uuids, err := db.RequestJobMassDeletion(ctx, job3.UpdatedAt.Time)
 	require.NoError(t, err)
 
 	db.nowfunc = realNowFunc
@@ -428,11 +432,11 @@ func TestCountTasksOfJobInStatus(t *testing.T) {
 	assert.Equal(t, 3, numQueued)
 	assert.Equal(t, 3, numTotal)
 
-	// Make one task failed.
-	task, err := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
+	// Make one taskJobWorker failed.
+	taskJobWorker, err := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
 	require.NoError(t, err)
-	task.Status = api.TaskStatusFailed
-	require.NoError(t, db.SaveTask(ctx, task))
+	taskJobWorker.Task.Status = api.TaskStatusFailed
+	require.NoError(t, db.SaveTask(ctx, &taskJobWorker.Task))
 
 	numQueued, numTotal, err = db.CountTasksOfJobInStatus(ctx, job, api.TaskStatusQueued)
 	require.NoError(t, err)
@@ -515,33 +519,33 @@ func TestFetchTasksOfJobInStatus(t *testing.T) {
 
 	allTasks, err := db.FetchTasksOfJob(ctx, job)
 	require.NoError(t, err)
-	assert.Equal(t, job, allTasks[0].Job, "FetchTasksOfJob should set job pointer")
+	assert.Equal(t, job.UUID, allTasks[0].JobUUID, "FetchTasksOfJob should set job UUID")
 
-	tasks, err := db.FetchTasksOfJobInStatus(ctx, job, api.TaskStatusQueued)
+	tasksJobsWorkers, err := db.FetchTasksOfJobInStatus(ctx, job, api.TaskStatusQueued)
 	require.NoError(t, err)
-	assert.Equal(t, allTasks, tasks)
-	assert.Equal(t, job, tasks[0].Job, "FetchTasksOfJobInStatus should set job pointer")
+	assert.Equal(t, allTasks, tasksJobsWorkers)
+	assert.Equal(t, job.UUID, tasksJobsWorkers[0].JobUUID, "FetchTasksOfJobInStatus should set job UUID")
 
-	// Make one task failed.
-	task, err := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
+	// Make one taskJobWorker failed.
+	taskJobWorker, err := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
 	require.NoError(t, err)
-	task.Status = api.TaskStatusFailed
-	require.NoError(t, db.SaveTask(ctx, task))
+	taskJobWorker.Task.Status = api.TaskStatusFailed
+	require.NoError(t, db.SaveTask(ctx, &taskJobWorker.Task))
 
-	tasks, err = db.FetchTasksOfJobInStatus(ctx, job, api.TaskStatusQueued)
+	tasksJobsWorkers, err = db.FetchTasksOfJobInStatus(ctx, job, api.TaskStatusQueued)
 	require.NoError(t, err)
-	assert.Equal(t, []*Task{allTasks[1], allTasks[2]}, tasks)
+	assert.Equal(t, []TaskJobWorker{allTasks[1], allTasks[2]}, tasksJobsWorkers)
 
 	// Check the failed task. This cannot directly compare to `allTasks[0]`
 	// because saving the task above changed some of its fields.
-	tasks, err = db.FetchTasksOfJobInStatus(ctx, job, api.TaskStatusFailed)
+	tasksJobsWorkers, err = db.FetchTasksOfJobInStatus(ctx, job, api.TaskStatusFailed)
 	require.NoError(t, err)
-	assert.Len(t, tasks, 1)
-	assert.Equal(t, allTasks[0].ID, tasks[0].ID)
+	assert.Len(t, tasksJobsWorkers, 1)
+	assert.Equal(t, allTasks[0].Task.ID, tasksJobsWorkers[0].Task.ID)
 
-	tasks, err = db.FetchTasksOfJobInStatus(ctx, job, api.TaskStatusActive)
+	tasksJobsWorkers, err = db.FetchTasksOfJobInStatus(ctx, job, api.TaskStatusActive)
 	require.NoError(t, err)
-	assert.Empty(t, tasks)
+	assert.Empty(t, tasksJobsWorkers)
 }
 
 func TestSaveTaskActivity(t *testing.T) {
@@ -549,16 +553,20 @@ func TestSaveTaskActivity(t *testing.T) {
 	defer close()
 
 	taskUUID := authoredJob.Tasks[0].UUID
-	task, err := db.FetchTask(ctx, taskUUID)
+	taskJobWorker, err := db.FetchTask(ctx, taskUUID)
 	require.NoError(t, err)
+
+	task := taskJobWorker.Task
 	require.Equal(t, api.TaskStatusQueued, task.Status)
 
 	task.Activity = "Somebody ran a ünit test"
 	task.Status = api.TaskStatusPaused // Should not be saved.
-	require.NoError(t, db.SaveTaskActivity(ctx, task))
+	require.NoError(t, db.SaveTaskActivity(ctx, &task))
 
-	dbTask, err := db.FetchTask(ctx, taskUUID)
+	dbTaskJobWorker, err := db.FetchTask(ctx, taskUUID)
 	require.NoError(t, err)
+
+	dbTask := dbTaskJobWorker.Task
 	require.Equal(t, "Somebody ran a ünit test", dbTask.Activity)
 	require.Equal(t, api.TaskStatusQueued, dbTask.Status,
 		"SaveTaskActivity() should not save the task status")
@@ -568,44 +576,40 @@ func TestTaskAssignToWorker(t *testing.T) {
 	ctx, close, db, _, authoredJob := jobTasksTestFixtures(t)
 	defer close()
 
-	task, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
+	taskJobWorker, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
 	require.NoError(t, err)
+	assert.Zero(t, taskJobWorker.WorkerUUID)
+	assert.Equal(t, authoredJob.JobID, taskJobWorker.JobUUID)
 
 	w := createWorker(ctx, t, db)
-	require.NoError(t, db.TaskAssignToWorker(ctx, task, w))
-
-	if task.Worker == nil {
-		t.Error("task.Worker == nil")
-	} else {
-		assert.Equal(t, w, task.Worker)
-	}
-	if task.WorkerID == nil {
-		t.Error("task.WorkerID == nil")
-	} else {
-		assert.Equal(t, w.ID, int64(*task.WorkerID))
-	}
+	require.NoError(t, db.TaskAssignToWorker(ctx, &taskJobWorker.Task, w))
+	assert.Equal(t,
+		sql.NullInt64{Int64: w.ID, Valid: true},
+		taskJobWorker.Task.WorkerID)
 }
 
 func TestFetchTasksOfWorkerInStatus(t *testing.T) {
 	ctx, close, db, _, authoredJob := jobTasksTestFixtures(t)
 	defer close()
 
-	task, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
+	taskJobWorker, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
+	task := taskJobWorker.Task
 	require.NoError(t, err)
 
 	w := createWorker(ctx, t, db)
-	require.NoError(t, db.TaskAssignToWorker(ctx, task, w))
+	require.NoError(t, db.TaskAssignToWorker(ctx, &task, w))
 
-	tasks, err := db.FetchTasksOfWorkerInStatus(ctx, w, task.Status)
+	tasksJobsWorkers, err := db.FetchTasksOfWorkerInStatus(ctx, w, task.Status)
 	require.NoError(t, err)
-	assert.Len(t, tasks, 1, "worker should have one task in status %q", task.Status)
-	assert.Equal(t, task.ID, tasks[0].ID)
-	assert.Equal(t, task.UUID, tasks[0].UUID)
+	assert.Len(t, tasksJobsWorkers, 1, "worker should have one task in status %q", task.Status)
+	assert.Equal(t, task.ID, tasksJobsWorkers[0].Task.ID)
+	assert.Equal(t, task.UUID, tasksJobsWorkers[0].Task.UUID)
+	assert.Equal(t, authoredJob.JobID, tasksJobsWorkers[0].JobUUID)
 
-	assert.NotEqual(t, api.TaskStatusCanceled, task.Status)
-	tasks, err = db.FetchTasksOfWorkerInStatus(ctx, w, api.TaskStatusCanceled)
+	require.NotEqual(t, api.TaskStatusCanceled, task.Status)
+	tasksJobsWorkers, err = db.FetchTasksOfWorkerInStatus(ctx, w, api.TaskStatusCanceled)
 	require.NoError(t, err)
-	assert.Empty(t, tasks, "worker should have no task in status %q", w)
+	assert.Empty(t, tasksJobsWorkers, "worker should have no task in status %q", api.TaskStatusCanceled)
 }
 
 func TestFetchTasksOfWorkerInStatusOfJob(t *testing.T) {
@@ -630,42 +634,42 @@ func TestFetchTasksOfWorkerInStatusOfJob(t *testing.T) {
 	// Assign a task from each job to each Worker.
 	// Also double-check the test precondition that all tasks have the same status.
 	{ // Job / Worker.
-		task1, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
+		taskJobWorker1, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
 		require.NoError(t, err)
-		require.NoError(t, db.TaskAssignToWorker(ctx, task1, worker))
-		require.Equal(t, task1.Status, api.TaskStatusQueued)
+		require.NoError(t, db.TaskAssignToWorker(ctx, &taskJobWorker1.Task, worker))
+		require.Equal(t, taskJobWorker1.Task.Status, api.TaskStatusQueued)
 
-		task2, err := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
+		taskJobWorker2, err := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
 		require.NoError(t, err)
-		require.NoError(t, db.TaskAssignToWorker(ctx, task2, worker))
-		require.Equal(t, task2.Status, api.TaskStatusQueued)
+		require.NoError(t, db.TaskAssignToWorker(ctx, &taskJobWorker2.Task, worker))
+		require.Equal(t, taskJobWorker2.Task.Status, api.TaskStatusQueued)
 	}
 	{ // Job / Other Worker.
-		task, err := db.FetchTask(ctx, authoredJob.Tasks[2].UUID)
+		taskJobWorker, err := db.FetchTask(ctx, authoredJob.Tasks[2].UUID)
 		require.NoError(t, err)
-		require.NoError(t, db.TaskAssignToWorker(ctx, task, otherWorker))
-		require.Equal(t, task.Status, api.TaskStatusQueued)
+		require.NoError(t, db.TaskAssignToWorker(ctx, &taskJobWorker.Task, otherWorker))
+		require.Equal(t, taskJobWorker.Task.Status, api.TaskStatusQueued)
 	}
 	{ // Other Job / Worker.
-		task, err := db.FetchTask(ctx, otherJob.Tasks[1].UUID)
+		taskJobWorker, err := db.FetchTask(ctx, otherJob.Tasks[1].UUID)
 		require.NoError(t, err)
-		require.NoError(t, db.TaskAssignToWorker(ctx, task, worker))
-		require.Equal(t, task.Status, api.TaskStatusQueued)
+		require.NoError(t, db.TaskAssignToWorker(ctx, &taskJobWorker.Task, worker))
+		require.Equal(t, taskJobWorker.Task.Status, api.TaskStatusQueued)
 	}
 	{ // Other Job / Other Worker.
-		task, err := db.FetchTask(ctx, otherJob.Tasks[2].UUID)
+		taskJobWorker, err := db.FetchTask(ctx, otherJob.Tasks[2].UUID)
 		require.NoError(t, err)
-		require.NoError(t, db.TaskAssignToWorker(ctx, task, otherWorker))
-		require.Equal(t, task.Status, api.TaskStatusQueued)
+		require.NoError(t, db.TaskAssignToWorker(ctx, &taskJobWorker.Task, otherWorker))
+		require.Equal(t, taskJobWorker.Task.Status, api.TaskStatusQueued)
 	}
 
 	{ // Test active tasks, should be none.
-		tasks, err := db.FetchTasksOfWorkerInStatusOfJob(ctx, worker, api.TaskStatusActive, dbJob)
+		tasks, err := db.FetchTasksOfWorkerInStatusOfJob(ctx, worker, api.TaskStatusActive, dbJob.UUID)
 		require.NoError(t, err)
 		require.Len(t, tasks, 0)
 	}
 	{ // Test queued tasks, should be two.
-		tasks, err := db.FetchTasksOfWorkerInStatusOfJob(ctx, worker, api.TaskStatusQueued, dbJob)
+		tasks, err := db.FetchTasksOfWorkerInStatusOfJob(ctx, worker, api.TaskStatusQueued, dbJob.UUID)
 		require.NoError(t, err)
 		require.Len(t, tasks, 2)
 		assert.Equal(t, authoredJob.Tasks[0].UUID, tasks[0].UUID)
@@ -675,7 +679,7 @@ func TestFetchTasksOfWorkerInStatusOfJob(t *testing.T) {
 		worker := createWorker(ctx, t, db, func(worker *Worker) {
 			worker.UUID = "6534a1d4-f58e-4f2c-8925-4b2cd6caac22"
 		})
-		tasks, err := db.FetchTasksOfWorkerInStatusOfJob(ctx, worker, api.TaskStatusQueued, dbJob)
+		tasks, err := db.FetchTasksOfWorkerInStatusOfJob(ctx, worker, api.TaskStatusQueued, dbJob.UUID)
 		require.NoError(t, err)
 		require.Len(t, tasks, 0)
 	}
@@ -685,27 +689,29 @@ func TestTaskTouchedByWorker(t *testing.T) {
 	ctx, close, db, _, authoredJob := jobTasksTestFixtures(t)
 	defer close()
 
-	task, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
+	taskJobWorker, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
+	task := taskJobWorker.Task
 	require.NoError(t, err)
-	assert.True(t, task.LastTouchedAt.IsZero())
+	assert.Zero(t, task.LastTouchedAt)
 
 	now := db.now()
-	err = db.TaskTouchedByWorker(ctx, task)
+	err = db.TaskTouchedByWorker(ctx, task.UUID)
 	require.NoError(t, err)
 
-	// Test the task instance as well as the database entry.
-	dbTask, err := db.FetchTask(ctx, task.UUID)
+	// Test the task as it is in the database.
+	dbTaskJobWorker, err := db.FetchTask(ctx, task.UUID)
 	require.NoError(t, err)
-	assert.WithinDuration(t, now, task.LastTouchedAt, time.Second)
-	assert.WithinDuration(t, now, dbTask.LastTouchedAt, time.Second)
+	assert.True(t, dbTaskJobWorker.Task.LastTouchedAt.Valid)
+	assert.WithinDuration(t, now, dbTaskJobWorker.Task.LastTouchedAt.Time, time.Second)
 }
 
 func TestAddWorkerToTaskFailedList(t *testing.T) {
 	ctx, close, db, _, authoredJob := jobTasksTestFixtures(t)
 	defer close()
 
-	task, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
+	taskJobWorker, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
 	require.NoError(t, err)
+	task := taskJobWorker.Task
 
 	worker1 := createWorker(ctx, t, db)
 
@@ -719,17 +725,17 @@ func TestAddWorkerToTaskFailedList(t *testing.T) {
 	require.NoError(t, err)
 
 	// First failure should be registered just fine.
-	numFailed, err := db.AddWorkerToTaskFailedList(ctx, task, worker1)
+	numFailed, err := db.AddWorkerToTaskFailedList(ctx, &task, worker1)
 	require.NoError(t, err)
 	assert.Equal(t, 1, numFailed)
 
 	// Calling again should be a no-op and not cause any errors.
-	numFailed, err = db.AddWorkerToTaskFailedList(ctx, task, worker1)
+	numFailed, err = db.AddWorkerToTaskFailedList(ctx, &task, worker1)
 	require.NoError(t, err)
 	assert.Equal(t, 1, numFailed)
 
 	// Another worker should be able to fail this task as well.
-	numFailed, err = db.AddWorkerToTaskFailedList(ctx, task, worker2)
+	numFailed, err = db.AddWorkerToTaskFailedList(ctx, &task, worker2)
 	require.NoError(t, err)
 	assert.Equal(t, 2, numFailed)
 
@@ -743,8 +749,10 @@ func TestClearFailureListOfTask(t *testing.T) {
 	defer close()
 	queries := db.queries()
 
-	task1, _ := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
-	task2, _ := db.FetchTask(ctx, authoredJob.Tasks[2].UUID)
+	taskJobWorker1, _ := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
+	taskJobWorker2, _ := db.FetchTask(ctx, authoredJob.Tasks[2].UUID)
+	task1 := taskJobWorker1.Task
+	task2 := taskJobWorker2.Task
 
 	worker1 := createWorker(ctx, t, db)
 
@@ -758,12 +766,12 @@ func TestClearFailureListOfTask(t *testing.T) {
 	require.NoError(t, err)
 
 	// Store some failures for different tasks.
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task1, worker1)
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task1, worker2)
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task2, worker1)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task1, worker1)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task1, worker2)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task2, worker1)
 
 	// Clearing should just update this one task.
-	require.NoError(t, db.ClearFailureListOfTask(ctx, task1))
+	require.NoError(t, db.ClearFailureListOfTask(ctx, &task1))
 	failures, err := queries.Test_FetchTaskFailures(ctx)
 	require.NoError(t, err)
 	if assert.Len(t, failures, 1) {
@@ -781,19 +789,22 @@ func TestClearFailureListOfJob(t *testing.T) {
 	authoredJob2 := duplicateJobAndTasks(authoredJob1)
 	persistAuthoredJob(t, ctx, db, authoredJob2)
 
-	task1_1, _ := db.FetchTask(ctx, authoredJob1.Tasks[1].UUID)
-	task1_2, _ := db.FetchTask(ctx, authoredJob1.Tasks[2].UUID)
-	task2_1, _ := db.FetchTask(ctx, authoredJob2.Tasks[1].UUID)
+	taskJobWorker1_1, _ := db.FetchTask(ctx, authoredJob1.Tasks[1].UUID)
+	taskJobWorker1_2, _ := db.FetchTask(ctx, authoredJob1.Tasks[2].UUID)
+	taskJobWorker2_1, _ := db.FetchTask(ctx, authoredJob2.Tasks[1].UUID)
+	task1_1 := taskJobWorker1_1.Task
+	task1_2 := taskJobWorker1_2.Task
+	task2_1 := taskJobWorker2_1.Task
 
 	worker1 := createWorker(ctx, t, db)
 	worker2 := createWorkerFrom(ctx, t, db, *worker1)
 
 	// Store some failures for different tasks and jobs
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task1_1, worker1)
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task1_1, worker2)
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task1_2, worker1)
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task2_1, worker1)
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task2_1, worker2)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task1_1, worker1)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task1_1, worker2)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task1_2, worker1)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task2_1, worker1)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task2_1, worker2)
 
 	// Sanity check: there should be 5 failures registered now.
 	assert.Equal(t, 5, countTaskFailures(ctx, db))
@@ -815,16 +826,18 @@ func TestFetchTaskFailureList(t *testing.T) {
 	defer close()
 
 	// Test with non-existing task.
-	fakeTask := Task{Model: Model{ID: 327}}
+	fakeTask := Task{ID: 327}
 	failures, err := db.FetchTaskFailureList(ctx, &fakeTask)
 	require.NoError(t, err)
 	assert.Empty(t, failures)
 
-	task1_1, _ := db.FetchTask(ctx, authoredJob1.Tasks[1].UUID)
-	task1_2, _ := db.FetchTask(ctx, authoredJob1.Tasks[2].UUID)
+	taskJobWorker1_1, _ := db.FetchTask(ctx, authoredJob1.Tasks[1].UUID)
+	taskJobWorker1_2, _ := db.FetchTask(ctx, authoredJob1.Tasks[2].UUID)
+	task1_1 := taskJobWorker1_1.Task
+	task1_2 := taskJobWorker1_2.Task
 
 	// Test without failures.
-	failures, err = db.FetchTaskFailureList(ctx, task1_1)
+	failures, err = db.FetchTaskFailureList(ctx, &task1_1)
 	require.NoError(t, err)
 	assert.Empty(t, failures)
 
@@ -832,12 +845,12 @@ func TestFetchTaskFailureList(t *testing.T) {
 	worker2 := createWorkerFrom(ctx, t, db, *worker1)
 
 	// Store some failures for different tasks and jobs
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task1_1, worker1)
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task1_1, worker2)
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task1_2, worker1)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task1_1, worker1)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task1_1, worker2)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task1_2, worker1)
 
 	// Fetch one task's failure list.
-	failures, err = db.FetchTaskFailureList(ctx, task1_1)
+	failures, err = db.FetchTaskFailureList(ctx, &task1_1)
 	require.NoError(t, err)
 
 	if assert.Len(t, failures, 2) {

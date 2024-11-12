@@ -13,11 +13,11 @@ import (
 type JobBlockListEntry = sqlc.FetchJobBlocklistRow
 
 // AddWorkerToJobBlocklist prevents this Worker of getting any task, of this type, on this job, from the task scheduler.
-func (db *DB) AddWorkerToJobBlocklist(ctx context.Context, job *Job, worker *Worker, taskType string) error {
-	if job.ID == 0 {
+func (db *DB) AddWorkerToJobBlocklist(ctx context.Context, jobID int64, workerID int64, taskType string) error {
+	if jobID == 0 {
 		panic("Cannot add worker to job blocklist with zero job ID")
 	}
-	if worker.ID == 0 {
+	if workerID == 0 {
 		panic("Cannot add worker to job blocklist with zero worker ID")
 	}
 	if taskType == "" {
@@ -28,8 +28,8 @@ func (db *DB) AddWorkerToJobBlocklist(ctx context.Context, job *Job, worker *Wor
 
 	return queries.AddWorkerToJobBlocklist(ctx, sqlc.AddWorkerToJobBlocklistParams{
 		CreatedAt: db.nowNullable().Time,
-		JobID:     int64(job.ID),
-		WorkerID:  int64(worker.ID),
+		JobID:     jobID,
+		WorkerID:  workerID,
 		TaskType:  taskType,
 	})
 }
@@ -72,18 +72,18 @@ func (db *DB) WorkersLeftToRun(ctx context.Context, job *Job, taskType string) (
 		workerUUIDs []string
 		err         error
 	)
-	if job.WorkerTagID == nil {
-		workerUUIDs, err = queries.WorkersLeftToRun(ctx, sqlc.WorkersLeftToRunParams{
-			JobID:    int64(job.ID),
-			TaskType: taskType,
-		})
-	} else {
+	if job.WorkerTagID.Valid {
 		workerUUIDs, err = queries.WorkersLeftToRunWithWorkerTag(ctx,
 			sqlc.WorkersLeftToRunWithWorkerTagParams{
-				JobID:       int64(job.ID),
+				JobID:       job.ID,
 				TaskType:    taskType,
-				WorkerTagID: int64(*job.WorkerTagID),
+				WorkerTagID: job.WorkerTagID.Int64,
 			})
+	} else {
+		workerUUIDs, err = queries.WorkersLeftToRun(ctx, sqlc.WorkersLeftToRunParams{
+			JobID:    job.ID,
+			TaskType: taskType,
+		})
 	}
 	if err != nil {
 		return nil, err
@@ -99,13 +99,13 @@ func (db *DB) WorkersLeftToRun(ctx context.Context, job *Job, taskType string) (
 }
 
 // CountTaskFailuresOfWorker returns the number of task failures of this worker, on this particular job and task type.
-func (db *DB) CountTaskFailuresOfWorker(ctx context.Context, job *Job, worker *Worker, taskType string) (int, error) {
+func (db *DB) CountTaskFailuresOfWorker(ctx context.Context, jobUUID string, workerID int64, taskType string) (int, error) {
 	var numFailures int64
 
 	queries := db.queries()
 	numFailures, err := queries.CountTaskFailuresOfWorker(ctx, sqlc.CountTaskFailuresOfWorkerParams{
-		JobID:    int64(job.ID),
-		WorkerID: int64(worker.ID),
+		JobUUID:  jobUUID,
+		WorkerID: workerID,
 		TaskType: taskType,
 	})
 

@@ -19,13 +19,19 @@ func (sm *StateMachine) RequeueActiveTasksOfWorker(
 	reason string,
 ) error {
 	// Fetch the tasks to update.
-	tasks, err := sm.persist.FetchTasksOfWorkerInStatus(
+	tasksJobs, err := sm.persist.FetchTasksOfWorkerInStatus(
 		ctx, worker, api.TaskStatusActive)
 	if err != nil {
 		return err
 	}
 
-	return sm.requeueTasksOfWorker(ctx, tasks, worker, reason)
+	// Run each task change through the task state machine.
+	var lastErr error
+	for _, taskJobWorker := range tasksJobs {
+		lastErr = sm.requeueTaskOfWorker(ctx, &taskJobWorker.Task, taskJobWorker.JobUUID, worker, reason)
+	}
+
+	return lastErr
 }
 
 // RequeueFailedTasksOfWorkerOfJob re-queues all failed tasks of this worker on this job.
@@ -34,22 +40,29 @@ func (sm *StateMachine) RequeueActiveTasksOfWorker(
 func (sm *StateMachine) RequeueFailedTasksOfWorkerOfJob(
 	ctx context.Context,
 	worker *persistence.Worker,
-	job *persistence.Job,
+	jobUUID string,
 	reason string,
 ) error {
 	// Fetch the tasks to update.
 	tasks, err := sm.persist.FetchTasksOfWorkerInStatusOfJob(
-		ctx, worker, api.TaskStatusFailed, job)
+		ctx, worker, api.TaskStatusFailed, jobUUID)
 	if err != nil {
 		return err
 	}
 
-	return sm.requeueTasksOfWorker(ctx, tasks, worker, reason)
+	// Run each task change through the task state machine.
+	var lastErr error
+	for _, task := range tasks {
+		lastErr = sm.requeueTaskOfWorker(ctx, task, jobUUID, worker, reason)
+	}
+
+	return lastErr
 }
 
-func (sm *StateMachine) requeueTasksOfWorker(
+func (sm *StateMachine) requeueTaskOfWorker(
 	ctx context.Context,
-	tasks []*persistence.Task,
+	task *persistence.Task,
+	jobUUID string,
 	worker *persistence.Worker,
 	reason string,
 ) error {
@@ -58,35 +71,30 @@ func (sm *StateMachine) requeueTasksOfWorker(
 		Str("reason", reason).
 		Logger()
 
-	// Run each task change through the task state machine.
-	var lastErr error
-	for _, task := range tasks {
-		logger.Info().
+	logger.Info().
+		Str("task", task.UUID).
+		Msg("re-queueing task")
+
+		// Write to task activity that it got requeued because of worker sign-off.
+	task.Activity = "Task was requeued by Manager because " + reason
+	if err := sm.persist.SaveTaskActivity(ctx, task); err != nil {
+		logger.Warn().Err(err).
 			Str("task", task.UUID).
-			Msg("re-queueing task")
-
-			// Write to task activity that it got requeued because of worker sign-off.
-		task.Activity = "Task was requeued by Manager because " + reason
-		if err := sm.persist.SaveTaskActivity(ctx, task); err != nil {
-			logger.Warn().Err(err).
-				Str("task", task.UUID).
-				Str("reason", reason).
-				Str("activity", task.Activity).
-				Msg("error saving task activity to database")
-			lastErr = err
-		}
-
-		if err := sm.TaskStatusChange(ctx, task, api.TaskStatusQueued); err != nil {
-			logger.Warn().Err(err).
-				Str("task", task.UUID).
-				Str("reason", reason).
-				Msg("error queueing task")
-			lastErr = err
-		}
-
-		// The error is already logged by the log storage.
-		_ = sm.logStorage.WriteTimestamped(logger, task.Job.UUID, task.UUID, task.Activity)
+			Str("reason", reason).
+			Str("activity", task.Activity).
+			Msg("error saving task activity to database")
 	}
 
-	return lastErr
+	err := sm.TaskStatusChange(ctx, task, api.TaskStatusQueued)
+	if err != nil {
+		logger.Warn().Err(err).
+			Str("task", task.UUID).
+			Str("reason", reason).
+			Msg("error queueing task")
+	}
+
+	// The error is already logged by the log storage.
+	_ = sm.logStorage.WriteTimestamped(logger, jobUUID, task.UUID, task.Activity)
+
+	return err
 }

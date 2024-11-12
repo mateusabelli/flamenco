@@ -4,6 +4,7 @@ package timeout_checker
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"testing"
 	"time"
@@ -109,7 +110,7 @@ func TestTaskTimeout(t *testing.T) {
 
 	lastTime := mocks.clock.Now().UTC().Add(-1 * time.Hour)
 
-	job := persistence.Job{UUID: "JOB-UUID"}
+	job := persistence.Job{ID: 327, UUID: "JOB-UUID"}
 	worker := persistence.Worker{
 		UUID: "WORKER-UUID",
 		Name: "Tester",
@@ -117,36 +118,35 @@ func TestTaskTimeout(t *testing.T) {
 	}
 	taskUnassigned := persistence.Task{
 		UUID:          "TASK-UUID-UNASSIGNED",
-		Job:           &job,
-		LastTouchedAt: lastTime,
-	}
-	taskUnknownWorker := persistence.Task{
-		UUID:          "TASK-UUID-UNKNOWN",
-		Job:           &job,
-		LastTouchedAt: lastTime,
-		WorkerID:      ptr(uint(worker.ID)),
+		JobID:         job.ID,
+		LastTouchedAt: sql.NullTime{Time: lastTime, Valid: true},
 	}
 	taskAssigned := persistence.Task{
 		UUID:          "TASK-UUID-ASSIGNED",
-		Job:           &job,
-		LastTouchedAt: lastTime,
-		WorkerID:      ptr(uint(worker.ID)),
-		Worker:        &worker,
+		JobID:         job.ID,
+		LastTouchedAt: sql.NullTime{Time: lastTime, Valid: true},
+		WorkerID:      sql.NullInt64{Int64: worker.ID, Valid: true},
 	}
 
 	mocks.persist.EXPECT().FetchTimedOutWorkers(mocks.ctx, gomock.Any()).AnyTimes().Return(nil, nil)
 
+	timedoutTaskInfo := []persistence.TimedOutTaskInfo{
+		{Task: taskUnassigned, JobUUID: job.UUID, WorkerName: "", WorkerUUID: ""},
+		{Task: taskAssigned, JobUUID: job.UUID, WorkerName: worker.Name, WorkerUUID: worker.UUID},
+	}
 	mocks.persist.EXPECT().FetchTimedOutTasks(mocks.ctx, gomock.Any()).
-		Return([]*persistence.Task{&taskUnassigned, &taskUnknownWorker, &taskAssigned}, nil)
+		Return(timedoutTaskInfo, nil)
 
-	mocks.taskStateMachine.EXPECT().TaskStatusChange(mocks.ctx, &taskUnassigned, api.TaskStatusFailed)
-	mocks.taskStateMachine.EXPECT().TaskStatusChange(mocks.ctx, &taskUnknownWorker, api.TaskStatusFailed)
-	mocks.taskStateMachine.EXPECT().TaskStatusChange(mocks.ctx, &taskAssigned, api.TaskStatusFailed)
+	taskUnassignedWithActivity := taskUnassigned
+	taskUnassignedWithActivity.Activity = "Task timed out on worker -unassigned-"
+	taskAssignedWithActivity := taskAssigned
+	taskAssignedWithActivity.Activity = "Task timed out on worker Tester (WORKER-UUID)"
+
+	mocks.taskStateMachine.EXPECT().TaskStatusChange(mocks.ctx, &taskUnassignedWithActivity, api.TaskStatusFailed)
+	mocks.taskStateMachine.EXPECT().TaskStatusChange(mocks.ctx, &taskAssignedWithActivity, api.TaskStatusFailed)
 
 	mocks.logStorage.EXPECT().WriteTimestamped(gomock.Any(), job.UUID, taskUnassigned.UUID,
 		"Task timed out. It was assigned to worker -unassigned-, but untouched since 2022-06-09T11:00:00Z")
-	mocks.logStorage.EXPECT().WriteTimestamped(gomock.Any(), job.UUID, taskUnknownWorker.UUID,
-		"Task timed out. It was assigned to worker -unknown-, but untouched since 2022-06-09T11:00:00Z")
 	mocks.logStorage.EXPECT().WriteTimestamped(gomock.Any(), job.UUID, taskAssigned.UUID,
 		"Task timed out. It was assigned to worker Tester (WORKER-UUID), but untouched since 2022-06-09T11:00:00Z")
 

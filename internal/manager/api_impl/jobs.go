@@ -4,6 +4,7 @@ package api_impl
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
@@ -112,7 +114,7 @@ func (f *Flamenco) SubmitJob(e echo.Context) error {
 	jobUpdate := eventbus.NewJobUpdate(dbJob)
 	f.broadcaster.BroadcastNewJob(jobUpdate)
 
-	apiJob := jobDBtoAPI(dbJob)
+	apiJob := jobDBtoAPI(ctx, f.persist, dbJob)
 	return e.JSON(http.StatusOK, apiJob)
 }
 
@@ -179,7 +181,8 @@ func (f *Flamenco) DeleteJob(e echo.Context, jobID string) error {
 	}
 
 	logger = logger.With().
-		Uint("dbID", dbJob.ID).
+		Int64("dbID", dbJob.ID).
+		Str("job", dbJob.UUID).
 		Str("currentstatus", string(dbJob.Status)).
 		Logger()
 	logger.Info().Msg("job deletion requested")
@@ -283,9 +286,9 @@ func (f *Flamenco) DeleteJobMass(e echo.Context) error {
 }
 
 // SetJobStatus is used by the web interface to change a job's status.
-func (f *Flamenco) SetJobStatus(e echo.Context, jobID string) error {
+func (f *Flamenco) SetJobStatus(e echo.Context, jobUUID string) error {
 	logger := requestLogger(e).With().
-		Str("job", jobID).
+		Str("job", jobUUID).
 		Logger()
 
 	var statusChange api.SetJobStatusJSONRequestBody
@@ -294,7 +297,7 @@ func (f *Flamenco) SetJobStatus(e echo.Context, jobID string) error {
 		return sendAPIError(e, http.StatusBadRequest, "invalid format")
 	}
 
-	dbJob, err := f.fetchJob(e, logger, jobID)
+	dbJob, err := f.fetchJob(e, logger, jobUUID)
 	if dbJob == nil {
 		// f.fetchJob already sent a response.
 		return err
@@ -308,7 +311,7 @@ func (f *Flamenco) SetJobStatus(e echo.Context, jobID string) error {
 	logger.Info().Msg("job status change requested")
 
 	ctx := e.Request().Context()
-	err = f.stateMachine.JobStatusChange(ctx, dbJob, statusChange.Status, statusChange.Reason)
+	err = f.stateMachine.JobStatusChange(ctx, jobUUID, statusChange.Status, statusChange.Reason)
 	if err != nil {
 		logger.Error().Err(err).Msg("error changing job status")
 		return sendAPIError(e, http.StatusInternalServerError, "unexpected error changing job status")
@@ -352,7 +355,7 @@ func (f *Flamenco) SetJobPriority(e echo.Context, jobID string) error {
 
 	logger = logger.With().
 		Str("jobName", dbJob.Name).
-		Int("prioCurrent", dbJob.Priority).
+		Int64("prioCurrent", dbJob.Priority).
 		Int("prioRequested", prioChange.Priority).
 		Logger()
 	logger.Info().Msg("job priority change requested")
@@ -361,7 +364,7 @@ func (f *Flamenco) SetJobPriority(e echo.Context, jobID string) error {
 	bgCtx, bgCtxCancel := bgContext()
 	defer bgCtxCancel()
 
-	dbJob.Priority = prioChange.Priority
+	dbJob.Priority = int64(prioChange.Priority)
 	err = f.persist.SaveJobPriority(bgCtx, dbJob)
 	if err != nil {
 		logger.Error().Err(err).Msg("error changing job priority")
@@ -388,7 +391,7 @@ func (f *Flamenco) SetTaskStatus(e echo.Context, taskID string) error {
 		return sendAPIError(e, http.StatusBadRequest, "invalid format")
 	}
 
-	dbTask, err := f.persist.FetchTask(ctx, taskID)
+	taskJobWorker, err := f.persist.FetchTask(ctx, taskID)
 	if err != nil {
 		if errors.Is(err, persistence.ErrTaskNotFound) {
 			return sendAPIError(e, http.StatusNotFound, "no such task")
@@ -396,6 +399,9 @@ func (f *Flamenco) SetTaskStatus(e echo.Context, taskID string) error {
 		logger.Error().Err(err).Msg("error fetching task")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching task")
 	}
+	dbTask := &taskJobWorker.Task
+
+	// TODO: do the rest of the processing in a background context.
 
 	logger = logger.With().
 		Str("currentstatus", string(dbTask.Status)).
@@ -660,78 +666,98 @@ func (f *Flamenco) lastRenderedInfoForJob(logger zerolog.Logger, jobUUID string)
 	return &info, nil
 }
 
-func jobDBtoAPI(dbJob *persistence.Job) api.Job {
+// jobDBtoAPI converts the job from the database struct to the API struct.
+//
+// Note that this function does not connect to the database, and thus cannot
+// find the job's worker tag.
+func jobDBtoAPI(ctx context.Context, persist PersistenceService, dbJob *persistence.Job) api.Job {
 	apiJob := api.Job{
 		SubmittedJob: api.SubmittedJob{
 			Name:     dbJob.Name,
-			Priority: dbJob.Priority,
+			Priority: int(dbJob.Priority),
 			Type:     dbJob.JobType,
 		},
 
 		Id:       dbJob.UUID,
 		Created:  dbJob.CreatedAt,
-		Updated:  dbJob.UpdatedAt,
+		Updated:  dbJob.UpdatedAt.Time,
 		Status:   api.JobStatus(dbJob.Status),
 		Activity: dbJob.Activity,
 	}
 
-	apiJob.Settings = &api.JobSettings{AdditionalProperties: dbJob.Settings}
-	apiJob.Metadata = &api.JobMetadata{AdditionalProperties: dbJob.Metadata}
+	{ // Parse job settings JSON.
+		settings := api.JobSettings{}
+		if err := json.Unmarshal(dbJob.Settings, &settings.AdditionalProperties); err != nil {
+			log.Error().Str("job", dbJob.UUID).AnErr("cause", err).Msg("could not parse job settings in database as JSON")
+		} else {
+			apiJob.Settings = &settings
+		}
+	}
 
-	if dbJob.Storage.ShamanCheckoutID != "" {
+	{ // Parse job metadata JSON.
+		metadata := api.JobMetadata{}
+		if err := json.Unmarshal(dbJob.Metadata, &metadata.AdditionalProperties); err != nil {
+			log.Error().Str("job", dbJob.UUID).AnErr("cause", err).Msg("could not parse job metadata in database as JSON")
+		} else {
+			apiJob.Metadata = &metadata
+		}
+	}
+
+	if dbJob.StorageShamanCheckoutID != "" {
 		apiJob.Storage = &api.JobStorageInfo{
-			ShamanCheckoutId: &dbJob.Storage.ShamanCheckoutID,
+			ShamanCheckoutId: &dbJob.StorageShamanCheckoutID,
 		}
 	}
 	if dbJob.DeleteRequestedAt.Valid {
 		apiJob.DeleteRequestedAt = &dbJob.DeleteRequestedAt.Time
 	}
-	if dbJob.WorkerTag != nil {
-		apiJob.WorkerTag = &dbJob.WorkerTag.UUID
+
+	if dbJob.WorkerTagID.Valid {
+		// TODO: see if this can be handled by the callers.
+		tag, err := persist.FetchWorkerTagByID(ctx, dbJob.WorkerTagID.Int64)
+		if err != nil {
+			log.Error().Str("job", dbJob.UUID).AnErr("cause", err).Msg("could not find job's worker tag")
+		}
+		apiJob.WorkerTag = &tag.UUID
 	}
 
 	return apiJob
 }
 
-func taskDBtoAPI(dbTask *persistence.Task) api.Task {
+func taskJobWorkertoAPI(taskJobWorker persistence.TaskJobWorker) api.Task {
+	return taskToAPI(&taskJobWorker.Task, taskJobWorker.JobUUID, taskJobWorker.WorkerUUID)
+}
+
+func taskToAPI(task *persistence.Task, jobUUID, workerUUID string) api.Task {
 	apiTask := api.Task{
-		Id:       dbTask.UUID,
-		Name:     dbTask.Name,
-		Priority: dbTask.Priority,
-		TaskType: dbTask.Type,
-		Created:  dbTask.CreatedAt,
-		Updated:  dbTask.UpdatedAt,
-		Status:   dbTask.Status,
-		Activity: dbTask.Activity,
-		Commands: make([]api.Command, len(dbTask.Commands)),
+		Id:         task.UUID,
+		IndexInJob: int(task.IndexInJob),
+		JobId:      jobUUID,
+		Name:       task.Name,
+		Priority:   int(task.Priority),
+		TaskType:   task.Type,
+		Created:    task.CreatedAt,
+		Updated:    task.UpdatedAt.Time,
+		Status:     task.Status,
+		Activity:   task.Activity,
 
-		// TODO: convert this to just store dbTask.WorkerUUID.
-		Worker: workerToTaskWorker(dbTask.Worker),
-
-		JobId:      dbTask.JobUUID,
-		IndexInJob: dbTask.IndexInJob,
+		// TODO: update the web frontend just use the UUID, as we have not enough
+		// info here to fill the name & address fields.
+		Worker: &api.TaskWorker{Id: workerUUID},
 	}
 
-	if dbTask.Job != nil {
-		apiTask.JobId = dbTask.Job.UUID
+	if err := json.Unmarshal(task.Commands, &apiTask.Commands); err != nil {
+		log.Error().
+			Str("task", task.UUID).
+			AnErr("cause", err).
+			Msg("could not parse task commands JSON")
 	}
 
-	if !dbTask.LastTouchedAt.IsZero() {
-		apiTask.LastTouched = &dbTask.LastTouchedAt
-	}
-
-	for i := range dbTask.Commands {
-		apiTask.Commands[i] = commandDBtoAPI(dbTask.Commands[i])
+	if task.LastTouchedAt.Valid {
+		apiTask.LastTouched = &task.LastTouchedAt.Time
 	}
 
 	return apiTask
-}
-
-func commandDBtoAPI(dbCommand persistence.Command) api.Command {
-	return api.Command{
-		Name:       dbCommand.Name,
-		Parameters: dbCommand.Parameters,
-	}
 }
 
 // workerToTaskWorker is nil-safe.

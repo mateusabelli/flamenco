@@ -16,15 +16,15 @@ func TestFetchTimedOutTasks(t *testing.T) {
 	ctx, close, db, job, _ := jobTasksTestFixtures(t)
 	defer close()
 
-	tasks, err := db.FetchTasksOfJob(ctx, job)
+	tasksOfJob, err := db.FetchTasksOfJob(ctx, job)
 	require.NoError(t, err)
 
 	now := db.now()
 	deadline := now.Add(-5 * time.Minute)
 
 	// Mark the task as last touched before the deadline, i.e. old enough for a timeout.
-	task := tasks[0]
-	task.LastTouchedAt = deadline.Add(-1 * time.Minute)
+	task := &tasksOfJob[0].Task
+	task.LastTouchedAt = sql.NullTime{Time: deadline.Add(-1 * time.Minute), Valid: true}
 	require.NoError(t, db.SaveTask(ctx, task))
 
 	w := createWorker(ctx, t, db)
@@ -45,9 +45,10 @@ func TestFetchTimedOutTasks(t *testing.T) {
 	if assert.Len(t, timedout, 1) {
 		// Other fields will be different, like the 'UpdatedAt' field -- this just
 		// tests that the expected task is returned.
-		assert.Equal(t, task.UUID, timedout[0].UUID)
-		assert.Equal(t, job, timedout[0].Job, "the job should be included in the result as well")
-		assert.Equal(t, w.UUID, timedout[0].Worker.UUID, "the worker should be included in the result as well")
+		assert.Equal(t, task.UUID, timedout[0].Task.UUID)
+		assert.Equal(t, job.UUID, timedout[0].JobUUID, "the job should be included in the result as well")
+		assert.Equal(t, w.UUID, timedout[0].WorkerUUID, "the worker UUID should be included in the result as well")
+		assert.Equal(t, w.Name, timedout[0].WorkerName, "the worker Name should be included in the result as well")
 	}
 }
 

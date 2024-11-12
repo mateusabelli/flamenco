@@ -1,7 +1,7 @@
 
 -- name: FetchAssignedAndRunnableTaskOfWorker :one
 -- Fetch a task that's assigned to this worker, and is in a runnable state.
-SELECT sqlc.embed(tasks)
+SELECT sqlc.embed(tasks), jobs.uuid as jobuuid, jobs.priority as job_priority, jobs.job_type as job_type
 FROM tasks
   INNER JOIN jobs ON tasks.job_id = jobs.id
 WHERE tasks.status=@active_task_status
@@ -20,7 +20,7 @@ LIMIT 1;
 --
 -- The order in the WHERE clause is important, slices should come last. See
 -- https://github.com/sqlc-dev/sqlc/issues/2452 for more info.
-SELECT sqlc.embed(tasks)
+SELECT sqlc.embed(tasks), jobs.uuid as jobuuid, jobs.priority as job_priority, jobs.job_type as job_type
 FROM tasks
   INNER JOIN jobs ON tasks.job_id = jobs.id
   LEFT JOIN task_failures TF ON tasks.id = TF.task_id AND TF.worker_id=@worker_id
@@ -51,8 +51,8 @@ ORDER BY jobs.priority DESC, tasks.priority DESC;
 -- Find the currently-active task assigned to a Worker. If not found, find the last task this Worker worked on.
 SELECT
   sqlc.embed(tasks),
-  sqlc.embed(jobs),
-  (tasks.status = @task_status_active AND jobs.status = @job_status_active) as is_active
+  jobs.uuid as jobuuid,
+  CAST(tasks.status = @task_status_active AND jobs.status = @job_status_active AS BOOLEAN) as is_active
 FROM tasks
   INNER JOIN jobs ON tasks.job_id = jobs.id
 WHERE

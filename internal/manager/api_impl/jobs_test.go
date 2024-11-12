@@ -3,6 +3,7 @@ package api_impl
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -66,10 +67,8 @@ func TestSubmitJobWithoutSettings(t *testing.T) {
 		UUID:     queuedJob.JobID,
 		Name:     queuedJob.Name,
 		JobType:  queuedJob.JobType,
-		Priority: queuedJob.Priority,
+		Priority: int64(queuedJob.Priority),
 		Status:   queuedJob.Status,
-		Settings: persistence.StringInterfaceMap{},
-		Metadata: persistence.StringStringMap{},
 	}
 	mf.persistence.EXPECT().FetchJob(gomock.Any(), queuedJob.JobID).Return(&dbJob, nil)
 
@@ -77,10 +76,10 @@ func TestSubmitJobWithoutSettings(t *testing.T) {
 	jobUpdate := api.EventJobUpdate{
 		Id:       dbJob.UUID,
 		Name:     &dbJob.Name,
-		Priority: dbJob.Priority,
+		Priority: int(dbJob.Priority),
 		Status:   dbJob.Status,
 		Type:     dbJob.JobType,
-		Updated:  dbJob.UpdatedAt,
+		Updated:  dbJob.UpdatedAt.Time,
 	}
 	mf.broadcaster.EXPECT().BroadcastNewJob(jobUpdate)
 
@@ -155,10 +154,10 @@ func TestSubmitJobWithSettings(t *testing.T) {
 		UUID:     queuedJob.JobID,
 		Name:     queuedJob.Name,
 		JobType:  queuedJob.JobType,
-		Priority: queuedJob.Priority,
+		Priority: int64(queuedJob.Priority),
 		Status:   queuedJob.Status,
-		Settings: variableReplacedSettings,
-		Metadata: variableReplacedMetadata,
+		Settings: []byte(`{"result": "{frames}/exploding.kittens"}`),
+		Metadata: []byte(`{"project": "{projects}/exploding-kittens"}`),
 	}
 	mf.persistence.EXPECT().FetchJob(gomock.Any(), queuedJob.JobID).Return(&dbJob, nil)
 
@@ -166,10 +165,10 @@ func TestSubmitJobWithSettings(t *testing.T) {
 	jobUpdate := api.EventJobUpdate{
 		Id:       dbJob.UUID,
 		Name:     &dbJob.Name,
-		Priority: dbJob.Priority,
+		Priority: int(dbJob.Priority),
 		Status:   dbJob.Status,
 		Type:     dbJob.JobType,
-		Updated:  dbJob.UpdatedAt,
+		Updated:  dbJob.UpdatedAt.Time,
 	}
 	mf.broadcaster.EXPECT().BroadcastNewJob(jobUpdate)
 
@@ -226,10 +225,8 @@ func TestSubmitJobWithEtag(t *testing.T) {
 		UUID:     authoredJob.JobID,
 		Name:     authoredJob.Name,
 		JobType:  authoredJob.JobType,
-		Priority: authoredJob.Priority,
+		Priority: int64(authoredJob.Priority),
 		Status:   api.JobStatusQueued,
-		Settings: persistence.StringInterfaceMap{},
-		Metadata: persistence.StringStringMap{},
 	}
 	mf.persistence.EXPECT().FetchJob(gomock.Any(), authoredJob.JobID).Return(&dbJob, nil)
 
@@ -290,16 +287,12 @@ func TestSubmitJobWithShamanCheckoutID(t *testing.T) {
 
 	// Expect the job to be fetched from the database again:
 	dbJob := persistence.Job{
-		UUID:     queuedJob.JobID,
-		Name:     queuedJob.Name,
-		JobType:  queuedJob.JobType,
-		Priority: queuedJob.Priority,
-		Status:   queuedJob.Status,
-		Settings: persistence.StringInterfaceMap{},
-		Metadata: persistence.StringStringMap{},
-		Storage: persistence.JobStorageInfo{
-			ShamanCheckoutID: "Весы/Синтел",
-		},
+		UUID:                    queuedJob.JobID,
+		Name:                    queuedJob.Name,
+		JobType:                 queuedJob.JobType,
+		Priority:                int64(queuedJob.Priority),
+		Status:                  queuedJob.Status,
+		StorageShamanCheckoutID: "Весы/Синтел",
 	}
 	mf.persistence.EXPECT().FetchJob(gomock.Any(), queuedJob.JobID).Return(&dbJob, nil)
 
@@ -307,10 +300,10 @@ func TestSubmitJobWithShamanCheckoutID(t *testing.T) {
 	jobUpdate := api.EventJobUpdate{
 		Id:       dbJob.UUID,
 		Name:     &dbJob.Name,
-		Priority: dbJob.Priority,
+		Priority: int(dbJob.Priority),
 		Status:   dbJob.Status,
 		Type:     dbJob.JobType,
-		Updated:  dbJob.UpdatedAt,
+		Updated:  dbJob.UpdatedAt.Time,
 	}
 	mf.broadcaster.EXPECT().BroadcastNewJob(jobUpdate)
 
@@ -368,34 +361,30 @@ func TestSubmitJobWithWorkerTag(t *testing.T) {
 	queuedJob.Status = api.JobStatusQueued
 	mf.persistence.EXPECT().StoreAuthoredJob(gomock.Any(), queuedJob).Return(nil)
 
-	// Expect the job to be fetched from the database again:
+	// Expect the job to be fetched from the database again, including its tag.
 	dbJob := persistence.Job{
-		Model: persistence.Model{
-			ID:        47,
-			CreatedAt: mf.clock.Now(),
-			UpdatedAt: mf.clock.Now(),
-		},
-		UUID:     queuedJob.JobID,
-		Name:     queuedJob.Name,
-		JobType:  queuedJob.JobType,
-		Priority: queuedJob.Priority,
-		Status:   queuedJob.Status,
-		Settings: persistence.StringInterfaceMap{},
-		Metadata: persistence.StringStringMap{},
+		ID:        47,
+		CreatedAt: mf.clock.Now(),
+		UpdatedAt: sql.NullTime{Time: mf.clock.Now(), Valid: true},
+		UUID:      queuedJob.JobID,
+		Name:      queuedJob.Name,
+		JobType:   queuedJob.JobType,
+		Priority:  int64(queuedJob.Priority),
+		Status:    queuedJob.Status,
 
-		WorkerTagID: ptr(uint(tag.ID)),
-		WorkerTag:   &tag,
+		WorkerTagID: sql.NullInt64{Int64: tag.ID, Valid: true},
 	}
 	mf.persistence.EXPECT().FetchJob(gomock.Any(), queuedJob.JobID).Return(&dbJob, nil)
+	mf.persistence.EXPECT().FetchWorkerTagByID(gomock.Any(), tag.ID).Return(tag, nil)
 
 	// Expect the new job to be broadcast.
 	jobUpdate := api.EventJobUpdate{
 		Id:       dbJob.UUID,
 		Name:     &dbJob.Name,
-		Priority: dbJob.Priority,
+		Priority: int(dbJob.Priority),
 		Status:   dbJob.Status,
 		Type:     dbJob.JobType,
-		Updated:  dbJob.UpdatedAt,
+		Updated:  dbJob.UpdatedAt.Time,
 	}
 	mf.broadcaster.EXPECT().BroadcastNewJob(jobUpdate)
 
@@ -404,14 +393,12 @@ func TestSubmitJobWithWorkerTag(t *testing.T) {
 	requestWorkerStore(echoCtx, &worker)
 	require.NoError(t, mf.flamenco.SubmitJob(echoCtx))
 
-	submittedJob.Metadata = new(api.JobMetadata)
-	submittedJob.Settings = new(api.JobSettings)
 	submittedJob.SubmitterPlatform = "" // Not persisted in the database.
 	assertResponseJSON(t, echoCtx, http.StatusOK, api.Job{
 		SubmittedJob:      submittedJob,
 		Id:                dbJob.UUID,
 		Created:           dbJob.CreatedAt,
-		Updated:           dbJob.UpdatedAt,
+		Updated:           dbJob.UpdatedAt.Time,
 		DeleteRequestedAt: nil,
 		Activity:          "",
 		Status:            api.JobStatusQueued,
@@ -580,17 +567,15 @@ func TestSetJobStatus_happy(t *testing.T) {
 		Reason: "someone pushed a button",
 	}
 	dbJob := persistence.Job{
-		UUID:     jobID,
-		Name:     "test job",
-		Status:   api.JobStatusActive,
-		Settings: persistence.StringInterfaceMap{},
-		Metadata: persistence.StringStringMap{},
+		UUID:   jobID,
+		Name:   "test job",
+		Status: api.JobStatusActive,
 	}
 
 	// Set up expectations.
 	ctx := gomock.Any()
 	mf.persistence.EXPECT().FetchJob(ctx, jobID).Return(&dbJob, nil)
-	mf.stateMachine.EXPECT().JobStatusChange(ctx, &dbJob, statusUpdate.Status, "someone pushed a button")
+	mf.stateMachine.EXPECT().JobStatusChange(ctx, jobID, statusUpdate.Status, "someone pushed a button")
 
 	// Going to Cancel Requested should NOT clear the failure list.
 
@@ -635,8 +620,6 @@ func TestSetJobPrio(t *testing.T) {
 		UUID:     jobID,
 		Name:     "test job",
 		Priority: 50,
-		Settings: persistence.StringInterfaceMap{},
-		Metadata: persistence.StringStringMap{},
 	}
 
 	echoCtx := mf.prepareMockedJSONRequest(prioUpdate)
@@ -655,7 +638,7 @@ func TestSetJobPrio(t *testing.T) {
 		RefreshTasks: false,
 		Priority:     prioUpdate.Priority,
 		Status:       dbJob.Status,
-		Updated:      dbJob.UpdatedAt,
+		Updated:      dbJob.UpdatedAt.Time,
 	}
 	mf.broadcaster.EXPECT().BroadcastJobUpdate(expectUpdate)
 
@@ -677,18 +660,16 @@ func TestSetJobStatusFailedToRequeueing(t *testing.T) {
 		Reason: "someone pushed a button",
 	}
 	dbJob := persistence.Job{
-		UUID:     jobID,
-		Name:     "test job",
-		Status:   api.JobStatusFailed,
-		Settings: persistence.StringInterfaceMap{},
-		Metadata: persistence.StringStringMap{},
+		UUID:   jobID,
+		Name:   "test job",
+		Status: api.JobStatusFailed,
 	}
 
 	// Set up expectations.
 	echoCtx := mf.prepareMockedJSONRequest(statusUpdate)
 	ctx := echoCtx.Request().Context()
 	mf.persistence.EXPECT().FetchJob(moremock.ContextWithDeadline(), jobID).Return(&dbJob, nil)
-	mf.stateMachine.EXPECT().JobStatusChange(ctx, &dbJob, statusUpdate.Status, "someone pushed a button")
+	mf.stateMachine.EXPECT().JobStatusChange(ctx, jobID, statusUpdate.Status, "someone pushed a button")
 	mf.persistence.EXPECT().ClearFailureListOfJob(ctx, &dbJob)
 	mf.persistence.EXPECT().ClearJobBlocklist(ctx, &dbJob)
 
@@ -712,31 +693,35 @@ func TestSetTaskStatusQueued(t *testing.T) {
 		Reason: "someone pushed a button",
 	}
 	dbJob := persistence.Job{
-		Model:    persistence.Model{ID: 47},
-		UUID:     jobID,
-		Name:     "test job",
-		Status:   api.JobStatusFailed,
-		Settings: persistence.StringInterfaceMap{},
-		Metadata: persistence.StringStringMap{},
+		ID:     47,
+		UUID:   jobID,
+		Name:   "test job",
+		Status: api.JobStatusFailed,
 	}
 	dbTask := persistence.Task{
 		UUID:   taskID,
 		Name:   "test task",
 		Status: api.TaskStatusFailed,
-		Job:    &dbJob,
 		JobID:  dbJob.ID,
 	}
 
 	// Set up expectations.
 	echoCtx := mf.prepareMockedJSONRequest(statusUpdate)
 	ctx := echoCtx.Request().Context()
-	mf.persistence.EXPECT().FetchTask(ctx, taskID).Return(&dbTask, nil)
-	mf.stateMachine.EXPECT().TaskStatusChange(ctx, &dbTask, statusUpdate.Status)
-	mf.persistence.EXPECT().ClearFailureListOfTask(ctx, &dbTask)
 
-	updatedTask := dbTask
-	updatedTask.Activity = "someone pushed a button"
-	mf.persistence.EXPECT().SaveTaskActivity(ctx, &updatedTask)
+	taskJobWorker := persistence.TaskJobWorker{
+		Task:       dbTask,
+		JobUUID:    dbJob.UUID,
+		WorkerUUID: "",
+	}
+
+	taskWithActivity := dbTask
+	taskWithActivity.Activity = "someone pushed a button"
+
+	mf.persistence.EXPECT().FetchTask(ctx, taskID).Return(taskJobWorker, nil)
+	mf.persistence.EXPECT().SaveTaskActivity(ctx, &taskWithActivity)
+	mf.stateMachine.EXPECT().TaskStatusChange(ctx, &taskWithActivity, statusUpdate.Status)
+	mf.persistence.EXPECT().ClearFailureListOfTask(ctx, &taskWithActivity)
 
 	// Do the call.
 	err := mf.flamenco.SetTaskStatus(echoCtx, taskID)
@@ -914,12 +899,10 @@ func TestDeleteJob(t *testing.T) {
 
 	jobID := "18a9b096-d77e-438c-9be2-74397038298b"
 	dbJob := persistence.Job{
-		Model:    persistence.Model{ID: 47},
-		UUID:     jobID,
-		Name:     "test job",
-		Status:   api.JobStatusFailed,
-		Settings: persistence.StringInterfaceMap{},
-		Metadata: persistence.StringStringMap{},
+		ID:     47,
+		UUID:   jobID,
+		Name:   "test job",
+		Status: api.JobStatusFailed,
 	}
 
 	// Set up expectations.

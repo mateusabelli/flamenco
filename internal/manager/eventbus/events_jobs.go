@@ -17,10 +17,10 @@ func NewJobUpdate(job *persistence.Job) api.EventJobUpdate {
 	jobUpdate := api.EventJobUpdate{
 		Id:       job.UUID,
 		Name:     &job.Name,
-		Updated:  job.UpdatedAt,
+		Updated:  job.UpdatedAt.Time,
 		Status:   job.Status,
 		Type:     job.JobType,
-		Priority: job.Priority,
+		Priority: int(job.Priority),
 	}
 
 	if job.DeleteRequestedAt.Valid {
@@ -34,14 +34,12 @@ func NewJobUpdate(job *persistence.Job) api.EventJobUpdate {
 // fills in the fields that represent the current state of the task. For
 // example, it omits `PreviousStatus`. The omitted fields can be filled in by
 // the caller.
-//
-// Assumes task.Job is not nil.
-func NewTaskUpdate(task *persistence.Task) api.EventTaskUpdate {
+func NewTaskUpdate(task persistence.Task, jobUUID string) api.EventTaskUpdate {
 	taskUpdate := api.EventTaskUpdate{
 		Id:       task.UUID,
-		JobId:    task.Job.UUID,
+		JobId:    jobUUID,
 		Name:     task.Name,
-		Updated:  task.UpdatedAt,
+		Updated:  task.UpdatedAt.Time,
 		Status:   task.Status,
 		Activity: task.Activity,
 	}

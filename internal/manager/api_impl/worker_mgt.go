@@ -66,7 +66,7 @@ func (f *Flamenco) FetchWorker(e echo.Context, workerUUID string) error {
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching worker tags: %v", err)
 	}
 
-	dbTask, err := f.persist.FetchWorkerTask(ctx, dbWorker)
+	taskJob, err := f.persist.FetchWorkerTask(ctx, dbWorker)
 	switch {
 	case errors.Is(err, context.Canceled):
 		return handleConnectionClosed(e, logger, "fetching task assigned to worker")
@@ -78,10 +78,10 @@ func (f *Flamenco) FetchWorker(e echo.Context, workerUUID string) error {
 	logger.Debug().Msg("fetched worker")
 	apiWorker := workerDBtoAPI(*dbWorker)
 
-	if dbTask != nil {
+	if taskJob != nil {
 		apiWorkerTask := api.WorkerTask{
-			TaskSummary: taskDBtoSummary(dbTask),
-			JobId:       dbTask.Job.UUID,
+			TaskSummary: taskDBtoSummaryAPI(taskJob.Task),
+			JobId:       taskJob.JobUUID,
 		}
 		apiWorker.Task = &apiWorkerTask
 	}

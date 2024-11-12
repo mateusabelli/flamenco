@@ -39,7 +39,7 @@ func (m *MockPersistenceService) EXPECT() *MockPersistenceServiceMockRecorder {
 }
 
 // CountTasksOfJobInStatus mocks base method.
-func (m *MockPersistenceService) CountTasksOfJobInStatus(arg0 context.Context, arg1 *persistence.Job, arg2 ...api.TaskStatus) (int, int, error) {
+func (m *MockPersistenceService) CountTasksOfJobInStatus(arg0 context.Context, arg1 *sqlc.Job, arg2 ...api.TaskStatus) (int, int, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
@@ -59,15 +59,45 @@ func (mr *MockPersistenceServiceMockRecorder) CountTasksOfJobInStatus(arg0, arg1
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountTasksOfJobInStatus", reflect.TypeOf((*MockPersistenceService)(nil).CountTasksOfJobInStatus), varargs...)
 }
 
+// FetchJob mocks base method.
+func (m *MockPersistenceService) FetchJob(arg0 context.Context, arg1 string) (*sqlc.Job, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchJob", arg0, arg1)
+	ret0, _ := ret[0].(*sqlc.Job)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchJob indicates an expected call of FetchJob.
+func (mr *MockPersistenceServiceMockRecorder) FetchJob(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchJob", reflect.TypeOf((*MockPersistenceService)(nil).FetchJob), arg0, arg1)
+}
+
+// FetchJobByID mocks base method.
+func (m *MockPersistenceService) FetchJobByID(arg0 context.Context, arg1 int64) (*sqlc.Job, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchJobByID", arg0, arg1)
+	ret0, _ := ret[0].(*sqlc.Job)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchJobByID indicates an expected call of FetchJobByID.
+func (mr *MockPersistenceServiceMockRecorder) FetchJobByID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchJobByID", reflect.TypeOf((*MockPersistenceService)(nil).FetchJobByID), arg0, arg1)
+}
+
 // FetchJobsInStatus mocks base method.
-func (m *MockPersistenceService) FetchJobsInStatus(arg0 context.Context, arg1 ...api.JobStatus) ([]*persistence.Job, error) {
+func (m *MockPersistenceService) FetchJobsInStatus(arg0 context.Context, arg1 ...api.JobStatus) ([]*sqlc.Job, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "FetchJobsInStatus", varargs...)
-	ret0, _ := ret[0].([]*persistence.Job)
+	ret0, _ := ret[0].([]*sqlc.Job)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -80,10 +110,10 @@ func (mr *MockPersistenceServiceMockRecorder) FetchJobsInStatus(arg0 interface{}
 }
 
 // FetchTasksOfWorkerInStatus mocks base method.
-func (m *MockPersistenceService) FetchTasksOfWorkerInStatus(arg0 context.Context, arg1 *sqlc.Worker, arg2 api.TaskStatus) ([]*persistence.Task, error) {
+func (m *MockPersistenceService) FetchTasksOfWorkerInStatus(arg0 context.Context, arg1 *sqlc.Worker, arg2 api.TaskStatus) ([]persistence.TaskJob, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchTasksOfWorkerInStatus", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]*persistence.Task)
+	ret0, _ := ret[0].([]persistence.TaskJob)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -95,10 +125,10 @@ func (mr *MockPersistenceServiceMockRecorder) FetchTasksOfWorkerInStatus(arg0, a
 }
 
 // FetchTasksOfWorkerInStatusOfJob mocks base method.
-func (m *MockPersistenceService) FetchTasksOfWorkerInStatusOfJob(arg0 context.Context, arg1 *sqlc.Worker, arg2 api.TaskStatus, arg3 *persistence.Job) ([]*persistence.Task, error) {
+func (m *MockPersistenceService) FetchTasksOfWorkerInStatusOfJob(arg0 context.Context, arg1 *sqlc.Worker, arg2 api.TaskStatus, arg3 string) ([]*sqlc.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchTasksOfWorkerInStatusOfJob", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]*persistence.Task)
+	ret0, _ := ret[0].([]*sqlc.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -110,7 +140,7 @@ func (mr *MockPersistenceServiceMockRecorder) FetchTasksOfWorkerInStatusOfJob(ar
 }
 
 // JobHasTasksInStatus mocks base method.
-func (m *MockPersistenceService) JobHasTasksInStatus(arg0 context.Context, arg1 *persistence.Job, arg2 api.TaskStatus) (bool, error) {
+func (m *MockPersistenceService) JobHasTasksInStatus(arg0 context.Context, arg1 *sqlc.Job, arg2 api.TaskStatus) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "JobHasTasksInStatus", arg0, arg1, arg2)
 	ret0, _ := ret[0].(bool)
@@ -125,7 +155,7 @@ func (mr *MockPersistenceServiceMockRecorder) JobHasTasksInStatus(arg0, arg1, ar
 }
 
 // SaveJobStatus mocks base method.
-func (m *MockPersistenceService) SaveJobStatus(arg0 context.Context, arg1 *persistence.Job) error {
+func (m *MockPersistenceService) SaveJobStatus(arg0 context.Context, arg1 *sqlc.Job) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveJobStatus", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -139,7 +169,7 @@ func (mr *MockPersistenceServiceMockRecorder) SaveJobStatus(arg0, arg1 interface
 }
 
 // SaveTask mocks base method.
-func (m *MockPersistenceService) SaveTask(arg0 context.Context, arg1 *persistence.Task) error {
+func (m *MockPersistenceService) SaveTask(arg0 context.Context, arg1 *sqlc.Task) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveTask", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -153,7 +183,7 @@ func (mr *MockPersistenceServiceMockRecorder) SaveTask(arg0, arg1 interface{}) *
 }
 
 // SaveTaskActivity mocks base method.
-func (m *MockPersistenceService) SaveTaskActivity(arg0 context.Context, arg1 *persistence.Task) error {
+func (m *MockPersistenceService) SaveTaskActivity(arg0 context.Context, arg1 *sqlc.Task) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveTaskActivity", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -167,7 +197,7 @@ func (mr *MockPersistenceServiceMockRecorder) SaveTaskActivity(arg0, arg1 interf
 }
 
 // SaveTaskStatus mocks base method.
-func (m *MockPersistenceService) SaveTaskStatus(arg0 context.Context, arg1 *persistence.Task) error {
+func (m *MockPersistenceService) SaveTaskStatus(arg0 context.Context, arg1 *sqlc.Task) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveTaskStatus", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -181,7 +211,7 @@ func (mr *MockPersistenceServiceMockRecorder) SaveTaskStatus(arg0, arg1 interfac
 }
 
 // UpdateJobsTaskStatuses mocks base method.
-func (m *MockPersistenceService) UpdateJobsTaskStatuses(arg0 context.Context, arg1 *persistence.Job, arg2 api.TaskStatus, arg3 string) error {
+func (m *MockPersistenceService) UpdateJobsTaskStatuses(arg0 context.Context, arg1 *sqlc.Job, arg2 api.TaskStatus, arg3 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateJobsTaskStatuses", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
@@ -195,7 +225,7 @@ func (mr *MockPersistenceServiceMockRecorder) UpdateJobsTaskStatuses(arg0, arg1,
 }
 
 // UpdateJobsTaskStatusesConditional mocks base method.
-func (m *MockPersistenceService) UpdateJobsTaskStatusesConditional(arg0 context.Context, arg1 *persistence.Job, arg2 []api.TaskStatus, arg3 api.TaskStatus, arg4 string) error {
+func (m *MockPersistenceService) UpdateJobsTaskStatusesConditional(arg0 context.Context, arg1 *sqlc.Job, arg2 []api.TaskStatus, arg3 api.TaskStatus, arg4 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateJobsTaskStatusesConditional", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)

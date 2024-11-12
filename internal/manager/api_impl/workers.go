@@ -4,6 +4,7 @@ package api_impl
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/last_rendered"
@@ -331,7 +333,7 @@ func (f *Flamenco) ScheduleTask(e echo.Context) error {
 	}
 
 	// Get a task to execute:
-	dbTask, err := f.persist.ScheduleTask(reqCtx, worker)
+	scheduledTask, err := f.persist.ScheduleTask(reqCtx, worker)
 	if err != nil {
 		if persistence.ErrIsDBBusy(err) {
 			logger.Warn().Msg("database busy scheduling task for worker")
@@ -340,7 +342,7 @@ func (f *Flamenco) ScheduleTask(e echo.Context) error {
 		logger.Warn().Err(err).Msg("error scheduling task for worker")
 		return sendAPIError(e, http.StatusInternalServerError, "internal error finding a task for you: %v", err)
 	}
-	if dbTask == nil {
+	if scheduledTask == nil {
 		return e.NoContent(http.StatusNoContent)
 	}
 
@@ -351,18 +353,18 @@ func (f *Flamenco) ScheduleTask(e echo.Context) error {
 
 	// Add a note to the task log about the worker assignment.
 	msg := fmt.Sprintf("Task assigned to worker %s (%s)", worker.Name, worker.UUID)
-	if err := f.logStorage.WriteTimestamped(logger, dbTask.Job.UUID, dbTask.UUID, msg); err != nil {
+	if err := f.logStorage.WriteTimestamped(logger, scheduledTask.JobUUID, scheduledTask.Task.UUID, msg); err != nil {
 		return sendAPIError(e, http.StatusInternalServerError, "internal error appending to task log: %v", err)
 	}
 
 	// Move the task to 'active' status so that it won't be assigned to another
 	// worker. This also enables the task timeout monitoring.
-	if err := f.stateMachine.TaskStatusChange(bgCtx, dbTask, api.TaskStatusActive); err != nil {
+	if err := f.stateMachine.TaskStatusChange(bgCtx, &scheduledTask.Task, api.TaskStatusActive); err != nil {
 		return sendAPIError(e, http.StatusInternalServerError, "internal error marking task as active: %v", err)
 	}
 
 	// Start timeout measurement as soon as the Worker gets the task assigned.
-	if err := f.workerPingedTask(logger, dbTask); err != nil {
+	if err := f.workerPingedTask(logger, scheduledTask.Task.UUID); err != nil {
 		return sendAPIError(e, http.StatusInternalServerError, "internal error updating task for timeout calculation: %v", err)
 	}
 
@@ -371,23 +373,23 @@ func (f *Flamenco) ScheduleTask(e echo.Context) error {
 	f.broadcaster.BroadcastWorkerUpdate(update)
 
 	// Convert database objects to API objects:
-	apiCommands := []api.Command{}
-	for _, cmd := range dbTask.Commands {
-		apiCommands = append(apiCommands, api.Command{
-			Name:       cmd.Name,
-			Parameters: cmd.Parameters,
-		})
-	}
 	apiTask := api.AssignedTask{
-		Uuid:        dbTask.UUID,
-		Commands:    apiCommands,
-		Job:         dbTask.Job.UUID,
-		JobPriority: dbTask.Job.Priority,
-		JobType:     dbTask.Job.JobType,
-		Name:        dbTask.Name,
-		Priority:    dbTask.Priority,
-		Status:      api.TaskStatus(dbTask.Status),
-		TaskType:    dbTask.Type,
+		Uuid:        scheduledTask.Task.UUID,
+		Job:         scheduledTask.JobUUID,
+		JobPriority: int(scheduledTask.JobPriority),
+		JobType:     scheduledTask.JobType,
+		Name:        scheduledTask.Task.Name,
+		Priority:    int(scheduledTask.Task.Priority),
+		Status:      api.TaskStatus(scheduledTask.Task.Status),
+		TaskType:    scheduledTask.Task.Type,
+	}
+
+	if err := json.Unmarshal(scheduledTask.Task.Commands, &apiTask.Commands); err != nil {
+		log.Error().
+			Str("task", scheduledTask.Task.UUID).
+			AnErr("cause", err).
+			Msg("could not parse task commands JSON")
+		return sendAPIError(e, http.StatusInternalServerError, "internal error parsing task commands JSON: %v", err)
 	}
 
 	// Perform variable replacement before sending to the Worker.
@@ -423,19 +425,17 @@ func (f *Flamenco) TaskOutputProduced(e echo.Context, taskID string) error {
 	}
 
 	// Fetch the task, to find its job UUID:
-	dbTask, err := f.persist.FetchTask(ctx, taskID)
+	taskJobWorker, err := f.persist.FetchTask(ctx, taskID)
 	switch {
 	case errors.Is(err, persistence.ErrTaskNotFound):
 		return e.JSON(http.StatusNotFound, "Task does not exist")
 	case err != nil:
 		logger.Error().Err(err).Msg("TaskOutputProduced: cannot fetch task")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching task")
-	case dbTask == nil:
-		panic("task could not be fetched, but database gave no error either")
 	}
 
 	// Include the job UUID in the logger.
-	jobUUID := dbTask.Job.UUID
+	jobUUID := taskJobWorker.JobUUID
 	logger = logger.With().Str("job", jobUUID).Logger()
 
 	// Read the image bytes into memory.
@@ -459,7 +459,7 @@ func (f *Flamenco) TaskOutputProduced(e echo.Context, taskID string) error {
 
 		Callback: func(ctx context.Context) {
 			// Store this job as the last one to get a rendered image.
-			err := f.persist.SetLastRendered(ctx, dbTask.Job)
+			err := f.persist.SetLastRendered(ctx, taskJobWorker.JobUUID)
 			if err != nil {
 				logger.Error().Err(err).Msg("TaskOutputProduced: error marking this job as the last one to receive render output")
 			}
@@ -497,12 +497,12 @@ func (f *Flamenco) TaskOutputProduced(e echo.Context, taskID string) error {
 
 func (f *Flamenco) workerPingedTask(
 	logger zerolog.Logger,
-	task *persistence.Task,
+	taskUUID string,
 ) error {
 	bgCtx, bgCtxCancel := bgContext()
 	defer bgCtxCancel()
 
-	err := f.persist.TaskTouchedByWorker(bgCtx, task)
+	err := f.persist.TaskTouchedByWorker(bgCtx, taskUUID)
 	if err != nil {
 		logger.Error().Err(err).Msg("error marking task as 'touched' by worker")
 		return err
@@ -549,7 +549,7 @@ func (f *Flamenco) MayWorkerRun(e echo.Context, taskID string) error {
 
 	// Fetch the task, to see if this worker is allowed to run it.
 	ctx := e.Request().Context()
-	dbTask, err := f.persist.FetchTask(ctx, taskID)
+	taskJobWorker, err := f.persist.FetchTask(ctx, taskID)
 	if err != nil {
 		if errors.Is(err, persistence.ErrTaskNotFound) {
 			mkr := api.MayKeepRunning{Reason: "Task not found"}
@@ -558,16 +558,13 @@ func (f *Flamenco) MayWorkerRun(e echo.Context, taskID string) error {
 		logger.Error().Err(err).Msg("MayWorkerRun: cannot fetch task")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching task")
 	}
-	if dbTask == nil {
-		panic("task could not be fetched, but database gave no error either")
-	}
 
-	mkr := mayWorkerRun(worker, dbTask)
+	mkr := mayWorkerRun(worker, &taskJobWorker.Task)
 
 	// Errors saving the "worker pinged task" and "worker seen" fields in the
 	// database are just logged. It's not something to bother the worker with.
 	if mkr.MayKeepRunning {
-		_ = f.workerPingedTask(logger, dbTask)
+		_ = f.workerPingedTask(logger, taskJobWorker.Task.UUID)
 	}
 	_ = f.workerSeen(logger, worker)
 
@@ -582,7 +579,7 @@ func mayWorkerRun(worker *persistence.Worker, dbTask *persistence.Task) api.MayK
 			StatusChangeRequested: true,
 		}
 	}
-	if dbTask.WorkerID == nil || *dbTask.WorkerID != uint(worker.ID) {
+	if !dbTask.WorkerID.Valid || dbTask.WorkerID.Int64 != worker.ID {
 		return api.MayKeepRunning{Reason: "task not assigned to this worker"}
 	}
 	if !task_state_machine.IsRunnableTaskStatus(dbTask.Status) {

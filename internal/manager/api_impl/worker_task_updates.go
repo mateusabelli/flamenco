@@ -29,16 +29,13 @@ func (f *Flamenco) TaskUpdate(e echo.Context, taskID string) error {
 
 	// Fetch the task, to see if this worker is even allowed to send us updates.
 	ctx := e.Request().Context()
-	dbTask, err := f.persist.FetchTask(ctx, taskID)
+	taskJobWorker, err := f.persist.FetchTask(ctx, taskID)
 	if err != nil {
 		logger.Warn().Err(err).Msg("cannot fetch task")
 		if errors.Is(err, persistence.ErrTaskNotFound) {
 			return sendAPIError(e, http.StatusNotFound, "task %+v not found", taskID)
 		}
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching task")
-	}
-	if dbTask == nil {
-		panic("task could not be fetched, but database gave no error either")
 	}
 
 	// Decode the request body.
@@ -47,13 +44,15 @@ func (f *Flamenco) TaskUpdate(e echo.Context, taskID string) error {
 		logger.Warn().Err(err).Msg("bad request received")
 		return sendAPIError(e, http.StatusBadRequest, "invalid format")
 	}
-	if dbTask.WorkerID == nil {
+	if !taskJobWorker.Task.WorkerID.Valid {
 		logger.Warn().
 			Msg("worker trying to update task that's not assigned to any worker")
 		return sendAPIError(e, http.StatusConflict, "task %+v is not assigned to any worker, so also not to you", taskID)
 	}
-	if *dbTask.WorkerID != uint(worker.ID) {
-		logger.Warn().Msg("worker trying to update task that's assigned to another worker")
+	if taskJobWorker.Task.WorkerID.Int64 != worker.ID {
+		logger.Warn().
+			Str("assignedToWorker", taskJobWorker.WorkerUUID).
+			Msg("worker trying to update task that's assigned to another worker")
 		return sendAPIError(e, http.StatusConflict, "task %+v is not assigned to you", taskID)
 	}
 
@@ -70,8 +69,8 @@ func (f *Flamenco) TaskUpdate(e echo.Context, taskID string) error {
 	bgCtx, bgCtxCancel := bgContext()
 	defer bgCtxCancel()
 
-	taskUpdateErr := f.doTaskUpdate(bgCtx, logger, worker, dbTask, taskUpdate)
-	workerUpdateErr := f.workerPingedTask(logger, dbTask)
+	taskUpdateErr := f.doTaskUpdate(bgCtx, logger, taskJobWorker.JobUUID, worker, &taskJobWorker.Task, taskUpdate)
+	workerUpdateErr := f.workerPingedTask(logger, taskJobWorker.Task.UUID)
 	workerSeenErr := f.workerSeen(logger, worker)
 
 	if taskUpdateErr != nil {
@@ -91,14 +90,11 @@ func (f *Flamenco) TaskUpdate(e echo.Context, taskID string) error {
 func (f *Flamenco) doTaskUpdate(
 	ctx context.Context,
 	logger zerolog.Logger,
+	jobUUID string,
 	w *persistence.Worker,
 	dbTask *persistence.Task,
 	update api.TaskUpdate,
 ) error {
-	if dbTask.Job == nil {
-		logger.Panic().Msg("dbTask.Job is nil, unable to continue")
-	}
-
 	var dbErrActivity error
 
 	if update.Activity != nil {
@@ -113,7 +109,7 @@ func (f *Flamenco) doTaskUpdate(
 	// Manager in response to a status change, should be logged after that.
 	if update.Log != nil {
 		// Errors writing the log to disk are already logged by logStorage, and can be safely ignored here.
-		_ = f.logStorage.Write(logger, dbTask.Job.UUID, dbTask.UUID, *update.Log)
+		_ = f.logStorage.Write(logger, jobUUID, dbTask.UUID, *update.Log)
 	}
 
 	if update.TaskStatus == nil {
@@ -124,7 +120,7 @@ func (f *Flamenco) doTaskUpdate(
 	var err error
 	if *update.TaskStatus == api.TaskStatusFailed {
 		// Failure is more complex than just going to the failed state.
-		err = f.onTaskFailed(ctx, logger, w, dbTask, update)
+		err = f.onTaskFailed(ctx, logger, w, dbTask, jobUUID, update)
 	} else {
 		// Just go to the given state.
 		err = f.stateMachine.TaskStatusChange(ctx, dbTask, *update.TaskStatus)
@@ -150,6 +146,7 @@ func (f *Flamenco) onTaskFailed(
 	logger zerolog.Logger,
 	worker *persistence.Worker,
 	task *persistence.Task,
+	jobUUID string,
 	update api.TaskUpdate,
 ) error {
 	// Sanity check.
@@ -164,18 +161,18 @@ func (f *Flamenco) onTaskFailed(
 	}
 
 	logger = logger.With().Str("taskType", task.Type).Logger()
-	wasBlacklisted, shoudlFailJob, err := f.maybeBlocklistWorker(ctx, logger, worker, task)
+	wasBlacklisted, shoudlFailJob, err := f.maybeBlocklistWorker(ctx, logger, worker, jobUUID, task)
 	if err != nil {
 		return fmt.Errorf("block-listing worker: %w", err)
 	}
 	if shoudlFailJob {
 		// There are no more workers left to finish the job.
-		return f.failJobAfterCatastroficTaskFailure(ctx, logger, worker, task)
+		return f.failJobAfterCatastroficTaskFailure(ctx, logger, worker, jobUUID, task)
 	}
 	if wasBlacklisted {
 		// Requeue all tasks of this job & task type that were hard-failed before by this worker.
 		reason := fmt.Sprintf("worker %s was blocked from tasks of type %q", worker.Name, task.Type)
-		err := f.stateMachine.RequeueFailedTasksOfWorkerOfJob(ctx, worker, task.Job, reason)
+		err := f.stateMachine.RequeueFailedTasksOfWorkerOfJob(ctx, worker, jobUUID, reason)
 		if err != nil {
 			return err
 		}
@@ -189,7 +186,7 @@ func (f *Flamenco) onTaskFailed(
 		Logger()
 
 	if numFailed >= threshold {
-		return f.hardFailTask(ctx, logger, worker, task, numFailed)
+		return f.hardFailTask(ctx, logger, worker, jobUUID, task, numFailed)
 	}
 
 	numWorkers, err := f.numWorkersCapableOfRunningTask(ctx, task)
@@ -203,9 +200,9 @@ func (f *Flamenco) onTaskFailed(
 	// and thus it is still counted.
 	// In such condition we should just fail the job itself.
 	if numWorkers <= 1 {
-		return f.failJobAfterCatastroficTaskFailure(ctx, logger, worker, task)
+		return f.failJobAfterCatastroficTaskFailure(ctx, logger, worker, jobUUID, task)
 	}
-	return f.softFailTask(ctx, logger, worker, task, numFailed)
+	return f.softFailTask(ctx, logger, worker, jobUUID, task, numFailed)
 }
 
 // maybeBlocklistWorker potentially block-lists the Worker, and checks whether
@@ -218,11 +215,12 @@ func (f *Flamenco) maybeBlocklistWorker(
 	ctx context.Context,
 	logger zerolog.Logger,
 	worker *persistence.Worker,
+	jobUUID string,
 	task *persistence.Task,
 ) (wasBlacklisted, shouldFailJob bool, err error) {
-	numFailures, err := f.persist.CountTaskFailuresOfWorker(ctx, task.Job, worker, task.Type)
+	numFailures, err := f.persist.CountTaskFailuresOfWorker(ctx, jobUUID, worker.ID, task.Type)
 	if err != nil {
-		return false, false, fmt.Errorf("counting failures of worker on job %q, task type %q: %w", task.Job.UUID, task.Type, err)
+		return false, false, fmt.Errorf("counting failures of worker on job %q, task type %q: %w", jobUUID, task.Type, err)
 	}
 	// The received task update hasn't been persisted in the database yet,
 	// so we should count that too.
@@ -238,7 +236,7 @@ func (f *Flamenco) maybeBlocklistWorker(
 	}
 
 	// Blocklist the Worker.
-	if err := f.blocklistWorker(ctx, logger, worker, task); err != nil {
+	if err := f.blocklistWorker(ctx, logger, worker, jobUUID, task); err != nil {
 		return true, false, err
 	}
 
@@ -251,12 +249,13 @@ func (f *Flamenco) blocklistWorker(
 	ctx context.Context,
 	logger zerolog.Logger,
 	worker *persistence.Worker,
+	jobUUID string,
 	task *persistence.Task,
 ) error {
 	logger.Warn().
-		Str("job", task.Job.UUID).
+		Str("job", jobUUID).
 		Msg("block-listing worker")
-	err := f.persist.AddWorkerToJobBlocklist(ctx, task.Job, worker, task.Type)
+	err := f.persist.AddWorkerToJobBlocklist(ctx, task.JobID, worker.ID, task.Type)
 	if err != nil {
 		return fmt.Errorf("adding worker to block list: %w", err)
 	}
@@ -264,11 +263,16 @@ func (f *Flamenco) blocklistWorker(
 }
 
 func (f *Flamenco) numWorkersCapableOfRunningTask(ctx context.Context, task *persistence.Task) (int, error) {
+	job, err := f.persist.FetchJobByID(ctx, task.JobID)
+	if err != nil {
+		return 0, fmt.Errorf("fetching job of task %s: %w", task.UUID, err)
+	}
+
 	// See which workers are left to run tasks of this type, on this job,
-	workersLeft, err := f.persist.WorkersLeftToRun(ctx, task.Job, task.Type)
+	workersLeft, err := f.persist.WorkersLeftToRun(ctx, job, task.Type)
 	if err != nil {
 		return 0, fmt.Errorf("fetching workers available to run tasks of type %q on job %q: %w",
-			task.Job.UUID, task.Type, err)
+			job.UUID, task.Type, err)
 	}
 
 	// Remove (from the list of available workers) those who failed this task before.
@@ -290,13 +294,14 @@ func (f *Flamenco) failJobAfterCatastroficTaskFailure(
 	ctx context.Context,
 	logger zerolog.Logger,
 	worker *persistence.Worker,
+	jobUUID string,
 	task *persistence.Task,
 ) error {
 	taskLog := fmt.Sprintf(
 		"Task failed by worker %s, Manager will fail the entire job as there are no more workers left for tasks of type %q.",
 		worker.Identifier(), task.Type,
 	)
-	if err := f.logStorage.WriteTimestamped(logger, task.Job.UUID, task.UUID, taskLog); err != nil {
+	if err := f.logStorage.WriteTimestamped(logger, jobUUID, task.UUID, taskLog); err != nil {
 		logger.Error().Err(err).Msg("error writing failure notice to task log")
 	}
 
@@ -309,17 +314,18 @@ func (f *Flamenco) failJobAfterCatastroficTaskFailure(
 
 	newJobStatus := api.JobStatusFailed
 	logger.Info().
-		Str("job", task.Job.UUID).
+		Str("job", jobUUID).
 		Str("newJobStatus", string(newJobStatus)).
 		Msg("no more workers left to run tasks of this type, failing the entire job")
 	reason := fmt.Sprintf("no more workers left to run tasks of type %q", task.Type)
-	return f.stateMachine.JobStatusChange(ctx, task.Job, newJobStatus, reason)
+	return f.stateMachine.JobStatusChange(ctx, jobUUID, newJobStatus, reason)
 }
 
 func (f *Flamenco) hardFailTask(
 	ctx context.Context,
 	logger zerolog.Logger,
 	worker *persistence.Worker,
+	jobUUID string,
 	task *persistence.Task,
 	numFailed int,
 ) error {
@@ -329,7 +335,7 @@ func (f *Flamenco) hardFailTask(
 		"Task failed by %s, Manager will mark it as hard failure",
 		pluralizer.Pluralize("worker", numFailed, true),
 	)
-	if err := f.logStorage.WriteTimestamped(logger, task.Job.UUID, task.UUID, taskLog); err != nil {
+	if err := f.logStorage.WriteTimestamped(logger, jobUUID, task.UUID, taskLog); err != nil {
 		logger.Error().Err(err).Msg("error writing failure notice to task log")
 	}
 
@@ -343,6 +349,7 @@ func (f *Flamenco) softFailTask(
 	ctx context.Context,
 	logger zerolog.Logger,
 	worker *persistence.Worker,
+	jobUUID string,
 	task *persistence.Task,
 	numFailed int,
 ) error {
@@ -357,7 +364,7 @@ func (f *Flamenco) softFailTask(
 		failsToThreshold,
 		pluralizer.Pluralize("failure", failsToThreshold, false),
 	)
-	if err := f.logStorage.WriteTimestamped(logger, task.Job.UUID, task.UUID, taskLog); err != nil {
+	if err := f.logStorage.WriteTimestamped(logger, jobUUID, task.UUID, taskLog); err != nil {
 		logger.Error().Err(err).Msg("error writing failure notice to task log")
 	}
 

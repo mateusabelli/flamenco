@@ -19,69 +19,27 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
-type Job struct {
-	Model
-	UUID string
+type Job = sqlc.Job
+type Task = sqlc.Task
 
-	Name     string
-	JobType  string
-	Priority int
-	Status   api.JobStatus
-	Activity string
+// TaskJobWorker represents a task, with identifieres for its job and the worker it's assigned to.
+type TaskJobWorker struct {
+	Task       Task
+	JobUUID    string
+	WorkerUUID string
+}
 
-	Settings StringInterfaceMap
-	Metadata StringStringMap
-
-	DeleteRequestedAt sql.NullTime
-
-	Storage JobStorageInfo
-
-	WorkerTagID *uint
-	WorkerTag   *WorkerTag
+// TaskJob represents a task, with identifier for its job.
+type TaskJob struct {
+	Task     Task
+	JobUUID  string
+	IsActive bool // Whether the worker assigned to this task is actually working on it.
 }
 
 type StringInterfaceMap map[string]interface{}
 type StringStringMap map[string]string
 
-// DeleteRequested returns whether deletion of this job was requested.
-func (j *Job) DeleteRequested() bool {
-	return j.DeleteRequestedAt.Valid
-}
-
-// JobStorageInfo contains info about where the job files are stored. It is
-// intended to be used when removing a job, which may include the removal of its
-// files.
-type JobStorageInfo struct {
-	// ShamanCheckoutID is only set when the job was actually using Shaman storage.
-	ShamanCheckoutID string
-}
-
-type Task struct {
-	Model
-	UUID string
-
-	Name       string
-	Type       string
-	JobID      uint
-	Job        *Job
-	JobUUID    string // Fetched by SQLC, handled by GORM in Task.AfterFind()
-	IndexInJob int
-	Priority   int
-	Status     api.TaskStatus
-
-	// Which worker is/was working on this.
-	WorkerID      *uint
-	Worker        *Worker
-	WorkerUUID    string    // Fetched by SQLC, handled by GORM in Task.AfterFind()
-	LastTouchedAt time.Time // Should contain UTC timestamps.
-
-	// Dependencies are tasks that need to be completed before this one can run.
-	Dependencies []*Task
-
-	Commands Commands
-	Activity string
-}
-
+// Commands is the schema used for (un)marshalling sqlc.Task.Commands.
 type Commands []Command
 
 type Command struct {
@@ -123,15 +81,7 @@ func (js *StringStringMap) Scan(value interface{}) error {
 }
 
 // TaskFailure keeps track of which Worker failed which Task.
-type TaskFailure struct {
-	// Don't include the standard Gorm ID, UpdatedAt, or DeletedAt fields, as they're useless here.
-	// Entries will never be updated, and should never be soft-deleted but just purged from existence.
-	CreatedAt time.Time
-	TaskID    uint
-	Task      *Task
-	WorkerID  uint
-	Worker    *Worker
-}
+type TaskFailure = sqlc.TaskFailure
 
 // StoreJob stores an AuthoredJob and its tasks, and saves it to the database.
 // The job will be in 'under construction' status. It is up to the caller to transition it to its desired initial status.
@@ -334,7 +284,7 @@ func (db *DB) storeAuthoredJobTaks(
 func (db *DB) FetchJob(ctx context.Context, jobUUID string) (*Job, error) {
 	queries := db.queries()
 
-	sqlcJob, err := queries.FetchJob(ctx, jobUUID)
+	job, err := queries.FetchJob(ctx, jobUUID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, ErrJobNotFound
@@ -342,23 +292,22 @@ func (db *DB) FetchJob(ctx context.Context, jobUUID string) (*Job, error) {
 		return nil, jobError(err, "fetching job")
 	}
 
-	gormJob, err := convertSqlcJob(sqlcJob)
-	if err != nil {
-		return nil, err
+	return &job, nil
+}
+
+// FetchJob fetches a single job by its database ID, without fetching its tasks.
+func (db *DB) FetchJobByID(ctx context.Context, jobID int64) (*Job, error) {
+	queries := db.queries()
+
+	job, err := queries.FetchJobByID(ctx, jobID)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, ErrJobNotFound
+	case err != nil:
+		return nil, jobError(err, "fetching job")
 	}
 
-	if sqlcJob.WorkerTagID.Valid {
-		workerTag, err := fetchWorkerTagByID(ctx, queries, sqlcJob.WorkerTagID.Int64)
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrWorkerTagNotFound
-		case err != nil:
-			return nil, workerTagError(err, "fetching worker tag of job")
-		}
-		gormJob.WorkerTag = &workerTag
-	}
-
-	return &gormJob, nil
+	return &job, nil
 }
 
 func (db *DB) FetchJobs(ctx context.Context) ([]*Job, error) {
@@ -369,28 +318,13 @@ func (db *DB) FetchJobs(ctx context.Context) ([]*Job, error) {
 		return nil, jobError(err, "fetching all jobs")
 	}
 
-	gormJobs := make([]*Job, len(sqlcJobs))
-	for index, sqlcJob := range sqlcJobs {
-		gormJob, err := convertSqlcJob(sqlcJob)
-		if err != nil {
-			return nil, err
-		}
-
-		if sqlcJob.WorkerTagID.Valid {
-			workerTag, err := fetchWorkerTagByID(ctx, queries, sqlcJob.WorkerTagID.Int64)
-			switch {
-			case errors.Is(err, sql.ErrNoRows):
-				return nil, ErrWorkerTagNotFound
-			case err != nil:
-				return nil, workerTagError(err, "fetching worker tag of job")
-			}
-			gormJob.WorkerTag = &workerTag
-		}
-
-		gormJobs[index] = &gormJob
+	// TODO: just return []Job instead of converting the array.
+	jobPointers := make([]*Job, len(sqlcJobs))
+	for index := range sqlcJobs {
+		jobPointers[index] = &sqlcJobs[index]
 	}
 
-	return gormJobs, nil
+	return jobPointers, nil
 }
 
 // FetchJobShamanCheckoutID fetches the job's Shaman Checkout ID.
@@ -492,21 +426,18 @@ func (db *DB) FetchJobsDeletionRequested(ctx context.Context) ([]string, error) 
 func (db *DB) FetchJobsInStatus(ctx context.Context, jobStatuses ...api.JobStatus) ([]*Job, error) {
 	queries := db.queries()
 
-	sqlcJobs, err := queries.FetchJobsInStatus(ctx, jobStatuses)
+	jobs, err := queries.FetchJobsInStatus(ctx, jobStatuses)
 	if err != nil {
 		return nil, jobError(err, "fetching jobs in status %q", jobStatuses)
 	}
 
-	var jobs []*Job
-	for index := range sqlcJobs {
-		job, err := convertSqlcJob(sqlcJobs[index])
-		if err != nil {
-			return nil, jobError(err, "converting fetched jobs in status %q", jobStatuses)
-		}
-		jobs = append(jobs, &job)
+	// TODO: just return []Job instead of converting the array.
+	pointers := make([]*Job, len(jobs))
+	for index := range jobs {
+		pointers[index] = &jobs[index]
 	}
 
-	return jobs, nil
+	return pointers, nil
 }
 
 // SaveJobStatus saves the job's Status and Activity fields.
@@ -552,7 +483,7 @@ func (db *DB) SaveJobStorageInfo(ctx context.Context, j *Job) error {
 
 	params := sqlc.SaveJobStorageInfoParams{
 		ID:                      int64(j.ID),
-		StorageShamanCheckoutID: j.Storage.ShamanCheckoutID,
+		StorageShamanCheckoutID: j.StorageShamanCheckoutID,
 	}
 
 	err := queries.SaveJobStorageInfo(ctx, params)
@@ -562,68 +493,21 @@ func (db *DB) SaveJobStorageInfo(ctx context.Context, j *Job) error {
 	return nil
 }
 
-func (db *DB) FetchTask(ctx context.Context, taskUUID string) (*Task, error) {
+func (db *DB) FetchTask(ctx context.Context, taskUUID string) (TaskJobWorker, error) {
 	queries := db.queries()
 
 	taskRow, err := queries.FetchTask(ctx, taskUUID)
 	if err != nil {
-		return nil, taskError(err, "fetching task %s", taskUUID)
+		return TaskJobWorker{}, taskError(err, "fetching task %s", taskUUID)
 	}
 
-	return convertSqlTaskWithJobAndWorker(ctx, queries, taskRow.Task)
-}
-
-// TODO: remove this code, and let the code that calls into the persistence
-// service fetch the job/worker explicitly when needed.
-func convertSqlTaskWithJobAndWorker(
-	ctx context.Context,
-	queries *sqlc.Queries,
-	task sqlc.Task,
-) (*Task, error) {
-	var (
-		gormJob Job
-		worker  Worker
-		err     error
-	)
-
-	// Fetch & convert the Job.
-	if task.JobID > 0 {
-		sqlcJob, err := queries.FetchJobByID(ctx, task.JobID)
-		if err != nil {
-			return nil, jobError(err, "fetching job of task %s", task.UUID)
-		}
-
-		gormJob, err = convertSqlcJob(sqlcJob)
-		if err != nil {
-			return nil, jobError(err, "converting job of task %s", task.UUID)
-		}
+	taskJobWorker := TaskJobWorker{
+		Task:       taskRow.Task,
+		JobUUID:    taskRow.JobUUID.String,
+		WorkerUUID: taskRow.WorkerUUID.String,
 	}
 
-	// Fetch the Worker.
-	if task.WorkerID.Valid && task.WorkerID.Int64 > 0 {
-		worker, err = queries.FetchWorkerUnconditionalByID(ctx, task.WorkerID.Int64)
-		if err != nil {
-			return nil, taskError(err, "fetching worker assigned to task %s", task.UUID)
-		}
-	}
-
-	// Convert the Task.
-	gormTask, err := convertSqlcTask(task, gormJob.UUID, worker.UUID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Put the Job & Worker into the Task.
-	if gormJob.ID > 0 {
-		gormTask.Job = &gormJob
-		gormTask.JobUUID = gormJob.UUID
-	}
-	if worker.ID > 0 {
-		gormTask.Worker = &worker
-		gormTask.WorkerUUID = worker.UUID
-	}
-
-	return gormTask, nil
+	return taskJobWorker, nil
 }
 
 // FetchTaskJobUUID fetches the job UUID of the given task.
@@ -655,32 +539,16 @@ func (db *DB) SaveTask(ctx context.Context, t *Task) error {
 	}
 
 	param := sqlc.UpdateTaskParams{
-		UpdatedAt: db.nowNullable(),
-		Name:      t.Name,
-		Type:      t.Type,
-		Priority:  int64(t.Priority),
-		Status:    t.Status,
-		Commands:  commandsJSON,
-		Activity:  t.Activity,
-		ID:        int64(t.ID),
-	}
-	if t.WorkerID != nil {
-		param.WorkerID = sql.NullInt64{
-			Int64: int64(*t.WorkerID),
-			Valid: true,
-		}
-	} else if t.Worker != nil && t.Worker.ID > 0 {
-		param.WorkerID = sql.NullInt64{
-			Int64: int64(t.Worker.ID),
-			Valid: true,
-		}
-	}
-
-	if !t.LastTouchedAt.IsZero() {
-		param.LastTouchedAt = sql.NullTime{
-			Time:  t.LastTouchedAt,
-			Valid: true,
-		}
+		UpdatedAt:     db.nowNullable(),
+		Name:          t.Name,
+		Type:          t.Type,
+		Priority:      t.Priority,
+		Status:        t.Status,
+		Commands:      commandsJSON,
+		Activity:      t.Activity,
+		ID:            t.ID,
+		WorkerID:      t.WorkerID,
+		LastTouchedAt: t.LastTouchedAt,
 	}
 
 	err = queries.UpdateTask(ctx, param)
@@ -724,26 +592,20 @@ func (db *DB) SaveTaskActivity(ctx context.Context, t *Task) error {
 func (db *DB) TaskAssignToWorker(ctx context.Context, t *Task, w *Worker) error {
 	queries := db.queries()
 
+	t.WorkerID = sql.NullInt64{Int64: w.ID, Valid: true}
+
 	err := queries.TaskAssignToWorker(ctx, sqlc.TaskAssignToWorkerParams{
 		UpdatedAt: db.nowNullable(),
-		WorkerID: sql.NullInt64{
-			Int64: int64(w.ID),
-			Valid: true,
-		},
-		ID: int64(t.ID),
+		WorkerID:  t.WorkerID,
+		ID:        t.ID,
 	})
 	if err != nil {
 		return taskError(err, "assigning task %s to worker %s", t.UUID, w.UUID)
 	}
-
-	// Update the task itself.
-	t.Worker = w
-	t.WorkerID = ptr(uint(w.ID))
-
 	return nil
 }
 
-func (db *DB) FetchTasksOfWorkerInStatus(ctx context.Context, worker *Worker, taskStatus api.TaskStatus) ([]*Task, error) {
+func (db *DB) FetchTasksOfWorkerInStatus(ctx context.Context, worker *Worker, taskStatus api.TaskStatus) ([]TaskJob, error) {
 	queries := db.queries()
 
 	rows, err := queries.FetchTasksOfWorkerInStatus(ctx, sqlc.FetchTasksOfWorkerInStatusParams{
@@ -757,38 +619,15 @@ func (db *DB) FetchTasksOfWorkerInStatus(ctx context.Context, worker *Worker, ta
 		return nil, taskError(err, "finding tasks of worker %s in status %q", worker.UUID, taskStatus)
 	}
 
-	jobCache := make(map[uint]*Job)
-
-	result := make([]*Task, len(rows))
+	result := make([]TaskJob, len(rows))
 	for i := range rows {
-		jobUUID := rows[i].JobUUID.String
-		gormTask, err := convertSqlcTask(rows[i].Task, jobUUID, worker.UUID)
-		if err != nil {
-			return nil, err
-		}
-		gormTask.Worker = worker
-		gormTask.WorkerID = ptr(uint(worker.ID))
-
-		// Fetch the job, either from the cache or from the database. This is done
-		// here because the task_state_machine functionality expects that task.Job
-		// is set.
-		// TODO: make that code fetch the job details it needs, rather than fetching
-		// the entire job here.
-		job := jobCache[gormTask.JobID]
-		if job == nil {
-			job, err = db.FetchJob(ctx, jobUUID)
-			if err != nil {
-				return nil, jobError(err, "finding job %s of task %s", jobUUID, gormTask.UUID)
-			}
-		}
-		gormTask.Job = job
-
-		result[i] = gormTask
+		result[i].Task = rows[i].Task
+		result[i].JobUUID = rows[i].JobUUID
 	}
 	return result, nil
 }
 
-func (db *DB) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, worker *Worker, taskStatus api.TaskStatus, job *Job) ([]*Task, error) {
+func (db *DB) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, worker *Worker, taskStatus api.TaskStatus, jobUUID string) ([]*Task, error) {
 	queries := db.queries()
 
 	rows, err := queries.FetchTasksOfWorkerInStatusOfJob(ctx, sqlc.FetchTasksOfWorkerInStatusOfJobParams{
@@ -796,24 +635,17 @@ func (db *DB) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, worker *Worke
 			Int64: int64(worker.ID),
 			Valid: true,
 		},
-		JobID:      int64(job.ID),
+		JobUUID:    jobUUID,
 		TaskStatus: taskStatus,
 	})
 	if err != nil {
-		return nil, taskError(err, "finding tasks of worker %s in status %q and job %s", worker.UUID, taskStatus, job.UUID)
+		return nil, taskError(err, "finding tasks of worker %s in status %q and job %s", worker.UUID, taskStatus, jobUUID)
 	}
 
+	// TODO: just return []Task instead of creating an array of pointers.
 	result := make([]*Task, len(rows))
 	for i := range rows {
-		gormTask, err := convertSqlcTask(rows[i].Task, job.UUID, worker.UUID)
-		if err != nil {
-			return nil, err
-		}
-		gormTask.Job = job
-		gormTask.JobID = job.ID
-		gormTask.Worker = worker
-		gormTask.WorkerID = ptr(uint(worker.ID))
-		result[i] = gormTask
+		result[i] = &rows[i].Task
 	}
 	return result, nil
 }
@@ -865,7 +697,7 @@ func (db *DB) CountTasksOfJobInStatus(
 }
 
 // FetchTaskIDsOfJob returns all tasks of the given job.
-func (db *DB) FetchTasksOfJob(ctx context.Context, job *Job) ([]*Task, error) {
+func (db *DB) FetchTasksOfJob(ctx context.Context, job *Job) ([]TaskJobWorker, error) {
 	queries := db.queries()
 
 	rows, err := queries.FetchTasksOfJob(ctx, int64(job.ID))
@@ -873,20 +705,17 @@ func (db *DB) FetchTasksOfJob(ctx context.Context, job *Job) ([]*Task, error) {
 		return nil, taskError(err, "fetching tasks of job %s", job.UUID)
 	}
 
-	result := make([]*Task, len(rows))
+	result := make([]TaskJobWorker, len(rows))
 	for i := range rows {
-		gormTask, err := convertSqlcTask(rows[i].Task, job.UUID, rows[i].WorkerUUID.String)
-		if err != nil {
-			return nil, err
-		}
-		gormTask.Job = job
-		result[i] = gormTask
+		result[i].Task = rows[i].Task
+		result[i].JobUUID = job.UUID
+		result[i].WorkerUUID = rows[i].WorkerUUID.String
 	}
 	return result, nil
 }
 
 // FetchTasksOfJobInStatus returns those tasks of the given job that have any of the given statuses.
-func (db *DB) FetchTasksOfJobInStatus(ctx context.Context, job *Job, taskStatuses ...api.TaskStatus) ([]*Task, error) {
+func (db *DB) FetchTasksOfJobInStatus(ctx context.Context, job *Job, taskStatuses ...api.TaskStatus) ([]TaskJobWorker, error) {
 	queries := db.queries()
 
 	rows, err := queries.FetchTasksOfJobInStatus(ctx, sqlc.FetchTasksOfJobInStatusParams{
@@ -897,14 +726,11 @@ func (db *DB) FetchTasksOfJobInStatus(ctx context.Context, job *Job, taskStatuse
 		return nil, taskError(err, "fetching tasks of job %s in status %q", job.UUID, taskStatuses)
 	}
 
-	result := make([]*Task, len(rows))
+	result := make([]TaskJobWorker, len(rows))
 	for i := range rows {
-		gormTask, err := convertSqlcTask(rows[i].Task, job.UUID, rows[i].WorkerUUID.String)
-		if err != nil {
-			return nil, err
-		}
-		gormTask.Job = job
-		result[i] = gormTask
+		result[i].Task = rows[i].Task
+		result[i].JobUUID = job.UUID
+		result[i].WorkerUUID = rows[i].WorkerUUID.String
 	}
 	return result, nil
 }
@@ -958,22 +784,18 @@ func (db *DB) UpdateJobsTaskStatusesConditional(ctx context.Context, job *Job,
 }
 
 // TaskTouchedByWorker marks the task as 'touched' by a worker. This is used for timeout detection.
-func (db *DB) TaskTouchedByWorker(ctx context.Context, t *Task) error {
+func (db *DB) TaskTouchedByWorker(ctx context.Context, taskUUID string) error {
 	queries := db.queries()
 
 	now := db.nowNullable()
 	err := queries.TaskTouchedByWorker(ctx, sqlc.TaskTouchedByWorkerParams{
 		UpdatedAt:     now,
 		LastTouchedAt: now,
-		ID:            int64(t.ID),
+		UUID:          taskUUID,
 	})
 	if err != nil {
 		return taskError(err, "saving task 'last touched at'")
 	}
-
-	// Also update the given task, so that it's consistent with the database.
-	t.LastTouchedAt = now.Time
-
 	return nil
 }
 
@@ -1039,83 +861,4 @@ func (db *DB) FetchTaskFailureList(ctx context.Context, t *Task) ([]*Worker, err
 		workers[idx] = &failureList[idx].Worker
 	}
 	return workers, nil
-}
-
-// convertSqlcJob converts a job from the SQLC-generated model to the model
-// expected by the rest of the code. This is mostly in place to aid in the GORM
-// to SQLC migration. It is intended that eventually the rest of the code will
-// use the same SQLC-generated model.
-func convertSqlcJob(job sqlc.Job) (Job, error) {
-	dbJob := Job{
-		Model: Model{
-			ID:        uint(job.ID),
-			CreatedAt: job.CreatedAt,
-			UpdatedAt: job.UpdatedAt.Time,
-		},
-		UUID:              job.UUID,
-		Name:              job.Name,
-		JobType:           job.JobType,
-		Priority:          int(job.Priority),
-		Status:            api.JobStatus(job.Status),
-		Activity:          job.Activity,
-		DeleteRequestedAt: job.DeleteRequestedAt,
-		Storage: JobStorageInfo{
-			ShamanCheckoutID: job.StorageShamanCheckoutID,
-		},
-	}
-
-	if err := json.Unmarshal(job.Settings, &dbJob.Settings); err != nil {
-		return Job{}, jobError(err, fmt.Sprintf("job %s has invalid settings: %v", job.UUID, err))
-	}
-
-	if err := json.Unmarshal(job.Metadata, &dbJob.Metadata); err != nil {
-		return Job{}, jobError(err, fmt.Sprintf("job %s has invalid metadata: %v", job.UUID, err))
-	}
-
-	if job.WorkerTagID.Valid {
-		workerTagID := uint(job.WorkerTagID.Int64)
-		dbJob.WorkerTagID = &workerTagID
-	}
-
-	return dbJob, nil
-}
-
-// convertSqlcTask converts a FetchTaskRow from the SQLC-generated model to the
-// model expected by the rest of the code. This is mostly in place to aid in the
-// GORM to SQLC migration. It is intended that eventually the rest of the code
-// will use the same SQLC-generated model.
-func convertSqlcTask(task sqlc.Task, jobUUID string, workerUUID string) (*Task, error) {
-	dbTask := Task{
-		Model: Model{
-			ID:        uint(task.ID),
-			CreatedAt: task.CreatedAt,
-			UpdatedAt: task.UpdatedAt.Time,
-		},
-
-		UUID:          task.UUID,
-		Name:          task.Name,
-		Type:          task.Type,
-		IndexInJob:    int(task.IndexInJob),
-		Priority:      int(task.Priority),
-		Status:        api.TaskStatus(task.Status),
-		LastTouchedAt: task.LastTouchedAt.Time,
-		Activity:      task.Activity,
-
-		JobID:      uint(task.JobID),
-		JobUUID:    jobUUID,
-		WorkerUUID: workerUUID,
-	}
-
-	// TODO: convert dependencies?
-
-	if task.WorkerID.Valid {
-		workerID := uint(task.WorkerID.Int64)
-		dbTask.WorkerID = &workerID
-	}
-
-	if err := json.Unmarshal(task.Commands, &dbTask.Commands); err != nil {
-		return nil, taskError(err, "task %s of job %s has invalid commands: %v", task.UUID, jobUUID, err)
-	}
-
-	return &dbTask, nil
 }

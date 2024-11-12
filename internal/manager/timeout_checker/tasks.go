@@ -21,38 +21,44 @@ func (ttc *TimeoutChecker) checkTasks(ctx context.Context) {
 		Logger()
 	logger.Trace().Msg("TimeoutChecker: finding active tasks that have not been touched since threshold")
 
-	tasks, err := ttc.persist.FetchTimedOutTasks(ctx, timeoutThreshold)
+	timeoutTaskInfo, err := ttc.persist.FetchTimedOutTasks(ctx, timeoutThreshold)
 	if err != nil {
 		log.Error().Err(err).Msg("TimeoutChecker: error fetching timed-out tasks from database")
 		return
 	}
 
-	if len(tasks) == 0 {
+	if len(timeoutTaskInfo) == 0 {
 		logger.Trace().Msg("TimeoutChecker: no timed-out tasks")
 		return
 	}
 	logger.Debug().
-		Int("numTasks", len(tasks)).
+		Int("numTasks", len(timeoutTaskInfo)).
 		Msg("TimeoutChecker: failing all active tasks that have not been touched since threshold")
 
-	for _, task := range tasks {
-		ttc.timeoutTask(ctx, task)
+	for _, taskInfo := range timeoutTaskInfo {
+		ttc.timeoutTask(ctx, taskInfo)
 	}
 }
 
 // timeoutTask marks a task as 'failed' due to a timeout.
-func (ttc *TimeoutChecker) timeoutTask(ctx context.Context, task *persistence.Task) {
-	workerIdent, logger := ttc.assignedWorker(task)
+func (ttc *TimeoutChecker) timeoutTask(ctx context.Context, taskInfo persistence.TimedOutTaskInfo) {
+	task := taskInfo.Task
+	workerIdent, logger := ttc.assignedWorker(taskInfo)
 
 	task.Activity = fmt.Sprintf("Task timed out on worker %s", workerIdent)
-	err := ttc.taskStateMachine.TaskStatusChange(ctx, task, api.TaskStatusFailed)
+	err := ttc.taskStateMachine.TaskStatusChange(ctx, &task, api.TaskStatusFailed)
 	if err != nil {
 		logger.Error().Err(err).Msg("TimeoutChecker: error saving timed-out task to database")
 	}
 
-	err = ttc.logStorage.WriteTimestamped(logger, task.Job.UUID, task.UUID,
+	lastTouchedAt := "forever"
+	if task.LastTouchedAt.Valid {
+		lastTouchedAt = task.LastTouchedAt.Time.Format(time.RFC3339)
+	}
+
+	err = ttc.logStorage.WriteTimestamped(logger, taskInfo.JobUUID, task.UUID,
 		fmt.Sprintf("Task timed out. It was assigned to worker %s, but untouched since %s",
-			workerIdent, task.LastTouchedAt.Format(time.RFC3339)))
+			workerIdent, lastTouchedAt))
 	if err != nil {
 		logger.Error().Err(err).Msg("TimeoutChecker: error writing timeout info to the task log")
 	}
@@ -60,27 +66,20 @@ func (ttc *TimeoutChecker) timeoutTask(ctx context.Context, task *persistence.Ta
 
 // assignedWorker returns a description of the worker assigned to this task,
 // and a logger configured for it.
-func (ttc *TimeoutChecker) assignedWorker(task *persistence.Task) (string, zerolog.Logger) {
-	logCtx := log.With().Str("task", task.UUID)
+func (ttc *TimeoutChecker) assignedWorker(taskInfo persistence.TimedOutTaskInfo) (string, zerolog.Logger) {
+	logCtx := log.With().Str("task", taskInfo.Task.UUID)
 
-	if task.WorkerID == nil {
+	if taskInfo.WorkerUUID == "" {
 		logger := logCtx.Logger()
 		logger.Warn().Msg("TimeoutChecker: task timed out, but was not assigned to any worker")
 		return "-unassigned-", logger
 	}
 
-	if task.Worker == nil {
-		logger := logCtx.Logger()
-		logger.Warn().Uint("workerDBID", *task.WorkerID).
-			Msg("TimeoutChecker: task is assigned to worker that no longer exists")
-		return "-unknown-", logger
-	}
-
 	logCtx = logCtx.
-		Str("worker", task.Worker.UUID).
-		Str("workerName", task.Worker.Name)
+		Str("worker", taskInfo.WorkerUUID).
+		Str("workerName", taskInfo.WorkerName)
 	logger := logCtx.Logger()
 	logger.Warn().Msg("TimeoutChecker: task timed out")
 
-	return task.Worker.Identifier(), logger
+	return fmt.Sprintf("%s (%s)", taskInfo.WorkerName, taskInfo.WorkerUUID), logger
 }

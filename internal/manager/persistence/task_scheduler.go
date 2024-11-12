@@ -22,10 +22,22 @@ var (
 	// completedTaskStatuses   = []api.TaskStatus{api.TaskStatusCompleted}
 )
 
+// ScheduledTask contains a Task and some info about its job.
+//
+// This structure is returned from different points in the code below, and
+// filled from different sqlc-generated structs. That's why it has to be an
+// explicit struct here, rather than an alias for some sqlc struct.
+type ScheduledTask struct {
+	Task        Task
+	JobUUID     string
+	JobPriority int64
+	JobType     string
+}
+
 // ScheduleTask finds a task to execute by the given worker.
 // If no task is available, (nil, nil) is returned, as this is not an error situation.
 // NOTE: this does not also fetch returnedTask.Worker, but returnedTask.WorkerID is set.
-func (db *DB) ScheduleTask(ctx context.Context, w *Worker) (*Task, error) {
+func (db *DB) ScheduleTask(ctx context.Context, w *Worker) (*ScheduledTask, error) {
 	logger := log.With().Str("worker", w.UUID).Logger()
 	logger.Trace().Msg("finding task for worker")
 
@@ -41,32 +53,27 @@ func (db *DB) ScheduleTask(ctx context.Context, w *Worker) (*Task, error) {
 
 	defer qtx.rollback()
 
-	task, err := db.scheduleTask(ctx, qtx.queries, w, logger)
+	scheduledTask, err := db.scheduleTask(ctx, qtx.queries, w, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	if task == nil {
+	if scheduledTask == nil {
 		// No task means no changes to the database.
 		// It's fine to just roll back the transaction.
 		return nil, nil
 	}
 
-	gormTask, err := convertSqlTaskWithJobAndWorker(ctx, qtx.queries, *task)
-	if err != nil {
-		return nil, err
-	}
-
 	if err := qtx.commit(); err != nil {
 		return nil, fmt.Errorf(
 			"could not commit database transaction after scheduling task %s for worker %s: %w",
-			task.UUID, w.UUID, err)
+			scheduledTask.Task.UUID, w.UUID, err)
 	}
 
-	return gormTask, nil
+	return scheduledTask, nil
 }
 
-func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker, logger zerolog.Logger) (*sqlc.Task, error) {
+func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker, logger zerolog.Logger) (*ScheduledTask, error) {
 	if w.ID == 0 {
 		panic("worker should be in database, but has zero ID")
 	}
@@ -76,11 +83,12 @@ func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker
 	// Note that this task type could be blocklisted or no longer supported by the
 	// Worker, but since it's active that is unlikely.
 	{
-		row, err := queries.FetchAssignedAndRunnableTaskOfWorker(ctx, sqlc.FetchAssignedAndRunnableTaskOfWorkerParams{
-			ActiveTaskStatus:  api.TaskStatusActive,
-			ActiveJobStatuses: schedulableJobStatuses,
-			WorkerID:          workerID,
-		})
+		row, err := queries.FetchAssignedAndRunnableTaskOfWorker(
+			ctx, sqlc.FetchAssignedAndRunnableTaskOfWorkerParams{
+				ActiveTaskStatus:  api.TaskStatusActive,
+				ActiveJobStatuses: schedulableJobStatuses,
+				WorkerID:          workerID,
+			})
 
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -88,11 +96,18 @@ func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker
 		case err != nil:
 			return nil, err
 		case row.Task.ID > 0:
-			return &row.Task, nil
+			// Task was previously assigned, just go for it again.
+			scheduledTask := ScheduledTask{
+				Task:        row.Task,
+				JobUUID:     row.JobUUID,
+				JobPriority: row.JobPriority,
+				JobType:     row.JobType,
+			}
+			return &scheduledTask, nil
 		}
 	}
 
-	task, err := findTaskForWorker(ctx, queries, w)
+	scheduledTask, err := findTaskForWorker(ctx, queries, w)
 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
@@ -107,10 +122,11 @@ func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker
 	}
 
 	// Assign the task to the worker.
+	assignmentTimestamp := db.nowNullable()
 	err = queries.AssignTaskToWorker(ctx, sqlc.AssignTaskToWorkerParams{
 		WorkerID: workerID,
-		Now:      db.nowNullable(),
-		TaskID:   task.ID,
+		TaskID:   scheduledTask.Task.ID,
+		Now:      assignmentTimestamp,
 	})
 
 	switch {
@@ -119,32 +135,33 @@ func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker
 		return nil, errDatabaseBusy
 	case err != nil:
 		logger.Warn().
-			Str("taskID", task.UUID).
+			Str("taskID", scheduledTask.Task.UUID).
 			Err(err).
 			Msg("assigning task to worker")
 		return nil, fmt.Errorf("assigning task to worker: %w", err)
 	}
 
 	// Make sure the returned task matches the database.
-	task.WorkerID = workerID
+	scheduledTask.Task.WorkerID = workerID
+	scheduledTask.Task.UpdatedAt = assignmentTimestamp
 
 	logger.Info().
-		Str("taskID", task.UUID).
+		Str("taskID", scheduledTask.Task.UUID).
 		Msg("assigned task to worker")
 
-	return &task, nil
+	return scheduledTask, nil
 }
 
 func findTaskForWorker(
 	ctx context.Context,
 	queries *sqlc.Queries,
 	w *Worker,
-) (sqlc.Task, error) {
+) (*ScheduledTask, error) {
 
 	// Construct the list of worker tag IDs to check.
 	tags, err := queries.FetchTagsOfWorker(ctx, w.UUID)
 	if err != nil {
-		return sqlc.Task{}, err
+		return nil, err
 	}
 	workerTags := make([]sql.NullInt64, len(tags))
 	for index, tag := range tags {
@@ -160,10 +177,17 @@ func findTaskForWorker(
 		WorkerTags:              workerTags,
 	})
 	if err != nil {
-		return sqlc.Task{}, err
+		return nil, err
 	}
 	if row.Task.ID == 0 {
-		return sqlc.Task{}, nil
+		return nil, nil
 	}
-	return row.Task, nil
+
+	scheduledTask := ScheduledTask{
+		Task:        row.Task,
+		JobUUID:     row.JobUUID,
+		JobPriority: row.JobPriority,
+		JobType:     row.JobType,
+	}
+	return &scheduledTask, nil
 }

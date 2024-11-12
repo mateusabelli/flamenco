@@ -89,20 +89,21 @@ func (q *Queries) ClearJobBlocklist(ctx context.Context, jobuuid string) error {
 const countTaskFailuresOfWorker = `-- name: CountTaskFailuresOfWorker :one
 SELECT count(TF.task_id) FROM task_failures TF
 INNER JOIN tasks T ON TF.task_id = T.id
+INNER JOIN jobs J ON T.job_id = J.id
 WHERE
     TF.worker_id = ?1
-AND T.job_id = ?2
+AND J.uuid = ?2
 AND T.type = ?3
 `
 
 type CountTaskFailuresOfWorkerParams struct {
 	WorkerID int64
-	JobID    int64
+	JobUUID  string
 	TaskType string
 }
 
 func (q *Queries) CountTaskFailuresOfWorker(ctx context.Context, arg CountTaskFailuresOfWorkerParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countTaskFailuresOfWorker, arg.WorkerID, arg.JobID, arg.TaskType)
+	row := q.db.QueryRowContext(ctx, countTaskFailuresOfWorker, arg.WorkerID, arg.JobUUID, arg.TaskType)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -350,6 +351,21 @@ func (q *Queries) FetchJobByID(ctx context.Context, id int64) (Job, error) {
 		&i.WorkerTagID,
 	)
 	return i, err
+}
+
+const fetchJobIDFromUUID = `-- name: FetchJobIDFromUUID :one
+SELECT id FROM jobs WHERE uuid=?1
+`
+
+// Fetch the job's database ID by its UUID.
+//
+// This query is here to keep the SetLastRendered query below simpler,
+// mostly because that query is alread hitting a limitation of sqlc.
+func (q *Queries) FetchJobIDFromUUID(ctx context.Context, jobuuid string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, fetchJobIDFromUUID, jobuuid)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const fetchJobShamanCheckoutID = `-- name: FetchJobShamanCheckoutID :one
@@ -736,9 +752,9 @@ func (q *Queries) FetchTasksOfJobInStatus(ctx context.Context, arg FetchTasksOfJ
 }
 
 const fetchTasksOfWorkerInStatus = `-- name: FetchTasksOfWorkerInStatus :many
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, jobs.UUID as jobUUID
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, jobs.uuid as jobuuid
 FROM tasks
-LEFT JOIN jobs ON (tasks.job_id = jobs.id)
+INNER JOIN jobs ON (tasks.job_id = jobs.id)
 WHERE tasks.worker_id = ?1
   AND tasks.status = ?2
 `
@@ -750,7 +766,7 @@ type FetchTasksOfWorkerInStatusParams struct {
 
 type FetchTasksOfWorkerInStatusRow struct {
 	Task    Task
-	JobUUID sql.NullString
+	JobUUID string
 }
 
 func (q *Queries) FetchTasksOfWorkerInStatus(ctx context.Context, arg FetchTasksOfWorkerInStatusParams) ([]FetchTasksOfWorkerInStatusRow, error) {
@@ -795,15 +811,16 @@ func (q *Queries) FetchTasksOfWorkerInStatus(ctx context.Context, arg FetchTasks
 const fetchTasksOfWorkerInStatusOfJob = `-- name: FetchTasksOfWorkerInStatusOfJob :many
 SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity
 FROM tasks
+LEFT JOIN jobs ON (tasks.job_id = jobs.id)
 WHERE tasks.worker_id = ?1
-  AND tasks.job_id = ?2
-  AND tasks.status = ?3
+  AND tasks.status = ?2
+  AND jobs.uuid = ?3
 `
 
 type FetchTasksOfWorkerInStatusOfJobParams struct {
 	WorkerID   sql.NullInt64
-	JobID      int64
 	TaskStatus api.TaskStatus
+	JobUUID    string
 }
 
 type FetchTasksOfWorkerInStatusOfJobRow struct {
@@ -811,7 +828,7 @@ type FetchTasksOfWorkerInStatusOfJobRow struct {
 }
 
 func (q *Queries) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, arg FetchTasksOfWorkerInStatusOfJobParams) ([]FetchTasksOfWorkerInStatusOfJobRow, error) {
-	rows, err := q.db.QueryContext(ctx, fetchTasksOfWorkerInStatusOfJob, arg.WorkerID, arg.JobID, arg.TaskStatus)
+	rows, err := q.db.QueryContext(ctx, fetchTasksOfWorkerInStatusOfJob, arg.WorkerID, arg.TaskStatus, arg.JobUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -849,11 +866,17 @@ func (q *Queries) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, arg Fetch
 }
 
 const fetchTimedOutTasks = `-- name: FetchTimedOutTasks :many
-SELECT id, created_at, updated_at, uuid, name, type, job_id, index_in_job, priority, status, worker_id, last_touched_at, commands, activity
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity,
+  -- Cast to remove nullability from the generated structs.
+  CAST(jobs.uuid AS VARCHAR(36)) as jobuuid,
+  CAST(workers.name AS VARCHAR(64)) as worker_name,
+  CAST(workers.uuid AS VARCHAR(36)) as workeruuid
 FROM tasks
+LEFT JOIN jobs ON jobs.id = tasks.job_id
+LEFT JOIN workers ON workers.id = tasks.worker_id
 WHERE
-    status = ?1
-AND last_touched_at <= ?2
+    tasks.status = ?1
+AND tasks.last_touched_at <= ?2
 `
 
 type FetchTimedOutTasksParams struct {
@@ -861,30 +884,40 @@ type FetchTimedOutTasksParams struct {
 	UntouchedSince sql.NullTime
 }
 
-func (q *Queries) FetchTimedOutTasks(ctx context.Context, arg FetchTimedOutTasksParams) ([]Task, error) {
+type FetchTimedOutTasksRow struct {
+	Task       Task
+	JobUUID    string
+	WorkerName string
+	WorkerUUID string
+}
+
+func (q *Queries) FetchTimedOutTasks(ctx context.Context, arg FetchTimedOutTasksParams) ([]FetchTimedOutTasksRow, error) {
 	rows, err := q.db.QueryContext(ctx, fetchTimedOutTasks, arg.TaskStatus, arg.UntouchedSince)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Task
+	var items []FetchTimedOutTasksRow
 	for rows.Next() {
-		var i Task
+		var i FetchTimedOutTasksRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.UUID,
-			&i.Name,
-			&i.Type,
-			&i.JobID,
-			&i.IndexInJob,
-			&i.Priority,
-			&i.Status,
-			&i.WorkerID,
-			&i.LastTouchedAt,
-			&i.Commands,
-			&i.Activity,
+			&i.Task.ID,
+			&i.Task.CreatedAt,
+			&i.Task.UpdatedAt,
+			&i.Task.UUID,
+			&i.Task.Name,
+			&i.Task.Type,
+			&i.Task.JobID,
+			&i.Task.IndexInJob,
+			&i.Task.Priority,
+			&i.Task.Status,
+			&i.Task.WorkerID,
+			&i.Task.LastTouchedAt,
+			&i.Task.Commands,
+			&i.Task.Activity,
+			&i.JobUUID,
+			&i.WorkerName,
+			&i.WorkerUUID,
 		); err != nil {
 			return nil, err
 		}
@@ -1221,17 +1254,17 @@ const taskTouchedByWorker = `-- name: TaskTouchedByWorker :exec
 UPDATE tasks SET
   updated_at = ?1,
   last_touched_at = ?2
-WHERE id=?3
+WHERE uuid=?3
 `
 
 type TaskTouchedByWorkerParams struct {
 	UpdatedAt     sql.NullTime
 	LastTouchedAt sql.NullTime
-	ID            int64
+	UUID          string
 }
 
 func (q *Queries) TaskTouchedByWorker(ctx context.Context, arg TaskTouchedByWorkerParams) error {
-	_, err := q.db.ExecContext(ctx, taskTouchedByWorker, arg.UpdatedAt, arg.LastTouchedAt, arg.ID)
+	_, err := q.db.ExecContext(ctx, taskTouchedByWorker, arg.UpdatedAt, arg.LastTouchedAt, arg.UUID)
 	return err
 }
 

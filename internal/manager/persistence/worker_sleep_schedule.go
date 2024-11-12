@@ -16,6 +16,7 @@ import (
 // sent to the 'asleep' and 'awake' states.
 type SleepSchedule = sqlc.SleepSchedule
 
+// SleepScheduleOwned represents a sleep schedule + info about the worker that's controlled by it.
 type SleepScheduleOwned struct {
 	SleepSchedule SleepSchedule
 	WorkerName    string

@@ -5,6 +5,7 @@ package api_impl
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"io"
 	"net/http"
 	"testing"
@@ -32,22 +33,28 @@ func TestTaskScheduleHappy(t *testing.T) {
 
 	// Expect a call into the persistence layer, which should return a scheduled task.
 	job := persistence.Job{
-		UUID: "583a7d59-887a-4c6c-b3e4-a753018f71b0",
+		ID:       1234,
+		UUID:     "583a7d59-887a-4c6c-b3e4-a753018f71b0",
+		Priority: 47,
+		JobType:  "simple-blender-test",
 	}
 	task := persistence.Task{
-		UUID: "4107c7aa-e86d-4244-858b-6c4fce2af503",
-		Job:  &job,
-		Commands: []persistence.Command{
-			{Name: "test", Parameters: map[string]interface{}{
-				"param": "prefix-{variable}-suffix",
-			}},
-		},
+		UUID:     "4107c7aa-e86d-4244-858b-6c4fce2af503",
+		JobID:    job.ID,
+		Priority: 327,
+		Commands: []byte(`[{"name": "test", "parameters": {"param": "prefix-{variable}-suffix"}}]`),
+	}
+	scheduledTask := persistence.ScheduledTask{
+		Task:        task,
+		JobUUID:     job.UUID,
+		JobPriority: job.Priority,
+		JobType:     job.JobType,
 	}
 
 	ctx := echo.Request().Context()
 	bgCtx := gomock.Not(ctx)
-	mf.persistence.EXPECT().ScheduleTask(ctx, &worker).Return(&task, nil)
-	mf.persistence.EXPECT().TaskTouchedByWorker(bgCtx, &task)
+	mf.persistence.EXPECT().ScheduleTask(ctx, &worker).Return(&scheduledTask, nil)
+	mf.persistence.EXPECT().TaskTouchedByWorker(bgCtx, task.UUID)
 	mf.persistence.EXPECT().WorkerSeen(bgCtx, &worker)
 	mf.expectExpandVariables(t,
 		config.VariableAudienceWorkers,
@@ -66,8 +73,11 @@ func TestTaskScheduleHappy(t *testing.T) {
 
 	// Check the response
 	assignedTask := api.AssignedTask{
-		Uuid: task.UUID,
-		Job:  job.UUID,
+		Uuid:        task.UUID,
+		Job:         job.UUID,
+		JobType:     "simple-blender-test",
+		JobPriority: 47,
+		Priority:    327,
 		Commands: []api.Command{
 			{Name: "test", Parameters: map[string]interface{}{
 				"param": "prefix-value-suffix",
@@ -493,16 +503,15 @@ func TestMayWorkerRun(t *testing.T) {
 	}
 
 	job := persistence.Job{
+		ID:   1234,
 		UUID: "583a7d59-887a-4c6c-b3e4-a753018f71b0",
 	}
 
 	task := persistence.Task{
 		UUID:   "4107c7aa-e86d-4244-858b-6c4fce2af503",
-		Job:    &job,
+		JobID:  job.ID,
 		Status: api.TaskStatusActive,
 	}
-
-	mf.persistence.EXPECT().FetchTask(gomock.Any(), task.UUID).Return(&task, nil).AnyTimes()
 
 	// Expect the worker to be marked as 'seen' regardless of whether it may run
 	// its current task or not, so equal to the number of calls to
@@ -511,6 +520,13 @@ func TestMayWorkerRun(t *testing.T) {
 
 	// Test: unhappy, task unassigned
 	{
+		taskJobWorker := persistence.TaskJobWorker{
+			Task:       task,
+			JobUUID:    job.UUID,
+			WorkerUUID: "",
+		}
+		mf.persistence.EXPECT().FetchTask(gomock.Any(), task.UUID).Return(taskJobWorker, nil)
+
 		echo := prepareRequest()
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
 		require.NoError(t, err)
@@ -522,11 +538,18 @@ func TestMayWorkerRun(t *testing.T) {
 
 	// Test: happy, task assigned to this worker.
 	{
+		task.WorkerID = sql.NullInt64{Int64: worker.ID, Valid: true}
+		taskJobWorker := persistence.TaskJobWorker{
+			Task:       task,
+			JobUUID:    job.UUID,
+			WorkerUUID: worker.UUID,
+		}
+		mf.persistence.EXPECT().FetchTask(gomock.Any(), task.UUID).Return(taskJobWorker, nil)
+
 		// Expect a 'touch' of the task.
-		mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), &task).Return(nil)
+		mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), task.UUID).Return(nil)
 
 		echo := prepareRequest()
-		task.WorkerID = ptr(uint(worker.ID))
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
 		require.NoError(t, err)
 		assertResponseJSON(t, echo, http.StatusOK, api.MayKeepRunning{
@@ -536,9 +559,16 @@ func TestMayWorkerRun(t *testing.T) {
 
 	// Test: unhappy, assigned but cancelled.
 	{
-		echo := prepareRequest()
-		task.WorkerID = ptr(uint(worker.ID))
+		task.WorkerID = sql.NullInt64{Int64: worker.ID, Valid: true}
 		task.Status = api.TaskStatusCanceled
+		taskJobWorker := persistence.TaskJobWorker{
+			Task:       task,
+			JobUUID:    job.UUID,
+			WorkerUUID: worker.UUID,
+		}
+		mf.persistence.EXPECT().FetchTask(gomock.Any(), task.UUID).Return(taskJobWorker, nil)
+
+		echo := prepareRequest()
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
 		require.NoError(t, err)
 		assertResponseJSON(t, echo, http.StatusOK, api.MayKeepRunning{
@@ -550,9 +580,16 @@ func TestMayWorkerRun(t *testing.T) {
 	// Test: unhappy, assigned and runnable but worker should go to bed.
 	{
 		worker.StatusChangeRequest(api.WorkerStatusAsleep, false)
-		echo := prepareRequest()
-		task.WorkerID = ptr(uint(worker.ID))
+		task.WorkerID = sql.NullInt64{Int64: worker.ID, Valid: true}
 		task.Status = api.TaskStatusActive
+		taskJobWorker := persistence.TaskJobWorker{
+			Task:       task,
+			JobUUID:    job.UUID,
+			WorkerUUID: worker.UUID,
+		}
+		mf.persistence.EXPECT().FetchTask(gomock.Any(), task.UUID).Return(taskJobWorker, nil)
+
+		echo := prepareRequest()
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
 		require.NoError(t, err)
 		assertResponseJSON(t, echo, http.StatusOK, api.MayKeepRunning{
@@ -564,13 +601,20 @@ func TestMayWorkerRun(t *testing.T) {
 
 	// Test: happy, assigned and runnable; worker should go to bed after task is finished.
 	{
-		// Expect a 'touch' of the task.
-		mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), &task).Return(nil)
-
 		worker.StatusChangeRequest(api.WorkerStatusAsleep, true)
-		echo := prepareRequest()
-		task.WorkerID = ptr(uint(worker.ID))
+		task.WorkerID = sql.NullInt64{Int64: worker.ID, Valid: true}
 		task.Status = api.TaskStatusActive
+		taskJobWorker := persistence.TaskJobWorker{
+			Task:       task,
+			JobUUID:    job.UUID,
+			WorkerUUID: worker.UUID,
+		}
+		mf.persistence.EXPECT().FetchTask(gomock.Any(), task.UUID).Return(taskJobWorker, nil)
+
+		// Expect a 'touch' of the task.
+		mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), task.UUID).Return(nil)
+
+		echo := prepareRequest()
 		err := mf.flamenco.MayWorkerRun(echo, task.UUID)
 		require.NoError(t, err)
 		assertResponseJSON(t, echo, http.StatusOK, api.MayKeepRunning{
@@ -593,12 +637,18 @@ func TestTaskOutputProduced(t *testing.T) {
 	}
 
 	job := persistence.Job{
+		ID:   1234,
 		UUID: "583a7d59-887a-4c6c-b3e4-a753018f71b0",
 	}
 	task := persistence.Task{
 		UUID:   "4107c7aa-e86d-4244-858b-6c4fce2af503",
-		Job:    &job,
+		JobID:  job.ID,
 		Status: api.TaskStatusActive,
+	}
+	taskJobWorker := persistence.TaskJobWorker{
+		Task:       task,
+		JobUUID:    job.UUID,
+		WorkerUUID: worker.UUID,
 	}
 
 	// Mock body to use in the request.
@@ -640,7 +690,7 @@ func TestTaskOutputProduced(t *testing.T) {
 	// Test: unhappy, wrong mime type
 	{
 		mf.persistence.EXPECT().WorkerSeen(gomock.Any(), &worker)
-		mf.persistence.EXPECT().FetchTask(gomock.Any(), task.UUID).Return(&task, nil)
+		mf.persistence.EXPECT().FetchTask(gomock.Any(), task.UUID).Return(taskJobWorker, nil)
 
 		echo := prepareRequest(bytes.NewReader(bodyBytes))
 		echo.Request().Header.Set("Content-Type", "image/openexr")
@@ -654,7 +704,7 @@ func TestTaskOutputProduced(t *testing.T) {
 	// Test: unhappy, queue full
 	{
 		mf.persistence.EXPECT().WorkerSeen(gomock.Any(), &worker)
-		mf.persistence.EXPECT().FetchTask(gomock.Any(), task.UUID).Return(&task, nil)
+		mf.persistence.EXPECT().FetchTask(gomock.Any(), task.UUID).Return(taskJobWorker, nil)
 
 		echo := prepareRequest(bytes.NewReader(bodyBytes))
 		mf.lastRender.EXPECT().QueueImage(gomock.Any()).Return(last_rendered.ErrQueueFull)
@@ -667,7 +717,7 @@ func TestTaskOutputProduced(t *testing.T) {
 	// Test: happy
 	{
 		mf.persistence.EXPECT().WorkerSeen(gomock.Any(), &worker)
-		mf.persistence.EXPECT().FetchTask(gomock.Any(), task.UUID).Return(&task, nil)
+		mf.persistence.EXPECT().FetchTask(gomock.Any(), task.UUID).Return(taskJobWorker, nil)
 		// Don't expect persistence.SetLastRendered(...) quite yet. That should be
 		// called after the image processing is done.
 
@@ -691,7 +741,7 @@ func TestTaskOutputProduced(t *testing.T) {
 
 		if assert.NotNil(t, actualPayload) {
 			ctx := context.Background()
-			mf.persistence.EXPECT().SetLastRendered(ctx, &job)
+			mf.persistence.EXPECT().SetLastRendered(ctx, job.UUID)
 
 			expectBroadcast := api.EventLastRenderedUpdate{
 				JobId: job.UUID,

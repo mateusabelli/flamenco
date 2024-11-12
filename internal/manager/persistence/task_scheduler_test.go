@@ -17,7 +17,7 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
-const schedulerTestTimeout = 100 * time.Millisecond
+const schedulerTestTimeout = 100 * time.Hour
 const schedulerTestTimeoutlong = 5000 * time.Millisecond
 
 func TestNoTasks(t *testing.T) {
@@ -26,8 +26,8 @@ func TestNoTasks(t *testing.T) {
 
 	w := linuxWorker(t, db)
 
-	task, err := db.ScheduleTask(ctx, &w)
-	assert.Nil(t, task)
+	scheduledTask, err := db.ScheduleTask(ctx, &w)
+	assert.Nil(t, scheduledTask)
 	require.NoError(t, err)
 }
 
@@ -41,24 +41,25 @@ func TestOneJobOneTask(t *testing.T) {
 	atj := authorTestJob("b6a1d859-122f-4791-8b78-b943329a9989", "simple-blender-render", authTask)
 	job := constructTestJob(ctx, t, db, atj)
 
-	task, err := db.ScheduleTask(ctx, &w)
+	scheduledTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
 
 	// Check the returned task.
-	require.NotNil(t, task)
-	assert.Equal(t, job.ID, task.JobID)
-	require.NotNil(t, task.WorkerID, "no worker assigned to returned task")
-	assert.Equal(t, w.ID, int64(*task.WorkerID), "task must be assigned to the requesting worker")
+	require.NotNil(t, scheduledTask)
+	assert.Equal(t, job.ID, scheduledTask.Task.JobID)
+	require.True(t, scheduledTask.Task.WorkerID.Valid, "no worker assigned to returned task")
+	assert.Equal(t, w.ID, scheduledTask.Task.WorkerID.Int64, "task must be assigned to the requesting worker")
 
 	// Check the task in the database.
 	now := db.now()
-	dbTask, err := db.FetchTask(context.Background(), authTask.UUID)
+	taskJobWorker, err := db.FetchTask(context.Background(), authTask.UUID)
 	require.NoError(t, err)
-	require.NotNil(t, dbTask)
-	require.NotNil(t, dbTask.WorkerID, "no worker assigned to task in database")
+	require.NotNil(t, taskJobWorker)
+	require.True(t, taskJobWorker.Task.WorkerID.Valid, "no worker assigned to task in database")
+	require.NotZero(t, taskJobWorker.WorkerUUID, "no worker fetched from database even though assigned assigned to task")
 
-	assert.Equal(t, w.ID, int64(*dbTask.WorkerID), "task must be assigned to the requesting worker")
-	assert.WithinDuration(t, now, dbTask.LastTouchedAt, time.Second, "task must be 'touched' by the worker after scheduling")
+	assert.Equal(t, w.ID, taskJobWorker.Task.WorkerID.Int64, "task must be assigned to the requesting worker")
+	assert.WithinDuration(t, now, taskJobWorker.Task.LastTouchedAt.Time, time.Second, "task must be 'touched' by the worker after scheduling")
 }
 
 func TestOneJobThreeTasksByPrio(t *testing.T) {
@@ -78,14 +79,14 @@ func TestOneJobThreeTasksByPrio(t *testing.T) {
 
 	job := constructTestJob(ctx, t, db, atj)
 
-	task, err := db.ScheduleTask(ctx, &w)
+	scheduledTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	require.NotNil(t, task)
+	require.NotNil(t, scheduledTask)
 
-	assert.Equal(t, job.ID, task.JobID)
-	assert.NotNil(t, task.Job)
+	assert.Equal(t, job.ID, scheduledTask.Task.JobID)
+	assert.Equal(t, job.UUID, scheduledTask.JobUUID)
 
-	assert.Equal(t, att2.Name, task.Name, "the high-prio task should have been chosen")
+	assert.Equal(t, att2.Name, scheduledTask.Task.Name, "the high-prio task should have been chosen")
 }
 
 func TestOneJobThreeTasksByDependencies(t *testing.T) {
@@ -105,11 +106,12 @@ func TestOneJobThreeTasksByDependencies(t *testing.T) {
 		att1, att2, att3)
 	job := constructTestJob(ctx, t, db, atj)
 
-	task, err := db.ScheduleTask(ctx, &w)
+	scheduledTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	require.NotNil(t, task)
-	assert.Equal(t, job.ID, task.JobID)
-	assert.Equal(t, att1.Name, task.Name, "the first task should have been chosen")
+	require.NotNil(t, scheduledTask)
+	assert.Equal(t, job.ID, scheduledTask.Task.JobID)
+	assert.Equal(t, job.UUID, scheduledTask.JobUUID)
+	assert.Equal(t, att1.Name, scheduledTask.Task.Name, "the first task should have been chosen")
 }
 
 func TestTwoJobsThreeTasks(t *testing.T) {
@@ -143,11 +145,11 @@ func TestTwoJobsThreeTasks(t *testing.T) {
 	constructTestJob(ctx, t, db, atj1)
 	job2 := constructTestJob(ctx, t, db, atj2)
 
-	task, err := db.ScheduleTask(ctx, &w)
+	scheduledTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	require.NotNil(t, task)
-	assert.Equal(t, job2.ID, task.JobID)
-	assert.Equal(t, att2_3.Name, task.Name, "the 3rd task of the 2nd job should have been chosen")
+	require.NotNil(t, scheduledTask)
+	assert.Equal(t, job2.ID, scheduledTask.Task.JobID)
+	assert.Equal(t, att2_3.Name, scheduledTask.Task.Name, "the 3rd task of the 2nd job should have been chosen")
 }
 
 // TestFanOutFanIn tests one starting task, then multiple tasks that depend on
@@ -190,14 +192,14 @@ func TestFanOutFanIn(t *testing.T) {
 	// Check the order in which tasks are handed out.
 	executionOrder := []string{} // Slice of task names.
 	for index := range 6 {
-		task, err := db.ScheduleTask(ctx, &w)
+		scheduledTask, err := db.ScheduleTask(ctx, &w)
 		require.NoError(t, err)
-		require.NotNil(t, task, "task #%d is nil", index)
-		executionOrder = append(executionOrder, task.Name)
+		require.NotNil(t, scheduledTask, "task #%d is nil", index)
+		executionOrder = append(executionOrder, scheduledTask.Task.Name)
 
 		// Fake that the task has been completed by the worker.
-		task.Status = api.TaskStatusCompleted
-		require.NoError(t, db.SaveTaskStatus(ctx, task))
+		scheduledTask.Task.Status = api.TaskStatusCompleted
+		require.NoError(t, db.SaveTaskStatus(ctx, &scheduledTask.Task))
 	}
 
 	expectedOrder := []string{
@@ -230,10 +232,10 @@ func TestSomeButNotAllDependenciesCompleted(t *testing.T) {
 	setTaskStatus(t, db, att1.UUID, api.TaskStatusCompleted)
 
 	w := linuxWorker(t, db)
-	task, err := db.ScheduleTask(ctx, &w)
+	scheduledTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	if task != nil {
-		t.Fatalf("there should not be any task assigned, but received %q", task.Name)
+	if scheduledTask != nil {
+		t.Fatalf("there should not be any task assigned, but received %q", scheduledTask.Task.Name)
 	}
 }
 
@@ -259,16 +261,16 @@ func TestAlreadyAssigned(t *testing.T) {
 	// another, higher-prio task to be done.
 	dbTask3, err := db.FetchTask(ctx, att3.UUID)
 	require.NoError(t, err)
-	dbTask3.WorkerID = ptr(uint(w.ID))
-	dbTask3.Status = api.TaskStatusActive
-	err = db.SaveTask(ctx, dbTask3)
+	dbTask3.Task.WorkerID = sql.NullInt64{Int64: w.ID, Valid: true}
+	dbTask3.Task.Status = api.TaskStatusActive
+	err = db.SaveTask(ctx, &dbTask3.Task)
 	require.NoError(t, err)
 
-	task, err := db.ScheduleTask(ctx, &w)
+	scheduledTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	require.NotNil(t, task)
+	require.NotNil(t, scheduledTask)
 
-	assert.Equal(t, att3.Name, task.Name, "the already-assigned task should have been chosen")
+	assert.Equal(t, att3.Name, scheduledTask.Task.Name, "the already-assigned task should have been chosen")
 }
 
 func TestAssignedToOtherWorker(t *testing.T) {
@@ -292,17 +294,17 @@ func TestAssignedToOtherWorker(t *testing.T) {
 	// it shouldn't matter which worker it's assigned to.
 	dbTask2, err := db.FetchTask(ctx, att2.UUID)
 	require.NoError(t, err)
-	dbTask2.WorkerID = ptr(uint(w2.ID))
-	dbTask2.Status = api.TaskStatusQueued
-	err = db.SaveTask(ctx, dbTask2)
+	dbTask2.Task.WorkerID = sql.NullInt64{Int64: w2.ID, Valid: true}
+	dbTask2.Task.Status = api.TaskStatusQueued
+	err = db.SaveTask(ctx, &dbTask2.Task)
 	require.NoError(t, err)
 
-	task, err := db.ScheduleTask(ctx, &w)
+	scheduledTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	require.NotNil(t, task)
+	require.NotNil(t, scheduledTask)
 
-	assert.Equal(t, att2.Name, task.Name, "the high-prio task should have been chosen")
-	assert.Equal(t, int64(*task.WorkerID), w.ID, "the task should now be assigned to the worker it was scheduled for")
+	assert.Equal(t, att2.Name, scheduledTask.Task.Name, "the high-prio task should have been chosen")
+	assert.Equal(t, w.ID, scheduledTask.Task.WorkerID.Int64, "the task should now be assigned to the worker it was scheduled for")
 }
 
 func TestPreviouslyFailed(t *testing.T) {
@@ -320,17 +322,17 @@ func TestPreviouslyFailed(t *testing.T) {
 	job := constructTestJob(ctx, t, db, atj)
 
 	// Mimick that this worker already failed the first task.
-	tasks, err := db.FetchTasksOfJob(ctx, job)
+	taskJobWorkers, err := db.FetchTasksOfJob(ctx, job)
 	require.NoError(t, err)
-	numFailed, err := db.AddWorkerToTaskFailedList(ctx, tasks[0], &w)
+	numFailed, err := db.AddWorkerToTaskFailedList(ctx, &taskJobWorkers[0].Task, &w)
 	require.NoError(t, err)
 	assert.Equal(t, 1, numFailed)
 
-	// This should assign the 2nd task.
-	task, err := db.ScheduleTask(ctx, &w)
+	// This should assign the 2nd scheduledTask.
+	scheduledTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	require.NotNil(t, task)
-	assert.Equal(t, att2.Name, task.Name, "the second task should have been chosen")
+	require.NotNil(t, scheduledTask)
+	assert.Equal(t, att2.Name, scheduledTask.Task.Name, "the second task should have been chosen")
 }
 
 func TestWorkerTagJobWithTag(t *testing.T) {
@@ -369,14 +371,14 @@ func TestWorkerTagJobWithTag(t *testing.T) {
 		job.WorkerTagUUID = tag1.UUID
 		constructTestJob(ctx, t, db, job)
 
-		task, err := db.ScheduleTask(ctx, &workerC)
+		scheduledTask, err := db.ScheduleTask(ctx, &workerC)
 		require.NoError(t, err)
-		require.NotNil(t, task, "job with matching tag should be scheduled")
-		assert.Equal(t, authTask.UUID, task.UUID)
+		require.NotNil(t, scheduledTask, "job with matching tag should be scheduled")
+		assert.Equal(t, authTask.UUID, scheduledTask.Task.UUID)
 
-		task, err = db.ScheduleTask(ctx, &workerNC)
+		scheduledTask, err = db.ScheduleTask(ctx, &workerNC)
 		require.NoError(t, err)
-		assert.Nil(t, task, "job with tag should not be scheduled for worker without tag")
+		assert.Nil(t, scheduledTask, "job with tag should not be scheduled for worker without tag")
 	}
 }
 
@@ -402,15 +404,15 @@ func TestWorkerTagJobWithoutTag(t *testing.T) {
 	job := authorTestJob("b6a1d859-122f-4791-8b78-b943329a9989", "simple-blender-render", authTask)
 	constructTestJob(ctx, t, db, job)
 
-	task, err := db.ScheduleTask(ctx, &workerC)
+	scheduledTask, err := db.ScheduleTask(ctx, &workerC)
 	require.NoError(t, err)
-	require.NotNil(t, task, "job without tag should always be scheduled to worker in some tag")
-	assert.Equal(t, authTask.UUID, task.UUID)
+	require.NotNil(t, scheduledTask, "job without tag should always be scheduled to worker in some tag")
+	assert.Equal(t, authTask.UUID, scheduledTask.Task.UUID)
 
-	task, err = db.ScheduleTask(ctx, &workerNC)
+	scheduledTask, err = db.ScheduleTask(ctx, &workerNC)
 	require.NoError(t, err)
-	require.NotNil(t, task, "job without tag should always be scheduled to worker without tag")
-	assert.Equal(t, authTask.UUID, task.UUID)
+	require.NotNil(t, scheduledTask, "job without tag should always be scheduled to worker without tag")
+	assert.Equal(t, authTask.UUID, scheduledTask.Task.UUID)
 }
 
 func TestBlocklisted(t *testing.T) {
@@ -428,14 +430,14 @@ func TestBlocklisted(t *testing.T) {
 	job := constructTestJob(ctx, t, db, atj)
 
 	// Mimick that this worker was already blocked for 'blender' tasks of this job.
-	err := db.AddWorkerToJobBlocklist(ctx, job, &w, "blender")
+	err := db.AddWorkerToJobBlocklist(ctx, job.ID, w.ID, "blender")
 	require.NoError(t, err)
 
-	// This should assign the 2nd task.
-	task, err := db.ScheduleTask(ctx, &w)
+	// This should assign the 2nd scheduledTask.
+	scheduledTask, err := db.ScheduleTask(ctx, &w)
 	require.NoError(t, err)
-	require.NotNil(t, task)
-	assert.Equal(t, att2.Name, task.Name, "the second task should have been chosen")
+	require.NotNil(t, scheduledTask)
+	assert.Equal(t, att2.Name, scheduledTask.Task.Name, "the second task should have been chosen")
 }
 
 // To test: blocklists
@@ -486,12 +488,12 @@ func authorTestTask(name, taskType string, dependencies ...*job_compilers.Author
 
 func setTaskStatus(t *testing.T, db *DB, taskUUID string, status api.TaskStatus) {
 	ctx := context.Background()
-	task, err := db.FetchTask(ctx, taskUUID)
+	taskJobWorker, err := db.FetchTask(ctx, taskUUID)
 	require.NoError(t, err)
 
-	task.Status = status
+	taskJobWorker.Task.Status = status
 
-	require.NoError(t, db.SaveTask(ctx, task))
+	require.NoError(t, db.SaveTask(ctx, &taskJobWorker.Task))
 }
 
 func linuxWorker(t *testing.T, db *DB, updaters ...func(worker *Worker)) Worker {

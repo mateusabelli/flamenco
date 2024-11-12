@@ -55,7 +55,8 @@ func (f *Flamenco) FetchJob(e echo.Context, jobID string) error {
 		return err
 	}
 
-	apiJob := jobDBtoAPI(dbJob)
+	ctx := e.Request().Context()
+	apiJob := jobDBtoAPI(ctx, f.persist, dbJob)
 	return e.JSON(http.StatusOK, apiJob)
 }
 
@@ -75,7 +76,7 @@ func (f *Flamenco) FetchJobs(e echo.Context) error {
 
 	apiJobs := make([]api.Job, len(dbJobs))
 	for i, dbJob := range dbJobs {
-		apiJobs[i] = jobDBtoAPI(dbJob)
+		apiJobs[i] = jobDBtoAPI(ctx, f.persist, dbJob)
 	}
 	result := api.JobsQueryResult{
 		Jobs: apiJobs,
@@ -94,7 +95,7 @@ func (f *Flamenco) FetchJobTasks(e echo.Context, jobID string) error {
 		return sendAPIError(e, http.StatusBadRequest, "job ID not valid")
 	}
 
-	tasks, err := f.persist.QueryJobTaskSummaries(ctx, jobID)
+	dbSummaries, err := f.persist.QueryJobTaskSummaries(ctx, jobID)
 	switch {
 	case errors.Is(err, context.Canceled):
 		logger.Debug().AnErr("cause", err).Msg("could not fetch job tasks, remote end probably closed connection")
@@ -104,12 +105,12 @@ func (f *Flamenco) FetchJobTasks(e echo.Context, jobID string) error {
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching job tasks: %v", err)
 	}
 
-	summaries := make([]api.TaskSummary, len(tasks))
-	for i, task := range tasks {
-		summaries[i] = taskDBtoSummary(task)
+	apiSummaries := make([]api.TaskSummary, len(dbSummaries))
+	for i, dbSummary := range dbSummaries {
+		apiSummaries[i] = taskSummaryDBtoAPI(dbSummary)
 	}
 	result := api.JobTasksSummary{
-		Tasks: &summaries,
+		Tasks: &apiSummaries,
 	}
 	return e.JSON(http.StatusOK, result)
 }
@@ -125,8 +126,8 @@ func (f *Flamenco) FetchTask(e echo.Context, taskID string) error {
 		return sendAPIError(e, http.StatusBadRequest, "job ID not valid")
 	}
 
-	// Fetch & convert the task.
-	task, err := f.persist.FetchTask(ctx, taskID)
+	// Fetch & convert the taskJobWorker.
+	taskJobWorker, err := f.persist.FetchTask(ctx, taskID)
 	if errors.Is(err, persistence.ErrTaskNotFound) {
 		logger.Debug().Msg("non-existent task requested")
 		return sendAPIError(e, http.StatusNotFound, "no such task")
@@ -135,10 +136,20 @@ func (f *Flamenco) FetchTask(e echo.Context, taskID string) error {
 		logger.Warn().Err(err).Msg("error fetching task")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching task")
 	}
-	apiTask := taskDBtoAPI(task)
+	apiTask := taskJobWorkertoAPI(taskJobWorker)
+
+	// Fetch the worker. TODO: get rid of this conversion, just include the
+	// worker's UUID and let the caller fetch the worker info themselves if
+	// necessary.
+	taskWorker, err := f.persist.FetchWorker(ctx, taskJobWorker.WorkerUUID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("error fetching task worker")
+		return sendAPIError(e, http.StatusInternalServerError, "error fetching task worker")
+	}
+	apiTask.Worker = workerToTaskWorker(taskWorker)
 
 	// Fetch & convert the failure list.
-	failedWorkers, err := f.persist.FetchTaskFailureList(ctx, task)
+	failedWorkers, err := f.persist.FetchTaskFailureList(ctx, &taskJobWorker.Task)
 	if err != nil {
 		logger.Warn().Err(err).Msg("error fetching task failure list")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching task failure list")
@@ -152,14 +163,26 @@ func (f *Flamenco) FetchTask(e echo.Context, taskID string) error {
 	return e.JSON(http.StatusOK, apiTask)
 }
 
-func taskDBtoSummary(task *persistence.Task) api.TaskSummary {
+func taskSummaryDBtoAPI(task persistence.TaskSummary) api.TaskSummary {
 	return api.TaskSummary{
 		Id:         task.UUID,
 		Name:       task.Name,
-		IndexInJob: task.IndexInJob,
-		Priority:   task.Priority,
+		IndexInJob: int(task.IndexInJob),
+		Priority:   int(task.Priority),
 		Status:     task.Status,
 		TaskType:   task.Type,
-		Updated:    task.UpdatedAt,
+		Updated:    task.UpdatedAt.Time,
+	}
+}
+
+func taskDBtoSummaryAPI(task persistence.Task) api.TaskSummary {
+	return api.TaskSummary{
+		Id:         task.UUID,
+		Name:       task.Name,
+		IndexInJob: int(task.IndexInJob),
+		Priority:   int(task.Priority),
+		Status:     task.Status,
+		TaskType:   task.Type,
+		Updated:    task.UpdatedAt.Time,
 	}
 }

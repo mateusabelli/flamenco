@@ -40,13 +40,23 @@ func (sm *StateMachine) TaskStatusChange(
 	task *persistence.Task,
 	newTaskStatus api.TaskStatus,
 ) error {
+	if task.JobID == 0 {
+		log.Panic().Str("task", task.UUID).Msg("task without job ID, cannot handle this")
+		return nil // Will not run because of the panic.
+	}
+
+	job, err := sm.persist.FetchJobByID(ctx, task.JobID)
+	if err != nil {
+		return fmt.Errorf("cannot fetch the job of task %s: %w", task.UUID, err)
+	}
+
 	oldTaskStatus := task.Status
 
-	if err := sm.taskStatusChangeOnly(ctx, task, newTaskStatus); err != nil {
+	if err := sm.taskStatusChangeOnly(ctx, task, job, newTaskStatus); err != nil {
 		return err
 	}
 
-	if err := sm.updateJobAfterTaskStatusChange(ctx, task, oldTaskStatus); err != nil {
+	if err := sm.updateJobAfterTaskStatusChange(ctx, task, job, oldTaskStatus); err != nil {
 		return fmt.Errorf("updating job after task status change: %w", err)
 	}
 	return nil
@@ -57,19 +67,16 @@ func (sm *StateMachine) TaskStatusChange(
 func (sm *StateMachine) taskStatusChangeOnly(
 	ctx context.Context,
 	task *persistence.Task,
+	job *persistence.Job,
 	newTaskStatus api.TaskStatus,
 ) error {
-	if task.JobUUID == "" {
-		log.Panic().Str("task", task.UUID).Msg("task without job UUID, cannot handle this")
-		return nil // Will not run because of the panic.
-	}
 
 	oldTaskStatus := task.Status
 	task.Status = newTaskStatus
 
 	logger := log.With().
 		Str("task", task.UUID).
-		Str("job", task.JobUUID).
+		Str("job", job.UUID).
 		Str("taskStatusOld", string(oldTaskStatus)).
 		Str("taskStatusNew", string(newTaskStatus)).
 		Logger()
@@ -82,12 +89,12 @@ func (sm *StateMachine) taskStatusChangeOnly(
 	if oldTaskStatus != newTaskStatus {
 		// logStorage already logs any error, and an error here shouldn't block the
 		// rest of the function.
-		_ = sm.logStorage.WriteTimestamped(logger, task.JobUUID, task.UUID,
+		_ = sm.logStorage.WriteTimestamped(logger, job.UUID, task.UUID,
 			fmt.Sprintf("task changed status %s -> %s", oldTaskStatus, newTaskStatus))
 	}
 
 	// Broadcast this change to the SocketIO clients.
-	taskUpdate := eventbus.NewTaskUpdate(task)
+	taskUpdate := eventbus.NewTaskUpdate(*task, job.UUID)
 	taskUpdate.PreviousStatus = &oldTaskStatus
 	sm.broadcaster.BroadcastTaskUpdate(taskUpdate)
 
@@ -97,16 +104,18 @@ func (sm *StateMachine) taskStatusChangeOnly(
 // updateJobAfterTaskStatusChange updates the job status based on the status of
 // this task and other tasks in the job.
 func (sm *StateMachine) updateJobAfterTaskStatusChange(
-	ctx context.Context, task *persistence.Task, oldTaskStatus api.TaskStatus,
+	ctx context.Context,
+	task *persistence.Task,
+	job *persistence.Job,
+	oldTaskStatus api.TaskStatus,
 ) error {
-	job := task.Job
 	if job == nil {
 		log.Panic().Str("task", task.UUID).Msg("task without job, cannot handle this")
 		return nil // Will not run because of the panic.
 	}
 
 	logger := log.With().
-		Str("job", task.JobUUID).
+		Str("job", job.UUID).
 		Str("task", task.UUID).
 		Str("taskStatusOld", string(oldTaskStatus)).
 		Str("taskStatusNew", string(task.Status)).
@@ -136,7 +145,7 @@ func (sm *StateMachine) updateJobAfterTaskStatusChange(
 		default:
 			logger.Info().Msg("job became active because one of its task changed status")
 			reason := fmt.Sprintf("task became %s", task.Status)
-			return sm.JobStatusChange(ctx, job, api.JobStatusActive, reason)
+			return sm.jobStatusChange(ctx, job, api.JobStatusActive, reason)
 		}
 
 	case api.TaskStatusCompleted:
@@ -163,7 +172,7 @@ func (sm *StateMachine) jobStatusIfAThenB(
 		Str("jobStatusOld", string(ifStatus)).
 		Str("jobStatusNew", string(thenStatus)).
 		Msg("Job will change status because one of its task changed status")
-	return sm.JobStatusChange(ctx, job, thenStatus, reason)
+	return sm.jobStatusChange(ctx, job, thenStatus, reason)
 }
 
 // isJobPausingComplete returns true when the job status is pause-requested and there are no more active tasks.
@@ -189,7 +198,7 @@ func (sm *StateMachine) updateJobOnTaskStatusCanceled(ctx context.Context, logge
 	if numRunnable == 0 {
 		// NOTE: this does NOT cancel any non-runnable (paused/failed) tasks. If that's desired, just cancel the job as a whole.
 		logger.Info().Msg("canceled task was last runnable task of job, canceling job")
-		return sm.JobStatusChange(ctx, job, api.JobStatusCanceled, "canceled task was last runnable task of job, canceling job")
+		return sm.jobStatusChange(ctx, job, api.JobStatusCanceled, "canceled task was last runnable task of job, canceling job")
 	}
 
 	// Deal with the special case when the job is in pause-requested status.
@@ -198,7 +207,7 @@ func (sm *StateMachine) updateJobOnTaskStatusCanceled(ctx context.Context, logge
 		return err
 	}
 	if toBePaused {
-		return sm.JobStatusChange(ctx, job, api.JobStatusPaused, "no more active tasks after task cancellation")
+		return sm.jobStatusChange(ctx, job, api.JobStatusPaused, "no more active tasks after task cancellation")
 	}
 
 	return nil
@@ -221,7 +230,7 @@ func (sm *StateMachine) updateJobOnTaskStatusFailed(ctx context.Context, logger 
 
 	if failedPercentage >= taskFailJobPercentage {
 		failLogger.Info().Msg("failing job because too many of its tasks failed")
-		return sm.JobStatusChange(ctx, job, api.JobStatusFailed, "too many tasks failed")
+		return sm.jobStatusChange(ctx, job, api.JobStatusFailed, "too many tasks failed")
 	}
 	// If the job didn't fail, this failure indicates that at least the job is active.
 	failLogger.Info().Msg("task failed, but not enough to fail the job")
@@ -232,7 +241,7 @@ func (sm *StateMachine) updateJobOnTaskStatusFailed(ctx context.Context, logger 
 		return err
 	}
 	if toBePaused {
-		return sm.JobStatusChange(ctx, job, api.JobStatusPaused, "no more active tasks after task failure")
+		return sm.jobStatusChange(ctx, job, api.JobStatusPaused, "no more active tasks after task failure")
 	}
 
 	return sm.jobStatusIfAThenB(ctx, logger, job, api.JobStatusQueued, api.JobStatusActive,
@@ -247,7 +256,7 @@ func (sm *StateMachine) updateJobOnTaskStatusCompleted(ctx context.Context, logg
 	}
 	if numComplete == numTotal {
 		logger.Info().Msg("all tasks of job are completed, job is completed")
-		return sm.JobStatusChange(ctx, job, api.JobStatusCompleted, "all tasks completed")
+		return sm.jobStatusChange(ctx, job, api.JobStatusCompleted, "all tasks completed")
 	}
 
 	// Deal with the special case when the job is in pause-requested status.
@@ -256,7 +265,7 @@ func (sm *StateMachine) updateJobOnTaskStatusCompleted(ctx context.Context, logg
 		return err
 	}
 	if toBePaused {
-		return sm.JobStatusChange(ctx, job, api.JobStatusPaused, "no more active tasks after task completion")
+		return sm.jobStatusChange(ctx, job, api.JobStatusPaused, "no more active tasks after task completion")
 	}
 
 	logger.Info().
@@ -268,6 +277,23 @@ func (sm *StateMachine) updateJobOnTaskStatusCompleted(ctx context.Context, logg
 
 // JobStatusChange gives a Job a new status, and handles the resulting status changes on its tasks.
 func (sm *StateMachine) JobStatusChange(
+	ctx context.Context,
+	jobUUID string,
+	newJobStatus api.JobStatus,
+	reason string,
+) error {
+	job, err := sm.persist.FetchJob(ctx, jobUUID)
+	if err != nil {
+		return err
+	}
+	return sm.jobStatusChange(ctx, job, newJobStatus, reason)
+}
+
+// jobStatusChange gives a Job a new status, and handles the resulting status changes on its tasks.
+//
+// This is the private implementation, which takes the job as an argument. The
+// public function (above) takes a job's UUID instead, so that it's easier to call.
+func (sm *StateMachine) jobStatusChange(
 	ctx context.Context,
 	job *persistence.Job,
 	newJobStatus api.JobStatus,
@@ -369,7 +395,7 @@ func (sm *StateMachine) jobStatusSet(ctx context.Context,
 	}
 
 	// Handle the status change.
-	result, err := sm.updateTasksAfterJobStatusChange(ctx, logger, job, oldJobStatus)
+	result, err := sm.updateTasksAfterjobStatusChange(ctx, logger, job, oldJobStatus)
 	if err != nil {
 		return "", fmt.Errorf("updating job's tasks after job status change: %w", err)
 	}
@@ -383,7 +409,7 @@ func (sm *StateMachine) jobStatusSet(ctx context.Context,
 	return result.followingJobStatus, nil
 }
 
-// tasksUpdateResult is returned by `updateTasksAfterJobStatusChange`.
+// tasksUpdateResult is returned by `updateTasksAfterjobStatusChange`.
 type tasksUpdateResult struct {
 	// FollowingJobStatus is set when the task updates should trigger another job status update.
 	followingJobStatus api.JobStatus
@@ -394,14 +420,14 @@ type tasksUpdateResult struct {
 	massTaskUpdate bool
 }
 
-// updateTasksAfterJobStatusChange updates the status of its tasks based on the
+// updateTasksAfterjobStatusChange updates the status of its tasks based on the
 // new status of this job.
 //
 // NOTE: this function assumes that the job already has its new status.
 //
 // Returns the new state the job should go into after this change, or an empty
 // string if there is no subsequent change necessary.
-func (sm *StateMachine) updateTasksAfterJobStatusChange(
+func (sm *StateMachine) updateTasksAfterjobStatusChange(
 	ctx context.Context,
 	logger zerolog.Logger,
 	job *persistence.Job,

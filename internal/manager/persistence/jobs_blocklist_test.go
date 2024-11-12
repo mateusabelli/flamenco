@@ -18,7 +18,7 @@ func TestAddWorkerToJobBlocklist(t *testing.T) {
 
 	{
 		// Add a worker to the block list.
-		err := db.AddWorkerToJobBlocklist(ctx, job, worker, "blender")
+		err := db.AddWorkerToJobBlocklist(ctx, job.ID, worker.ID, "blender")
 		require.NoError(t, err)
 
 		list, err := queries.Test_FetchJobBlocklist(ctx)
@@ -33,7 +33,7 @@ func TestAddWorkerToJobBlocklist(t *testing.T) {
 
 	{
 		// Adding the same worker again should be a no-op.
-		err := db.AddWorkerToJobBlocklist(ctx, job, worker, "blender")
+		err := db.AddWorkerToJobBlocklist(ctx, job.ID, worker.ID, "blender")
 		require.NoError(t, err)
 
 		list, err := queries.Test_FetchJobBlocklist(ctx)
@@ -48,7 +48,7 @@ func TestFetchJobBlocklist(t *testing.T) {
 
 	// Add a worker to the block list.
 	worker := createWorker(ctx, t, db)
-	err := db.AddWorkerToJobBlocklist(ctx, job, worker, "blender")
+	err := db.AddWorkerToJobBlocklist(ctx, job.ID, worker.ID, "blender")
 	require.NoError(t, err)
 
 	list, err := db.FetchJobBlocklist(ctx, job.UUID)
@@ -68,9 +68,9 @@ func TestClearJobBlocklist(t *testing.T) {
 
 	// Add a worker and some entries to the block list.
 	worker := createWorker(ctx, t, db)
-	err := db.AddWorkerToJobBlocklist(ctx, job, worker, "blender")
+	err := db.AddWorkerToJobBlocklist(ctx, job.ID, worker.ID, "blender")
 	require.NoError(t, err)
-	err = db.AddWorkerToJobBlocklist(ctx, job, worker, "ffmpeg")
+	err = db.AddWorkerToJobBlocklist(ctx, job.ID, worker.ID, "ffmpeg")
 	require.NoError(t, err)
 
 	// Clear the blocklist.
@@ -89,9 +89,9 @@ func TestRemoveFromJobBlocklist(t *testing.T) {
 
 	// Add a worker and some entries to the block list.
 	worker := createWorker(ctx, t, db)
-	err := db.AddWorkerToJobBlocklist(ctx, job, worker, "blender")
+	err := db.AddWorkerToJobBlocklist(ctx, job.ID, worker.ID, "blender")
 	require.NoError(t, err)
-	err = db.AddWorkerToJobBlocklist(ctx, job, worker, "ffmpeg")
+	err = db.AddWorkerToJobBlocklist(ctx, job.ID, worker.ID, "ffmpeg")
 	require.NoError(t, err)
 
 	// Remove an entry.
@@ -148,20 +148,20 @@ func TestWorkersLeftToRun(t *testing.T) {
 	assert.Equal(t, uuidMap(worker1, worker2, workerC1), left)
 
 	// Two workers, one blocked.
-	_ = db.AddWorkerToJobBlocklist(ctx, job, worker1, "blender")
+	_ = db.AddWorkerToJobBlocklist(ctx, job.ID, worker1.ID, "blender")
 	left, err = db.WorkersLeftToRun(ctx, job, "blender")
 	require.NoError(t, err)
 	assert.Equal(t, uuidMap(worker2, workerC1), left)
 
 	// All workers blocked.
-	_ = db.AddWorkerToJobBlocklist(ctx, job, worker2, "blender")
-	_ = db.AddWorkerToJobBlocklist(ctx, job, workerC1, "blender")
+	_ = db.AddWorkerToJobBlocklist(ctx, job.ID, worker2.ID, "blender")
+	_ = db.AddWorkerToJobBlocklist(ctx, job.ID, workerC1.ID, "blender")
 	left, err = db.WorkersLeftToRun(ctx, job, "blender")
 	require.NoError(t, err)
 	assert.Empty(t, left)
 
 	// Two workers, unknown job.
-	fakeJob := Job{Model: Model{ID: 327}}
+	fakeJob := Job{ID: 327}
 	left, err = db.WorkersLeftToRun(ctx, &fakeJob, "blender")
 	require.NoError(t, err)
 	assert.Equal(t, uuidMap(worker1, worker2, workerC1), left)
@@ -222,13 +222,13 @@ func TestWorkersLeftToRunWithTags(t *testing.T) {
 	assert.Equal(t, uuidMap(workerC13, workerC1), left)
 
 	// One worker blocked, one worker remain.
-	_ = db.AddWorkerToJobBlocklist(ctx, job, workerC1, "blender")
+	_ = db.AddWorkerToJobBlocklist(ctx, job.ID, workerC1.ID, "blender")
 	left, err = db.WorkersLeftToRun(ctx, job, "blender")
 	require.NoError(t, err)
 	assert.Equal(t, uuidMap(workerC13), left)
 
 	// All taged workers blocked.
-	_ = db.AddWorkerToJobBlocklist(ctx, job, workerC13, "blender")
+	_ = db.AddWorkerToJobBlocklist(ctx, job.ID, workerC13.ID, "blender")
 	left, err = db.WorkersLeftToRun(ctx, job, "blender")
 	require.NoError(t, err)
 	assert.Empty(t, left)
@@ -238,12 +238,16 @@ func TestCountTaskFailuresOfWorker(t *testing.T) {
 	ctx, close, db, dbJob, authoredJob := jobTasksTestFixtures(t)
 	defer close()
 
-	task0, err := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
+	taskJobWorker0, err := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
 	require.NoError(t, err)
-	task1, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
+	taskJobWorker1, err := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
 	require.NoError(t, err)
-	task2, err := db.FetchTask(ctx, authoredJob.Tasks[2].UUID)
+	taskJobWorker2, err := db.FetchTask(ctx, authoredJob.Tasks[2].UUID)
 	require.NoError(t, err)
+
+	task0 := taskJobWorker0.Task
+	task1 := taskJobWorker1.Task
+	task2 := taskJobWorker2.Task
 
 	// Sanity check on the test data.
 	assert.Equal(t, "blender", task0.Type)
@@ -254,28 +258,28 @@ func TestCountTaskFailuresOfWorker(t *testing.T) {
 	worker2 := createWorkerFrom(ctx, t, db, *worker1)
 
 	// Store some failures for different tasks
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task0, worker1)
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task1, worker1)
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task1, worker2)
-	_, _ = db.AddWorkerToTaskFailedList(ctx, task2, worker1)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task0, worker1)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task1, worker1)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task1, worker2)
+	_, _ = db.AddWorkerToTaskFailedList(ctx, &task2, worker1)
 
 	// Multiple failures.
-	numBlender1, err := db.CountTaskFailuresOfWorker(ctx, dbJob, worker1, "blender")
+	numBlender1, err := db.CountTaskFailuresOfWorker(ctx, dbJob.UUID, worker1.ID, "blender")
 	require.NoError(t, err)
 	assert.Equal(t, 2, numBlender1)
 
 	// Single failure, but multiple tasks exist of this type.
-	numBlender2, err := db.CountTaskFailuresOfWorker(ctx, dbJob, worker2, "blender")
+	numBlender2, err := db.CountTaskFailuresOfWorker(ctx, dbJob.UUID, worker2.ID, "blender")
 	require.NoError(t, err)
 	assert.Equal(t, 1, numBlender2)
 
 	// Single failure, only one task of this type exists.
-	numFFMpeg1, err := db.CountTaskFailuresOfWorker(ctx, dbJob, worker1, "ffmpeg")
+	numFFMpeg1, err := db.CountTaskFailuresOfWorker(ctx, dbJob.UUID, worker1.ID, "ffmpeg")
 	require.NoError(t, err)
 	assert.Equal(t, 1, numFFMpeg1)
 
 	// No failure.
-	numFFMpeg2, err := db.CountTaskFailuresOfWorker(ctx, dbJob, worker2, "ffmpeg")
+	numFFMpeg2, err := db.CountTaskFailuresOfWorker(ctx, dbJob.UUID, worker2.ID, "ffmpeg")
 	require.NoError(t, err)
 	assert.Equal(t, 0, numFFMpeg2)
 }

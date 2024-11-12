@@ -31,7 +31,7 @@ func (q *Queries) AssignTaskToWorker(ctx context.Context, arg AssignTaskToWorker
 }
 
 const fetchAssignedAndRunnableTaskOfWorker = `-- name: FetchAssignedAndRunnableTaskOfWorker :one
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, jobs.uuid as jobuuid, jobs.priority as job_priority, jobs.job_type as job_type
 FROM tasks
   INNER JOIN jobs ON tasks.job_id = jobs.id
 WHERE tasks.status=?1
@@ -47,7 +47,10 @@ type FetchAssignedAndRunnableTaskOfWorkerParams struct {
 }
 
 type FetchAssignedAndRunnableTaskOfWorkerRow struct {
-	Task Task
+	Task        Task
+	JobUUID     string
+	JobPriority int64
+	JobType     string
 }
 
 // Fetch a task that's assigned to this worker, and is in a runnable state.
@@ -81,6 +84,9 @@ func (q *Queries) FetchAssignedAndRunnableTaskOfWorker(ctx context.Context, arg 
 		&i.Task.LastTouchedAt,
 		&i.Task.Commands,
 		&i.Task.Activity,
+		&i.JobUUID,
+		&i.JobPriority,
+		&i.JobType,
 	)
 	return i, err
 }
@@ -88,8 +94,8 @@ func (q *Queries) FetchAssignedAndRunnableTaskOfWorker(ctx context.Context, arg 
 const fetchWorkerTask = `-- name: FetchWorkerTask :one
 SELECT
   tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity,
-  jobs.id, jobs.created_at, jobs.updated_at, jobs.uuid, jobs.name, jobs.job_type, jobs.priority, jobs.status, jobs.activity, jobs.settings, jobs.metadata, jobs.delete_requested_at, jobs.storage_shaman_checkout_id, jobs.worker_tag_id,
-  (tasks.status = ?1 AND jobs.status = ?2) as is_active
+  jobs.uuid as jobuuid,
+  CAST(tasks.status = ?1 AND jobs.status = ?2 AS BOOLEAN) as is_active
 FROM tasks
   INNER JOIN jobs ON tasks.job_id = jobs.id
 WHERE
@@ -108,8 +114,8 @@ type FetchWorkerTaskParams struct {
 
 type FetchWorkerTaskRow struct {
 	Task     Task
-	Job      Job
-	IsActive interface{}
+	JobUUID  string
+	IsActive bool
 }
 
 // Find the currently-active task assigned to a Worker. If not found, find the last task this Worker worked on.
@@ -131,27 +137,14 @@ func (q *Queries) FetchWorkerTask(ctx context.Context, arg FetchWorkerTaskParams
 		&i.Task.LastTouchedAt,
 		&i.Task.Commands,
 		&i.Task.Activity,
-		&i.Job.ID,
-		&i.Job.CreatedAt,
-		&i.Job.UpdatedAt,
-		&i.Job.UUID,
-		&i.Job.Name,
-		&i.Job.JobType,
-		&i.Job.Priority,
-		&i.Job.Status,
-		&i.Job.Activity,
-		&i.Job.Settings,
-		&i.Job.Metadata,
-		&i.Job.DeleteRequestedAt,
-		&i.Job.StorageShamanCheckoutID,
-		&i.Job.WorkerTagID,
+		&i.JobUUID,
 		&i.IsActive,
 	)
 	return i, err
 }
 
 const findRunnableTask = `-- name: FindRunnableTask :one
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, jobs.uuid as jobuuid, jobs.priority as job_priority, jobs.job_type as job_type
 FROM tasks
   INNER JOIN jobs ON tasks.job_id = jobs.id
   LEFT JOIN task_failures TF ON tasks.id = TF.task_id AND TF.worker_id=?1
@@ -189,7 +182,10 @@ type FindRunnableTaskParams struct {
 }
 
 type FindRunnableTaskRow struct {
-	Task Task
+	Task        Task
+	JobUUID     string
+	JobPriority int64
+	JobType     string
 }
 
 // Find a task to be run by a worker. This is the core of the task scheduler.
@@ -255,6 +251,9 @@ func (q *Queries) FindRunnableTask(ctx context.Context, arg FindRunnableTaskPara
 		&i.Task.LastTouchedAt,
 		&i.Task.Commands,
 		&i.Task.Activity,
+		&i.JobUUID,
+		&i.JobPriority,
+		&i.JobType,
 	)
 	return i, err
 }

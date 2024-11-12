@@ -15,14 +15,19 @@ import (
 // This is used to show the global last-rendered image in the web interface.
 
 // SetLastRendered sets this job as the one with the most recent rendered image.
-func (db *DB) SetLastRendered(ctx context.Context, j *Job) error {
+func (db *DB) SetLastRendered(ctx context.Context, jobUUID string) error {
 	queries := db.queries()
+
+	jobID, err := queries.FetchJobIDFromUUID(ctx, jobUUID)
+	if err != nil {
+		return jobError(err, "finding job with UUID %q", jobUUID)
+	}
 
 	now := db.nowNullable()
 	return queries.SetLastRendered(ctx, sqlc.SetLastRenderedParams{
 		CreatedAt: now.Time,
 		UpdatedAt: now,
-		JobID:     int64(j.ID),
+		JobID:     jobID,
 	})
 }
 

@@ -49,7 +49,7 @@ func TestQueryJobTaskSummaries(t *testing.T) {
 	assert.Len(t, summaries, len(expectTaskUUIDs))
 	for index, summary := range summaries {
 		assert.True(t, expectTaskUUIDs[summary.UUID], "%q should be in %v", summary.UUID, expectTaskUUIDs)
-		assert.Equal(t, index+1, summary.IndexInJob)
+		assert.Equal(t, int64(index+1), summary.IndexInJob)
 	}
 }
 

@@ -99,7 +99,7 @@ func (db *DB) FetchWorkers(ctx context.Context) ([]*Worker, error) {
 }
 
 // FetchWorkerTask returns the most recent task assigned to the given Worker.
-func (db *DB) FetchWorkerTask(ctx context.Context, worker *Worker) (*Task, error) {
+func (db *DB) FetchWorkerTask(ctx context.Context, worker *Worker) (*TaskJob, error) {
 	queries := db.queries()
 
 	// Convert the WorkerID to a NullInt64. As task.worker_id can be NULL, this is
@@ -119,27 +119,12 @@ func (db *DB) FetchWorkerTask(ctx context.Context, worker *Worker) (*Task, error
 		return nil, taskError(err, "fetching task assigned to Worker %s", worker.UUID)
 	}
 
-	// Found a task!
-	if row.Job.ID == 0 {
-		panic(fmt.Sprintf("task found but with no job: %#v", row))
+	taskJob := TaskJob{
+		Task:     row.Task,
+		JobUUID:  row.JobUUID,
+		IsActive: row.IsActive,
 	}
-	if row.Task.ID == 0 {
-		panic(fmt.Sprintf("task found but with zero ID: %#v", row))
-	}
-
-	// Convert the task & job to gorm data types.
-	gormTask, err := convertSqlcTask(row.Task, row.Job.UUID, worker.UUID)
-	if err != nil {
-		return nil, err
-	}
-	gormJob, err := convertSqlcJob(row.Job)
-	if err != nil {
-		return nil, err
-	}
-	gormTask.Job = &gormJob
-	gormTask.Worker = worker
-
-	return gormTask, nil
+	return &taskJob, nil
 }
 
 func (db *DB) SaveWorkerStatus(ctx context.Context, w *Worker) error {

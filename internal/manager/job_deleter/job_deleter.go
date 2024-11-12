@@ -250,7 +250,7 @@ func (s *Service) canDeleteShamanCheckout(logger zerolog.Logger, job *persistenc
 		return false
 	}
 
-	checkoutID := job.Storage.ShamanCheckoutID
+	checkoutID := job.StorageShamanCheckoutID
 	if checkoutID == "" {
 		logger.Debug().Msg("job deleter: job was not created with Shaman (or before Flamenco v3.2), cannot delete job files")
 		return false

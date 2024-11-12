@@ -96,17 +96,23 @@ func TestFetchWorker(t *testing.T) {
 
 	// Test with worker that does NOT have a status change requested, and DOES have an assigned task.
 	mf.persistence.EXPECT().FetchWorker(gomock.Any(), workerUUID).Return(&worker, nil)
+
+	assignedJob := persistence.Job{UUID: "f0e25ee4-0d13-4291-afc3-e9446b555aaf"}
 	assignedTask := persistence.Task{
 		UUID:   "806057d5-759a-4e75-86a4-356d43f28cff",
 		Name:   "test task",
-		Job:    &persistence.Job{UUID: "f0e25ee4-0d13-4291-afc3-e9446b555aaf"},
 		Status: api.TaskStatusActive,
 	}
 	mf.persistence.EXPECT().FetchTagsOfWorker(gomock.Any(), workerUUID).Return([]persistence.WorkerTag{
 		{UUID: "0e701402-c4cc-49b0-8b8c-3eb8718d463a", Name: "EEVEE"},
 		{UUID: "59211f0a-81cc-4148-b0b7-32b3e2dcdb8f", Name: "Cycles"},
 	}, nil)
-	mf.persistence.EXPECT().FetchWorkerTask(gomock.Any(), &worker).Return(&assignedTask, nil)
+	assignedTaskJob := persistence.TaskJob{
+		Task:     assignedTask,
+		JobUUID:  assignedJob.UUID,
+		IsActive: true,
+	}
+	mf.persistence.EXPECT().FetchWorkerTask(gomock.Any(), &worker).Return(&assignedTaskJob, nil)
 
 	echo = mf.prepareMockedRequest(nil)
 	err = mf.flamenco.FetchWorker(echo, workerUUID)
@@ -127,7 +133,7 @@ func TestFetchWorker(t *testing.T) {
 				Name:   assignedTask.Name,
 				Status: assignedTask.Status,
 			},
-			JobId: assignedTask.Job.UUID,
+			JobId: assignedJob.UUID,
 		},
 		Tags: &[]api.WorkerTag{
 			{Id: ptr("0e701402-c4cc-49b0-8b8c-3eb8718d463a"), Name: "EEVEE"},
