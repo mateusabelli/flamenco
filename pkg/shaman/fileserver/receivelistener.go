@@ -47,9 +47,7 @@ func (fs *FileServer) receiveListenerFor(checksum string, filesize int64) chan s
 
 	go func() {
 		// Wait until the channel closes.
-		select {
-		case <-channel:
-		}
+		<-channel
 
 		fs.receiverMutex.Lock()
 		defer fs.receiverMutex.Unlock()

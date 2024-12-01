@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,7 +42,7 @@ func TestLogWriting(t *testing.T) {
 	require.NoError(t, err)
 
 	filename := filepath.Join(jobDir, "task-20ff9d06-53ec-4019-9e2e-1774f05f170a.txt")
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	require.NoError(t, err, "the log file should exist")
 	assert.Equal(t, "Ovo je priča\nIma dvije linije\n", string(contents))
 }
@@ -67,7 +66,7 @@ func TestLogRotation(t *testing.T) {
 	filename := filepath.Join(jobDir, "task-20ff9d06-53ec-4019-9e2e-1774f05f170a.txt")
 	rotatedFilename := filename + ".1"
 
-	contents, err := ioutil.ReadFile(rotatedFilename)
+	contents, err := os.ReadFile(rotatedFilename)
 	require.NoError(t, err, "the rotated log file should exist")
 	assert.Equal(t, "Ovo je priča\n", string(contents))
 
@@ -216,7 +215,7 @@ type TaskLogsMocks struct {
 func taskLogsTestFixtures(t *testing.T) (*Storage, func(), *TaskLogsMocks) {
 	mockCtrl := gomock.NewController(t)
 
-	temppath, err := ioutil.TempDir("", "testlogs")
+	temppath, err := os.MkdirTemp("", "testlogs")
 	require.NoError(t, err)
 
 	mocks := &TaskLogsMocks{

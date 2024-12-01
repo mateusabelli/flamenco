@@ -26,7 +26,7 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"projects.blender.org/studio/flamenco/pkg/shaman/config"
@@ -86,7 +86,7 @@ func TestStoreFile(t *testing.T) {
 	assert.Equal(t, filestore.StatusStored, status)
 	assert.FileExists(t, path)
 
-	savedContent, err := ioutil.ReadFile(path)
+	savedContent, err := os.ReadFile(path)
 	require.NoError(t, err)
 	assert.EqualValues(t, payload, savedContent, "The file should be saved uncompressed")
 }

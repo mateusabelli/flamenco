@@ -23,7 +23,6 @@
 package filestore
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -115,7 +114,7 @@ func TestOpenForUpload(t *testing.T) {
 	assert.Equal(t, file.Name(), foundPath)
 	assert.Equal(t, StatusUploading, status)
 
-	readContents, err := ioutil.ReadFile(foundPath)
+	readContents, err := os.ReadFile(foundPath)
 	require.NoError(t, err)
 	assert.EqualValues(t, contents, readContents)
 }

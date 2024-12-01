@@ -101,7 +101,6 @@ readloop:
 		// Prepend any leftovers from the previous line to the received bytes.
 		if len(leftovers) > 0 {
 			lineBytes = append(leftovers, lineBytes...)
-			leftovers = []byte{}
 		}
 		// Make sure long lines are broken on character boundaries.
 		lineBytes, leftovers = splitOnCharacterBoundary(lineBytes)

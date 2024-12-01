@@ -5,7 +5,6 @@ package task_logs
 import (
 	"errors"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,7 +15,7 @@ import (
 )
 
 func setUpTest(t *testing.T) string {
-	temppath, err := ioutil.TempDir("", "testlogs")
+	temppath, err := os.MkdirTemp("", "testlogs")
 	require.NoError(t, err)
 	return temppath
 }
@@ -78,12 +77,12 @@ func TestMultipleFilesWithHoles(t *testing.T) {
 	defer tearDownTest(temppath)
 
 	filepath := filepath.Join(temppath, "existing.txt")
-	require.NoError(t, ioutil.WriteFile(filepath, []byte("thefile"), 0666))
-	require.NoError(t, ioutil.WriteFile(filepath+".1", []byte("file .1"), 0666))
-	require.NoError(t, ioutil.WriteFile(filepath+".2", []byte("file .2"), 0666))
-	require.NoError(t, ioutil.WriteFile(filepath+".3", []byte("file .3"), 0666))
-	require.NoError(t, ioutil.WriteFile(filepath+".5", []byte("file .5"), 0666))
-	require.NoError(t, ioutil.WriteFile(filepath+".7", []byte("file .7"), 0666))
+	require.NoError(t, os.WriteFile(filepath, []byte("thefile"), 0666))
+	require.NoError(t, os.WriteFile(filepath+".1", []byte("file .1"), 0666))
+	require.NoError(t, os.WriteFile(filepath+".2", []byte("file .2"), 0666))
+	require.NoError(t, os.WriteFile(filepath+".3", []byte("file .3"), 0666))
+	require.NoError(t, os.WriteFile(filepath+".5", []byte("file .5"), 0666))
+	require.NoError(t, os.WriteFile(filepath+".7", []byte("file .7"), 0666))
 
 	err := rotateLogFile(zerolog.Nop(), filepath)
 
@@ -100,7 +99,7 @@ func TestMultipleFilesWithHoles(t *testing.T) {
 	assert.False(t, fileExists(filepath+".9"))
 
 	read := func(filename string) string {
-		content, err := ioutil.ReadFile(filename)
+		content, err := os.ReadFile(filename)
 		require.NoError(t, err)
 		return string(content)
 	}

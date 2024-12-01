@@ -23,7 +23,6 @@
 package touch
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -36,7 +35,7 @@ func TestTouch(t *testing.T) {
 	testPath := "_touch_test.txt"
 
 	// Create a file
-	assert.Nil(t, ioutil.WriteFile(testPath, []byte("just a test"), 0644))
+	assert.Nil(t, os.WriteFile(testPath, []byte("just a test"), 0644))
 	defer os.Remove(testPath)
 
 	// Make it old

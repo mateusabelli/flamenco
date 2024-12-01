@@ -185,7 +185,6 @@ checkloop:
 			break checkloop
 		case <-time.After(mayKeepRunningPeriod):
 			// Time to do another check.
-			break
 		}
 
 		mkr := w.mayIKeepRunning(taskCtx, task.Uuid)

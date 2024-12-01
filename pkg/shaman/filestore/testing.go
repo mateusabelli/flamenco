@@ -25,7 +25,6 @@ package filestore
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -36,7 +35,7 @@ import (
 
 // CreateTestStore returns a Store that can be used for unit testing.
 func CreateTestStore() *Store {
-	tempDir, err := ioutil.TempDir("", "shaman-filestore-test-")
+	tempDir, err := os.MkdirTemp("", "shaman-filestore-test-")
 	if err != nil {
 		panic(err)
 	}

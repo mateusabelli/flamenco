@@ -79,6 +79,7 @@ func stressByRequestingTask(ctx context.Context, client worker.FlamencoClient) {
 	}
 }
 
+//lint:ignore U1000 stressBySendingTaskUpdate is currently unused, but someone may find it useful for different kinds of stess testing.
 func stressBySendingTaskUpdate(ctx context.Context, client worker.FlamencoClient, task *api.AssignedTask) {
 	logLine := "This is a log-line for stress testing. It will be repeated more than once.\n"
 	logToSend := strings.Repeat(logLine, 5)

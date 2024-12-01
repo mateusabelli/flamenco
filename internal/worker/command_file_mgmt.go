@@ -133,7 +133,7 @@ func (ce *CommandExecutor) cmdCopyFile(ctx context.Context, logger zerolog.Logge
 		return err
 	}
 
-	err, logMsg := fileCopy(src, dest)
+	logMsg, err := fileCopy(src, dest)
 	return ce.errorLogProcess(ctx, logger, cmd, taskID, err, logMsg)
 }
 
@@ -171,48 +171,48 @@ func (ce *CommandExecutor) moveAndLog(ctx context.Context, taskID, cmdName, src,
 	return nil
 }
 
-func fileCopy(src, dest string) (error, string) {
+func fileCopy(src, dest string) (string, error) {
 	src_file, err := os.Open(src)
 	if err != nil {
 		msg := fmt.Sprintf("failed to open source file %q: %v", src, err)
-		return err, msg
+		return msg, err
 	}
 	defer src_file.Close()
 
 	src_file_stat, err := src_file.Stat()
 	if err != nil {
 		msg := fmt.Sprintf("failed to stat source file %q: %v", src, err)
-		return err, msg
+		return msg, err
 	}
 
 	if !src_file_stat.Mode().IsRegular() {
-		err := &os.PathError{Op: "stat", Path: src, Err: errors.New("Not a regular file")}
+		err := &os.PathError{Op: "stat", Path: src, Err: errors.New("not a regular file")}
 		msg := fmt.Sprintf("invalid source file %q: %v", src, err)
-		return err, msg
+		return msg, err
 	}
 
 	dest_dirpath := filepath.Dir(dest)
 	if !fileExists(dest_dirpath) {
 		if err := os.MkdirAll(dest_dirpath, 0750); err != nil {
 			msg := fmt.Sprintf("failed to create directories %q: %v", dest_dirpath, err)
-			return err, msg
+			return msg, err
 		}
 	}
 
 	dest_file, err := os.Create(dest)
 	if err != nil {
 		msg := fmt.Sprintf("failed to create destination file %q: %v", dest, err)
-		return err, msg
+		return msg, err
 	}
 	defer dest_file.Close()
 
 	if _, err := io.Copy(dest_file, src_file); err != nil {
 		msg := fmt.Sprintf("failed to copy %q to %q: %v", src, dest, err)
-		return err, msg
+		return msg, err
 	}
 
 	msg := fmt.Sprintf("copied %q to %q", src, dest)
-	return nil, msg
+	return msg, nil
 }
 
 func fileExists(filename string) bool {

@@ -5,14 +5,6 @@ package task_state_machine
 import "projects.blender.org/studio/flamenco/pkg/api"
 
 var (
-	// Task statuses that always get requeued when the job is requeueing.
-	nonCompletedStatuses = []api.TaskStatus{
-		api.TaskStatusCanceled,
-		api.TaskStatusFailed,
-		api.TaskStatusPaused,
-		api.TaskStatusSoftFailed,
-	}
-
 	// Workers are allowed to keep running tasks when they are in this status.
 	// 'queued', 'claimed-by-manager', and 'soft-failed' aren't considered runnable,
 	// as those statuses indicate the task wasn't assigned to a Worker by the scheduler.

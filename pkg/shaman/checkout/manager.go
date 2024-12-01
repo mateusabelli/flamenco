@@ -73,7 +73,7 @@ func (err ErrInvalidCheckoutPath) Error() string {
 
 // Errors returned by the Checkout Manager.
 var (
-	ErrCheckoutAlreadyExists = errors.New("A checkout with this ID already exists")
+	ErrCheckoutAlreadyExists = errors.New("a checkout with this ID already exists")
 )
 
 // NewManager creates and returns a new Checkout Manager.

@@ -163,7 +163,7 @@ func TestTimestampedPathFile(t *testing.T) {
 
 	fileCreateEmpty("somefile.txt")
 	if err := os.Chtimes("somefile.txt", mtime, mtime); err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	newpath, err := timestampedPath("somefile.txt")
@@ -365,7 +365,7 @@ func TestCmdCopyFileSourceIsDir(t *testing.T) {
 		fmt.Sprintf("copy-file: copying %q to %q", f.absolute_src_path, f.absolute_dest_path))
 
 	f.mocks.listener.EXPECT().LogProduced(gomock.Any(), taskID,
-		fmt.Sprintf("copy-file: invalid source file %q: stat %s: Not a regular file",
+		fmt.Sprintf("copy-file: invalid source file %q: stat %s: not a regular file",
 			f.absolute_src_path, f.absolute_src_path))
 
 	assert.Error(t, f.run())

@@ -46,7 +46,7 @@ func AutodiscoverManager(ctx context.Context) (string, error) {
 
 	logger := log.Logger
 	if deadline, ok := ctx.Deadline(); ok {
-		timeout := deadline.Sub(time.Now()).Round(1 * time.Second)
+		timeout := time.Until(deadline).Round(1 * time.Second)
 		logger = logger.With().Str("timeout", timeout.String()).Logger()
 	}
 	logger.Info().Msg("auto-discovering Manager via UPnP/SSDP")

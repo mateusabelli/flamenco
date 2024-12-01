@@ -185,7 +185,7 @@ func (s *Storage) Tail(jobID, taskID string) (string, error) {
 		return "", fmt.Errorf("unable to open log file for reading: %w", err)
 	}
 
-	fileSize, err := file.Seek(0, os.SEEK_END)
+	fileSize, err := file.Seek(0, io.SeekEnd)
 	if err != nil {
 		return "", fmt.Errorf("unable to seek to end of log file: %w", err)
 	}
@@ -197,14 +197,14 @@ func (s *Storage) Tail(jobID, taskID string) (string, error) {
 	)
 	if fileSize <= tailSize {
 		// The file is small, just read all of it.
-		_, err = file.Seek(0, os.SEEK_SET)
+		_, err = file.Seek(0, io.SeekStart)
 		if err != nil {
 			return "", fmt.Errorf("unable to seek to start of log file: %w", err)
 		}
 		buffer, err = io.ReadAll(file)
 	} else {
 		// Read the last 'tailSize' number of bytes.
-		_, err = file.Seek(-tailSize, os.SEEK_END)
+		_, err = file.Seek(-tailSize, io.SeekEnd)
 		if err != nil {
 			return "", fmt.Errorf("unable to seek in log file: %w", err)
 		}
