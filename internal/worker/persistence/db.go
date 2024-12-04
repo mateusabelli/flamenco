@@ -150,47 +150,10 @@ func (db *DB) queries() *sqlc.Queries {
 	return sqlc.New(&loggingWrapper)
 }
 
-type queriesTX struct {
-	queries  *sqlc.Queries
-	commit   func() error
-	rollback func() error
-}
-
-// queries returns the SQLC Queries struct, connected to this database.
-//
-// After calling this function, all queries should use this transaction until it
-// is closed (either committed or rolled back). Otherwise SQLite will deadlock,
-// as it will make any other query wait until this transaction is done.
-func (db *DB) queriesWithTX() (*queriesTX, error) {
-	tx, err := db.sqlDB.Begin()
-	if err != nil {
-		return nil, fmt.Errorf("could not begin database transaction: %w", err)
-	}
-
-	loggingWrapper := LoggingDBConn{tx}
-
-	qtx := queriesTX{
-		queries:  sqlc.New(&loggingWrapper),
-		commit:   tx.Commit,
-		rollback: tx.Rollback,
-	}
-
-	return &qtx, nil
-}
-
 // now returns 'now' as reported by db.nowfunc.
 // It always converts the timestamp to UTC.
 func (db *DB) now() time.Time {
 	return db.nowfunc()
-}
-
-// nowNullable returns the result of `now()` wrapped in a sql.NullTime.
-// It is nullable just for ease of use, it will never actually be null.
-func (db *DB) nowNullable() sql.NullTime {
-	return sql.NullTime{
-		Time:  db.now(),
-		Valid: true,
-	}
 }
 
 func (db *DB) pragmaForeignKeys(ctx context.Context, enabled bool) error {

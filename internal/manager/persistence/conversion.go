@@ -10,7 +10,3 @@ func nullTimeToUTC(t sql.NullTime) sql.NullTime {
 		Valid: t.Valid,
 	}
 }
-
-func ptr[T any](value T) *T {
-	return &value
-}

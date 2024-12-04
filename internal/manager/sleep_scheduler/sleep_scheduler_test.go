@@ -297,17 +297,3 @@ func testFixtures(t *testing.T) (*SleepScheduler, TestMocks, context.Context) {
 	ss := New(mocks.clock, mocks.persist, mocks.broadcaster)
 	return ss, mocks, ctx
 }
-
-func createTestWorker(updaters ...func(*persistence.Worker)) persistence.Worker {
-	w := persistence.Worker{
-		ID:   47,
-		UUID: "4f2d3755-c365-429f-8017-44356427c069",
-		Name: "schedule test worker",
-	}
-
-	for _, updater := range updaters {
-		updater(&w)
-	}
-
-	return w
-}
