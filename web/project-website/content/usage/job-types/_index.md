@@ -57,7 +57,7 @@ Each job compiler has two parts to it:
 TODO: write more documentation. For now, you can refer to [the built-in job
 compiler scripts][built-in-scripts] as examples.
 
-[built-in-scripts]: https://projects.blender.org/studio/flamenco/src/branch/main/internal/manager/job_compilers/scripts
+[built-in-scripts]: {{< ref "builtin.md" >}}
 
 ## Task Types
 

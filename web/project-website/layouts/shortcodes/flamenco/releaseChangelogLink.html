@@ -1,3 +1,0 @@
-{{- $version := .Get "version" | default $.Site.Data.flamenco.latestVersion -}} {{- $linktext :=
-.Get 0 | default "missing link text" -}}
-<a class="flamenco-changelog-link" href="https://projects.blender.org/studio/flamenco/src/tag/v{{$version}}/CHANGELOG.md">{{ $linktext }}</a>

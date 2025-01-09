@@ -11,7 +11,7 @@ Manager web-interface after installation.
 
 The latest version is: **{{< flamenco/latestVersion >}}**
 
-What is new is described in the {{< flamenco/releaseChangelogLink "release changelog" ->}}.
+What is new is described in the {{< flamenco/releaseSourceLink "CHANGELOG.md" "release changelog" ->}}.
 
 | Platform                           | File                                                                                         |
 |------------------------------------|----------------------------------------------------------------------------------------------|

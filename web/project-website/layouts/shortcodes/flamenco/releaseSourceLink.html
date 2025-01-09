@@ -1,0 +1,6 @@
+{{- $version := .Get "version" | default $.Site.Data.flamenco.latestVersion -}}
+{{- $url := .Get 0 | default "missing-url" -}}
+{{- $linktext := .Get 1 | default "missing link text" -}}
+<a class="flamenco-source-link" href="https://projects.blender.org/studio/flamenco/src/tag/v{{$version}}/{{$url}}">{{
+  $linktext }}</a>
+{{- "" -}}

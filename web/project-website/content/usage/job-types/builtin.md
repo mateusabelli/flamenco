@@ -5,8 +5,8 @@ weight: 10
 
 Flamenco comes with built-in job types that are used for most common tasks. Currently, there are two of them:
 
-- Simple Blender Render
-- Single Image Render
+- Simple Blender Render ({{< flamenco/releaseSourceLink "internal/manager/job_compilers/scripts/simple_blender_render.js" "source" ->}})
+- Single Image Render ({{< flamenco/releaseSourceLink "internal/manager/job_compilers/scripts/simple_blender_render.js" "source" ->}})
 
 ## Simple Blender Render
 
