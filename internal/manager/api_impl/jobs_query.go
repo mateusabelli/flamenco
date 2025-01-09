@@ -138,15 +138,17 @@ func (f *Flamenco) FetchTask(e echo.Context, taskID string) error {
 	}
 	apiTask := taskJobWorkertoAPI(taskJobWorker)
 
-	// Fetch the worker. TODO: get rid of this conversion, just include the
-	// worker's UUID and let the caller fetch the worker info themselves if
-	// necessary.
-	taskWorker, err := f.persist.FetchWorker(ctx, taskJobWorker.WorkerUUID)
-	if err != nil {
-		logger.Warn().Err(err).Msg("error fetching task worker")
-		return sendAPIError(e, http.StatusInternalServerError, "error fetching task worker")
+	if taskJobWorker.WorkerUUID != "" {
+		// Fetch the worker. TODO: get rid of this conversion, just include the
+		// worker's UUID and let the caller fetch the worker info themselves if
+		// necessary.
+		taskWorker, err := f.persist.FetchWorker(ctx, taskJobWorker.WorkerUUID)
+		if err != nil {
+			logger.Warn().Err(err).Msg("error fetching task worker")
+			return sendAPIError(e, http.StatusInternalServerError, "error fetching task worker")
+		}
+		apiTask.Worker = workerToTaskWorker(taskWorker)
 	}
-	apiTask.Worker = workerToTaskWorker(taskWorker)
 
 	// Fetch & convert the failure list.
 	failedWorkers, err := f.persist.FetchTaskFailureList(ctx, &taskJobWorker.Task)
