@@ -4,3 +4,4 @@
 {{- $version := .Get "version" | default $.Site.Data.flamenco.latestVersion -}}
 {{- $filename := printf "flamenco-%s-%s-%s.%s" $version $os $arch $extension -}}
 <a class="flamenco-download-link" href="/downloads/{{ $filename }}">{{ $filename }}</a>
+{{- "" -}}

@@ -9,3 +9,5 @@
 <a class="{{ with $class }}{{ printf " %s" . }}{{ end }}"
   {{- with $ref }}{{ printf " href=\"%s\"" . | safeHTMLAttr }}{{ end }}
 >{{ $.Inner }}</a>
+
+{{- "" -}}
