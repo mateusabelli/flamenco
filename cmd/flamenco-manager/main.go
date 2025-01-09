@@ -38,6 +38,7 @@ import (
 	"projects.blender.org/studio/flamenco/internal/manager/task_state_machine"
 	"projects.blender.org/studio/flamenco/internal/manager/timeout_checker"
 	"projects.blender.org/studio/flamenco/internal/own_url"
+	"projects.blender.org/studio/flamenco/internal/race"
 	"projects.blender.org/studio/flamenco/internal/upnp_ssdp"
 	"projects.blender.org/studio/flamenco/pkg/api"
 	"projects.blender.org/studio/flamenco/pkg/shaman"
@@ -80,6 +81,10 @@ func main() {
 		Str("osDetail", osDetail).
 		Str("arch", runtime.GOARCH).
 		Msgf("starting %v", appinfo.ApplicationName)
+
+	if race.Enabled {
+		log.Warn().Msg("Race condition checker is enabled, expect non-standard performance")
+	}
 
 	parseCliArgs()
 	if cliArgs.version {
