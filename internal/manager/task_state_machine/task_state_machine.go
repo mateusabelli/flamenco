@@ -5,6 +5,7 @@ package task_state_machine
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -23,6 +24,10 @@ type StateMachine struct {
 	persist     PersistenceService
 	broadcaster ChangeBroadcaster
 	logStorage  LogStorage
+
+	// mutex protects all public functions, so that only one function can run at a time.
+	// This is to avoid race conditions on task/job status updates.
+	mutex *sync.Mutex
 }
 
 func NewStateMachine(persist PersistenceService, broadcaster ChangeBroadcaster, logStorage LogStorage) *StateMachine {
@@ -30,6 +35,7 @@ func NewStateMachine(persist PersistenceService, broadcaster ChangeBroadcaster, 
 		persist:     persist,
 		broadcaster: broadcaster,
 		logStorage:  logStorage,
+		mutex:       new(sync.Mutex),
 	}
 }
 
@@ -44,6 +50,9 @@ func (sm *StateMachine) TaskStatusChange(
 		log.Panic().Str("task", task.UUID).Msg("task without job ID, cannot handle this")
 		return nil // Will not run because of the panic.
 	}
+
+	sm.mutex.Lock()
+	defer sm.mutex.Unlock()
 
 	job, err := sm.persist.FetchJobByID(ctx, task.JobID)
 	if err != nil {
@@ -282,6 +291,9 @@ func (sm *StateMachine) JobStatusChange(
 	newJobStatus api.JobStatus,
 	reason string,
 ) error {
+	sm.mutex.Lock()
+	defer sm.mutex.Unlock()
+
 	job, err := sm.persist.FetchJob(ctx, jobUUID)
 	if err != nil {
 		return err
@@ -621,6 +633,9 @@ func (sm *StateMachine) checkTaskCompletion(
 // to run at startup of Flamenco Manager, and checks to see if there are any
 // jobs in a status that a human will not be able to fix otherwise.
 func (sm *StateMachine) CheckStuck(ctx context.Context) {
+	sm.mutex.Lock()
+	defer sm.mutex.Unlock()
+
 	stuckJobs, err := sm.persist.FetchJobsInStatus(ctx, api.JobStatusCancelRequested, api.JobStatusRequeueing)
 	if err != nil {
 		log.Error().Err(err).Msg("unable to fetch stuck jobs")
