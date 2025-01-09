@@ -43,6 +43,11 @@ func FlamencoManagerWithoutWebapp() error {
 	return nil
 }
 
+// Build the Flamenco Manager executable with race condition checker enabled, do not rebuild the webapp
+func FlamencoManagerRace() error {
+	return build("./cmd/flamenco-manager", "-race")
+}
+
 func flamencoManager() error {
 	return build("./cmd/flamenco-manager")
 }
@@ -93,7 +98,7 @@ func WebappStatic() error {
 	return packAddon(zipPath)
 }
 
-func build(exePackage string) error {
+func build(exePackage string, extraArgs ...string) error {
 	flags, err := buildFlags()
 	if err != nil {
 		return err
@@ -101,6 +106,7 @@ func build(exePackage string) error {
 
 	args := []string{"build", "-v"}
 	args = append(args, flags...)
+	args = append(args, extraArgs...)
 	args = append(args, exePackage)
 	return sh.RunV(mg.GoCmd(), args...)
 }
