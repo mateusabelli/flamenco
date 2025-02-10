@@ -34,7 +34,7 @@ and build the frontend files.
 It's recommended to install Node via Snap:
 
 ```
-sudo snap install node --classic --channel=18
+sudo snap install node --classic --channel=22
 ```
 
 If you install NodeJS in a different way, it may not be bundled with Yarn. In that case, run:
@@ -45,7 +45,7 @@ sudo npm install --global yarn
 
 {{< /tab >}}
 {{< tab "Windows" >}}
-Install [Node v18 LTS](https://nodejs.org/en/download/). Be sure to enable the "Automatically install the necessary tools" checkbox.
+Install [Node v22 LTS](https://nodejs.org/en/download/). Be sure to enable the "Automatically install the necessary tools" checkbox.
 
 Then install Yarn via:
 
@@ -57,7 +57,7 @@ npm install --global yarn
 {{< tab "macOS" >}}
 **Option 1** (Native install)
 
-Install [Node v18 LTS](https://nodejs.org/en/download/) and then install Yarn via:
+Install [Node v22 LTS](https://nodejs.org/en/download/) and then install Yarn via:
 
 ```
 npm install --global yarn
@@ -67,11 +67,11 @@ npm install --global yarn
 
 **Option 2** (Homebrew)
 
-Install Node 18 via homebrew:
+Install Node 22 via homebrew:
 
 ```
-brew install node@18
-brew link node@18
+brew install node@22
+brew link node@22
 ```
 
 Then install yarn:
