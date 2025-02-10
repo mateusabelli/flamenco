@@ -14,10 +14,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// loadScripts iterates over all JavaScript files, compiles them, and stores the
-// result into `s.compilers`.
-func (s *Service) loadScripts() error {
-	compilers := map[string]Compiler{}
+// loadScripts loads all Job Compiler JavaScript files and returns them.
+func loadScripts() map[string]Compiler {
+	scripts := map[string]Compiler{}
 
 	// Collect all job compilers.
 	for _, fs := range getAvailableFilesystems() {
@@ -37,21 +36,16 @@ func (s *Service) loadScripts() error {
 		// Merge the returned compilers into the big map, skipping ones that were
 		// already there.
 		for name := range compilersfromFS {
-			_, found := compilers[name]
+			_, found := scripts[name]
 			if found {
 				continue
 			}
 
-			compilers[name] = compilersfromFS[name]
+			scripts[name] = compilersfromFS[name]
 		}
 	}
 
-	// Assign the new set of compilers in a thread-safe way.
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	s.compilers = compilers
-
-	return nil
+	return scripts
 }
 
 // loadScriptsFrom iterates over files in the root of the given filesystem,
@@ -156,19 +150,21 @@ func newGojaVM(registry *require.Registry) *goja.Runtime {
 // compilerVMForJobType returns a Goja *Runtime that has the job compiler script
 // for the given job type loaded up.
 func (s *Service) compilerVMForJobType(jobTypeName string) (*VM, error) {
-	program, ok := s.compilers[jobTypeName]
+	// TODO: only load the one necessary script, and not everything.
+	scripts := loadScripts()
+	script, ok := scripts[jobTypeName]
 	if !ok {
 		return nil, ErrJobTypeUnknown
 	}
 
 	runtime := newGojaVM(s.registry)
-	if _, err := runtime.RunProgram(program.program); err != nil {
+	if _, err := runtime.RunProgram(script.program); err != nil {
 		return nil, err
 	}
 
 	vm := &VM{
 		runtime:  runtime,
-		compiler: program,
+		compiler: script,
 	}
 	if err := vm.updateEtag(); err != nil {
 		return nil, err

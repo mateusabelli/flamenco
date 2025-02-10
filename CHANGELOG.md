@@ -6,6 +6,8 @@ bugs in actually-released versions.
 
 ## 3.7 - in development
 
+- Load job compiler scripts on demand, rather than caching them all at startup of the Manager. This makes it simpler to create & test scripts, as the Manager no longer has to be restarted after every update.
+
 ## 3.6 - released 2024-12-01
 
 - Change the name of the add-on from "Flamenco 3" to just "Flamenco".

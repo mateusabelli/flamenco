@@ -26,13 +26,13 @@ import (
 var ErrJobTypeUnknown = errors.New("job type unknown")
 var ErrJobTypeBadEtag = errors.New("job type etag does not match")
 
-// Service contains job compilers defined in JavaScript.
+// Service can load & run job compilers.
 type Service struct {
-	compilers   map[string]Compiler // Mapping from job type name to the job compiler of that type.
-	registry    *require.Registry   // Goja module registry.
+	registry    *require.Registry // Goja module registry.
 	timeService TimeService
 
-	// mutex protects 'compilers' from race conditions.
+	// mutex ensures only one job compiler runs at a time, and protects
+	// 'registry' from race conditions.
 	mutex *sync.Mutex
 }
 
@@ -56,18 +56,13 @@ type TimeService interface {
 	Now() time.Time
 }
 
-// Load returns a job compiler service with all JS files loaded.
-func Load(ts TimeService) (*Service, error) {
+// New returns a job compiler service.
+func New(ts TimeService) (*Service, error) {
 	initFileLoader()
 
 	service := Service{
-		compilers:   map[string]Compiler{},
 		timeService: ts,
 		mutex:       new(sync.Mutex),
-	}
-
-	if err := service.loadScripts(); err != nil {
-		return nil, err
 	}
 
 	staticFileLoader := func(path string) ([]byte, error) {
@@ -152,11 +147,8 @@ func (s *Service) Compile(ctx context.Context, sj api.SubmittedJob) (*AuthoredJo
 func (s *Service) ListJobTypes() api.AvailableJobTypes {
 	jobTypes := make([]api.AvailableJobType, 0)
 
-	// Protect access to s.compilers.
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	for typeName := range s.compilers {
+	compilers := loadScripts()
+	for typeName := range compilers {
 		compiler, err := s.compilerVMForJobType(typeName)
 		if err != nil {
 			log.Warn().Err(err).Str("jobType", typeName).Msg("unable to determine job type settings")

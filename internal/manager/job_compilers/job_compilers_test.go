@@ -66,7 +66,7 @@ func mockedClock(t *testing.T) clock.Clock {
 func TestSimpleBlenderRenderHappy(t *testing.T) {
 	c := mockedClock(t)
 
-	s, err := Load(c)
+	s, err := New(c)
 	require.NoError(t, err)
 
 	// Compiling a job should be really fast.
@@ -142,7 +142,7 @@ func TestSimpleBlenderRenderHappy(t *testing.T) {
 func TestSimpleBlenderRenderWithScene(t *testing.T) {
 	c := mockedClock(t)
 
-	s, err := Load(c)
+	s, err := New(c)
 	require.NoError(t, err)
 
 	// Compiling a job should be really fast.
@@ -177,7 +177,7 @@ func TestSimpleBlenderRenderWithScene(t *testing.T) {
 func TestJobWithoutTag(t *testing.T) {
 	c := mockedClock(t)
 
-	s, err := Load(c)
+	s, err := New(c)
 	require.NoError(t, err)
 
 	// Compiling a job should be really fast.
@@ -206,7 +206,7 @@ func TestJobWithoutTag(t *testing.T) {
 func TestSimpleBlenderRenderWindowsPaths(t *testing.T) {
 	c := mockedClock(t)
 
-	s, err := Load(c)
+	s, err := New(c)
 	require.NoError(t, err)
 
 	// Compiling a job should be really fast.
@@ -270,7 +270,7 @@ func TestSimpleBlenderRenderWindowsPaths(t *testing.T) {
 func TestSimpleBlenderRenderOutputPathFieldReplacement(t *testing.T) {
 	c := mockedClock(t)
 
-	s, err := Load(c)
+	s, err := New(c)
 	require.NoError(t, err)
 
 	// Compiling a job should be really fast.
@@ -317,7 +317,7 @@ func TestSimpleBlenderRenderOutputPathFieldReplacement(t *testing.T) {
 func TestEtag(t *testing.T) {
 	c := mockedClock(t)
 
-	s, err := Load(c)
+	s, err := New(c)
 	require.NoError(t, err)
 
 	// Etags should be computed when the compiler VM is obtained.
@@ -361,7 +361,7 @@ func TestEtag(t *testing.T) {
 }
 
 func TestComplexFrameRange(t *testing.T) {
-	s, err := Load(mockedClock(t))
+	s, err := New(mockedClock(t))
 	require.NoError(t, err)
 
 	// Compiling a job should be really fast.

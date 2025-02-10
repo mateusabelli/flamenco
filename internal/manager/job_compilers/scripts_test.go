@@ -65,6 +65,13 @@ func BenchmarkLoadScripts_fromDisk(b *testing.B) {
 	}
 }
 
+func BenchmarkLoadScripts(b *testing.B) {
+	zerolog.SetGlobalLevel(zerolog.Disabled)
+	for i := 0; i < b.N; i++ {
+		loadScripts()
+	}
+}
+
 // keys returns the set of keys of the mapping.
 func keys[K comparable, V any](mapping map[K]V) map[K]bool {
 	keys := map[K]bool{}

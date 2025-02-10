@@ -166,7 +166,7 @@ func runFlamencoManager() bool {
 	defer persist.Close()
 
 	timeService := clock.New()
-	compiler, err := job_compilers.Load(timeService)
+	compiler, err := job_compilers.New(timeService)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error loading job compilers")
 	}
