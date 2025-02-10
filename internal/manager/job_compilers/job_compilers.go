@@ -24,7 +24,6 @@ import (
 )
 
 var ErrJobTypeUnknown = errors.New("job type unknown")
-var ErrScriptIncomplete = errors.New("job compiler script incomplete")
 var ErrJobTypeBadEtag = errors.New("job type etag does not match")
 
 // Service contains job compilers defined in JavaScript.
@@ -191,12 +190,10 @@ func (s *Service) GetJobType(typeName string) (api.AvailableJobType, error) {
 func (vm *VM) getCompileJob() (jobCompileFunc, error) {
 	compileJob, isCallable := goja.AssertFunction(vm.runtime.Get("compileJob"))
 	if !isCallable {
-		// TODO: construct a more elaborate Error type that contains this info, instead of logging here.
-		log.Error().
-			Str("jobType", vm.compiler.jobType).
-			Str("script", vm.compiler.filename).
-			Msg("script does not define a compileJob(job) function")
-		return nil, ErrScriptIncomplete
+		return nil, JobScriptIncompleteError{
+			scriptFilename: vm.compiler.filename,
+			message:        "does not define a compileJob(job) function",
+		}
 	}
 
 	// TODO: wrap this in a nicer way.
@@ -206,18 +203,39 @@ func (vm *VM) getCompileJob() (jobCompileFunc, error) {
 	}, nil
 }
 
+type JobScriptIncompleteError struct {
+	wrappedErr     error
+	scriptFilename string
+	message        string
+}
+
+func (err JobScriptIncompleteError) Error() string {
+	if err.wrappedErr == nil {
+		return fmt.Sprintf("script (%s) %s", err.scriptFilename, err.message)
+	}
+	return fmt.Sprintf("script (%s) %s: %v", err.scriptFilename, err.message, err.wrappedErr)
+}
+
+func (err JobScriptIncompleteError) Unwrap() error {
+	return err.wrappedErr
+}
+
 func (vm *VM) getJobTypeInfo() (api.AvailableJobType, error) {
 	jtValue := vm.runtime.Get("JOB_TYPE")
+	if jtValue == nil {
+		return api.AvailableJobType{}, JobScriptIncompleteError{
+			scriptFilename: vm.compiler.filename,
+			message:        "does not define a JOB_TYPE object",
+		}
+	}
 
 	var ajt api.AvailableJobType
 	if err := vm.runtime.ExportTo(jtValue, &ajt); err != nil {
-		// TODO: construct a more elaborate Error type that contains this info, instead of logging here.
-		log.Error().
-			Err(err).
-			Str("jobType", vm.compiler.jobType).
-			Str("script", vm.compiler.filename).
-			Msg("script does not define a proper JOB_TYPE object")
-		return api.AvailableJobType{}, ErrScriptIncomplete
+		return api.AvailableJobType{}, JobScriptIncompleteError{
+			wrappedErr:     err,
+			scriptFilename: vm.compiler.filename,
+			message:        "does not define a proper JOB_TYPE object",
+		}
 	}
 
 	ajt.Name = vm.compiler.jobType
