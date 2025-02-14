@@ -7,6 +7,9 @@ bugs in actually-released versions.
 ## 3.7 - in development
 
 - Load job compiler scripts on demand, rather than caching them all at startup of the Manager. This makes it simpler to create & test scripts, as the Manager no longer has to be restarted after every update.
+- The conversion from a known path prefix to a variable is now done in a case-insensitive way. This means that if the variable `{storage}` has value `S:\Flamenco`, a path `s:\flamenco\project\file.blend` will be recognised and stored as `{storage}\project\file.blend`.
+
+  This happens uniformly, regardless of the platform. So also on Linux, which has a case-sensitive filesystem, this matching is done in a case-insensitive way. It is very unlikely that a Flamenco configuration has two separate variables, for paths that only differ in their case.
 
 ## 3.6 - released 2024-12-01
 
