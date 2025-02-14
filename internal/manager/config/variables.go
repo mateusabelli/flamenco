@@ -50,11 +50,15 @@ func (c *Conf) NewVariableExpander(audience VariableAudience, platform VariableP
 // ValueToVariableReplacer replaces any variable values it recognises in
 // valueToConvert to the actual variable. For example, `/path/to/file.blend` can
 // be changed to `{my_storage}/file.blend`.
+//
+// Matching is done in a case-insensitive way on all platforms, because some
+// filesystems are case-insensitive. It is very unlikely that there will be two
+// variables for two paths, only differing in their case.
 func (vvc *ValueToVariableReplacer) Replace(valueToConvert string) string {
 	result := valueToConvert
 
 	for varName, varValue := range vvc.twoWayVars {
-		if !isValueMatch(result, varValue) {
+		if !isValueMatch(strings.ToLower(result), strings.ToLower(varValue)) {
 			continue
 		}
 		result = vvc.join(varName, result[len(varValue):])

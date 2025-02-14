@@ -50,3 +50,29 @@ func TestExpandTwowayVariablesMixedSlashes(t *testing.T) {
 	assert.Equal(t, `/shared/flamenco/shot/file.blend`, expanderLnx.Expand(`{shared}\shot\file.blend`))
 	assert.Equal(t, `/shared/flamenco/shot/file.blend`, expanderLnx.Expand(`{shared}/shot/file.blend`))
 }
+
+func TestReplaceTwowayVariablesMixedCase(t *testing.T) {
+	c := DefaultConfig(func(c *Conf) {
+		c.Variables["shared"] = Variable{
+			IsTwoWay: true,
+			Values: []VariableValue{
+				{Value: "/shared/flamenco", Platform: VariablePlatformLinux},
+				{Value: `Y:\shared\flamenco`, Platform: VariablePlatformWindows},
+			},
+		}
+	})
+
+	replacerWin := c.NewVariableToValueConverter(VariableAudienceWorkers, VariablePlatformWindows)
+
+	// Both uppercase and lowercase drive letter should match.
+	assert.Equal(t, `{shared}\shot\file.blend`, replacerWin.Replace(`y:\shared\flamenco\shot\file.blend`),
+		"Lower-case drive letter should match")
+	assert.Equal(t, `{shared}\shot\file.blend`, replacerWin.Replace(`Y:\shared\flamenco\shot\file.blend`),
+		"Same-case drive letter should match")
+
+	// Both uppercase and lowercase path should match.
+	assert.Equal(t, `{shared}\shot\file.blend`, replacerWin.Replace(`Y:\SHARED\flamenco\shot\file.blend`),
+		"Upper case 1st directory component should match")
+	assert.Equal(t, `{shared}\SHOT\file.blend`, replacerWin.Replace(`Y:\shared\FLAMENCO\SHOT\file.blend`),
+		"Upper case 2nd directory component should match")
+}
