@@ -195,27 +195,22 @@ tools:
 
 
 # FFmpeg version to bundle.
-# Version 5.1.3 is the last release in the 5.x series, but binaries have not
-# been made available. And then there are different 'latest' binaries for the
-# different platforms.
-FFMPEG_VERSION_LINUX=5.1.1
-FFMPEG_VERSION_WINDOWS=5.1.2
-FFMPEG_VERSION_DARWIN=5.1.2
+FFMPEG_VERSION=7.0.2
 TOOLS=./tools
 TOOLS_DOWNLOAD=./tools/download
 
-FFMPEG_PACKAGE_LINUX=$(TOOLS_DOWNLOAD)/ffmpeg-$(FFMPEG_VERSION_LINUX)-linux-amd64-static.tar.xz
-FFMPEG_PACKAGE_DARWIN=$(TOOLS_DOWNLOAD)/ffmpeg-$(FFMPEG_VERSION_DARWIN)-darwin-amd64.zip
-FFMPEG_PACKAGE_WINDOWS=$(TOOLS_DOWNLOAD)/ffmpeg-$(FFMPEG_VERSION_WINDOWS)-windows-amd64.zip
+FFMPEG_PACKAGE_LINUX=$(TOOLS_DOWNLOAD)/ffmpeg-$(FFMPEG_VERSION)-linux-amd64-static.tar.xz
+FFMPEG_PACKAGE_DARWIN=$(TOOLS_DOWNLOAD)/ffmpeg-$(FFMPEG_VERSION)-darwin-amd64.zip
+FFMPEG_PACKAGE_WINDOWS=$(TOOLS_DOWNLOAD)/ffmpeg-$(FFMPEG_VERSION)-windows-amd64.zip
 
 .PHONY: tools-linux
 tools-linux:
 	[ -e $(FFMPEG_PACKAGE_LINUX) ] || curl \
 		--create-dirs -o $(FFMPEG_PACKAGE_LINUX) \
-		https://www.johnvansickle.com/ffmpeg/old-releases/ffmpeg-$(FFMPEG_VERSION_LINUX)-amd64-static.tar.xz
+		https://www.johnvansickle.com/ffmpeg/releases/ffmpeg-$(FFMPEG_VERSION)-amd64-static.tar.xz
 	tar xvf \
 		$(FFMPEG_PACKAGE_LINUX) \
-		ffmpeg-$(FFMPEG_VERSION_LINUX)-amd64-static/ffmpeg \
+		ffmpeg-$(FFMPEG_VERSION)-amd64-static/ffmpeg \
 		--strip-components=1
 	mv ffmpeg $(TOOLS)/ffmpeg-linux-amd64
 
@@ -223,7 +218,7 @@ tools-linux:
 tools-darwin:
 	[ -e $(FFMPEG_PACKAGE_DARWIN) ] || curl \
 		--create-dirs -o $(FFMPEG_PACKAGE_DARWIN) \
-		https://evermeet.cx/ffmpeg/ffmpeg-$(FFMPEG_VERSION_DARWIN).zip
+		https://evermeet.cx/ffmpeg/ffmpeg-$(FFMPEG_VERSION).zip
 	unzip $(FFMPEG_PACKAGE_DARWIN)
 	mv ffmpeg $(TOOLS)/ffmpeg-darwin-amd64
 
@@ -231,8 +226,8 @@ tools-darwin:
 tools-windows:
 	[ -e $(FFMPEG_PACKAGE_WINDOWS) ] || curl \
 		--create-dirs -o $(FFMPEG_PACKAGE_WINDOWS) \
-		https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-$(FFMPEG_VERSION_WINDOWS)-essentials_build.zip
-	unzip -j $(FFMPEG_PACKAGE_WINDOWS) ffmpeg-$(FFMPEG_VERSION_WINDOWS)-essentials_build/bin/ffmpeg.exe -d .
+		https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-$(FFMPEG_VERSION)-essentials_build.zip
+	unzip -j $(FFMPEG_PACKAGE_WINDOWS) ffmpeg-$(FFMPEG_VERSION)-essentials_build/bin/ffmpeg.exe -d .
 	mv ffmpeg.exe $(TOOLS)/ffmpeg-windows-amd64.exe
 
 

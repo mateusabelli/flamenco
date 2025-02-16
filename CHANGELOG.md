@@ -13,6 +13,7 @@ bugs in actually-released versions.
 - Fix issue where jobs could get stuck in `pause-requested` state. Such jobs are now also detected at startup of the Manager, and sent to `paused` when possible.
 - Log a warning at startup when the `blender` variable is missing, or has no value for one or more platforms.
 - Fix an issue in the First Time Setup wizard, where the "System Default Location for Blender" could cause the `blender` variable to be empty, and thus the farm inoperable.
+- Upgrade bundled FFmpeg from 5.1.2 to 7.0.2
 
 
 ## 3.6 - released 2024-12-01
