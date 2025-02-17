@@ -19,12 +19,12 @@ import (
 func findFFmpeg() {
 	result, err := find_ffmpeg.Find()
 	switch {
+	case err == nil: // Has to be first because of the checks in the next `case`.
+		log.Info().Str("path", result.Path).Str("version", result.Version).Msg("FFmpeg found on this system")
 	case errors.Is(err, fs.ErrNotExist), strings.Contains(err.Error(), "file not found"):
 		log.Warn().Msg("FFmpeg could not be found on this system, jobs may not run correctly")
-	case err != nil:
-		log.Warn().AnErr("cause", err).Msg("there was an unexpected error finding FFmpeg on this system, jobs may not run correctly")
 	default:
-		log.Info().Str("path", result.Path).Str("version", result.Version).Msg("FFmpeg found on this system")
+		log.Warn().AnErr("cause", err).Msg("there was an unexpected error finding FFmpeg on this system, jobs may not run correctly")
 	}
 }
 
