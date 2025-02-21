@@ -3,7 +3,7 @@ title: Single Image
 weight: 5
 ---
 
-{{< flamenco/thirdPartyCompatibility blender="v4.2+" flamenco="v3.6-alpha+" >}}
+{{< flamenco/thirdPartyCompatibility blender="v4.2+" flamenco="v3.6+" >}}
 
 Created by [David Zhang][author].
 Documented and maintained by [Sybren Stüvel][maintainer].
