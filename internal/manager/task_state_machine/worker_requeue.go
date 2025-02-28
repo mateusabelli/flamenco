@@ -4,6 +4,7 @@ package task_state_machine
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/rs/zerolog/log"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
@@ -18,6 +19,9 @@ func (sm *StateMachine) RequeueActiveTasksOfWorker(
 	worker *persistence.Worker,
 	reason string,
 ) error {
+	sm.mutex.Lock()
+	defer sm.mutex.Unlock()
+
 	// Fetch the tasks to update.
 	tasksJobs, err := sm.persist.FetchTasksOfWorkerInStatus(
 		ctx, worker, api.TaskStatusActive)
@@ -28,7 +32,7 @@ func (sm *StateMachine) RequeueActiveTasksOfWorker(
 	// Run each task change through the task state machine.
 	var lastErr error
 	for _, taskJobWorker := range tasksJobs {
-		lastErr = sm.requeueTaskOfWorker(ctx, &taskJobWorker.Task, taskJobWorker.JobUUID, worker, reason)
+		lastErr = sm.returnTaskOfWorker(ctx, &taskJobWorker.Task, taskJobWorker.JobUUID, worker, reason)
 	}
 
 	return lastErr
@@ -43,6 +47,9 @@ func (sm *StateMachine) RequeueFailedTasksOfWorkerOfJob(
 	jobUUID string,
 	reason string,
 ) error {
+	sm.mutex.Lock()
+	defer sm.mutex.Unlock()
+
 	// Fetch the tasks to update.
 	tasks, err := sm.persist.FetchTasksOfWorkerInStatusOfJob(
 		ctx, worker, api.TaskStatusFailed, jobUUID)
@@ -53,13 +60,15 @@ func (sm *StateMachine) RequeueFailedTasksOfWorkerOfJob(
 	// Run each task change through the task state machine.
 	var lastErr error
 	for _, task := range tasks {
-		lastErr = sm.requeueTaskOfWorker(ctx, task, jobUUID, worker, reason)
+		lastErr = sm.returnTaskOfWorker(ctx, task, jobUUID, worker, reason)
 	}
 
 	return lastErr
 }
 
-func (sm *StateMachine) requeueTaskOfWorker(
+// returnTaskOfWorker returns the task to the task pool.
+// This either re-queues the task for execution, or pauses it, depending on the current job status.
+func (sm *StateMachine) returnTaskOfWorker(
 	ctx context.Context,
 	task *persistence.Task,
 	jobUUID string,
@@ -71,12 +80,27 @@ func (sm *StateMachine) requeueTaskOfWorker(
 		Str("reason", reason).
 		Logger()
 
+	job, err := sm.persist.FetchJob(ctx, jobUUID)
+	if err != nil {
+		return fmt.Errorf("could not requeue task of worker %q: %w", worker.UUID, err)
+	}
+
+	// Depending on the job's status, a Worker returning its task to the pool should make it go to 'queued' or 'paused'.
+	var targetTaskStatus api.TaskStatus
+	switch job.Status {
+	case api.JobStatusPauseRequested, api.JobStatusPaused:
+		targetTaskStatus = api.TaskStatusPaused
+	default:
+		targetTaskStatus = api.TaskStatusQueued
+	}
+
 	logger.Info().
 		Str("task", task.UUID).
-		Msg("re-queueing task")
+		Str("newTaskStatus", string(targetTaskStatus)).
+		Msg("returning task to pool")
 
 		// Write to task activity that it got requeued because of worker sign-off.
-	task.Activity = "Task was requeued by Manager because " + reason
+	task.Activity = fmt.Sprintf("Task was %s by Manager because %s", targetTaskStatus, reason)
 	if err := sm.persist.SaveTaskActivity(ctx, task); err != nil {
 		logger.Warn().Err(err).
 			Str("task", task.UUID).
@@ -85,12 +109,11 @@ func (sm *StateMachine) requeueTaskOfWorker(
 			Msg("error saving task activity to database")
 	}
 
-	err := sm.TaskStatusChange(ctx, task, api.TaskStatusQueued)
-	if err != nil {
+	if err := sm.taskStatusChange(ctx, task, targetTaskStatus); err != nil {
 		logger.Warn().Err(err).
 			Str("task", task.UUID).
 			Str("reason", reason).
-			Msg("error queueing task")
+			Msg("error returning task to pool")
 	}
 
 	// The error is already logged by the log storage.

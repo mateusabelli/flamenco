@@ -41,7 +41,24 @@ func NewStateMachine(persist PersistenceService, broadcaster ChangeBroadcaster, 
 
 // TaskStatusChange updates the task's status to the new one.
 // `task` is expected to still have its original status, and have a filled `Job` pointer.
+// This is the external API endpoint, which ensures the state machine is locked.
 func (sm *StateMachine) TaskStatusChange(
+	ctx context.Context,
+	task *persistence.Task,
+	newTaskStatus api.TaskStatus,
+) error {
+
+	sm.mutex.Lock()
+	defer sm.mutex.Unlock()
+
+	return sm.taskStatusChange(ctx, task, newTaskStatus)
+}
+
+// taskStatusChange updates the task's status to the new one.
+// `task` is expected to still have its original status, and have a filled `Job` pointer.
+// This is the internal version fo TaskStatusChange(), which assumes the state
+// machine is already locked.
+func (sm *StateMachine) taskStatusChange(
 	ctx context.Context,
 	task *persistence.Task,
 	newTaskStatus api.TaskStatus,
@@ -50,9 +67,6 @@ func (sm *StateMachine) TaskStatusChange(
 		log.Panic().Str("task", task.UUID).Msg("task without job ID, cannot handle this")
 		return nil // Will not run because of the panic.
 	}
-
-	sm.mutex.Lock()
-	defer sm.mutex.Unlock()
 
 	job, err := sm.persist.FetchJobByID(ctx, task.JobID)
 	if err != nil {
@@ -137,8 +151,7 @@ func (sm *StateMachine) updateJobAfterTaskStatusChange(
 		return sm.jobStatusIfAThenB(ctx, logger, job, api.JobStatusCompleted, api.JobStatusRequeueing, "task was queued")
 
 	case api.TaskStatusPaused:
-		// Pausing a task has no impact on the job.
-		return nil
+		return sm.updateJobOnTaskStatusPaused(ctx, job)
 
 	case api.TaskStatusCanceled:
 		return sm.updateJobOnTaskStatusCanceled(ctx, logger, job)
@@ -220,6 +233,19 @@ func (sm *StateMachine) updateJobOnTaskStatusCanceled(ctx context.Context, logge
 	}
 
 	return nil
+}
+
+// updateJobOnTaskStatusPaused checks if all tasks are paused, and if so, pauses the entire job.
+func (sm *StateMachine) updateJobOnTaskStatusPaused(ctx context.Context, job *persistence.Job) error {
+	toBePaused, err := sm.isJobPausingComplete(ctx, job)
+	if err != nil {
+		return err
+	}
+	if !toBePaused {
+		return nil
+	}
+
+	return sm.jobStatusChange(ctx, job, api.JobStatusPaused, "last task got paused")
 }
 
 // updateJobOnTaskStatusFailed conditionally escalates the failure of a task to fail the entire job.
