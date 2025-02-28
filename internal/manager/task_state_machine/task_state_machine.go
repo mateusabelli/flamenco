@@ -662,7 +662,11 @@ func (sm *StateMachine) CheckStuck(ctx context.Context) {
 	sm.mutex.Lock()
 	defer sm.mutex.Unlock()
 
-	stuckJobs, err := sm.persist.FetchJobsInStatus(ctx, api.JobStatusCancelRequested, api.JobStatusRequeueing)
+	stuckJobs, err := sm.persist.FetchJobsInStatus(ctx,
+		api.JobStatusCancelRequested,
+		api.JobStatusRequeueing,
+		api.JobStatusPauseRequested,
+	)
 	if err != nil {
 		log.Error().Err(err).Msg("unable to fetch stuck jobs")
 		return

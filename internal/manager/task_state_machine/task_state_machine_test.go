@@ -447,7 +447,11 @@ func TestCheckStuck(t *testing.T) {
 	// task3 := taskOfSameJob(task2, api.TaskStatusSoftFailed)
 	job.Status = api.JobStatusRequeueing
 
-	mocks.persist.EXPECT().FetchJobsInStatus(ctx, api.JobStatusCancelRequested, api.JobStatusRequeueing).
+	mocks.persist.EXPECT().FetchJobsInStatus(ctx,
+		api.JobStatusCancelRequested,
+		api.JobStatusRequeueing,
+		api.JobStatusPauseRequested,
+	).
 		Return([]*persistence.Job{job}, nil)
 	mocks.persist.EXPECT().CountTasksOfJobInStatus(ctx, job, api.TaskStatusCompleted).Return(1, 3, nil)
 
