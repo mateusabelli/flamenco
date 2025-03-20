@@ -22,13 +22,16 @@ func NewService() *Service {
 	}
 }
 
-// IsFirstRun returns true if this is likely to be the first run of Flamenco.
-func (s *Service) IsFirstRun() (bool, error) {
-	if s.forceFirstRun {
-		return true, nil
-	}
+func (s *Service) ForceFirstRun() {
+	s.forceFirstRun = true
+}
 
+// Load parses the flamenco-manager.yaml file, and returns whether this is
+// likely to be the first run or not.
+func (s *Service) Load() (bool, error) {
 	config, err := getConf()
+	s.config = config
+
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 		// No configuration means first run.
@@ -38,20 +41,7 @@ func (s *Service) IsFirstRun() (bool, error) {
 	}
 
 	// No shared storage configured means first run.
-	return config.SharedStoragePath == "", nil
-}
-
-func (s *Service) ForceFirstRun() {
-	s.forceFirstRun = true
-}
-
-func (s *Service) Load() error {
-	config, err := getConf()
-	if err != nil {
-		return err
-	}
-	s.config = config
-	return nil
+	return s.forceFirstRun || config.SharedStoragePath == "", nil
 }
 
 func (s *Service) Get() *Conf {

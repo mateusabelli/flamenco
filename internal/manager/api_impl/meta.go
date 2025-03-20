@@ -39,7 +39,7 @@ func (f *Flamenco) GetVersion(e echo.Context) error {
 }
 
 func (f *Flamenco) GetConfiguration(e echo.Context) error {
-	isFirstRun, err := f.config.IsFirstRun()
+	isFirstRun, err := f.config.Load()
 	if err != nil {
 		logger := requestLogger(e)
 		logger.Error().Err(err).Msg("error investigating configuration")

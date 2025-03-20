@@ -246,6 +246,7 @@ func (c *Conf) processAfterLoading(override ...func(c *Conf)) {
 	c.constructVariableLookupTable()
 	c.checkDatabase()
 	c.checkVariables()
+	c.checkBlenderVariable()
 }
 
 // MockCurrentGOOSForTests can be used in unit tests to make the variable
@@ -599,6 +600,37 @@ func (c *Conf) checkVariables() {
 
 			variable.Values[valueIndex] = value
 		}
+	}
+}
+
+func (c *Conf) checkBlenderVariable() {
+	blenderKey := "blender"
+	blender, ok := c.Variables[blenderKey]
+	if !ok {
+		log.Error().Msg("config: variable 'blender' not found, Flamenco will not be able to run Blender")
+		return
+	}
+
+	missingPlatforms := []string{}
+	for _, value := range blender.Values {
+		if value.Value == "" {
+			missingPlatforms = append(missingPlatforms, string(value.Platform))
+		}
+	}
+
+	logger := log.With().
+		Str("filename", configFilename).
+		Logger()
+	switch len(missingPlatforms) {
+	case 0: // Fine.
+	case 1:
+		logger.Warn().
+			Str("platform", missingPlatforms[0]).
+			Msgf("config: variable %q has no value, Flamenco will not be able to run Blender on this platform", blenderKey)
+	default: // More than one missing platform.
+		logger.Warn().
+			Strs("platforms", missingPlatforms).
+			Msgf("config: variable %q has no value, Flamenco will not be able to run Blender on these platforms", blenderKey)
 	}
 }
 

@@ -953,19 +953,19 @@ func (mr *MockConfigServiceMockRecorder) Get() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockConfigService)(nil).Get))
 }
 
-// IsFirstRun mocks base method.
-func (m *MockConfigService) IsFirstRun() (bool, error) {
+// Load mocks base method.
+func (m *MockConfigService) Load() (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsFirstRun")
+	ret := m.ctrl.Call(m, "Load")
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// IsFirstRun indicates an expected call of IsFirstRun.
-func (mr *MockConfigServiceMockRecorder) IsFirstRun() *gomock.Call {
+// Load indicates an expected call of Load.
+func (mr *MockConfigServiceMockRecorder) Load() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFirstRun", reflect.TypeOf((*MockConfigService)(nil).IsFirstRun))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockConfigService)(nil).Load))
 }
 
 // NewVariableExpander mocks base method.

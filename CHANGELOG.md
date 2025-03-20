@@ -11,6 +11,7 @@ bugs in actually-released versions.
 
   This happens uniformly, regardless of the platform. So also on Linux, which has a case-sensitive filesystem, this matching is done in a case-insensitive way. It is very unlikely that a Flamenco configuration has two separate variables, for paths that only differ in their case.
 - Fix issue where jobs could get stuck in `pause-requested` state. Such jobs are now also detected at startup of the Manager, and sent to `paused` when possible.
+- Log a warning at startup when the `blender` variable is missing, or has no value for one or more platforms.
 
 
 ## 3.6 - released 2024-12-01

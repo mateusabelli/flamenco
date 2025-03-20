@@ -4,9 +4,7 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
-	"io/fs"
 	"net"
 	"net/url"
 	"os"
@@ -117,15 +115,10 @@ func main() {
 func runFlamencoManager() bool {
 	// Load configuration.
 	configService := config.NewService()
-	err := configService.Load()
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		log.Error().Err(err).Msg("loading configuration")
-	}
-
 	if cliArgs.setupAssistant {
 		configService.ForceFirstRun()
 	}
-	isFirstRun, err := configService.IsFirstRun()
+	isFirstRun, err := configService.Load()
 	switch {
 	case err != nil:
 		log.Fatal().Err(err).Msg("unable to determine whether this is the first run of Flamenco or not")

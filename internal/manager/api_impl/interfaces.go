@@ -184,8 +184,8 @@ type ConfigService interface {
 	// options (like Shaman).
 	EffectiveStoragePath() string
 
-	// IsFirstRun returns true if this is likely to be the first run of Flamenco.
-	IsFirstRun() (bool, error)
+	// Load returns true if this is likely to be the first run of Flamenco.
+	Load() (bool, error)
 
 	// ForceFirstRun forces IsFirstRun() to return true. This is used to force the
 	// setup assistant on a configured system.
