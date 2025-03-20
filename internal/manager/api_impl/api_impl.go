@@ -96,7 +96,7 @@ func (f *Flamenco) requestShutdown() {
 	defer func() {
 		// Recover the panic that happens when the channel is closed multiple times.
 		// Requesting a shutdown should be possible multiple times without panicing.
-		recover()
+		_ = recover()
 	}()
 	close(f.done)
 }
