@@ -6,6 +6,7 @@ package persistence
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -163,7 +164,7 @@ func (db *DB) queries() *sqlc.Queries {
 type queriesTX struct {
 	queries  *sqlc.Queries
 	commit   func() error
-	rollback func() error
+	rollback func()
 }
 
 // queries returns the SQLC Queries struct, connected to this database.
@@ -182,10 +183,27 @@ func (db *DB) queriesWithTX() (*queriesTX, error) {
 	qtx := queriesTX{
 		queries:  sqlc.New(&loggingWrapper),
 		commit:   tx.Commit,
-		rollback: tx.Rollback,
+		rollback: rollbackWrapper(tx.Rollback),
 	}
 
 	return &qtx, nil
+}
+
+func rollbackWrapper(rollback func() error) func() {
+	return func() {
+		err := rollback()
+
+		// AThis function is typically called unconditionally via `defer` and so the
+		// most common case is that the transaction has already been committed, and
+		// thus ErrTxDone is returned here.
+
+		switch {
+		case err == nil: // Not really expected, but a good rollback is ok.
+		case errors.Is(err, sql.ErrTxDone): // Expected.
+		default:
+			log.Error().Msg("database: query rollback failed unexpectedly")
+		}
+	}
 }
 
 // now returns 'now' as reported by db.nowfunc.
