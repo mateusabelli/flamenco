@@ -157,7 +157,13 @@ func (s *Service) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case jobUUID := <-s.queue:
-			s.deleteJob(ctx, jobUUID)
+			err := s.deleteJob(ctx, jobUUID)
+			if err != nil {
+				log.Error().
+					AnErr("cause", err).
+					Str("job", jobUUID).
+					Msg("job deleter: could not delete job")
+			}
 
 			if len(s.queue) == 0 {
 				waitTime = 100 * time.Millisecond
@@ -210,19 +216,17 @@ func (s *Service) deleteJob(ctx context.Context, jobUUID string) error {
 	logger.Debug().Msg("job deleter: starting job deletion")
 	err := s.deleteShamanCheckout(ctx, logger, jobUUID)
 	if err != nil {
-		return err
+		return fmt.Errorf("remove Shaman checkout: %w", err)
 	}
 
 	logger.Debug().Msg("job deleter: removing logs, last-rendered images, etc.")
 	if err := s.storage.RemoveJobStorage(ctx, jobUUID); err != nil {
-		logger.Error().Err(err).Msg("job deleter: error removing job logs, job deletion aborted")
-		return err
+		return fmt.Errorf("remove job logs: %w", err)
 	}
 
 	logger.Debug().Msg("job deleter: removing job from database")
 	if err := s.persist.DeleteJob(ctx, jobUUID); err != nil {
-		logger.Error().Err(err).Msg("job deleter: unable to remove job from database")
-		return err
+		return fmt.Errorf("remove job from database: %w", err)
 	}
 
 	// Broadcast that this job was deleted. This only contains the UUID and the
