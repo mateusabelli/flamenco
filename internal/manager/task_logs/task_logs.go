@@ -216,7 +216,8 @@ func (s *Storage) Tail(jobID, taskID string) (string, error) {
 		firstNewline := bytes.IndexByte(buffer, byte('\n'))
 		if 0 <= firstNewline && firstNewline < numBytes-1 {
 			buffer = buffer[firstNewline+1:]
-		} else {
+		} else { //nolint:staticcheck
+			// nolint: because I (Sybren) want to keep the 'else' + the comment it contains
 			// The file consists of a single line of text; don't strip the first line.
 		}
 	}
