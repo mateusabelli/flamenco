@@ -291,7 +291,7 @@ func (f *Flamenco) SaveSetupAssistantConfig(e echo.Context) error {
 		// The input command can be found on $PATH, and thus we don't need to save
 		// the absolute path to Blender here.
 		executable = setupAssistantCfg.BlenderExecutable.Input
-	case api.BlenderPathSourceInputPath:
+	case api.BlenderPathSourceInputPath, api.BlenderPathSourceSystemLocation:
 		// The path should be used as-is.
 		executable = setupAssistantCfg.BlenderExecutable.Path
 	}
