@@ -20,7 +20,7 @@ import (
 
 // Run unit tests, check for vulnerabilities, and run the linter
 func Check(ctx context.Context) {
-	mg.CtxDeps(ctx, Test, Govulncheck, Staticcheck, Vet)
+	mg.CtxDeps(ctx, Test, Govulncheck, Staticcheck, Vet, FormatCheck)
 }
 
 // Run unit tests
@@ -58,4 +58,24 @@ func Staticcheck() error {
 // Run `go vet`
 func Vet() error {
 	return sh.RunV(mg.GoCmd(), "vet", "./...")
+}
+
+// Run `gofmt`, formatting all the source code.
+func Format() error {
+	return sh.RunV("gofmt", "-s", "-w", ".")
+}
+
+// Run `gofmt` on all the source code, reporting all differences.
+func FormatCheck(ctx context.Context) error {
+	output, err := sh.Output("gofmt", "-d", ".")
+	if err != nil {
+		return err
+	}
+
+	if output == "" {
+		// Format was OK.
+		return nil
+	}
+
+	return fmt.Errorf("Formatting check failed:\n%s", output)
 }

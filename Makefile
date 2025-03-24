@@ -154,6 +154,12 @@ devserver-website:
 devserver-webapp: buildtool
 	"${BUILDTOOL_PATH}" devServerWebapp
 
+format: buildtool
+	"${BUILDTOOL_PATH}" format
+
+format-check: buildtool
+	"${BUILDTOOL_PATH}" formatCheck
+
 deploy-website:
 	$(MAKE) -s check-environment
 	rm -rf web/project-website/public/
@@ -311,4 +317,4 @@ publish-release-packages:
 		${RELEASE_PACKAGE_LINUX} ${RELEASE_PACKAGE_DARWIN} ${RELEASE_PACKAGE_DARWIN_ARM64} ${RELEASE_PACKAGE_WINDOWS} ${RELEASE_PACKAGE_SHAFILE} \
 		${WEBSERVER_SSH}:${WEBSERVER_ROOT}/downloads/
 
-.PHONY: application version flamenco-manager flamenco-worker webapp webapp-static generate generate-go generate-py with-deps swagger-ui list-embedded test clean flamenco-manager-without-webapp
+.PHONY: application version flamenco-manager flamenco-worker webapp webapp-static generate generate-go generate-py with-deps swagger-ui list-embedded test clean flamenco-manager-without-webapp format format-check
