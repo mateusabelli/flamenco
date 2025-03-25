@@ -29,11 +29,11 @@ type LogChunker struct {
 	flushAfter time.Duration
 }
 
-func NewLogChunker(taskID string, listerer CommandListener, timeService TimeService) *LogChunker {
+func NewLogChunker(taskID string, listener CommandListener, timeService TimeService) *LogChunker {
 	return &LogChunker{
 		taskID: taskID,
 
-		listener:    listerer,
+		listener:    listener,
 		timeService: timeService,
 
 		buffer:          strings.Builder{},
