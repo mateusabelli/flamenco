@@ -165,7 +165,7 @@ deploy-website:
 	rm -rf web/project-website/public/
 	go run ${HUGO_PKG} -s web/project-website --baseURL https://flamenco.blender.org/
 	rsync web/project-website/public/ ${WEBSERVER_SSH}:${WEBSERVER_ROOT}/ \
-		-e "ssh" \
+		-e "ssh -p ${WEBSERVER_SSH_PORT}" \
 		-rl \
 		--exclude v2/ \
 		--exclude downloads/ \
