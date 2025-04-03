@@ -11,8 +11,8 @@ import (
 // To update the version number in all the relevant places, update the VERSION
 // variable below and run `mage update-version`.
 const (
-	version      = "3.7-beta1"
-	releaseCycle = "beta"
+	version      = "3.7"
+	releaseCycle = "release"
 )
 
 func gitHash() (string, error) {
