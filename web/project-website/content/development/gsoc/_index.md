@@ -1,7 +1,6 @@
 ---
 title: Google Summer of Code
 weight: 1000
-linkTitle: GSoC
 ---
 
 Flamenco is a Blender Foundation project, and is also part of Blender's GSoC
