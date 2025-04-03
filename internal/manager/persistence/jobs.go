@@ -140,7 +140,7 @@ func (db *DB) StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.Au
 		return jobError(err, "storing job")
 	}
 
-	err = db.storeAuthoredJobTaks(ctx, qtx, jobID, &authoredJob)
+	err = db.storeAuthoredJobTask(ctx, qtx, jobID, &authoredJob)
 	if err != nil {
 		return err
 	}
@@ -148,9 +148,9 @@ func (db *DB) StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.Au
 	return qtx.commit()
 }
 
-// StoreAuthoredJobTaks is a low-level function that is only used for recreating an existing job's tasks.
+// StoreAuthoredJobTask is a low-level function that is only used for recreating an existing job's tasks.
 // It stores `authoredJob`'s tasks, but attaches them to the already-persisted `job`.
-func (db *DB) StoreAuthoredJobTaks(
+func (db *DB) StoreAuthoredJobTask(
 	ctx context.Context,
 	job *Job,
 	authoredJob *job_compilers.AuthoredJob,
@@ -161,7 +161,7 @@ func (db *DB) StoreAuthoredJobTaks(
 	}
 	defer qtx.rollback()
 
-	err = db.storeAuthoredJobTaks(ctx, qtx, int64(job.ID), authoredJob)
+	err = db.storeAuthoredJobTask(ctx, qtx, int64(job.ID), authoredJob)
 	if err != nil {
 		return err
 	}
@@ -169,10 +169,10 @@ func (db *DB) StoreAuthoredJobTaks(
 	return qtx.commit()
 }
 
-// storeAuthoredJobTaks stores the tasks of the authored job.
+// storeAuthoredJobTask stores the tasks of the authored job.
 // Note that this function does NOT commit the database transaction. That is up
 // to the caller.
-func (db *DB) storeAuthoredJobTaks(
+func (db *DB) storeAuthoredJobTask(
 	ctx context.Context,
 	qtx *queriesTX,
 	jobID int64,
