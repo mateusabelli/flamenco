@@ -130,10 +130,16 @@ enable the race condition checker, and ways to speed up the build process.
 
 If you're interested in helping out with Flamenco development, please read [Get Involved][get-involved]!
 
+[Blender's guidelines on contributing code][contributing] also applies to
+Flamenco. Be sure to give it a read-through, as it has useful information and
+will make the whole process of getting your changes into Flamenco a more
+pleasant one.
+
 If you need to change or add any database queries, read through the [database section][database].
 
 [get-involved]: {{<ref "development/get-involved" >}}
 [database]: {{<ref "development/database" >}}
+[contributing]: https://developer.blender.org/docs/handbook/contributing/
 
 
 ## Software Design
