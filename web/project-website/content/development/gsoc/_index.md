@@ -12,6 +12,15 @@ The most important tip: **use your own brain. Show that you can think and find
 information yourself. This will greatly increase your chance of acceptance.** So
 congratulations, you found this page! That's a good start.
 
+As an extension of the above: **do not use ChatGPT or other AI**. This goes for
+writing your proposal, the communication in the chat, as well as writing code
+yourself. If your English is not that good and you feel insecure about that,
+don't worry. For most of the team, English is not their first language. Your
+mentor will want to communicate with _you_ though, and not with some AI. Also
+the copyright status of AI-generated code is dubious, and you may not have
+permission to share the code and claim that you wrote it. As such, AI-generated
+code cannot be accepted.
+
 Another way to increase your chances: **don't over-sell your skills**. Using
 Flamenco once or twice is not enough to say you "*know Flamenco*". If you don't
 know all of the programming languages and techniques used in the project, that
