@@ -21,6 +21,11 @@ the copyright status of AI-generated code is dubious, and you may not have
 permission to share the code and claim that you wrote it. As such, AI-generated
 code cannot be accepted.
 
+**Become familiar with Flamenco**. Your proposal should also contain some form
+of planning. You can't plan your work if you have no experience with Flamenco,
+and haven't made any code changes to Flamenco yet. Without that experience, it's
+not a plan but a wish list.
+
 Another way to increase your chances: **don't over-sell your skills**. Using
 Flamenco once or twice is not enough to say you "*know Flamenco*". If you don't
 know all of the programming languages and techniques used in the project, that
@@ -28,14 +33,6 @@ doesn't have to be any problem. But discuss it. For example, saying "*I've never
 used Go*" is fine, but do make it explicit that this is the case, and also
 explain why you think it's fine to still apply for joining this Go-based
 project.
-
-When you link to your work to show off your skills, that's great! But make sure
-that it is clear **what was written by you, and what was written by somebody else**.
-If the Git history only has commits in your name, and there is no description
-like "copied code from ${LOCATION} as a starting point", then realise that the
-rest of the world will think this is your code. Be careful, this could be seen
-as plagiarism. Many Open Source licenses require you to credit the original
-authors.
 
 And finally: **be part of the community**. Join the chat, use Flamenco, get
 involved. Communicate with your mentor. If you have questions, pop in the
