@@ -106,7 +106,27 @@ You'll need [7Zip][7zip] to extract it.
 [7zip]: https://www.7-zip.org/download.html
 {{< /tab >}}
 {{< tab "macOS" >}}
-TODO: write this documentation.
+If make is not already installed on MacOS, there are two ways to install it.
+
+**Option 1: install XCode Command Line Tools**
+
+In your terminal, run:
+```
+xcode-select --install
+```
+
+**Option 2: install `make` via Homebrew**
+
+First, make sure that [Homebrew][homebrew] is installed.
+
+Once that is done, run:
+```
+brew install make
+```
+
+Both ways will install `make` on your machine.
+
+[homebrew]: https://brew.sh/
 {{< /tab >}}
 {{< /tabs >}}
 
