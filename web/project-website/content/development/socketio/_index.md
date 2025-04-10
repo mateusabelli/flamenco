@@ -11,7 +11,7 @@ SocketIO messages have an *event name* and *room name*.
 
 - **Web interface clients** send messages to the server with just an *event
   name*. These are received in handlers set up by
-  `internal/manager/webupdates/webupdates.go`, function
+  `internal/manager/eventbus/socketio.go`, function
   `registerSIOEventHandlers()`.
 - **Manager** typically sends to all clients in a specific *room*. Which client
   has joined which room is determined by the Manager as well. By default every
