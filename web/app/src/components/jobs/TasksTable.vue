@@ -63,7 +63,7 @@ export default {
             return `${dot} ${status}`;
           },
         },
-        { title: 'Name', field: 'name', sorter: 'string' },
+        { title: 'Name', field: 'name', sorter: 'string', minWidth: 104 },
         {
           title: 'Updated',
           field: 'updated',
