@@ -1,6 +1,8 @@
 ---
 title: Getting Started
 weight: 1
+aliases:
+  - /devstart
 ---
 
 To start, get a **Git checkout** with either of these commands. The 1st one is for
