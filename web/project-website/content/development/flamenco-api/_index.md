@@ -53,10 +53,10 @@ components:
 The JavaScript code for the web-application will look something like this:
 
 ```JavaScript
-import { apiClient } from '@/stores/api-query-count';
-import { MetaApi } from "@/manager-api";
+import { getAPIClient } from '@/api-client';
+import * as API from "@/manager-api";
 
-const metaAPI = new MetaApi(apiClient);
+const metaAPI = new API.MetaApi(getAPIClient());
 metaAPI.getVersion()
   .then((version) => {
     this.flamencoName = version.name;
@@ -69,17 +69,17 @@ metaAPI.getVersion()
 
 This follows a few standard steps:
 
-1. **Import the `apiClient`**. For the web-app, this actually is a little wrapper
+1. **Import `getAPIClient`**. For the web-app, this actually is a little wrapper
    for the actual API client. The wrapper takes care of showing a "loading"
    spinner in the top-right corner when API calls take a long time to return a
    response.
 2. **Import the API class** that contains this operation. This always has the form
    `{tag}Api`, where `{tag}` comes from the `tag: ...` in the OpenAPI YAML
    file. In our case, the tag is `meta`, so the code imports `MetaApi`.
-3. **Construct the API object** with `new MetaApi(apiClient)`. You only have to
+3. **Construct the API object** with `new MetaApi(getAPIClient())`. You only have to
    do this once; after that you can call as many functions on it as you want.
 4. **Call** the function. The function name comes from the `operationId` in the YAML
-   file,
+   file.
 5. **Handle** the succesful return (`.then(...)`) and any errors (`.catch(...)`).
 
 All API function calls, like the `metaAPI.getVersion()` function above,
