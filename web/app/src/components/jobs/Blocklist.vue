@@ -4,25 +4,27 @@
   </div>
   <template v-else>
     <table class="blocklist" v-if="blocklist.length">
-      <tr>
-        <th>Worker</th>
-        <th>Task Type</th>
-        <th></th>
-      </tr>
-      <tr v-for="entry in blocklist">
-        <td>
-          <link-worker :worker="{ id: entry.worker_id, name: entry.worker_name }" />
-        </td>
-        <td>{{ entry.task_type }}</td>
-        <td>
-          <button
-            class="btn in-table-row"
-            @click="removeBlocklistEntry(entry)"
-            title="Allow this worker to execute these task types">
-            ❌
-          </button>
-        </td>
-      </tr>
+      <tbody>
+        <tr>
+          <th>Worker</th>
+          <th>Task Type</th>
+          <th></th>
+        </tr>
+        <tr v-for="entry in blocklist" :key="entry.worker_id">
+          <td>
+            <link-worker :worker="{ id: entry.worker_id, name: entry.worker_name }" />
+          </td>
+          <td>{{ entry.task_type }}</td>
+          <td>
+            <button
+              class="btn in-table-row"
+              @click="removeBlocklistEntry(entry)"
+              title="Allow this worker to execute these task types">
+              ❌
+            </button>
+          </td>
+        </tr>
+      </tbody>
     </table>
     <div v-else class="dl-no-data">
       <span>This job has no blocked workers.</span>

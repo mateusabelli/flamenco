@@ -23,7 +23,7 @@
       <template v-if="taskData.failed_by_workers.length > 0">
         <dt class="field-failed-by-workers" title="Failed by Workers">Failed by Workers</dt>
         <dd>
-          <div v-for="worker in taskData.failed_by_workers">
+          <div :key="worker.id" v-for="worker in taskData.failed_by_workers">
             <link-worker :worker="worker" />
           </div>
         </dd>
@@ -50,7 +50,7 @@
 
     <h3 class="sub-title">Commands</h3>
     <dl>
-      <template v-for="cmd in taskData.commands">
+      <template :key="cmd.name" v-for="cmd in taskData.commands">
         <dt :class="`field-${cmd.name}`" :title="cmd.name">{{ cmd.name }}</dt>
         <dd>{{ cmd.parameters }}</dd>
       </template>

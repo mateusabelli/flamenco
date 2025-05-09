@@ -21,6 +21,7 @@ const visibleStatuses = computed(() => {
   <ul class="status-filter-bar" :class="{ 'is-filtered': activeStatuses.length > 0 }">
     <li
       v-for="status in visibleStatuses"
+      :key="status.value"
       class="status-filter-indicator"
       :data-status="status"
       :class="{ active: activeStatuses.indexOf(status) >= 0 }"
