@@ -106,7 +106,7 @@ storage.** This makes it possible to store large files, like simulation caches,
 on the shared storage, without Flamenco creating a copy for each render job.
 
 {{< hint type=Warning >}} On Windows it is not possible to construct a relative
-path to an asset when that asset is no a different drive than the main blend
+path to an asset when that asset is on a different drive than the main blend
 file. If you still want Flamenco to copy such assets, there are two workarounds:
 
 - Move your asset libraries to the same drive as your Blender projects.
