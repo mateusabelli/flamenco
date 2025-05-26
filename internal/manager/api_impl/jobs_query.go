@@ -143,11 +143,16 @@ func (f *Flamenco) FetchTask(e echo.Context, taskID string) error {
 		// worker's UUID and let the caller fetch the worker info themselves if
 		// necessary.
 		taskWorker, err := f.persist.FetchWorker(ctx, taskJobWorker.WorkerUUID)
-		if err != nil {
-			logger.Warn().Err(err).Msg("error fetching task worker")
+		switch {
+		case errors.Is(err, persistence.ErrWorkerNotFound):
+			// This is fine, workers can be soft-deleted from the database, and then
+			// the above FetchWorker call will not return it.
+		case err != nil:
+			logger.Warn().Err(err).Str("worker", taskJobWorker.WorkerUUID).Msg("error fetching task worker")
 			return sendAPIError(e, http.StatusInternalServerError, "error fetching task worker")
+		default:
+			apiTask.Worker = workerToTaskWorker(taskWorker)
 		}
-		apiTask.Worker = workerToTaskWorker(taskWorker)
 	}
 
 	// Fetch & convert the failure list.
