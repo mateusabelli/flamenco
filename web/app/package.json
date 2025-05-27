@@ -23,7 +23,7 @@
     "pinia": "^2.0.13",
     "socket.io-client": "2",
     "superagent": "^7.1.2",
-    "tabulator-tables": "^5.4.3",
+    "tabulator-tables": "^6.3.0",
     "vue": "^3.2.31",
     "vue-router": "^4.0.14"
   },

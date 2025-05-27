@@ -167,7 +167,7 @@ export default {
       layout: 'fitColumns',
       layoutColumnsOnNewData: true,
       height: '82%',
-      selectable: false,
+      selectableRows: false,
     };
 
     this.tabulator = new Tabulator('#tag-table-container', tag_options);

@@ -89,7 +89,7 @@ export default {
       height: '100%', // Must be set in order for the virtual DOM to function correctly.
       maxHeight: '100%',
       data: [], // Will be filled via a Flamenco API request.
-      selectable: false, // The active task is tracked by click events.
+      selectableRows: false, // The active and selected tasks are tracked by custom click events.
     };
 
     this.tabulator = new Tabulator('#flamenco_task_list', options);

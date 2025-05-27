@@ -92,7 +92,7 @@ export default {
       layoutColumnsOnNewData: true,
       height: '720px', // Must be set in order for the virtual DOM to function correctly.
       data: [], // Will be filled via a Flamenco API request.
-      selectable: false, // The active job is tracked by click events, not row selection.
+      selectableRows: false, // The active job is tracked by click events, not row selection.
     };
     this.tabulator = new Tabulator('#flamenco_job_list', options);
     this.tabulator.on('rowClick', this.onRowClick);

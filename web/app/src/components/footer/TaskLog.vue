@@ -25,7 +25,7 @@ const tabOptions = {
   height: 'calc(25vh - 3rem)', // Must be set in order for the virtual DOM to function correctly.
   data: taskLog.history,
   placeholder: 'Task log will appear here',
-  selectable: false,
+  selectableRows: false,
 };
 
 let tabulator = null;
