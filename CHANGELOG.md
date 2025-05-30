@@ -4,7 +4,7 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
-## 3.7 - released 2024-04-03
+## 3.7 - released 2025-04-03
 
 - Load job compiler scripts on demand, rather than caching them all at startup of the Manager. This makes it simpler to create & test scripts, as the Manager no longer has to be restarted after every update.
 - The conversion from a known path prefix to a variable is now done in a case-insensitive way. This means that if the variable `{storage}` has value `S:\Flamenco`, a path `s:\flamenco\project\file.blend` will be recognised and stored as `{storage}\project\file.blend`.
