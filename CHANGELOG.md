@@ -4,6 +4,10 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
+## 3.8 - in development
+
+- Shift-click & ctrl-click can now be used to select multiple tasks ([#104386](https://projects.blender.org/studio/flamenco/pulls/104386)). The action buttons (requeue/pause/cancel) now work on all selected tasks.
+
 ## 3.7 - released 2025-04-03
 
 - Load job compiler scripts on demand, rather than caching them all at startup of the Manager. This makes it simpler to create & test scripts, as the Manager no longer has to be restarted after every update.
