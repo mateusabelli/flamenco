@@ -13,12 +13,7 @@
         ref="jobDetails"
         :jobData="jobs.activeJob"
         @reshuffled="_recalcTasksTableHeight" />
-      <tasks-table
-        v-if="hasJobData"
-        ref="tasksTable"
-        :jobID="jobID"
-        :taskID="taskID"
-        @tableRowClicked="onTableTaskClicked" />
+      <tasks-table v-if="hasJobData" ref="tasksTable" :jobID="jobID" :taskID="taskID" />
     </template>
   </div>
   <div class="col col-3">
@@ -116,7 +111,6 @@ export default {
     // })
 
     this._fetchJob(this.jobID);
-    this._fetchTask(this.taskID);
 
     window.addEventListener('resize', this._recalcTasksTableHeight);
   },
@@ -127,9 +121,6 @@ export default {
     jobID(newJobID, oldJobID) {
       this._fetchJob(newJobID);
     },
-    taskID(newTaskID, oldTaskID) {
-      this._fetchTask(newTaskID);
-    },
     showFooterPopup(shown) {
       if (shown) localStorage.setItem('footer-popover-visible', 'true');
       else localStorage.removeItem('footer-popover-visible');
@@ -139,31 +130,12 @@ export default {
   methods: {
     onTableJobClicked(rowData) {
       // Don't route to the current job, as that'll deactivate the current task.
-      if (rowData.id == this.jobID) return;
+      if (rowData.id === this.jobID) return;
       this._routeToJob(rowData.id);
-    },
-    onTableTaskClicked(rowData) {
-      this._routeToTask(rowData.id);
     },
     onActiveJobDeleted(deletedJobUUID) {
       this._routeToJobOverview();
     },
-
-    onSelectedTaskChanged(taskSummary) {
-      if (!taskSummary) {
-        // There is no active task.
-        this.tasks.deselectAllTasks();
-        return;
-      }
-
-      const jobsAPI = new API.JobsApi(getAPIClient());
-      jobsAPI.fetchTask(taskSummary.id).then((task) => {
-        this.tasks.setActiveTask(task);
-        // Forward the full task to Tabulator, so that that gets updated too.
-        if (this.$refs.tasksTable) this.$refs.tasksTable.processTaskUpdate(task);
-      });
-    },
-
     showTaskLogTail() {
       this.showFooterPopup = true;
       this.$nextTick(() => {
@@ -186,7 +158,6 @@ export default {
       this._fetchJob(this.jobID);
       if (jobUpdate.refresh_tasks) {
         if (this.$refs.tasksTable) this.$refs.tasksTable.fetchTasks();
-        this._fetchTask(this.taskID);
       }
     },
 
@@ -196,7 +167,7 @@ export default {
      */
     onSioTaskUpdate(taskUpdate) {
       if (this.$refs.tasksTable) this.$refs.tasksTable.processTaskUpdate(taskUpdate);
-      if (this.taskID == taskUpdate.id) this._fetchTask(this.taskID);
+ 
       this.notifs.addTaskUpdate(taskUpdate);
     },
 
@@ -230,14 +201,6 @@ export default {
       const route = { name: 'jobs', params: { jobID: jobID } };
       this.$router.push(route);
     },
-    /**
-     * @param {string} taskID task ID to navigate to within this job, can be
-     * empty string for "no active task".
-     */
-    _routeToTask(taskID) {
-      const route = { name: 'jobs', params: { jobID: this.jobID, taskID: taskID } };
-      this.$router.push(route);
-    },
 
     /**
      * Fetch job info and set the active job once it's received.
@@ -266,24 +229,6 @@ export default {
           }
           console.log(`Unable to fetch job ${jobID}:`, err);
         });
-    },
-
-    /**
-     * Fetch task info and set the active task once it's received.
-     * @param {string} taskID task ID, can be empty string for "no task".
-     */
-    _fetchTask(taskID) {
-      if (!taskID) {
-        this.tasks.deselectAllTasks();
-        return;
-      }
-
-      const jobsAPI = new API.JobsApi(getAPIClient());
-      return jobsAPI.fetchTask(taskID).then((task) => {
-        this.tasks.setActiveTask(task);
-        // Forward the full task to Tabulator, so that that gets updated too.\
-        if (this.$refs.tasksTable) this.$refs.tasksTable.processTaskUpdate(task);
-      });
     },
 
     onChatMessage(message) {

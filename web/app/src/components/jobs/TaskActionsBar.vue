@@ -29,16 +29,18 @@ export default {
     },
 
     _handleTaskActionPromise(promise, description) {
-      // const numTasks = this.tasks.numSelected;
-      const numTasks = 1;
       return promise
-        .then(() => {
-          // There used to be a call to `this.notifs.add(message)` here, but now
-          // that task status changes are logged in the notifications anyway,
-          // it's no longer necessary.
-          // This function is still kept, in case we want to bring back the
-          // notifications when multiple tasks can be selected. Then a summary
-          // ("N tasks requeued") could be logged here.
+        .then((values) => {
+          const { incompatibleTasks, compatibleTasks, totalTaskCount } = values;
+
+          // TODO: messages could be improved to specify the names of tasks that failed
+          const failedMessage = `Could not apply ${description} status to ${incompatibleTasks.length} out of ${totalTaskCount} task(s).`;
+          const successMessage = `${compatibleTasks.length} task(s) successfully ${description}.`;
+
+          this.notifs.add(
+            `${compatibleTasks.length > 0 ? successMessage : ''}
+            ${incompatibleTasks.length > 0 ? failedMessage : ''}`
+          );
         })
         .catch((error) => {
           const errorMsg = JSON.stringify(error); // TODO: handle API errors better.

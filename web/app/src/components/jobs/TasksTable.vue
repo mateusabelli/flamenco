@@ -26,7 +26,6 @@ import TaskActionsBar from '@/components/jobs/TaskActionsBar.vue';
 import StatusFilterBar from '@/components/StatusFilterBar.vue';
 
 export default {
-  emits: ['tableRowClicked'],
   props: [
     'jobID', // ID of the job of which the tasks are shown here.
     'taskID', // The active task.
@@ -40,6 +39,7 @@ export default {
       tasks: useTasks(),
       shownStatuses: [],
       availableStatuses: [], // Will be filled after data is loaded from the backend.
+      lastSelectedTaskPosition: null,
     };
   },
   mounted() {
@@ -105,7 +105,7 @@ export default {
     jobID() {
       this.fetchTasks();
     },
-    taskID(oldID, newID) {
+    taskID(newID, oldID) {
       this._reformatRow(oldID);
       this._reformatRow(newID);
     },
@@ -122,6 +122,14 @@ export default {
       // updates. Just fetch the data and start from scratch.
       this.fetchTasks();
     },
+    /**
+     * @param {string} taskID task ID to navigate to within this job, can be
+     * empty string for "no active task".
+     */
+    _routeToTask(taskID) {
+      const route = { name: 'jobs', params: { jobID: this.jobID, taskID: taskID } };
+      this.$router.push(route);
+    },
     sortData() {
       const tab = this.tabulator;
       tab.setSort(tab.getSorters()); // This triggers re-sorting.
@@ -130,27 +138,62 @@ export default {
       this.tabulator.setFilter(this._filterByStatus);
       this.fetchTasks();
     },
+    /**
+     * Fetch task info and set the active task once it's received.
+     */
+    fetchActiveTask() {
+      // If there's no active task, reset the state and Pinia stores
+      if (!this.taskID) {
+        this.tasks.clearActiveTask();
+        this.tasks.clearSelectedTasks();
+        this.lastSelectedTaskPosition = null;
+        return;
+      }
+
+      // Otherwise, set the state and Pinia stores
+      const jobsApi = new API.JobsApi(getAPIClient()); // init the API
+      jobsApi.fetchTask(this.taskID).then((task) => {
+        this.tasks.setActiveTask(task);
+        this.tasks.setSelectedTasks([task]);
+
+        const activeRow = this.tabulator.getRow(this.taskID);
+        // If the page is reloaded, re-initialize the last selected task (or active task) position, allowing the user to multi-select from that task.
+        this.lastSelectedTaskPosition = activeRow.getPosition();
+        // Make sure the active row on tabulator has the selected status toggled as well
+        this.tabulator.selectRow(activeRow);
+      });
+    },
+    /**
+     * Fetch all tasks and set the Tabulator data
+     */
     fetchTasks() {
+      // No active job
       if (!this.jobID) {
         this.tabulator.setData([]);
         return;
       }
 
-      const jobsApi = new API.JobsApi(getAPIClient());
-      jobsApi.fetchJobTasks(this.jobID).then(this.onTasksFetched, function (error) {
-        // TODO: error handling.
-        console.error(error);
-      });
-    },
-    onTasksFetched(data) {
-      // "Down-cast" to TaskUpdate to only get those fields, just for debugging things:
-      // let tasks = data.tasks.map((j) => API.TaskUpdate.constructFromObject(j));
-      this.tabulator.setData(data.tasks);
-      this._refreshAvailableStatuses();
+      // Deselect all rows before setting new task data. This prevents the error caused by trying to deselect rows that don't exist on the new data.
+      this.tabulator.deselectRow();
 
-      this.recalcTableHeight();
+      const jobsApi = new API.JobsApi(getAPIClient()); // init the API
+
+      jobsApi.fetchJobTasks(this.jobID).then(
+        (data) => {
+          this.tabulator.setData(data.tasks);
+          this._refreshAvailableStatuses();
+          this.recalcTableHeight();
+
+          this.fetchActiveTask();
+        },
+        (error) => {
+          // TODO: error handling.
+          console.error(error);
+        }
+      );
     },
     processTaskUpdate(taskUpdate) {
+      // Any updates to tasks i.e. status changes will need to reflect its changes to the rows on Tabulator here.
       // updateData() will only overwrite properties that are actually set on
       // taskUpdate, and leave the rest as-is.
       if (this.tabulator.initialized) {
@@ -161,15 +204,68 @@ export default {
             this.tabulator.redraw();
           }); // Resize columns based on new data.
       }
+      this.tasks.setSelectedTasks(this.getSelectedTasks()); // Update Pinia stores
       this._refreshAvailableStatuses();
     },
+    getSelectedTasks() {
+      return this.tabulator.getSelectedData();
+    },
+    handleMultiSelect(event, row, tabulator) {
+      const position = row.getPosition();
 
+      // Manage the click event and Tabulator row selection
+      if (event.shiftKey && this.lastSelectedTaskPosition) {
+        // Shift + Click - selects a range of rows
+        let start = Math.min(position, this.lastSelectedTaskPosition);
+        let end = Math.max(position, this.lastSelectedTaskPosition);
+        const rowsToSelect = [];
+
+        for (let i = start; i <= end; i++) {
+          const currRow = this.tabulator.getRowFromPosition(i);
+          rowsToSelect.push(currRow);
+        }
+        tabulator.selectRow(rowsToSelect);
+
+        // Remove text-selection that occurs during Shift + Click
+        document.getSelection().removeAllRanges();
+      } else if (event.ctrlKey || event.metaKey) {
+        // Supports Cmd key on MacOS
+        // Ctrl + Click - toggles additional rows
+        if (tabulator.getSelectedRows().includes(row)) {
+          tabulator.deselectRow(row);
+        } else {
+          tabulator.selectRow(row);
+        }
+      } else if (!event.ctrlKey && !event.metaKey) {
+        // Regular Click - resets the selection to one row
+        tabulator.deselectRow(); // De-select all rows
+        tabulator.selectRow(row);
+      }
+    },
     onRowClick(event, row) {
-      // Take a copy of the data, so that it's decoupled from the tabulator data
-      // store. There were some issues where navigating to another job would
-      // overwrite the old job's ID, and this prevents that.
-      const rowData = plain(row.getData());
-      this.$emit('tableRowClicked', rowData);
+      // Handles Shift + Click, Ctrl + Click, and regular Click
+      this.handleMultiSelect(event, row, this.tabulator);
+
+      // Update the app route, Pinia store, and component state
+      if (this.tabulator.getSelectedRows().includes(row)) {
+        // The row was toggled -> selected
+        const rowData = row.getData();
+        this._routeToTask(rowData.id);
+
+        const jobsApi = new API.JobsApi(getAPIClient()); // init the API
+        jobsApi.fetchTask(rowData.id).then((task) => {
+          // row.getData() will return the API.TaskSummary data, while tasks.setActiveTask() needs the entire API.Task
+          this.tasks.setActiveTask(task);
+        });
+        this.lastSelectedTaskPosition = row.getPosition();
+      } else {
+        // The row was toggled -> de-selected
+        this._routeToTask('');
+        this.tasks.clearActiveTask();
+        this.lastSelectedTaskPosition = null;
+      }
+
+      this.tasks.setSelectedTasks(this.getSelectedTasks()); // Set the selected tasks according to tabulator's selected rows
     },
     toggleStatusFilter(status) {
       const asSet = new Set(this.shownStatuses);

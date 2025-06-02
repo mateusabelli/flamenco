@@ -6,6 +6,8 @@ import { useJobs } from '@/stores/jobs';
 
 const jobsAPI = new API.JobsApi(getAPIClient());
 
+const taskStatusCanCancel = ['active', 'queued', 'soft-failed'];
+const taskStatusCanRequeue = ['canceled', 'completed', 'failed'];
 // 'use' prefix is idiomatic for Pinia stores.
 // See https://pinia.vuejs.org/core-concepts/
 export const useTasks = defineStore('tasks', {
@@ -17,6 +19,7 @@ export const useTasks = defineStore('tasks', {
      * @type {string}
      */
     activeTaskID: '',
+    selectedTasks: [],
   }),
   getters: {
     canCancel() {
@@ -24,24 +27,33 @@ export const useTasks = defineStore('tasks', {
       const activeJob = jobs.activeJob;
 
       if (!activeJob) {
-        console.warn('no active job, unable to determine whether the active task is cancellable');
+        console.warn('no active job, unable to determine whether the task(s) is cancellable');
         return false;
       }
 
       if (activeJob.status == 'pause-requested') {
-        // Cancelling a task should not be possible while the job is being paused.
+        // Cancelling task(s) should not be possible while the job is being paused.
         // In the future this might be supported, see issue #104315.
         return false;
       }
-
       // Allow cancellation for specified task statuses.
-      return this._anyTaskWithStatus(['queued', 'active', 'soft-failed']);
+      return this._anyTaskWithStatus(taskStatusCanCancel);
     },
     canRequeue() {
-      return this._anyTaskWithStatus(['canceled', 'completed', 'failed']);
+      return this._anyTaskWithStatus(taskStatusCanRequeue);
     },
   },
   actions: {
+    setSelectedTasks(tasks) {
+      this.$patch({
+        selectedTasks: tasks,
+      });
+    },
+    clearSelectedTasks() {
+      this.$patch({
+        selectedTasks: [],
+      });
+    },
     setActiveTaskID(taskID) {
       this.$patch({
         activeTask: { id: taskID },
@@ -54,7 +66,7 @@ export const useTasks = defineStore('tasks', {
         activeTaskID: task.id,
       });
     },
-    deselectAllTasks() {
+    clearActiveTask() {
       this.$patch({
         activeTask: null,
         activeTaskID: '',
@@ -65,43 +77,64 @@ export const useTasks = defineStore('tasks', {
      * Actions on the selected tasks.
      *
      * All the action functions return a promise that resolves when the action has been performed.
-     *
-     * TODO: actually have these work on all selected tasks. For simplicity, the
-     * code now assumes that only the active task needs to be operated on.
      */
     cancelTasks() {
-      return this._setTaskStatus('canceled');
+      return this._setTaskStatus('canceled', taskStatusCanCancel);
     },
     requeueTasks() {
-      return this._setTaskStatus('queued');
+      return this._setTaskStatus('queued', taskStatusCanRequeue);
     },
 
     // Internal methods.
 
     /**
      *
-     * @param {string[]} statuses
+     * @param {string[]} task_statuses
      * @returns bool indicating whether there is a selected task with any of the given statuses.
      */
-    _anyTaskWithStatus(statuses) {
-      return (
-        !!this.activeTask && !!this.activeTask.status && statuses.includes(this.activeTask.status)
-      );
-      // return this.selectedTasks.reduce((foundTask, task) => (foundTask || statuses.includes(task.status)), false);
+    _anyTaskWithStatus(task_statuses) {
+      if (this.selectedTasks.length) {
+        return this.selectedTasks.some((task) => task_statuses.includes(task.status));
+      }
+      return false;
     },
 
     /**
      * Transition the selected task(s) to the new status.
      * @param {string} newStatus
-     * @returns a Promise for the API request.
+     * @param {string[]} task_statuses The task statuses compatible with the transition to new status
+     * @returns a Promise for the API request(s).
      */
-    _setTaskStatus(newStatus) {
-      if (!this.activeTaskID) {
-        console.warn(`_setTaskStatus(${newStatus}) impossible, no active task ID`);
+    _setTaskStatus(newStatus, task_statuses) {
+      const totalTaskCount = this.selectedTasks.length;
+
+      if (!totalTaskCount) {
+        console.warn(`_setTaskStatus(${newStatus}) impossible, no selected tasks`);
         return;
       }
+
+      const { compatibleTasks, incompatibleTasks } = this.selectedTasks.reduce(
+        (result, task) => {
+          if (task_statuses.includes(task.status)) {
+            result.compatibleTasks.push(task);
+          } else {
+            result.incompatibleTasks.push(task);
+          }
+          return result;
+        },
+        { compatibleTasks: [], incompatibleTasks: [] }
+      );
+
       const statuschange = new API.TaskStatusChange(newStatus, 'requested from web interface');
-      return jobsAPI.setTaskStatus(this.activeTaskID, statuschange);
+      const setTaskStatusPromises = compatibleTasks.map((task) =>
+        jobsAPI.setTaskStatus(task.id, statuschange)
+      );
+
+      return Promise.allSettled(setTaskStatusPromises).then((results) => ({
+        compatibleTasks: results,
+        incompatibleTasks,
+        totalTaskCount,
+      }));
     },
   },
 });
