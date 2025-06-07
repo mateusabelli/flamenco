@@ -84,7 +84,7 @@ depending on the platform it runs on.
 
 | Parameter | Type       | Description            |
 |-----------|------------|------------------------|
-| `exec`    | `string`   | The executable to run. |
+| `exe`     | `string`   | The executable to run. |
 | `args`    | `[]string` | Commandline arguments. |
 
 ## Misc: `echo`
