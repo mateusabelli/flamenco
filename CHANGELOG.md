@@ -8,6 +8,14 @@ bugs in actually-released versions.
 
 - Shift-click & ctrl-click can now be used to select multiple tasks ([#104386](https://projects.blender.org/studio/flamenco/pulls/104386)). The action buttons (requeue/pause/cancel) now work on all selected tasks.
 - Upgrade Blender Asset Tracer (BAT) to 1.19 to support Blender 5.0 ([BAT#92893](https://projects.blender.org/blender/blender-asset-tracer/pulls/92893)).
+- Update Go & dependencies to fix security vulnerabilities:
+  - https://pkg.go.dev/vuln/GO-2025-3751
+  - https://pkg.go.dev/vuln/GO-2025-3750
+  - https://pkg.go.dev/vuln/GO-2025-3563
+  - https://pkg.go.dev/vuln/GO-2025-3553
+  - https://pkg.go.dev/vuln/GO-2025-3533
+  - https://pkg.go.dev/vuln/GO-2025-3503
+  - https://pkg.go.dev/vuln/GO-2025-3447
 
 
 ## 3.7 - released 2025-04-03
