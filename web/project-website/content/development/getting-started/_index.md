@@ -85,54 +85,7 @@ brew install yarn
 {{< /tab >}}
 {{< /tabs >}}
 
-## 3. Utilities
-
-Building Flamenco requires only a few tools to be installed on your system.
-
-
-{{< tabs "installing-utils" >}}
-{{< tab "Linux" >}}
-On Linux only `make` is necessary, which can be installed via your package manager.
-
-On Debian, and relatives like Ubuntu, run:
-
-```
-sudo apt install make
-```
-{{< /tab >}}
-{{< tab "Windows" >}}
-Install [MingW W64][mingw]. If in doubt which version to get, grab the `x86_64...seh` one.
-You'll need [7Zip][7zip] to extract it.
-
-[mingw]: https://github.com/niXman/mingw-builds-binaries/releases
-[7zip]: https://www.7-zip.org/download.html
-{{< /tab >}}
-{{< tab "macOS" >}}
-If make is not already installed on MacOS, there are two ways to install it.
-
-**Option 1: install XCode Command Line Tools**
-
-In your terminal, run:
-```
-xcode-select --install
-```
-
-**Option 2: install `make` via Homebrew**
-
-First, make sure that [Homebrew][homebrew] is installed.
-
-Once that is done, run:
-```
-brew install make
-```
-
-Both ways will install `make` on your machine.
-
-[homebrew]: https://brew.sh/
-{{< /tab >}}
-{{< /tabs >}}
-
-## 4. Your First Build
+## 3. Your First Build
 
 Run `go run mage.go installDeps` to install build-time dependencies. This is
 only necessary the first time you build Flamenco (or when these dependencies are
@@ -148,7 +101,7 @@ enable the race condition checker, and ways to speed up the build process.
 
 [building]: {{< relref "../building/" >}}
 
-## 5. Get Involved
+## 4. Get Involved
 
 If you're interested in helping out with Flamenco development, please read [Get Involved][get-involved]!
 
