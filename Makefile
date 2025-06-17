@@ -56,6 +56,9 @@ with-deps: buildtool
 vet: buildtool
 	"${BUILDTOOL_PATH}" vet
 
+check: buildtool
+	"${BUILDTOOL_PATH}" check
+
 application: flamenco-manager flamenco-worker
 
 flamenco-manager: buildtool

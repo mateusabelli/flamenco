@@ -87,6 +87,7 @@ These are the main `make` targets:
 | `generate-py`                     | Generate the Python code, containing the OpenAPI client code for the Blender add-on.                                                                    |
 | `generate-js`                     | Generate the JavaScript code, containing the OpenAPI client code for the web interface.                                                                 |
 | `test`                            | Run the unit tests.                                                                                                                                     |
+| `check`                           | Run various checks on the Go code. This includes `go vet` and checks for known vulnerabilities.                                                         |
 | `clean`                           | Remove build-time files.                                                                                                                                |
 | `version`                         | Print some version numbers, mostly for debugging the Makefile itself.                                                                                   |
 | `format`                          | Run the auto-formatter on all Go code.                                                                                                                  |
