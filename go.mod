@@ -13,7 +13,7 @@ require (
 	github.com/eclipse/paho.golang v0.12.0
 	github.com/fromkeith/gossdp v0.0.0-20180102154144-1b2c43f6886e
 	github.com/gertd/go-pluralize v0.2.1
-	github.com/getkin/kin-openapi v0.131.0
+	github.com/getkin/kin-openapi v0.132.0
 	github.com/golang/mock v1.6.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.5.0
