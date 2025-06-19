@@ -7,6 +7,7 @@ bugs in actually-released versions.
 ## 3.8 - in development
 
 - Shift-click & ctrl-click can now be used to select multiple tasks ([#104386](https://projects.blender.org/studio/flamenco/pulls/104386)). The action buttons (requeue/pause/cancel) now work on all selected tasks.
+- While holding shift, the tasks table will not change the ordering of the tasks, to aid in shift-selecting ranges ([#104388](https://projects.blender.org/studio/flamenco/pulls/104388)).
 - Upgrade Blender Asset Tracer (BAT) to 1.19 to support Blender 5.0 ([BAT#92893](https://projects.blender.org/blender/blender-asset-tracer/pulls/92893)).
 - Update Go & dependencies to fix security vulnerabilities:
   - https://pkg.go.dev/vuln/GO-2025-3751
