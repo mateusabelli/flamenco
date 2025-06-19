@@ -10,7 +10,11 @@
     </div>
   </div>
   <div>
-    <div class="task-list with-clickable-row" id="flamenco_task_list"></div>
+    <div
+      @keydown="disableSorting"
+      @keyup="enableSorting"
+      class="task-list with-clickable-row"
+      id="flamenco_task_list"></div>
   </div>
 </template>
 
@@ -40,6 +44,7 @@ export default {
       shownStatuses: [],
       availableStatuses: [], // Will be filled after data is loaded from the backend.
       lastSelectedTaskPosition: null,
+      sortable: true,
     };
   },
   mounted() {
@@ -131,6 +136,7 @@ export default {
       this.$router.push(route);
     },
     sortData() {
+      if (!this.sortable) return;
       const tab = this.tabulator;
       tab.setSort(tab.getSorters()); // This triggers re-sorting.
     },
@@ -191,6 +197,16 @@ export default {
           console.error(error);
         }
       );
+    },
+    enableSorting(event) {
+      if (event.key === 'Shift') {
+        this.sortable = true;
+      }
+    },
+    disableSorting(event) {
+      if (event.key === 'Shift') {
+        this.sortable = false;
+      }
     },
     processTaskUpdate(taskUpdate) {
       // Any updates to tasks i.e. status changes will need to reflect its changes to the rows on Tabulator here.
