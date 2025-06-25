@@ -128,9 +128,6 @@ func TestGCComponents(t *testing.T) {
 	server, cleanup := createTestShaman()
 	defer cleanup()
 
-	extraCheckoutDir := filepath.Join(server.config.TestTempDir, "extra-checkout")
-	server.config.GarbageCollect.ExtraCheckoutDirs = []string{extraCheckoutDir}
-
 	filestore.LinkTestFileStore(server.config.FileStorePath())
 
 	copymap := func(somemap mtimeMap) mtimeMap {
@@ -146,7 +143,6 @@ func TestGCComponents(t *testing.T) {
 	makeOld(server, expectOld, "stored/30/928ffced04c7008f3324fded86d133effea50828f5ad896196f2a2e190ac7e/6001.blob")
 	makeOld(server, expectOld, "stored/59/0c148428d5c35fab3ebad2f3365bb469ab9c531b60831f3e826c472027a0b9/3367.blob")
 	makeOld(server, expectOld, "stored/80/b749c27b2fef7255e7e7b3c2029b03b31299c75ff1f1c72732081c70a713a3/7488.blob")
-	makeOld(server, expectOld, "stored/dc/89f15de821ad1df3e78f8ef455e653a2d1862f2eb3f5ee78aa4ca68eb6fb35/781.blob")
 
 	// utility mapping to be able to find absolute paths more easily
 	absPaths := map[string]string{}
@@ -166,11 +162,8 @@ func TestGCComponents(t *testing.T) {
 	err = server.checkoutMan.SymlinkToCheckout(absPaths["3367.blob"], server.config.CheckoutPath(),
 		filepath.Join(checkoutInfo.RelativePath, "use-of-3367.blob"))
 	require.NoError(t, err)
-	err = server.checkoutMan.SymlinkToCheckout(absPaths["781.blob"], extraCheckoutDir,
-		filepath.Join(checkoutInfo.RelativePath, "use-of-781.blob"))
-	require.NoError(t, err)
 
-	// There should only be two old file reported now.
+	// There should be two old file reported.
 	expectRemovable := mtimeMap{
 		absPaths["6001.blob"]: expectOld[absPaths["6001.blob"]],
 		absPaths["7488.blob"]: expectOld[absPaths["7488.blob"]],
@@ -178,15 +171,11 @@ func TestGCComponents(t *testing.T) {
 	oldFiles = copymap(expectOld)
 	stats := GCStats{}
 	err = server.gcFilterLinkedFiles(server.config.CheckoutPath(), oldFiles, log.With().Str("package", "shaman/test").Logger(), &stats)
-	assert.Equal(t, 1, stats.numSymlinksChecked) // 1 is in checkoutPath, the other in extraCheckoutDir
+	assert.Equal(t, 1, stats.numSymlinksChecked)
 	require.NoError(t, err)
-	assert.Equal(t, len(expectRemovable)+1, len(oldFiles)) // one file is linked from the extra checkout dir
-	err = server.gcFilterLinkedFiles(extraCheckoutDir, oldFiles, log.With().Str("package", "shaman/test").Logger(), &stats)
-	assert.Equal(t, 2, stats.numSymlinksChecked) // 1 is in checkoutPath, the other in extraCheckoutDir
-	require.NoError(t, err)
-	assert.EqualValues(t, expectRemovable, oldFiles)
+	assert.Equal(t, len(expectRemovable), len(oldFiles))
 
-	// Touching a file before requesting deletion should not delete it.
+	// Touching a file before requesting deletion should prevent its deletetion.
 	now := time.Now()
 	err = os.Chtimes(absPaths["6001.blob"], now, now)
 	require.NoError(t, err)
@@ -202,7 +191,6 @@ func TestGCComponents(t *testing.T) {
 
 	assert.FileExists(t, absPaths["3367.blob"], "file should exist after GC")
 	assert.FileExists(t, absPaths["6001.blob"], "file should exist after GC")
-	assert.FileExists(t, absPaths["781.blob"], "file should exist after GC")
 	_, err = os.Stat(absPaths["7488.blob"])
 	assert.ErrorIs(t, err, fs.ErrNotExist, "file %s should NOT exist after GC", absPaths["7488.blob"])
 }
@@ -214,9 +202,6 @@ func TestGarbageCollect(t *testing.T) {
 	server, cleanup := createTestShaman()
 	defer cleanup()
 
-	extraCheckoutDir := filepath.Join(server.config.TestTempDir, "extra-checkout")
-	server.config.GarbageCollect.ExtraCheckoutDirs = []string{extraCheckoutDir}
-
 	filestore.LinkTestFileStore(server.config.FileStorePath())
 
 	// Make some files old.
@@ -224,7 +209,6 @@ func TestGarbageCollect(t *testing.T) {
 	makeOld(server, expectOld, "stored/30/928ffced04c7008f3324fded86d133effea50828f5ad896196f2a2e190ac7e/6001.blob")
 	makeOld(server, expectOld, "stored/59/0c148428d5c35fab3ebad2f3365bb469ab9c531b60831f3e826c472027a0b9/3367.blob")
 	makeOld(server, expectOld, "stored/80/b749c27b2fef7255e7e7b3c2029b03b31299c75ff1f1c72732081c70a713a3/7488.blob")
-	makeOld(server, expectOld, "stored/dc/89f15de821ad1df3e78f8ef455e653a2d1862f2eb3f5ee78aa4ca68eb6fb35/781.blob")
 
 	// utility mapping to be able to find absolute paths more easily
 	absPaths := map[string]string{}
@@ -237,9 +221,6 @@ func TestGarbageCollect(t *testing.T) {
 	require.NoError(t, err)
 	err = server.checkoutMan.SymlinkToCheckout(absPaths["3367.blob"], server.config.CheckoutPath(),
 		filepath.Join(checkoutInfo.RelativePath, "use-of-3367.blob"))
-	require.NoError(t, err)
-	err = server.checkoutMan.SymlinkToCheckout(absPaths["781.blob"], extraCheckoutDir,
-		filepath.Join(checkoutInfo.RelativePath, "use-of-781.blob"))
 	require.NoError(t, err)
 
 	// Running the garbage collector should only remove those two unused files.
@@ -255,6 +236,5 @@ func TestGarbageCollect(t *testing.T) {
 	assert.ErrorIs(t, err, fs.ErrNotExist, "file %s should NOT exist after GC", absPaths["7488.blob"])
 
 	// Used files should still exist.
-	assert.FileExists(t, absPaths["781.blob"])
 	assert.FileExists(t, absPaths["3367.blob"])
 }

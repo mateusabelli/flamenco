@@ -54,9 +54,6 @@ setting the following settings in `shaman.yaml`:
   sweeps. Default is `8h`. Set to `0` to disable garbage collection.
 - `garbageCollect.maxAge`: files that are newer than this age are not
   considered for garbage collection. Default is `744h` or 31 days.
-- `garbageCollect.extraCheckoutPaths`: list of directories to include when
-  searching for symlinks. Shaman will never create a checkout here.
-  Default is empty.
 
 Every time a file is symlinked into a checkout directory, it is 'touched'
 (that is, its modification time is set to 'now').

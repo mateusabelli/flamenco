@@ -29,9 +29,8 @@ var defaultConfig = Conf{
 			// Enable Shaman by default, except on Windows where symlinks are still tricky.
 			Enabled: runtime.GOOS != "windows",
 			GarbageCollect: shaman_config.GarbageCollect{
-				Period:            24 * time.Hour,
-				MaxAge:            31 * 24 * time.Hour,
-				ExtraCheckoutDirs: []string{},
+				Period: 24 * time.Hour,
+				MaxAge: 31 * 24 * time.Hour,
 			},
 		},
 

@@ -46,9 +46,8 @@ func CreateTestConfig() (conf Config, cleanup func()) {
 		StoragePath: tempDir,
 
 		GarbageCollect: GarbageCollect{
-			Period:            8 * time.Hour,
-			MaxAge:            31 * 24 * time.Hour,
-			ExtraCheckoutDirs: []string{},
+			Period: 8 * time.Hour,
+			MaxAge: 31 * 24 * time.Hour,
 		},
 	}
 
