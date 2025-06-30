@@ -19,6 +19,8 @@ There are three code generators used by Flamenco:
 [mockgen]: https://github.com/golang/mock/mockgen
 [openapi-codegen]: https://openapi-generator.tech/
 
+### Go code generators
+
 The first two generators can be installed with either of these commands:
 
 ```bash
@@ -29,9 +31,51 @@ $ go run mage.go installGenerators
 $ make install-generators
 ```
 
+### Python and JavaScript code generators
+
+
 `openapi-codegen` is bundled with the Flamenco sources, but does need a Java
-runtime environment to be installed. On Ubuntu Linux, `sudo apt install
-default-jre-headless` should be enough.
+runtime environment to be installed.
+
+{{< tabs "installing-java" >}}
+{{< tab "Linux" >}}
+
+On Ubuntu Linux this should be enough:
+
+```bash
+$ sudo apt install default-jre-headless
+```
+
+Other Linux distributions very likely have a similar package.
+
+{{< /tab >}}
+{{< tab "Windows" >}}
+
+Use the [official Java installer](https://www.java.com/en/download/manual.jsp).
+
+{{< /tab >}}
+{{< tab "macOS" >}}
+
+**Option 1** (Native install)
+
+Use the [official Java installer](https://www.java.com/en/download/manual.jsp).
+
+<br />
+
+**Option 2** (Homebrew)
+
+Install Java via homebrew:
+
+```
+brew install java
+```
+
+Note that this requires XCode to be installed.
+
+{{< /tab >}}
+{{< /tabs >}}
+
+
 
 ## Committing Generated Code
 
