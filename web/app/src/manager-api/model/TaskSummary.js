@@ -13,6 +13,7 @@
 
 import ApiClient from '../ApiClient';
 import TaskStatus from './TaskStatus';
+import TaskWorker from './TaskWorker';
 
 /**
  * The TaskSummary model module.
@@ -84,6 +85,9 @@ class TaskSummary {
             if (data.hasOwnProperty('updated')) {
                 obj['updated'] = ApiClient.convertToType(data['updated'], 'Date');
             }
+            if (data.hasOwnProperty('worker')) {
+                obj['worker'] = TaskWorker.constructFromObject(data['worker']);
+            }
         }
         return obj;
     }
@@ -125,6 +129,11 @@ TaskSummary.prototype['task_type'] = undefined;
  * @member {Date} updated
  */
 TaskSummary.prototype['updated'] = undefined;
+
+/**
+ * @member {module:model/TaskWorker} worker
+ */
+TaskSummary.prototype['worker'] = undefined;
 
 
 

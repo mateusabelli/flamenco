@@ -31,7 +31,9 @@ from flamenco.manager.exceptions import ApiAttributeError
 
 def lazy_import():
     from flamenco.manager.model.task_status import TaskStatus
+    from flamenco.manager.model.task_worker import TaskWorker
     globals()['TaskStatus'] = TaskStatus
+    globals()['TaskWorker'] = TaskWorker
 
 
 class TaskSummary(ModelNormal):
@@ -94,6 +96,7 @@ class TaskSummary(ModelNormal):
             'priority': (int,),  # noqa: E501
             'task_type': (str,),  # noqa: E501
             'updated': (datetime,),  # noqa: E501
+            'worker': (TaskWorker,),  # noqa: E501
         }
 
     @cached_property
@@ -109,6 +112,7 @@ class TaskSummary(ModelNormal):
         'priority': 'priority',  # noqa: E501
         'task_type': 'task_type',  # noqa: E501
         'updated': 'updated',  # noqa: E501
+        'worker': 'worker',  # noqa: E501
     }
 
     read_only_vars = {
@@ -161,6 +165,7 @@ class TaskSummary(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
+            worker (TaskWorker): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)
@@ -258,6 +263,7 @@ class TaskSummary(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
+            worker (TaskWorker): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)

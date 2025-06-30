@@ -325,9 +325,10 @@ AND T.type = @task_type;
 
 
 -- name: QueryJobTaskSummaries :many
-SELECT tasks.id, tasks.uuid, tasks.name, tasks.index_in_job, tasks.priority, tasks.status, tasks.type, tasks.updated_at
+SELECT tasks.id, tasks.uuid, tasks.name, tasks.index_in_job, tasks.priority, tasks.status, tasks.type, tasks.updated_at, workers.UUID as workerUUID
 FROM tasks
 LEFT JOIN jobs ON jobs.id = tasks.job_id
+LEFT JOIN workers ON  workers.id = tasks.worker_id
 WHERE jobs.uuid=@job_uuid;
 
 -- name: SummarizeJobStatuses :many

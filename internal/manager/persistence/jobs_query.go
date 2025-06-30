@@ -33,7 +33,8 @@ func (db *DB) QueryJobTaskSummaries(ctx context.Context, jobUUID string) ([]Task
 			Type:       task.Type,
 			IndexInJob: task.IndexInJob,
 			Priority:   task.Priority,
-			Status:     api.TaskStatus(task.Status),
+			Status:     task.Status,
+			WorkerUUID: task.WorkerUUID,
 		}
 	}
 

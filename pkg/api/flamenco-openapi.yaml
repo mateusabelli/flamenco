@@ -2072,6 +2072,7 @@ components:
         priority: { type: integer }
         task_type: { type: string }
         updated: { type: string, format: date-time }
+        worker: { $ref: "#/components/schemas/TaskWorker" }
       required: [id, name, status, index_in_job, priority, task_type, updated]
 
     TaskLogInfo:

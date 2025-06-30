@@ -132,6 +132,11 @@ func TestFetchWorker(t *testing.T) {
 				Id:     assignedTask.UUID,
 				Name:   assignedTask.Name,
 				Status: assignedTask.Status,
+				Worker: &api.TaskWorker{
+					Address: "fe80::5054:ff:fede:2ad7",
+					Id:      "e7632d62-c3b8-4af0-9e78-01752928952c",
+					Name:    "дрон",
+				},
 			},
 			JobId: assignedJob.UUID,
 		},

@@ -82,6 +82,19 @@ export default {
             return datetime.relativeTime(cellValue);
           },
         },
+        {
+          title: 'Worker',
+          field: 'worker.name',
+          sorter: 'string',
+          sorterParams: { alignEmptyValues: 'bottom' },
+          formatter: (cell) => {
+            const worker = cell.getData().worker;
+            if (!worker) return '';
+            return `<a href="/app/workers/${worker.id}">${worker.name}</a>`;
+          },
+          minWidth: 100,
+          widthGrow: 1,
+        },
       ],
       rowFormatter(row) {
         const data = row.getData();

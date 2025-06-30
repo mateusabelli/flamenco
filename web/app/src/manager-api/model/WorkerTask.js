@@ -14,6 +14,7 @@
 import ApiClient from '../ApiClient';
 import TaskStatus from './TaskStatus';
 import TaskSummary from './TaskSummary';
+import TaskWorker from './TaskWorker';
 import WorkerTaskAllOf from './WorkerTaskAllOf';
 
 /**
@@ -92,6 +93,9 @@ class WorkerTask {
             if (data.hasOwnProperty('updated')) {
                 obj['updated'] = ApiClient.convertToType(data['updated'], 'Date');
             }
+            if (data.hasOwnProperty('worker')) {
+                obj['worker'] = TaskWorker.constructFromObject(data['worker']);
+            }
             if (data.hasOwnProperty('job_id')) {
                 obj['job_id'] = ApiClient.convertToType(data['job_id'], 'String');
             }
@@ -138,6 +142,11 @@ WorkerTask.prototype['task_type'] = undefined;
 WorkerTask.prototype['updated'] = undefined;
 
 /**
+ * @member {module:model/TaskWorker} worker
+ */
+WorkerTask.prototype['worker'] = undefined;
+
+/**
  * @member {String} job_id
  */
 WorkerTask.prototype['job_id'] = undefined;
@@ -172,6 +181,10 @@ TaskSummary.prototype['task_type'] = undefined;
  * @member {Date} updated
  */
 TaskSummary.prototype['updated'] = undefined;
+/**
+ * @member {module:model/TaskWorker} worker
+ */
+TaskSummary.prototype['worker'] = undefined;
 // Implement WorkerTaskAllOf interface:
 /**
  * @member {String} job_id

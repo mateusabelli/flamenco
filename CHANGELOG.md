@@ -10,6 +10,7 @@ bugs in actually-released versions.
 - While holding shift, the tasks table will not change the ordering of the tasks, to aid in shift-selecting ranges ([#104388](https://projects.blender.org/studio/flamenco/pulls/104388)).
 - Upgrade Blender Asset Tracer (BAT) to 1.19 to support Blender 5.0 ([BAT#92893](https://projects.blender.org/blender/blender-asset-tracer/pulls/92893)).
 - Remove the "extra checkout paths" feature from the Shaman system and thus the configuration file ([#104403](https://projects.blender.org/studio/flamenco/issues/104403)).
+- Add a new "Worker" column to the Job Task table indicating which worker the task is assigned to.
 - Update Go & dependencies to fix security vulnerabilities:
   - https://pkg.go.dev/vuln/GO-2025-3751
   - https://pkg.go.dev/vuln/GO-2025-3750

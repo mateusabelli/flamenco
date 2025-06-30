@@ -108,6 +108,20 @@ func (f *Flamenco) FetchJobTasks(e echo.Context, jobID string) error {
 	apiSummaries := make([]api.TaskSummary, len(dbSummaries))
 	for i, dbSummary := range dbSummaries {
 		apiSummaries[i] = taskSummaryDBtoAPI(dbSummary)
+
+		// We only have the Worker UUID at this point, fetch the full worker information
+		worker, err := f.persist.FetchWorker(ctx, apiSummaries[i].Worker.Id)
+
+		switch {
+		case errors.Is(err, persistence.ErrWorkerNotFound):
+			// This is fine, workers can be soft-deleted from the database, and then
+			// the above FetchWorker call will not return it.
+		case err != nil:
+			logger.Warn().Err(err).Str("worker", apiSummaries[i].Worker.Id).Msg("error fetching task worker")
+			return sendAPIError(e, http.StatusInternalServerError, "error fetching task worker")
+		default:
+			apiSummaries[i].Worker = workerToTaskWorker(worker)
+		}
 	}
 	result := api.JobTasksSummary{
 		Tasks: &apiSummaries,
@@ -179,10 +193,11 @@ func taskSummaryDBtoAPI(task persistence.TaskSummary) api.TaskSummary {
 		Status:     task.Status,
 		TaskType:   task.Type,
 		Updated:    task.UpdatedAt.Time,
+		Worker:     &api.TaskWorker{Id: task.WorkerUUID.String},
 	}
 }
 
-func taskDBtoSummaryAPI(task persistence.Task) api.TaskSummary {
+func taskDBtoSummaryAPI(task persistence.Task, worker *persistence.Worker) api.TaskSummary {
 	return api.TaskSummary{
 		Id:         task.UUID,
 		Name:       task.Name,
@@ -191,5 +206,6 @@ func taskDBtoSummaryAPI(task persistence.Task) api.TaskSummary {
 		Status:     task.Status,
 		TaskType:   task.Type,
 		Updated:    task.UpdatedAt.Time,
+		Worker:     workerToTaskWorker(worker),
 	}
 }

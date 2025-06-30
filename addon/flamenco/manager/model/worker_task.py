@@ -32,9 +32,11 @@ from flamenco.manager.exceptions import ApiAttributeError
 def lazy_import():
     from flamenco.manager.model.task_status import TaskStatus
     from flamenco.manager.model.task_summary import TaskSummary
+    from flamenco.manager.model.task_worker import TaskWorker
     from flamenco.manager.model.worker_task_all_of import WorkerTaskAllOf
     globals()['TaskStatus'] = TaskStatus
     globals()['TaskSummary'] = TaskSummary
+    globals()['TaskWorker'] = TaskWorker
     globals()['WorkerTaskAllOf'] = WorkerTaskAllOf
 
 
@@ -99,6 +101,7 @@ class WorkerTask(ModelComposed):
             'task_type': (str,),  # noqa: E501
             'updated': (datetime,),  # noqa: E501
             'job_id': (str,),  # noqa: E501
+            'worker': (TaskWorker,),  # noqa: E501
         }
 
     @cached_property
@@ -115,6 +118,7 @@ class WorkerTask(ModelComposed):
         'task_type': 'task_type',  # noqa: E501
         'updated': 'updated',  # noqa: E501
         'job_id': 'job_id',  # noqa: E501
+        'worker': 'worker',  # noqa: E501
     }
 
     read_only_vars = {
@@ -164,6 +168,7 @@ class WorkerTask(ModelComposed):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
+            worker (TaskWorker): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)
@@ -271,6 +276,7 @@ class WorkerTask(ModelComposed):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
+            worker (TaskWorker): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)

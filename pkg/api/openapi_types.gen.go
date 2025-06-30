@@ -787,6 +787,9 @@ type TaskSummary struct {
 	Status     TaskStatus `json:"status"`
 	TaskType   string     `json:"task_type"`
 	Updated    time.Time  `json:"updated"`
+
+	// Worker reference, as used in Task objects.
+	Worker *TaskWorker `json:"worker,omitempty"`
 }
 
 // TaskUpdate is sent by a Worker to update the status & logs of a task it's executing. All properties are optional; omitted properties are ignored (i.e. omitting `activity` will not erase the activity property of the task).

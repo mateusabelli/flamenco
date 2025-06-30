@@ -80,7 +80,7 @@ func (f *Flamenco) FetchWorker(e echo.Context, workerUUID string) error {
 
 	if taskJob != nil {
 		apiWorkerTask := api.WorkerTask{
-			TaskSummary: taskDBtoSummaryAPI(taskJob.Task),
+			TaskSummary: taskDBtoSummaryAPI(taskJob.Task, dbWorker),
 			JobId:       taskJob.JobUUID,
 		}
 		apiWorker.Task = &apiWorkerTask
