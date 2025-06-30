@@ -93,6 +93,9 @@ db-migrate-down:
 webapp-static: buildtool
 	"${BUILDTOOL_PATH}" webappStatic
 
+install-generators: buildtool
+	"${BUILDTOOL_PATH}" installGenerators
+
 generate: buildtool
 	"${BUILDTOOL_PATH}" generate
 

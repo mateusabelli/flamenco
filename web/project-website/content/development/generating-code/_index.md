@@ -7,12 +7,36 @@ Some code (Go, Python, JavaScript) is generated from the OpenAPI specs in
 `pkg/api/flamenco-openapi.yaml`. There are also Go files generated to create
 mock implementations of interfaces for unit testing purposes.
 
+## Installing the Code Generators
+
+There are three code generators used by Flamenco:
+
+- [`oapi-codegen`][oapi-codegen] for the OpenAPI server & client in Go.
+- [`mockgen`][mockgen] for generating mocks for tests in Go.
+- [`openapi-codegen`][openapi-codegen] for the OpenAPI clients in Python and JavaScript.
+
+[oapi-codegen]: https://github.com/deepmap/oapi-codegen/cmd/oapi-codegen
+[mockgen]: https://github.com/golang/mock/mockgen
+[openapi-codegen]: https://openapi-generator.tech/
+
+The first two generators can be installed with either of these commands:
+
+```bash
+# Simplest way to install the Go generators:
+$ go run mage.go installGenerators
+
+# Faster to re-run than the above, but does require Make:
+$ make install-generators
+```
+
+`openapi-codegen` is bundled with the Flamenco sources, but does need a Java
+runtime environment to be installed. On Ubuntu Linux, `sudo apt install
+default-jre-headless` should be enough.
+
+## Committing Generated Code
+
 **Generated code is committed to Git**, so that after a checkout you shouldn't
 need to re-run the generator to build Flamenco.
-
-The JavaScript & Python generator is made in Java, so it requires a JRE/JDK to
-be installed. On Ubuntu Linux, `sudo apt install default-jre-headless` should be
-enough.
 
 The following files & directories are generated. Generated directories are
 completely erased before regeneration, so do not add any files there manually.
