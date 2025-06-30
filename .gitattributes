@@ -3,6 +3,8 @@
 /addon/flamenco/manager_README.md linguist-generated=true
 /web/app/src/manager-api/** linguist-generated=true
 **/*.gen.go linguist-generated=true
+**/*.sql.go linguist-generated=true
+**/sqlc/db.go
 /go.sum linguist-generated=true
 
 # In your Git config, set:
