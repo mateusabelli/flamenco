@@ -75,8 +75,8 @@ type Base struct {
 
 	ManagerName string `yaml:"manager_name"`
 
-	DatabaseDSN      string        `yaml:"database"`
-	DBIntegrityCheck time.Duration `yaml:"database_check_period"`
+	DatabaseDSN      string   `yaml:"database"`
+	DBIntegrityCheck Duration `yaml:"database_check_period"`
 
 	Listen string `yaml:"listen"`
 
@@ -92,8 +92,8 @@ type Base struct {
 
 	Shaman shaman_config.Config `yaml:"shaman"`
 
-	TaskTimeout   time.Duration `yaml:"task_timeout"`
-	WorkerTimeout time.Duration `yaml:"worker_timeout"`
+	TaskTimeout   Duration `yaml:"task_timeout"`
+	WorkerTimeout Duration `yaml:"worker_timeout"`
 
 	/* This many failures (on a given job+task type combination) will ban a worker
 	 * from that task type on that job. */
@@ -109,9 +109,9 @@ type Base struct {
 // GarbageCollect contains the config options for the GC.
 type ShamanGarbageCollect struct {
 	// How frequently garbage collection is performed on the file store:
-	Period time.Duration `yaml:"period"`
+	Period Duration `yaml:"period"`
 	// How old files must be before they are GC'd:
-	MaxAge time.Duration `yaml:"maxAge"`
+	MaxAge Duration `yaml:"maxAge"`
 	// Paths to check for symlinks before GC'ing files.
 	ExtraCheckoutDirs []string `yaml:"extraCheckoutPaths"`
 

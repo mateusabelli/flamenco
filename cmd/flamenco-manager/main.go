@@ -193,8 +193,8 @@ func runFlamencoManager() bool {
 	e := buildWebService(flamenco, persist, ssdp, socketio, urls, localStorage)
 
 	timeoutChecker := timeout_checker.New(
-		configService.Get().TaskTimeout,
-		configService.Get().WorkerTimeout,
+		time.Duration(configService.Get().TaskTimeout),
+		time.Duration(configService.Get().WorkerTimeout),
 		timeService, persist, taskStateMachine, logStorage, eventBroker)
 
 	// The main context determines the lifetime of the application. All
@@ -240,7 +240,7 @@ func runFlamencoManager() bool {
 	go func() {
 		defer wg.Done()
 		persist.PeriodicIntegrityCheck(mainCtx,
-			configService.Get().DBIntegrityCheck,
+			time.Duration(configService.Get().DBIntegrityCheck),
 			mainCtxCancel)
 	}()
 

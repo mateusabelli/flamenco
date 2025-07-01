@@ -20,7 +20,7 @@ var defaultConfig = Conf{
 		ManagerName:             "Flamenco",
 		Listen:                  ":8080",
 		DatabaseDSN:             "flamenco-manager.sqlite",
-		DBIntegrityCheck:        10 * time.Minute,
+		DBIntegrityCheck:        Duration(10 * time.Minute),
 		SSDPDiscovery:           true,
 		LocalManagerStoragePath: "./flamenco-manager-storage",
 		SharedStoragePath:       "", // Empty string means "first run", and should trigger the config setup assistant.
@@ -34,8 +34,8 @@ var defaultConfig = Conf{
 			},
 		},
 
-		TaskTimeout:   10 * time.Minute,
-		WorkerTimeout: 1 * time.Minute,
+		TaskTimeout:   Duration(10 * time.Minute),
+		WorkerTimeout: Duration(1 * time.Minute),
 
 		BlocklistThreshold:         3,
 		TaskFailAfterSoftFailCount: 3,
