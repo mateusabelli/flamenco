@@ -106,20 +106,6 @@ type Base struct {
 	MQTT MQTTConfig `yaml:"mqtt"`
 }
 
-// GarbageCollect contains the config options for the GC.
-type ShamanGarbageCollect struct {
-	// How frequently garbage collection is performed on the file store:
-	Period Duration `yaml:"period"`
-	// How old files must be before they are GC'd:
-	MaxAge Duration `yaml:"maxAge"`
-	// Paths to check for symlinks before GC'ing files.
-	ExtraCheckoutDirs []string `yaml:"extraCheckoutPaths"`
-
-	// Used by the -gc CLI arg to silently disable the garbage collector
-	// while we're performing a manual sweep.
-	SilentlyDisable bool `yaml:"-"`
-}
-
 // MQTTConfig contains the configuration options for MQTT broker (idea for the future) and client.
 type MQTTConfig struct {
 	Client eventbus.MQTTClientConfig `yaml:"client"`
