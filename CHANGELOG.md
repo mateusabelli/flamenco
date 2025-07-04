@@ -6,7 +6,7 @@ bugs in actually-released versions.
 
 ## 3.8 - in development
 
-- Shift-click & ctrl-click can now be used to select multiple tasks ([#104386](https://projects.blender.org/studio/flamenco/pulls/104386)). The action buttons (requeue/pause/cancel) now work on all selected tasks.
+- Shift-click & ctrl-click can now be used to select multiple jobs ([#104391](https://projects.blender.org/studio/flamenco/pulls/104391)) and tasks ([#104386](https://projects.blender.org/studio/flamenco/pulls/104386)). The action buttons (requeue/pause/cancel) now work on all selected items.
 - While holding shift, the tasks table will not change the ordering of the tasks, to aid in shift-selecting ranges ([#104388](https://projects.blender.org/studio/flamenco/pulls/104388)).
 - Upgrade Blender Asset Tracer (BAT) to 1.19 to support Blender 5.0 ([BAT#92893](https://projects.blender.org/blender/blender-asset-tracer/pulls/92893)).
 - Remove the "extra checkout paths" feature from the Shaman system and thus the configuration file ([#104403](https://projects.blender.org/studio/flamenco/issues/104403)).
