@@ -28,7 +28,6 @@ import StatusFilterBar from '@/components/StatusFilterBar.vue';
 export default {
   name: 'JobsTable',
   props: ['activeJobID'],
-  emits: ['tableRowClicked', 'activeJobDeleted', 'jobDeleted'],
   components: {
     JobActionsBar,
     StatusFilterBar,
@@ -37,8 +36,8 @@ export default {
     return {
       shownStatuses: [],
       availableStatuses: [], // Will be filled after data is loaded from the backend.
-
       jobs: useJobs(),
+      lastSelectedJobPosition: null,
     };
   },
   mounted() {
@@ -115,80 +114,210 @@ export default {
       this.$nextTick(this.recalcTableHeight);
     },
   },
-  computed: {
-    selectedIDs() {
-      return this.tabulator.getSelectedData().map((job) => job.id);
-    },
-  },
   methods: {
-    onReconnected() {
+    /**
+     * Send to the job overview page, i.e. job view without active job.
+     */
+    _routeToJobOverview() {
+      const route = { name: 'jobs' };
+      this.$router.push(route);
+    },
+    /**
+     * @param {string} jobID job ID to navigate to, can be empty string for "no active job".
+     */
+    _routeToJob(jobID) {
+      const route = { name: 'jobs', params: { jobID: jobID } };
+      this.$router.push(route);
+    },
+    async onReconnected() {
       // If the connection to the backend was lost, we have likely missed some
       // updates. Just fetch the data and start from scratch.
-      this.fetchAllJobs();
+      await this.initAllJobs();
+      await this.initActiveJob();
     },
     sortData() {
       const tab = this.tabulator;
       tab.setSort(tab.getSorters()); // This triggers re-sorting.
     },
-    _onTableBuilt() {
+    async _onTableBuilt() {
       this.tabulator.setFilter(this._filterByStatus);
-      this.fetchAllJobs();
+      await this.initAllJobs();
+      await this.initActiveJob();
     },
-    fetchAllJobs() {
+    async fetchAllJobs() {
       const jobsApi = new API.JobsApi(getAPIClient());
-      this.jobs.isJobless = false;
-      jobsApi.fetchJobs().then(this.onJobsFetched, function (error) {
-        // TODO: error handling.
-        console.error(error);
-      });
+      return jobsApi
+        .fetchJobs()
+        .then((data) => data.jobs)
+        .catch((e) => {
+          throw new Error('Unable to fetch all jobs:', e);
+        });
     },
-    onJobsFetched(data) {
-      // "Down-cast" to JobUpdate to only get those fields, just for debugging things:
-      // data.jobs = data.jobs.map((j) => API.JobUpdate.constructFromObject(j));
-      const hasJobs = data && data.jobs && data.jobs.length > 0;
-      this.jobs.isJobless = !hasJobs;
-      this.tabulator.setData(data.jobs);
-      this._refreshAvailableStatuses();
+    /**
+     * Initializes all jobs and sets the Tabulator data. Updates pinia stores and state accordingly.
+     */
+    async initAllJobs() {
+      try {
+        this.jobs.isJobless = false;
+        const jobs = await this.fetchAllJobs();
 
-      this.recalcTableHeight();
+        // Update Tabulator
+        this.tabulator.setData(jobs);
+        this._refreshAvailableStatuses();
+        this.recalcTableHeight();
+
+        // Update  Pinia stores
+        const hasJobs = jobs && jobs.length > 0;
+        this.jobs.isJobless = !hasJobs;
+      } catch (e) {
+        console.error(e);
+      }
     },
-    processJobUpdate(jobUpdate) {
+    /**
+     * Initializes the active job. Updates pinia stores and state accordingly.
+     */
+    async initActiveJob() {
+      // If there's no active job, reset the state and Pinia stores
+      if (!this.activeJobID) {
+        this.jobs.clearActiveJob();
+        this.jobs.clearSelectedJobs();
+        this.lastSelectedJobPosition = null;
+        return;
+      }
+
+      // Otherwise, set the state and Pinia stores
+      try {
+        const job = await this.fetchJob(this.activeJobID);
+        this.jobs.setActiveJob(job);
+        this.processJobUpdate(job);
+        this.jobs.setSelectedJobs([job]);
+
+        const activeRow = this.tabulator.getRow(this.activeJobID);
+        // If the page is reloaded, re-initialize the last selected job (or active job) position, allowing the user to multi-select from that job.
+        this.lastSelectedJobPosition = activeRow.getPosition();
+        // Make sure the active row on tabulator has the selected status toggled as well
+        this.tabulator.selectRow(activeRow);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    /**
+     * Fetch a Job based on ID
+     */
+    fetchJob(jobID) {
+      const jobsApi = new API.JobsApi(getAPIClient());
+      return jobsApi
+        .fetchJob(jobID)
+        .then((job) => job)
+        .catch((err) => {
+          throw new Error(`Unable to fetch job with ID ${jobID}:`, err);
+        });
+    },
+    async processJobUpdate(jobUpdate) {
       // updateData() will only overwrite properties that are actually set on
       // jobUpdate, and leave the rest as-is.
       if (!this.tabulator.initialized) {
         return;
       }
-      const row = this.tabulator.rowManager.findRow(jobUpdate.id);
 
-      let promise = null;
-      if (jobUpdate.was_deleted) {
-        if (row) promise = row.delete();
-        else promise = Promise.resolve();
-        promise.finally(() => {
-          this.$emit('jobDeleted', jobUpdate.id);
-          if (jobUpdate.id == this.activeJobID) {
-            this.$emit('activeJobDeleted', jobUpdate.id);
-          }
-        });
-      } else {
-        if (row) promise = this.tabulator.updateData([jobUpdate]);
-        else promise = this.tabulator.addData([jobUpdate]);
+      try {
+        const row = this.tabulator.rowManager.findRow(jobUpdate.id);
+        // If the row update is for deletion, delete the row and route to /jobs
+        if (jobUpdate.was_deleted && row) {
+          // Prevents the issue where deleted rows persist on Tabulator's selectedData
+          // (this should technically not happen -- need to investigate more)
+          this.tabulator.deselectRow(jobUpdate.id);
+          row.delete().then(() => {
+            if (jobUpdate.id === this.activeJobID) {
+              this._routeToJobOverview();
+
+              // Update Pinia Stores
+              this.jobs.clearActiveJob();
+            }
+            // Update Pinia Stores
+            this.jobs.setSelectedJobs(this.getSelectedJobs());
+          });
+          return;
+        }
+
+        if (row) {
+          await this.tabulator.updateData([jobUpdate]); // Update existing row
+        } else {
+          await this.tabulator.addData([jobUpdate]); // Add new row
+        }
+        this.sortData();
+        await this.tabulator.redraw(); // Resize columns based on new data.
+        this._refreshAvailableStatuses();
+
+        if (jobUpdate.id === this.activeJobID && row) {
+          const job = await this.fetchJob(jobUpdate.id);
+          this.jobs.setActiveJob(job);
+        }
+        this.jobs.setSelectedJobs(this.tabulator.getSelectedData()); // Update Pinia stores
+      } catch (e) {
+        console.error(e);
       }
-
-      promise
-        .then(this.sortData)
-        .then(() => {
-          this.tabulator.redraw();
-        }) // Resize columns based on new data.
-        .then(this._refreshAvailableStatuses);
     },
+    handleMultiSelect(event, row, tabulator) {
+      const position = row.getPosition();
 
-    onRowClick(event, row) {
+      // Manage the click event and Tabulator row selection
+      if (event.shiftKey && this.lastSelectedJobPosition) {
+        // Shift + Click - selects a range of rows
+        let start = Math.min(position, this.lastSelectedJobPosition);
+        let end = Math.max(position, this.lastSelectedJobPosition);
+        const rowsToSelect = [];
+
+        for (let i = start; i <= end; i++) {
+          const currRow = this.tabulator.getRowFromPosition(i);
+          rowsToSelect.push(currRow);
+        }
+        tabulator.selectRow(rowsToSelect);
+
+        // Remove the text selection that occurs
+        document.getSelection().removeAllRanges();
+      } else if (event.ctrlKey || event.metaKey) {
+        // Supports Cmd key on MacOS
+        // Ctrl + Click - toggles additional rows
+        if (tabulator.getSelectedRows().includes(row)) {
+          tabulator.deselectRow(row);
+        } else {
+          tabulator.selectRow(row);
+        }
+      } else if (!event.ctrlKey && !event.metaKey) {
+        // Regular Click - resets the selection to one row
+        tabulator.deselectRow(); // De-select all rows
+        tabulator.selectRow(row);
+      }
+    },
+    async onRowClick(event, row) {
       // Take a copy of the data, so that it's decoupled from the tabulator data
       // store. There were some issues where navigating to another job would
       // overwrite the old job's ID, and this prevents that.
-      const rowData = plain(row.getData());
-      this.$emit('tableRowClicked', rowData);
+
+      // Handles Shift + Click, Ctrl + Click, and regular Click
+      this.handleMultiSelect(event, row, this.tabulator);
+
+      // Update the app route, Pinia store, and component state
+      if (row.isSelected()) {
+        // The row was toggled -> selected
+        const rowData = row.getData();
+        this._routeToJob(rowData.id);
+
+        const job = await this.fetchJob(rowData.id);
+        this.jobs.setActiveJob(job);
+        this.lastSelectedJobPosition = row.getPosition();
+      } else {
+        // The row was toggled -> de-selected
+        this._routeToJob('');
+        this.jobs.clearActiveJob();
+        this.lastSelectedJobPosition = null;
+      }
+
+      this.jobs.setSelectedJobs(this.getSelectedJobs()); // Set the selected jobs according to tabulator's selected rows
+    },
+    getSelectedJobs() {
+      return this.tabulator.getSelectedData();
     },
     toggleStatusFilter(status) {
       const asSet = new Set(this.shownStatuses);

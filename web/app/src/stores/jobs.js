@@ -5,6 +5,25 @@ import { getAPIClient } from '@/api-client';
 
 const jobsAPI = new API.JobsApi(getAPIClient());
 
+const JOB_ACTIONS = Object.freeze({
+  CANCEL: {
+    status: 'cancel-requested',
+    prerequisiteStatuses: ['active', 'paused', 'failed', 'queued'],
+  },
+  PAUSE: {
+    status: 'pause-requested',
+    prerequisiteStatuses: ['active', 'canceled', 'queued'],
+  },
+  REQUEUE: {
+    status: 'requeueing',
+    prerequisiteStatuses: ['canceled', 'completed', 'failed', 'paused'],
+  },
+  DELETE: {
+    status: 'delete-requested',
+    prerequisiteStatuses: ['canceled', 'completed', 'failed', 'paused', 'queued'],
+  },
+});
+
 // 'use' prefix is idiomatic for Pinia stores.
 // See https://pinia.vuejs.org/core-concepts/
 export const useJobs = defineStore('jobs', {
@@ -16,25 +35,27 @@ export const useJobs = defineStore('jobs', {
      * @type {string}
      */
     activeJobID: '',
-
     /**
      * Set to true when it is known that there are no jobs at all in the system.
      * This is written by the JobsTable.vue component.
+     * @type {bool}
      */
     isJobless: false,
+    /** @type {API.Job[]} */
+    selectedJobs: [],
   }),
   getters: {
     canDelete() {
-      return this._anyJobWithStatus(['completed', 'canceled', 'failed', 'paused', 'queued']);
+      return this._anyJobWithStatus(JOB_ACTIONS.DELETE.prerequisiteStatuses);
     },
     canCancel() {
-      return this._anyJobWithStatus(['active', 'failed', 'queued']);
+      return this._anyJobWithStatus(JOB_ACTIONS.CANCEL.prerequisiteStatuses);
     },
     canRequeue() {
-      return this._anyJobWithStatus(['canceled', 'completed', 'failed', 'paused']);
+      return this._anyJobWithStatus(JOB_ACTIONS.REQUEUE.prerequisiteStatuses);
     },
     canPause() {
-      return this._anyJobWithStatus(['active', 'queued', 'canceled']);
+      return this._anyJobWithStatus(JOB_ACTIONS.PAUSE.prerequisiteStatuses);
     },
   },
   actions: {
@@ -59,10 +80,20 @@ export const useJobs = defineStore('jobs', {
         state.hasChanged = true;
       });
     },
-    deselectAllJobs() {
+    clearActiveJob() {
       this.$patch({
         activeJob: null,
         activeJobID: '',
+      });
+    },
+    setSelectedJobs(jobs) {
+      this.$patch({
+        selectedJobs: jobs,
+      });
+    },
+    clearSelectedJobs() {
+      this.$patch({
+        selectedJobs: [],
       });
     },
 
@@ -70,28 +101,21 @@ export const useJobs = defineStore('jobs', {
      * Actions on the selected jobs.
      *
      * All the action functions return a promise that resolves when the action has been performed.
-     *
-     * TODO: actually have these work on all selected jobs. For simplicity, the
-     * code now assumes that only the active job needs to be operated on.
      */
     cancelJobs() {
-      return this._setJobStatus('cancel-requested');
+      return this._setJobStatus(JOB_ACTIONS.CANCEL.status, JOB_ACTIONS.CANCEL.prerequisiteStatuses);
     },
     pauseJobs() {
-      return this._setJobStatus('pause-requested');
+      return this._setJobStatus(JOB_ACTIONS.PAUSE.status, JOB_ACTIONS.PAUSE.prerequisiteStatuses);
     },
     requeueJobs() {
-      return this._setJobStatus('requeueing');
+      return this._setJobStatus(
+        JOB_ACTIONS.REQUEUE.status,
+        JOB_ACTIONS.REQUEUE.prerequisiteStatuses
+      );
     },
     deleteJobs() {
-      if (!this.activeJobID) {
-        console.warn(`deleteJobs() impossible, no active job ID`);
-        return new Promise((resolve, reject) => {
-          reject('No job selected, unable to delete');
-        });
-      }
-
-      return jobsAPI.deleteJob(this.activeJobID);
+      return this._setJobStatus(JOB_ACTIONS.DELETE.status, JOB_ACTIONS.DELETE.prerequisiteStatuses);
     },
 
     // Internal methods.
@@ -101,25 +125,56 @@ export const useJobs = defineStore('jobs', {
      * @param {string[]} statuses
      * @returns bool indicating whether there is a selected job with any of the given statuses.
      */
-    _anyJobWithStatus(statuses) {
-      return (
-        !!this.activeJob && !!this.activeJob.status && statuses.includes(this.activeJob.status)
-      );
-      // return this.selectedJobs.reduce((foundJob, job) => (foundJob || statuses.includes(job.status)), false);
+    _anyJobWithStatus(job_statuses) {
+      if (this.selectedJobs.length) {
+        return this.selectedJobs.some((job) => job_statuses.includes(job.status));
+      }
+      return false;
     },
 
     /**
      * Transition the selected job(s) to the new status.
      * @param {string} newStatus
-     * @returns a Promise for the API request.
+     * @param {string[]} job_statuses The job statuses compatible with the transition to new status
+     * @returns a Promise for the API request(s).
      */
-    _setJobStatus(newStatus) {
-      if (!this.activeJobID) {
-        console.warn(`_setJobStatus(${newStatus}) impossible, no active job ID`);
+    _setJobStatus(newStatus, job_statuses) {
+      const totalJobCount = this.selectedJobs.length;
+
+      if (!totalJobCount) {
+        console.warn(`_setJobStatus(${newStatus}) impossible, no selected job(s).`);
         return;
       }
-      const statuschange = new API.JobStatusChange(newStatus, 'requested from web interface');
-      return jobsAPI.setJobStatus(this.activeJobID, statuschange);
+
+      const { compatibleJobs, incompatibleJobs } = this.selectedJobs.reduce(
+        (result, job) => {
+          if (job_statuses.includes(job.status)) {
+            result.compatibleJobs.push(job);
+          } else {
+            result.incompatibleJobs.push(job);
+          }
+          return result;
+        },
+        { compatibleJobs: [], incompatibleJobs: [] }
+      );
+
+      let setJobStatusPromises = [];
+
+      if (newStatus === JOB_ACTIONS.DELETE.status) {
+        setJobStatusPromises = compatibleJobs.map((job) => jobsAPI.deleteJob(job.id));
+      } else {
+        const statuschange = new API.JobStatusChange(newStatus, 'requested from web interface');
+
+        setJobStatusPromises = compatibleJobs.map((job) =>
+          jobsAPI.setJobStatus(job.id, statuschange)
+        );
+      }
+
+      return Promise.allSettled(setJobStatusPromises).then((results) => ({
+        compatibleJobs: results,
+        incompatibleJobs,
+        totalJobCount,
+      }));
     },
   },
 });

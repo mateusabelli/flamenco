@@ -1,8 +1,10 @@
 <template>
   <div class="btn-bar jobs">
-    <div class="btn-bar-popover" v-if="deleteInfo != null">
-      <p v-if="deleteInfo.shaman_checkout">Delete job, including Shaman checkout?</p>
-      <p v-else>Delete job? The job files will be kept.</p>
+    <div class="btn-bar-popover" v-if="showDeleteJobPopup">
+      <p v-if="shamanEnv">
+        Delete {{ jobs.selectedJobs.length }} job(s), including Shaman checkout?
+      </p>
+      <p v-else>Delete {{ jobs.selectedJobs.length }} job(s)?</p>
       <div class="inner-btn-bar">
         <button class="btn cancel" v-on:click="_hideDeleteJobPopup">Cancel</button>
         <button class="btn delete dangerous" v-on:click="onButtonDeleteConfirmed">Delete</button>
@@ -30,10 +32,13 @@
 <script>
 import { useJobs } from '@/stores/jobs';
 import { useNotifs } from '@/stores/notifications';
-import { getAPIClient } from '@/api-client';
-import { JobsApi } from '@/manager-api';
-import { JobDeletionInfo } from '@/manager-api';
+import { getAPIClient, newBareAPIClient } from '@/api-client';
+import { JobsApi, MetaApi } from '@/manager-api';
 
+const cancelDescription = 'marked for cancellation';
+const requeueDescription = 'marked for requeueing';
+const pauseDescription = 'marked for pausing';
+const deleteDescription = 'marked for deleting';
 export default {
   name: 'JobActionsBar',
   props: ['activeJobID'],
@@ -41,8 +46,10 @@ export default {
     jobs: useJobs(),
     notifs: useNotifs(),
     jobsAPI: new JobsApi(getAPIClient()),
+    metaAPI: new MetaApi(newBareAPIClient()),
 
-    deleteInfo: null,
+    shamanEnv: null,
+    showDeleteJobPopup: false,
   }),
   computed: {},
   watch: {
@@ -55,62 +62,77 @@ export default {
       this._startJobDeletionFlow();
     },
     onButtonDeleteConfirmed() {
-      return this.jobs
-        .deleteJobs()
-        .then(() => {
-          this.notifs.add('job marked for deletion');
-        })
-        .catch((error) => {
-          const errorMsg = JSON.stringify(error); // TODO: handle API errors better.
-          this.notifs.add(`Error: ${errorMsg}`);
-        })
-        .finally(this._hideDeleteJobPopup);
+      return this._handleJobActionPromise(this.jobs.deleteJobs(), deleteDescription);
     },
     onButtonCancel() {
-      return this._handleJobActionPromise(this.jobs.cancelJobs(), 'marked for cancellation');
+      return this._handleJobActionPromise(this.jobs.cancelJobs(), cancelDescription);
     },
     onButtonRequeue() {
-      return this._handleJobActionPromise(this.jobs.requeueJobs(), 'requeueing');
+      return this._handleJobActionPromise(this.jobs.requeueJobs(), requeueDescription);
     },
     onButtonPause() {
-      return this._handleJobActionPromise(this.jobs.pauseJobs(), 'marked for pausing');
+      return this._handleJobActionPromise(this.jobs.pauseJobs(), pauseDescription);
     },
 
     _handleJobActionPromise(promise, description) {
-      return promise.then(() => {
-        // There used to be a call to `this.notifs.add(message)` here, but now
-        // that job status changes are logged in the notifications anyway,
-        // it's no longer necessary.
-        // This function is still kept, in case we want to bring back the
-        // notifications when multiple jobs can be selected. Then a summary
-        // ("N jobs requeued") could be logged here.btn-bar-popover
-      });
-    },
+      return promise
+        .then((values) => {
+          const { incompatibleJobs, compatibleJobs, totalJobCount } = values;
 
-    _startJobDeletionFlow() {
-      if (!this.activeJobID) {
-        this.notifs.add('No active job, unable to delete anything');
-        return;
-      }
+          // TODO: messages could be improved to specify the names of jobs that failed
+          const failedMessage = `Could not apply ${description} status to ${incompatibleJobs.length} out of ${totalJobCount} job(s).`;
+          const successMessage = `${compatibleJobs.length} job(s) successfully ${description}.`;
 
-      this.jobsAPI
-        .deleteJobWhatWouldItDo(this.activeJobID)
-        .then(this._showDeleteJobPopup)
+          this.notifs.add(
+            `${compatibleJobs.length > 0 ? successMessage : ''}
+             ${incompatibleJobs.length > 0 ? failedMessage : ''}`
+          );
+        })
         .catch((error) => {
           const errorMsg = JSON.stringify(error); // TODO: handle API errors better.
           this.notifs.add(`Error: ${errorMsg}`);
+        })
+        .finally(() => {
+          this._hideDeleteJobPopup();
         });
     },
 
+    _startJobDeletionFlow() {
+      if (!this.jobs.selectedJobs.length) {
+        this.notifs.add('No selected job(s), unable to delete anything');
+        return;
+      }
+
+      this._showDeleteJobPopup();
+    },
+
     /**
-     * @param { JobDeletionInfo } deleteInfo
+     * Shows the delete popup, and checks for Shaman to render the correct delete confirmation message.
      */
-    _showDeleteJobPopup(deleteInfo) {
-      this.deleteInfo = deleteInfo;
+    _showDeleteJobPopup() {
+      // Concurrently fetch:
+      // 1) the first job's deletion info
+      // 2) the environment configuration
+      Promise.allSettled([
+        this.jobsAPI
+          .deleteJobWhatWouldItDo(this.jobs.selectedJobs[0].id)
+          .catch((error) => console.error('Error fetching deleteJobWhatWouldItDo:', error)),
+        this.metaAPI
+          .getConfiguration()
+          .catch((error) => console.error('Error getting configuration:', error)),
+      ]).then((results) => {
+        const [jobDeletionInfo, managerConfig] = results.map((result) => result.value);
+
+        // If either have Shaman, render the message relevant to an enabled Shaman environment
+        this.shamanEnv = jobDeletionInfo.shaman_checkout || managerConfig.shamanEnabled;
+      });
+
+      this.showDeleteJobPopup = true;
     },
 
     _hideDeleteJobPopup() {
-      this.deleteInfo = null;
+      this.shamanEnv = null;
+      this.showDeleteJobPopup = false;
     },
   },
 };

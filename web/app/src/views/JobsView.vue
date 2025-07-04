@@ -1,10 +1,6 @@
 <template>
   <div class="col col-1">
-    <jobs-table
-      ref="jobsTable"
-      :activeJobID="jobID"
-      @tableRowClicked="onTableJobClicked"
-      @activeJobDeleted="onActiveJobDeleted" />
+    <jobs-table ref="jobsTable" :activeJobID="jobID" />
   </div>
   <div class="col col-2 job-details-column" id="col-job-details">
     <get-the-addon v-if="jobs.isJobless" />
@@ -57,12 +53,10 @@
 </template>
 
 <script>
-import * as API from '@/manager-api';
 import { useJobs } from '@/stores/jobs';
 import { useTasks } from '@/stores/tasks';
 import { useNotifs } from '@/stores/notifications';
 import { useTaskLog } from '@/stores/tasklog';
-import { getAPIClient } from '@/api-client';
 
 import FooterPopup from '@/components/footer/FooterPopup.vue';
 import GetTheAddon from '@/components/GetTheAddon.vue';
@@ -110,17 +104,12 @@ export default {
     //   console.log("Pinia state   :", state)
     // })
 
-    this._fetchJob(this.jobID);
-
     window.addEventListener('resize', this._recalcTasksTableHeight);
   },
   unmounted() {
     window.removeEventListener('resize', this._recalcTasksTableHeight);
   },
   watch: {
-    jobID(newJobID, oldJobID) {
-      this._fetchJob(newJobID);
-    },
     showFooterPopup(shown) {
       if (shown) localStorage.setItem('footer-popover-visible', 'true');
       else localStorage.removeItem('footer-popover-visible');
@@ -128,14 +117,6 @@ export default {
     },
   },
   methods: {
-    onTableJobClicked(rowData) {
-      // Don't route to the current job, as that'll deactivate the current task.
-      if (rowData.id === this.jobID) return;
-      this._routeToJob(rowData.id);
-    },
-    onActiveJobDeleted(deletedJobUUID) {
-      this._routeToJobOverview();
-    },
     showTaskLogTail() {
       this.showFooterPopup = true;
       this.$nextTick(() => {
@@ -155,7 +136,6 @@ export default {
         return;
       }
 
-      this._fetchJob(this.jobID);
       if (jobUpdate.refresh_tasks) {
         if (this.$refs.tasksTable) this.$refs.tasksTable.fetchTasks();
       }
@@ -185,50 +165,6 @@ export default {
      */
     onSioLastRenderedUpdate(lastRenderedUpdate) {
       this.$refs.jobDetails.refreshLastRenderedImage(lastRenderedUpdate);
-    },
-
-    /**
-     * Send to the job overview page, i.e. job view without active job.
-     */
-    _routeToJobOverview() {
-      const route = { name: 'jobs' };
-      this.$router.push(route);
-    },
-    /**
-     * @param {string} jobID job ID to navigate to, can be empty string for "no active job".
-     */
-    _routeToJob(jobID) {
-      const route = { name: 'jobs', params: { jobID: jobID } };
-      this.$router.push(route);
-    },
-
-    /**
-     * Fetch job info and set the active job once it's received.
-     * @param {string} jobID job ID, can be empty string for "no job".
-     */
-    _fetchJob(jobID) {
-      if (!jobID) {
-        this.jobs.deselectAllJobs();
-        return;
-      }
-
-      const jobsAPI = new API.JobsApi(getAPIClient());
-      return jobsAPI
-        .fetchJob(jobID)
-        .then((job) => {
-          this.jobs.setActiveJob(job);
-          // Forward the full job to Tabulator, so that that gets updated too.
-          this.$refs.jobsTable.processJobUpdate(job);
-          this._recalcTasksTableHeight();
-        })
-        .catch((err) => {
-          if (err.status == 404) {
-            // It can happen that a job cannot be found, for example when it was asynchronously deleted.
-            this.jobs.deselectAllJobs();
-            return;
-          }
-          console.log(`Unable to fetch job ${jobID}:`, err);
-        });
     },
 
     onChatMessage(message) {
