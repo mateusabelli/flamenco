@@ -22,6 +22,10 @@ flamenco-worker-credentials.yaml
 node_modules/
 /vendor/
 
+# Mockgen creates those files temporarily, and they can linger when it
+# fails to run properly. They should never be committed to Git.
+gomock_reflect_*
+
 # Directory for custom job compiler scripts:
 /scripts/
 
