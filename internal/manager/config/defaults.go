@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
+	"projects.blender.org/studio/flamenco/pkg/duration"
 	shaman_config "projects.blender.org/studio/flamenco/pkg/shaman/config"
 )
 
@@ -20,7 +21,7 @@ var defaultConfig = Conf{
 		ManagerName:             "Flamenco",
 		Listen:                  ":8080",
 		DatabaseDSN:             "flamenco-manager.sqlite",
-		DBIntegrityCheck:        Duration(10 * time.Minute),
+		DBIntegrityCheck:        duration.Duration(10 * time.Minute),
 		SSDPDiscovery:           true,
 		LocalManagerStoragePath: "./flamenco-manager-storage",
 		SharedStoragePath:       "", // Empty string means "first run", and should trigger the config setup assistant.
@@ -29,13 +30,13 @@ var defaultConfig = Conf{
 			// Enable Shaman by default, except on Windows where symlinks are still tricky.
 			Enabled: runtime.GOOS != "windows",
 			GarbageCollect: shaman_config.GarbageCollect{
-				Period: 24 * time.Hour,
-				MaxAge: 31 * 24 * time.Hour,
+				Period: duration.Duration(24 * time.Hour),
+				MaxAge: duration.Duration(31 * 24 * time.Hour),
 			},
 		},
 
-		TaskTimeout:   Duration(10 * time.Minute),
-		WorkerTimeout: Duration(1 * time.Minute),
+		TaskTimeout:   duration.Duration(10 * time.Minute),
+		WorkerTimeout: duration.Duration(1 * time.Minute),
 
 		BlocklistThreshold:         3,
 		TaskFailAfterSoftFailCount: 3,

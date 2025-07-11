@@ -57,13 +57,13 @@ func (s *Server) periodicCleanup() {
 		select {
 		case <-s.shutdownChan:
 			return
-		case <-time.After(s.config.GarbageCollect.Period):
+		case <-time.After(time.Duration(s.config.GarbageCollect.Period)):
 		}
 	}
 }
 
 func (s *Server) gcAgeThreshold() time.Time {
-	return time.Now().Add(-s.config.GarbageCollect.MaxAge).Round(1 * time.Second)
+	return time.Now().Add(time.Duration(-s.config.GarbageCollect.MaxAge).Round(1 * time.Second))
 
 }
 

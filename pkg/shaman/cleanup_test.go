@@ -58,7 +58,7 @@ func makeOld(shaman *Server, expectOld mtimeMap, relPath string) {
 			shaman.config.GarbageCollect.MaxAge))
 	}
 	age := -2 * shaman.config.GarbageCollect.MaxAge
-	oldTime := time.Now().Add(age)
+	oldTime := time.Now().Add(time.Duration(age))
 	absPath := filepath.Join(shaman.config.FileStorePath(), relPath)
 
 	err := os.Chtimes(absPath, oldTime, oldTime)
@@ -76,7 +76,7 @@ func makeOld(shaman *Server, expectOld mtimeMap, relPath string) {
 
 	log.Debug().
 		Str("relPath", relPath).
-		Stringer("age", age).
+		Stringer("age", time.Duration(age)).
 		Stringer("stamp", oldTime).
 		Stringer("actual", osModTime).
 		Msg("makeOld")
@@ -93,7 +93,7 @@ func TestGCCanary(t *testing.T) {
 	server, cleanup := createTestShaman()
 	defer cleanup()
 
-	assert.True(t, server.config.GarbageCollect.MaxAge > 10*time.Minute,
+	assert.True(t, time.Duration(server.config.GarbageCollect.MaxAge) > 10*time.Minute,
 		"config.GarbageCollect.MaxAge must be big enough for this test to be reliable, is %v",
 		server.config.GarbageCollect.MaxAge)
 }

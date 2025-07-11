@@ -26,6 +26,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"projects.blender.org/studio/flamenco/pkg/duration"
 )
 
 // CreateTestConfig creates a configuration + cleanup function.
@@ -46,8 +48,8 @@ func CreateTestConfig() (conf Config, cleanup func()) {
 		StoragePath: tempDir,
 
 		GarbageCollect: GarbageCollect{
-			Period: 8 * time.Hour,
-			MaxAge: 31 * 24 * time.Hour,
+			Period: duration.Duration(8 * time.Hour),
+			MaxAge: duration.Duration(31 * 24 * time.Hour),
 		},
 	}
 

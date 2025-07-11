@@ -23,6 +23,7 @@ import (
 	"projects.blender.org/studio/flamenco/internal/appinfo"
 	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/pkg/crosspath"
+	"projects.blender.org/studio/flamenco/pkg/duration"
 	shaman_config "projects.blender.org/studio/flamenco/pkg/shaman/config"
 )
 
@@ -75,8 +76,8 @@ type Base struct {
 
 	ManagerName string `yaml:"manager_name"`
 
-	DatabaseDSN      string   `yaml:"database"`
-	DBIntegrityCheck Duration `yaml:"database_check_period"`
+	DatabaseDSN      string            `yaml:"database"`
+	DBIntegrityCheck duration.Duration `yaml:"database_check_period"`
 
 	Listen string `yaml:"listen"`
 
@@ -92,8 +93,8 @@ type Base struct {
 
 	Shaman shaman_config.Config `yaml:"shaman"`
 
-	TaskTimeout   Duration `yaml:"task_timeout"`
-	WorkerTimeout Duration `yaml:"worker_timeout"`
+	TaskTimeout   duration.Duration `yaml:"task_timeout"`
+	WorkerTimeout duration.Duration `yaml:"worker_timeout"`
 
 	/* This many failures (on a given job+task type combination) will ban a worker
 	 * from that task type on that job. */
