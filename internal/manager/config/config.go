@@ -182,7 +182,17 @@ func DefaultConfig(override ...func(c *Conf)) Conf {
 
 // loadConf parses the given file and returns its contents as a Conf object.
 func loadConf(filename string, overrides ...func(c *Conf)) (Conf, error) {
-	log.Debug().Str("file", filename).Msg("loading configuration")
+	// Make sure the rest of the logging uses an absolute path, to help
+	// disambiguate things and simplify debugging.
+	if !filepath.IsAbs(filename) {
+		var err error
+		filename, err = filepath.Abs(filename)
+		if err != nil {
+			return Conf{}, fmt.Errorf("making configuration file path absolute: %w", err)
+		}
+	}
+
+	log.Info().Str("file", filename).Msg("loading configuration")
 	yamlFile, err := os.ReadFile(filename)
 	if err != nil {
 		var evt *zerolog.Event
