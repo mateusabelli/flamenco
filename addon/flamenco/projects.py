@@ -77,7 +77,7 @@ class FinderInfo:
 finders: dict[str, FinderInfo] = {
     "BLENDER_PROJECT": FinderInfo(
         "Blender Project",
-        "Find a .blend_project directory and use that as indicator for the top level project directory.",
+        "Find a .blender_project directory and use that as indicator for the top level project directory.",
         _finder_blender_project,
     ),
     "GIT": FinderInfo(
