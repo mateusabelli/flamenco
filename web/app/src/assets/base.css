@@ -256,6 +256,7 @@ nav > ul {
 nav > ul > li > a {
   display: block;
   padding: var(--spacer-xs) var(--spacer-sm);
+  white-space: nowrap;
 }
 
 h2.column-title {
