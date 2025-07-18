@@ -26,7 +26,7 @@
   grid-area: col-1;
 }
 
-.col-workers-2 {
+.col-workers-details {
   grid-area: col-2;
 }
 </style>

@@ -146,10 +146,10 @@ body.is-two-columns #app {
 @media (max-width: 960px) {
   body.is-two-columns #app {
     grid-template-areas:
-      "header"
-      "col-1"
-      "col-2"
-      "footer";
+      "header-L header-R"
+      "col-1 col-1"
+      "col-2 col-2"
+      "footer footer";
     grid-template-columns: 1fr;
     grid-template-rows: var(--header-height) 1fr 1fr var(--footer-height);
   }

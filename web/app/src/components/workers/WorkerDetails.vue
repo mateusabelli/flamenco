@@ -46,7 +46,7 @@
     <section class="worker-tags" v-if="workers.tags && workers.tags.length">
       <h3 class="sub-title">Tags</h3>
       <ul>
-        <li v-for="tag in workers.tags">
+        <li :key="tag.id" v-for="tag in workers.tags">
           <switch-checkbox
             :isChecked="thisWorkerTags[tag.id]"
             :label="tag.name"
