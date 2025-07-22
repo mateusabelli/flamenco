@@ -72,11 +72,6 @@ func (ce *CommandExecutor) cmdMoveDirectory(ctx context.Context, logger zerolog.
 		}
 	}
 
-	// self._log.info("Moving %s to %s", src, dest)
-	// await self.worker.register_log(
-	// 		"%s: Moving %s to %s", self.command_name, src, dest
-	// )
-	// src.rename(dest)
 	logger.Info().Msg("moving directory")
 	return ce.moveAndLog(ctx, taskID, cmd.Name, src, dest)
 }
