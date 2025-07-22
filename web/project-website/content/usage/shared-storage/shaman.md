@@ -4,7 +4,7 @@ title: Shaman Storage System
 
 {{< toc >}}
 
-Flamenco comes with a storage system named *Shaman*. It makes it possible to
+Flamenco comes with a storage system named _Shaman_. It makes it possible to
 have independence of render jobs, as well as as-fast-as-possible uploads to the
 farm. Shaman is built into Flamenco Manager.
 
@@ -24,34 +24,35 @@ that's done, Shaman will recreate the file layout required for the render job.
 
 When the Shaman system is enabled, Flamenco Manager creates two directories in
 the shared storage:
+
 - `file-store`: all the uploaded files are stored here. They are not stored by
   their original filename, but rather by an identifier that is based on their
   contents. In other words, when a file is renamed but otherwise is unchanged,
   it will still be identified as the same file.
 - `jobs`: each render job will get its own directory here. It will contain
-  *symbolic links* (also known as *symlinks*) to the files in `file-store`. This
+  _symbolic links_ (also known as _symlinks_) to the files in `file-store`. This
   way a file that was uploaded once can appear in multiple jobs simultaneously.
 
 The process of submitting files via Shaman works as follows:
 
 1. The Flamenco Blender add-on determines which files are necessary to render the current blend file.
-2. It creates an *identifier* for this file, which consists of the SHA256 sum + the length of the file in bytes.
+2. It creates an _identifier_ for this file, which consists of the SHA256 sum + the length of the file in bytes.
 3. A list of all identifiers is sent to Flamenco Manager.
 4. Flamenco Manager checks which of the identified files are already available in the shared storage, and which ones should be uploaded.
 5. The Blender add-on uploads these files.
 6. The Blender add-on sends the list of identifiers again, this time together with the desired file path. For example, it will send entries like `8c6c3a96efed9637dfe2ed4966b7b0b42ebf291c3ae23895b53ed1da51c468ff 512 path/to/file.blend`.
-7. Flamenco Manager creates a *checkout* of the identified files, by creating the directory structure and using symbolic links to make the files available at the expected paths.
+7. Flamenco Manager creates a _checkout_ of the identified files, by creating the directory structure and using symbolic links to make the files available at the expected paths.
 
 ## Why is it called Shaman?
 
 It was named this way because it uses SHA256 sums to identify files. Also it's a
-[Sintel][sintel] reference, where one of the main characters is called *the shaman*.
+[Sintel][sintel] reference, where one of the main characters is called _the shaman_.
 
 [sintel]: https://studio.blender.org/films/sintel/
 
 ## Requirements
 
-Because of the use of *symbolic links* (also known as *symlinks*), using Shaman
+Because of the use of _symbolic links_ (also known as _symlinks_), using Shaman
 is only possible on systems that support those. These should be supported by the
 computers running Flamenco Manager and Workers.
 
@@ -66,14 +67,14 @@ follows:
 
 On Windows Home (also known as "core"), you'll need to enable Developer Mode:
 
-1. Press the Windows key, type "*Developer settings*", and click Open or press
+1. Press the Windows key, type "_Developer settings_", and click Open or press
    Enter.
-2. Click the slider under "*Developer Mode*" to turn it ON.
+2. Click the slider under "_Developer Mode_" to turn it ON.
 
 See [Developer Mode][devmode] for more information, including some security implications.
 
 Alternatively you can use the freely available [Polsedit][polsedit] to enable
-the *Create Symbolic Links* security policy.
+the _Create Symbolic Links_ security policy.
 
 [devmode]: https://learn.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development
 [polsedit]: https://www.southsoftware.com/polsedit.html
@@ -178,7 +179,6 @@ necessary to make Blender fetch the updated configuration.
 
 {{< /hint >}}
 
-
 ## Garbage Collection
 
 Shaman keeps track of which files are still in use, and which files are not.
@@ -186,7 +186,7 @@ When a file in `file-store` is no longer symlinked from anywhere in the `jobs`
 directory, it will automatically be deleted. When a job is submitted that
 requires it, it will be reuploaded automatically.
 
-The garbage collection system also keeps track of *when* a file in `file-store`
+The garbage collection system also keeps track of _when_ a file in `file-store`
 is used by a job. Even when it's no longer symlinked (because, for example, you
 cleaned up the `jobs` directory) it will only be removed 31 days after its last
 use in a render job.
@@ -199,13 +199,9 @@ shaman:
   garbageCollect:
     period: 24h0m0s
     maxAge: 744h0m0s
-    extraCheckoutPaths: []
 ```
 
 - `period`: the garbage collector runs every 24 hours by default. Change this
   setting to make it more/less frequent.
 - `maxAge`: unused files will only be removed when they haven't been referenced
   for this amount of time.
-- `extraCheckoutPaths`: a list of paths that should also be searched for
-  symlinks, to prevent removal of files from `file-store`. This is not typically
-  used; it may come in handy when transitioning a farm to use Shaman.

@@ -9,6 +9,7 @@ Please report any issues at [the script's Github][github].
 
 [author]: https://projects.blender.org/Dylan-Blanque
 [github]: https://github.com/dblanque/flamenco-compositor-script/issues
+
 {{< /flamenco/thirdPartyCompatibility >}}
 
 This job type updates Blender's compositor nodes to work with Flamenco.
@@ -19,12 +20,12 @@ You'll need to do the following changes to support this workflow:
 2. Copy `startup_script.py` to the configured Blender File Folder in your shared storage.
 3. Copy `multi_pass_render.js` to the `scripts` folder in your Flamenco Manager installation folder (create it if it doesn't exist).
 4. Add these variables to your `flamenco-manager.yaml` file:
-    - `storagePath`: Your NAS path, multi-platform variable.
-    - `jobSubPath`: Where the jobs are stored inside `storagePath`.
-    - `renderSubpath`: Where the render output is stored inside `storagePath`.
-    - `deviceType`: Compute Device Type to force. Do not set the variable if you wish to use whatever is available.
+   - `storagePath`: Your NAS path, multi-platform variable.
+   - `jobSubPath`: Where the jobs are stored inside `storagePath`.
+   - `renderSubpath`: Where the render output is stored inside `storagePath`.
+   - `deviceType`: Compute Device Type to force. Do not set the variable if you wish to use whatever is available.
 5. Submit your job from Blender with the corresponding Multi-Pass Job, it should
-whatever compositor nodes you have set and correct the paths where necessary.
+   whatever compositor nodes you have set and correct the paths where necessary.
 
 [compositorrepo]: https://github.com/dblanque/flamenco-compositor-script/archive/refs/heads/main.zip
 
@@ -33,7 +34,6 @@ This has only been tested in an environment with [Shaman][shaman] enabled, but i
 
 [shaman]: {{< ref "/usage/shared-storage/shaman" >}}
 {{< /hint >}}
-
 
 # Example Configuration Flamenco Manager YAML
 
@@ -56,7 +56,6 @@ shaman:
   garbageCollect:
     period: 24h0m0s
     maxAge: 744h0m0s
-    extraCheckoutPaths: []
 task_timeout: 10m0s
 worker_timeout: 1m0s
 blocklist_threshold: 3
