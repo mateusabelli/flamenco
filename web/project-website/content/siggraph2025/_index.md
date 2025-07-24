@@ -6,5 +6,5 @@ geekdocCollapseSection: true
 geekdocNav: false
 geekdocHidden: true
 
-redirect: https://talks.stuvel.eu/2025-08-siggraph/
+redirect: https://talks.stuvel.eu/2025-08-siggraph/index-siggraph-2025-flamenco.html
 ---
