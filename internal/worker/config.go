@@ -47,17 +47,17 @@ var defaultConfig = WorkerConfig{
 // WorkerConfig represents the configuration of a single worker.
 // It does not include authentication credentials.
 type WorkerConfig struct {
-	WorkerName string `yaml:"worker_name"`
+	WorkerName string `yaml:"worker_name" json:"worker_name"`
 
 	// ConfiguredManager is the Manager URL that's in the configuration file.
-	ConfiguredManager string `yaml:"manager_url"`
+	ConfiguredManager string `yaml:"manager_url" json:"manager_url"`
 
 	// ManagerURL is the Manager URL to use by the Worker. It could come from the
 	// configuration file, but also from autodiscovery via UPnP/SSDP.
-	ManagerURL string `yaml:"-"`
+	ManagerURL string `yaml:"-" json:"-"`
 
-	TaskTypes       []string `yaml:"task_types"`
-	RestartExitCode int      `yaml:"restart_exit_code"`
+	TaskTypes       []string `yaml:"task_types" json:"task_types"`
+	RestartExitCode int      `yaml:"restart_exit_code" json:"restart_exit_code"`
 
 	// LinuxOOMScoreAdjust controls the Linux out-of-memory killer. Is used when
 	// spawning a sub-process, to adjust the likelyness that that subprocess is
@@ -69,12 +69,12 @@ type WorkerConfig struct {
 	//
 	// If this value is not specified in the configuration file, Flamenco Worker
 	// will not attempt to adjust its OOM score.
-	LinuxOOMScoreAdjust *int `yaml:"oom_score_adjust"`
+	LinuxOOMScoreAdjust *int `yaml:"oom_score_adjust" json:"oom_score_adjust"`
 }
 
 type WorkerCredentials struct {
-	WorkerID string `yaml:"worker_id"`
-	Secret   string `yaml:"worker_secret"`
+	WorkerID string `yaml:"worker_id" json:"worker_id"`
+	Secret   string `yaml:"worker_secret" json:"worker_secret"`
 }
 
 // FileConfigWrangler is the default config wrangler that actually reads & writes files.
