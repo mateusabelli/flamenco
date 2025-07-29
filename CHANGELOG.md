@@ -11,6 +11,7 @@ bugs in actually-released versions.
 - Upgrade Blender Asset Tracer (BAT) to 1.20 to support Blender 5.0 ([BAT#92893](https://projects.blender.org/blender/blender-asset-tracer/pulls/92893) and [BAT@16c208bc8e13](https://projects.blender.org/blender/blender-asset-tracer/commit/16c208bc8e130c8b1233bdb411ecabdab19af3c5)).
 - Remove the "extra checkout paths" feature from the Shaman system and thus the configuration file ([#104403](https://projects.blender.org/studio/flamenco/issues/104403)).
 - Add a new "Worker" column to the Job Task table indicating which worker the task is assigned to.
+- When the Worker starts up, it now correctly logs its configuration with the same keys as in the `flamenco-worker.yaml` file ([37b073b8d56b](https://projects.blender.org/studio/flamenco/commit/37b073b8d56bafc19f1bbf8abd79ee1f7a75d336))
 - Update Go & dependencies to fix security vulnerabilities:
   - https://pkg.go.dev/vuln/GO-2025-3751
   - https://pkg.go.dev/vuln/GO-2025-3750
