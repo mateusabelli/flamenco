@@ -30,7 +30,7 @@ func updateMagefiles() bool {
 	// Perform replacements on the AST.
 	replacements := map[string]string{
 		"version":      cliArgs.newVersion,
-		"releaseCycle": releaseCycle,
+		"releaseCycle": cliArgs.releaseCycle,
 	}
 
 	var (

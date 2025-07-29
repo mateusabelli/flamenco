@@ -3,7 +3,7 @@
 PKG := projects.blender.org/studio/flamenco
 
 # To update the version number in all the relevant places, update the VERSION
-# variable below and run `make update-version`.
+# and RELEASE_CYCLE variables below and run `make update-version`.
 VERSION := 3.8-alpha1
 # "alpha", "beta", or "release".
 RELEASE_CYCLE := alpha
@@ -113,7 +113,7 @@ update-version:
 	@echo "--- Updating Flamenco version to ${VERSION}"
 	@echo "--- If this stops with exit status 42, it was already at that version."
 	@echo
-	go run ./cmd/update-version ${VERSION}
+	go run ./cmd/update-version ${VERSION} ${RELEASE_CYCLE}
 	$(MAKE) generate-py
 	$(MAKE) generate-js
 	@echo

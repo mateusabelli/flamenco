@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/mattn/go-colorable"
@@ -22,9 +21,8 @@ var (
 
 		newVersion     string
 		updateMakefile bool
+		releaseCycle   string
 	}
-
-	releaseCycle string
 )
 
 func main() {
@@ -34,17 +32,6 @@ func main() {
 	configLogLevel()
 
 	log.Info().Str("version", cliArgs.newVersion).Msg("updating Flamenco version")
-
-	switch {
-	case strings.Contains(cliArgs.newVersion, "alpha"), strings.Contains(cliArgs.newVersion, "dev"):
-		releaseCycle = "alpha"
-	case strings.Contains(cliArgs.newVersion, "beta"):
-		releaseCycle = "beta"
-	case strings.Contains(cliArgs.newVersion, "rc"):
-		releaseCycle = "rc"
-	default:
-		releaseCycle = "release"
-	}
 
 	var anyFileWasChanged bool
 	if cliArgs.updateMakefile {
@@ -73,8 +60,10 @@ func parseCliArgs() {
 	flag.Parse()
 
 	cliArgs.newVersion = flag.Arg(0)
-	if cliArgs.newVersion == "" {
-		os.Stderr.WriteString(fmt.Sprintf("Usage: %s [-quiet|-debug|-trace] {new Flamenco version number}\n", os.Args[0]))
+	cliArgs.releaseCycle = flag.Arg(1)
+
+	if cliArgs.newVersion == "" || cliArgs.releaseCycle == "" {
+		os.Stderr.WriteString(fmt.Sprintf("Usage: %s [-quiet|-debug|-trace] {new Flamenco version number} {release cycle}\n", os.Args[0]))
 		os.Stderr.WriteString("\n")
 		flag.PrintDefaults()
 		os.Stderr.WriteString("\n")

@@ -9,7 +9,7 @@ import (
 )
 
 // To update the version number in all the relevant places, update the VERSION
-// variable below and run `mage update-version`.
+// variable below and run `make update-version`.
 const (
 	version      = "3.8-alpha1"
 	releaseCycle = "alpha"
