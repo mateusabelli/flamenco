@@ -8,6 +8,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -37,6 +39,14 @@ type Model struct {
 
 func OpenDB(ctx context.Context, dsn string) (*DB, error) {
 	log.Info().Str("dsn", dsn).Msg("opening database")
+
+	// 'dsn' should just be a file path to a sqlite file. If its directory doesn't
+	// exist yet, create it. Otherwise sqlite will come back with a cryptic error
+	// message "unable to open database file: out of memory (14)".
+	dbDirectory := filepath.Dir(dsn)
+	if err := os.MkdirAll(dbDirectory, os.ModePerm); err != nil {
+		return nil, fmt.Errorf("creating database directory %s: %w", dbDirectory, err)
+	}
 
 	db, err := openDB(ctx, dsn)
 	if err != nil {
