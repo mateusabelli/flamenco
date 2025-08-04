@@ -216,9 +216,9 @@ tools-linux:
 		https://www.johnvansickle.com/ffmpeg/releases/ffmpeg-$(FFMPEG_VERSION)-amd64-static.tar.xz
 	tar xvf \
 		$(FFMPEG_PACKAGE_LINUX) \
-		ffmpeg-$(FFMPEG_VERSION)-amd64-static/ffmpeg \
-		--strip-components=1
-	mv ffmpeg $(TOOLS)/ffmpeg-linux-amd64
+		ffmpeg-$(FFMPEG_VERSION)-amd64-static/ffmpeg
+	mv ffmpeg-$(FFMPEG_VERSION)-amd64-static/ffmpeg $(TOOLS)/ffmpeg-linux-amd64
+	rmdir ffmpeg-$(FFMPEG_VERSION)-amd64-static
 
 .PHONY: tools-darwin
 tools-darwin:
