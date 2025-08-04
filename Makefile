@@ -245,7 +245,8 @@ RELEASE_PACKAGE_DARWIN := ${RELEASE_PACKAGE_DARWIN_BASE}.tar.gz
 RELEASE_PACKAGE_DARWIN_ARM64_BASE := flamenco-${VERSION}-macos-arm64
 RELEASE_PACKAGE_DARWIN_ARM64 := ${RELEASE_PACKAGE_DARWIN_ARM64_BASE}.tar.gz
 
-RELEASE_PACKAGE_WINDOWS := flamenco-${VERSION}-windows-amd64.zip
+RELEASE_PACKAGE_WINDOWS_BASE := flamenco-${VERSION}-windows-amd64
+RELEASE_PACKAGE_WINDOWS := ${RELEASE_PACKAGE_WINDOWS_BASE}.zip
 
 RELEASE_PACKAGE_EXTRA_FILES := README.md LICENSE CHANGELOG.md
 RELEASE_PACKAGE_SHAFILE := flamenco-${VERSION}.sha256
@@ -305,9 +306,12 @@ release-package-windows:
 	$(MAKE) -s flamenco-manager-without-webapp GOOS=windows GOARCH=amd64
 	$(MAKE) -s flamenco-worker GOOS=windows GOARCH=amd64
 	$(MAKE) -s tools-windows
-	mkdir -p dist
-	rm -f dist/${RELEASE_PACKAGE_WINDOWS}
-	zip -r -9 dist/${RELEASE_PACKAGE_WINDOWS} flamenco-manager.exe flamenco-worker.exe ${RELEASE_PACKAGE_EXTRA_FILES} tools/*-windows*
+	mkdir -p dist/${RELEASE_PACKAGE_WINDOWS_BASE}/tools
+	cp flamenco-manager.exe flamenco-worker.exe ${RELEASE_PACKAGE_EXTRA_FILES} dist/${RELEASE_PACKAGE_WINDOWS_BASE}
+	cp tools/*-windows* dist/${RELEASE_PACKAGE_WINDOWS_BASE}/tools
+	rm -f dist/${RELEASE_PACKAGE_WINDOWS}  # Don't update any existing ZIP.
+	cd dist/${RELEASE_PACKAGE_WINDOWS_BASE}; zip -r -9 ../${RELEASE_PACKAGE_WINDOWS} flamenco-manager.exe flamenco-worker.exe ${RELEASE_PACKAGE_EXTRA_FILES} tools/*-windows*
+	rm -rf dist/${RELEASE_PACKAGE_WINDOWS_BASE}
 	@echo "Done! Created ${RELEASE_PACKAGE_WINDOWS}"
 
 .PHONY: publish-release-packages
