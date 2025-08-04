@@ -20,7 +20,14 @@ type StorageInfo struct {
 // NewNextToExe returns a storage representation that sits next to the
 // currently-running executable. If that directory cannot be determined, falls
 // back to the current working directory.
+// If `subdir` is an absolute path, it is used as-is.
 func NewNextToExe(subdir string) StorageInfo {
+	if filepath.IsAbs(subdir) {
+		return StorageInfo{
+			rootPath: subdir,
+		}
+	}
+
 	exeDir := getSuitableStorageRoot()
 	storagePath := filepath.Join(exeDir, subdir)
 
