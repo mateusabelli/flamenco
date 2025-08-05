@@ -930,6 +930,9 @@ type CheckBlenderExePathJSONBody PathCheckInput
 // CheckSharedStoragePathJSONBody defines parameters for CheckSharedStoragePath.
 type CheckSharedStoragePathJSONBody PathCheckInput
 
+// UpdateConfigurationFileJSONBody defines parameters for UpdateConfigurationFile.
+type UpdateConfigurationFileJSONBody map[string]interface{}
+
 // SaveSetupAssistantConfigJSONBody defines parameters for SaveSetupAssistantConfig.
 type SaveSetupAssistantConfigJSONBody SetupAssistantConfig
 
@@ -1001,6 +1004,9 @@ type CheckBlenderExePathJSONRequestBody CheckBlenderExePathJSONBody
 
 // CheckSharedStoragePathJSONRequestBody defines body for CheckSharedStoragePath for application/json ContentType.
 type CheckSharedStoragePathJSONRequestBody CheckSharedStoragePathJSONBody
+
+// UpdateConfigurationFileJSONRequestBody defines body for UpdateConfigurationFile for application/json ContentType.
+type UpdateConfigurationFileJSONRequestBody UpdateConfigurationFileJSONBody
 
 // SaveSetupAssistantConfigJSONRequestBody defines body for SaveSetupAssistantConfig for application/json ContentType.
 type SaveSetupAssistantConfigJSONRequestBody SaveSetupAssistantConfigJSONBody

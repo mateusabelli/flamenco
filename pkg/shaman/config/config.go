@@ -43,11 +43,11 @@ const (
 type Config struct {
 	// Used only for unit tests, so that they know where the temporary
 	// directory created for this test is located.
-	TestTempDir string `yaml:"-"`
+	TestTempDir string `json:"-" yaml:"-"`
 
-	Enabled        bool           `yaml:"enabled"`
-	StoragePath    string         `yaml:"-"` // Needs to be set externally, not saved in config.
-	GarbageCollect GarbageCollect `yaml:"garbageCollect"`
+	Enabled        bool           `json:"enabled" yaml:"enabled"`
+	StoragePath    string         `json:"-" yaml:"-"` // Needs to be set externally, not saved in config.
+	GarbageCollect GarbageCollect `json:"garbageCollect" yaml:"garbageCollect"`
 }
 
 // GarbageCollect contains the config options for the GC.
@@ -59,7 +59,7 @@ type GarbageCollect struct {
 
 	// Used by the -gc CLI arg to silently disable the garbage collector
 	// while we're performing a manual sweep.
-	SilentlyDisable bool `yaml:"-"`
+	SilentlyDisable bool `json:"-" yaml:"-"`
 }
 
 // FileStorePath returns the sub-directory of the configured storage path,

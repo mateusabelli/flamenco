@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"projects.blender.org/studio/flamenco/internal/manager/config"
 	"projects.blender.org/studio/flamenco/pkg/api"
+	shaman_config "projects.blender.org/studio/flamenco/pkg/shaman/config"
 )
 
 func TestGetVariables(t *testing.T) {
@@ -400,4 +401,92 @@ func metaTestFixtures(t *testing.T) (mockedFlamenco, func()) {
 	}
 
 	return mf, finish
+}
+
+// TestUpdateConfigurationFile checks to see if JSON attributes actually overwrite the Config struct attributes
+func TestUpdateConfigurationFile(t *testing.T) {
+
+	mf, finish := metaTestFixtures(t)
+	defer finish()
+
+	doTest := func(body config.Conf) config.Conf {
+
+		var replacedConfig config.Conf
+		// Mock the loading and saving of the config.
+		mf.config.EXPECT().Replace(body).Do(func(newConfig config.Conf) {
+			replacedConfig = newConfig
+		})
+
+		// Call the API.
+		echoCtx := mf.prepareMockedJSONRequest(body)
+		err := mf.flamenco.UpdateConfigurationFile(echoCtx)
+
+		require.NoError(t, err)
+
+		assertResponseNoContent(t, echoCtx)
+
+		return replacedConfig
+	}
+
+	// Test situation where manager name is updated
+	{
+		form := config.Conf{
+			Base: config.Base{
+				ManagerName: "abc",
+			},
+		}
+
+		updatedConfig := doTest(form)
+		assert.Equal(t, form.Base.ManagerName, updatedConfig.Base.ManagerName)
+		// Other settings should be set to their zero values.
+		assert.Equal(t, form.Base.Listen, updatedConfig.Listen)
+		assert.Equal(t, form.Variables, updatedConfig.Variables)
+	}
+
+	// Test situation where listen is updated
+	{
+		form := config.Conf{
+			Base: config.Base{
+				Listen: ":3000",
+			},
+		}
+
+		updatedConfig := doTest(form)
+		assert.Equal(t, form.Base.Listen, updatedConfig.Base.Listen)
+		// Other settings should be set to their zero values.
+		assert.Equal(t, form.Base.Shaman.Enabled, updatedConfig.Base.Shaman.Enabled)
+		assert.Equal(t, form.Base.ManagerName, updatedConfig.Base.ManagerName)
+		assert.Equal(t, form.Variables, updatedConfig.Variables)
+	}
+
+	// Test situation where shaman enabled is updated
+	{
+		form := config.Conf{
+			Base: config.Base{
+				Shaman: shaman_config.Config{
+					Enabled: true,
+				},
+			},
+		}
+
+		updatedConfig := doTest(form)
+		assert.Equal(t, form.Base.Shaman.Enabled, updatedConfig.Base.Shaman.Enabled)
+		// Other settings should be set to their zero values.
+		assert.Equal(t, form.Base.Listen, updatedConfig.Base.Listen)
+		assert.Equal(t, form.Base.ManagerName, updatedConfig.Base.ManagerName)
+		assert.Equal(t, form.Variables, updatedConfig.Variables)
+	}
+
+	// Test situation where shaman enabled is omitted defaults to false
+	{
+		form := config.Conf{
+			Base: config.Base{
+				Shaman: shaman_config.Config{},
+			},
+		}
+
+		updatedConfig := doTest(form)
+		assert.Equal(t, false, updatedConfig.Base.Shaman.Enabled)
+		assert.Equal(t, false, form.Base.Shaman.Enabled)
+	}
 }

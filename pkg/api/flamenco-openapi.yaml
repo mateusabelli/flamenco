@@ -141,7 +141,26 @@ paths:
             application/yaml:
               schema:
                 type: string
-
+    put:
+      summary: Overwrites the configuration file. It does not actively reload the new configuration.
+      tags: [meta]
+      operationId: updateConfigurationFile
+      requestBody:
+        description: The configuration values as a JSON
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Currently there is no validation for the request body. The caller must ensure the configuration is valid.
+      responses:
+        "204":
+          description: The configuration was successfully stored to flamenco-manager.yaml
+        default:
+          description: Unable to save the configuration file
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /api/v3/configuration/variables/{audience}/{platform}:
     summary: Endpoint for getting the variables from Flamenco Manager's configuration.
     get:

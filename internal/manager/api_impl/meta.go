@@ -53,6 +53,24 @@ func (f *Flamenco) GetConfiguration(e echo.Context) error {
 	})
 }
 
+func (f *Flamenco) UpdateConfigurationFile(e echo.Context) error {
+	logger := requestLogger(e)
+	
+	var newConf config.Conf
+	if err := e.Bind(&newConf); err != nil {
+		logger.Warn().Err(err).Msg("bad request received")
+		return sendAPIError(e, http.StatusBadRequest, err.Error())
+	}
+
+	// Save the final configuration to disk.
+	if err := f.config.Replace(newConf); err != nil {
+		logger.Error().Err(err).Msg("error saving configuration file")
+		return sendAPIError(e, http.StatusInternalServerError, "setup assistant: error saving configuration file: %v", err)
+	}
+
+	return e.NoContent(http.StatusNoContent)
+}
+
 func (f *Flamenco) GetConfigurationFile(e echo.Context) error {
 	config := f.config.Get()
 	return e.JSON(http.StatusOK, config)

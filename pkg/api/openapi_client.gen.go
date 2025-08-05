@@ -111,6 +111,11 @@ type ClientInterface interface {
 	// GetConfigurationFile request
 	GetConfigurationFile(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UpdateConfigurationFile request with any body
+	UpdateConfigurationFileWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateConfigurationFile(ctx context.Context, body UpdateConfigurationFileJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SaveSetupAssistantConfig request with any body
 	SaveSetupAssistantConfigWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -374,6 +379,30 @@ func (c *Client) CheckSharedStoragePath(ctx context.Context, body CheckSharedSto
 
 func (c *Client) GetConfigurationFile(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetConfigurationFileRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateConfigurationFileWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateConfigurationFileRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateConfigurationFile(ctx context.Context, body UpdateConfigurationFileJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateConfigurationFileRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1369,6 +1398,46 @@ func NewGetConfigurationFileRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewUpdateConfigurationFileRequest calls the generic UpdateConfigurationFile builder with application/json body
+func NewUpdateConfigurationFileRequest(server string, body UpdateConfigurationFileJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateConfigurationFileRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUpdateConfigurationFileRequestWithBody generates requests for UpdateConfigurationFile with any type of body
+func NewUpdateConfigurationFileRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v3/configuration/file")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -3296,6 +3365,11 @@ type ClientWithResponsesInterface interface {
 	// GetConfigurationFile request
 	GetConfigurationFileWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetConfigurationFileResponse, error)
 
+	// UpdateConfigurationFile request with any body
+	UpdateConfigurationFileWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateConfigurationFileResponse, error)
+
+	UpdateConfigurationFileWithResponse(ctx context.Context, body UpdateConfigurationFileJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateConfigurationFileResponse, error)
+
 	// SaveSetupAssistantConfig request with any body
 	SaveSetupAssistantConfigWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SaveSetupAssistantConfigResponse, error)
 
@@ -3595,6 +3669,28 @@ func (r GetConfigurationFileResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetConfigurationFileResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateConfigurationFileResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateConfigurationFileResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateConfigurationFileResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4788,6 +4884,23 @@ func (c *ClientWithResponses) GetConfigurationFileWithResponse(ctx context.Conte
 	return ParseGetConfigurationFileResponse(rsp)
 }
 
+// UpdateConfigurationFileWithBodyWithResponse request with arbitrary body returning *UpdateConfigurationFileResponse
+func (c *ClientWithResponses) UpdateConfigurationFileWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateConfigurationFileResponse, error) {
+	rsp, err := c.UpdateConfigurationFileWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateConfigurationFileResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateConfigurationFileWithResponse(ctx context.Context, body UpdateConfigurationFileJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateConfigurationFileResponse, error) {
+	rsp, err := c.UpdateConfigurationFile(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateConfigurationFileResponse(rsp)
+}
+
 // SaveSetupAssistantConfigWithBodyWithResponse request with arbitrary body returning *SaveSetupAssistantConfigResponse
 func (c *ClientWithResponses) SaveSetupAssistantConfigWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SaveSetupAssistantConfigResponse, error) {
 	rsp, err := c.SaveSetupAssistantConfigWithBody(ctx, contentType, body, reqEditors...)
@@ -5544,6 +5657,32 @@ func ParseGetConfigurationFileResponse(rsp *http.Response) (*GetConfigurationFil
 			return nil, err
 		}
 		response.YAML200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateConfigurationFileResponse parses an HTTP response from a UpdateConfigurationFileWithResponse call
+func ParseUpdateConfigurationFileResponse(rsp *http.Response) (*UpdateConfigurationFileResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateConfigurationFileResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
 
 	}
 

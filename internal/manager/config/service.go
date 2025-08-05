@@ -26,6 +26,17 @@ func (s *Service) ForceFirstRun() {
 	s.forceFirstRun = true
 }
 
+func (s *Service) Replace(config Conf) error {
+	if err := config.Overwrite(); err != nil {
+		return err
+	}
+
+	// Replace the in-memory config with the new one
+	s.config = config
+	log.Info().Str("filename", configFilename).Msg("in-memory configuration file replaced")
+	return nil
+}
+
 // Load parses the flamenco-manager.yaml file, and returns whether this is
 // likely to be the first run or not.
 func (s *Service) Load() (bool, error) {

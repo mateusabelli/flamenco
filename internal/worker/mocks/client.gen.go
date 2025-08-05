@@ -1456,6 +1456,46 @@ func (mr *MockFlamencoClientMockRecorder) TaskUpdateWithResponse(arg0, arg1, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TaskUpdateWithResponse", reflect.TypeOf((*MockFlamencoClient)(nil).TaskUpdateWithResponse), varargs...)
 }
 
+// UpdateConfigurationFileWithBodyWithResponse mocks base method.
+func (m *MockFlamencoClient) UpdateConfigurationFileWithBodyWithResponse(arg0 context.Context, arg1 string, arg2 io.Reader, arg3 ...api.RequestEditorFn) (*api.UpdateConfigurationFileResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateConfigurationFileWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*api.UpdateConfigurationFileResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateConfigurationFileWithBodyWithResponse indicates an expected call of UpdateConfigurationFileWithBodyWithResponse.
+func (mr *MockFlamencoClientMockRecorder) UpdateConfigurationFileWithBodyWithResponse(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConfigurationFileWithBodyWithResponse", reflect.TypeOf((*MockFlamencoClient)(nil).UpdateConfigurationFileWithBodyWithResponse), varargs...)
+}
+
+// UpdateConfigurationFileWithResponse mocks base method.
+func (m *MockFlamencoClient) UpdateConfigurationFileWithResponse(arg0 context.Context, arg1 api.UpdateConfigurationFileJSONRequestBody, arg2 ...api.RequestEditorFn) (*api.UpdateConfigurationFileResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateConfigurationFileWithResponse", varargs...)
+	ret0, _ := ret[0].(*api.UpdateConfigurationFileResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateConfigurationFileWithResponse indicates an expected call of UpdateConfigurationFileWithResponse.
+func (mr *MockFlamencoClientMockRecorder) UpdateConfigurationFileWithResponse(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConfigurationFileWithResponse", reflect.TypeOf((*MockFlamencoClient)(nil).UpdateConfigurationFileWithResponse), varargs...)
+}
+
 // UpdateWorkerTagWithBodyWithResponse mocks base method.
 func (m *MockFlamencoClient) UpdateWorkerTagWithBodyWithResponse(arg0 context.Context, arg1, arg2 string, arg3 io.Reader, arg4 ...api.RequestEditorFn) (*api.UpdateWorkerTagResponse, error) {
 	m.ctrl.T.Helper()

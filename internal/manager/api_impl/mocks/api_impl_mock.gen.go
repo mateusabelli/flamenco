@@ -996,6 +996,20 @@ func (mr *MockConfigServiceMockRecorder) NewVariableToValueConverter(arg0, arg1 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewVariableToValueConverter", reflect.TypeOf((*MockConfigService)(nil).NewVariableToValueConverter), arg0, arg1)
 }
 
+// Replace mocks base method.
+func (m *MockConfigService) Replace(arg0 config.Conf) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Replace", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Replace indicates an expected call of Replace.
+func (mr *MockConfigServiceMockRecorder) Replace(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Replace", reflect.TypeOf((*MockConfigService)(nil).Replace), arg0)
+}
+
 // ResolveVariables mocks base method.
 func (m *MockConfigService) ResolveVariables(arg0 config.VariableAudience, arg1 config.VariablePlatform) map[string]config.ResolvedVariable {
 	m.ctrl.T.Helper()

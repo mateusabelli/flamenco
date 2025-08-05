@@ -67,71 +67,71 @@ type TestTasks struct {
 // ConfMeta contains configuration file metadata.
 type ConfMeta struct {
 	// Version of the config file structure.
-	Version int `yaml:"version"`
+	Version int `json:"version" yaml:"version"`
 }
 
 // Base contains those settings that are shared by all configuration versions.
 type Base struct {
-	Meta ConfMeta `yaml:"_meta"`
+	Meta ConfMeta `json:"_meta" yaml:"_meta"`
 
-	ManagerName string `yaml:"manager_name"`
+	ManagerName string `json:"manager_name" yaml:"manager_name"`
 
-	DatabaseDSN      string            `yaml:"database"`
-	DBIntegrityCheck duration.Duration `yaml:"database_check_period"`
+	DatabaseDSN      string            `json:"database" yaml:"database"`
+	DBIntegrityCheck duration.Duration `json:"database_check_period" yaml:"database_check_period"`
 
-	Listen string `yaml:"listen"`
+	Listen string `json:"listen" yaml:"listen"`
 
-	SSDPDiscovery bool `yaml:"autodiscoverable"`
+	SSDPDiscovery bool `json:"autodiscoverable" yaml:"autodiscoverable"`
 
 	// LocalManagerStoragePath is where the Manager stores its files, like task
 	// logs, last-rendered images, etc.
-	LocalManagerStoragePath string `yaml:"local_manager_storage_path"`
+	LocalManagerStoragePath string `json:"local_manager_storage_path" yaml:"local_manager_storage_path"`
 
 	// SharedStoragePath is where files shared between Manager and Workers go,
 	// like the blend files of a render job.
-	SharedStoragePath string `yaml:"shared_storage_path"`
+	SharedStoragePath string `json:"shared_storage_path" yaml:"shared_storage_path"`
 
-	Shaman shaman_config.Config `yaml:"shaman"`
+	Shaman shaman_config.Config `json:"shaman" yaml:"shaman"`
 
-	TaskTimeout   duration.Duration `yaml:"task_timeout"`
-	WorkerTimeout duration.Duration `yaml:"worker_timeout"`
+	TaskTimeout   duration.Duration `json:"task_timeout" yaml:"task_timeout"`
+	WorkerTimeout duration.Duration `json:"worker_timeout" yaml:"worker_timeout"`
 
 	/* This many failures (on a given job+task type combination) will ban a worker
 	 * from that task type on that job. */
-	BlocklistThreshold int `yaml:"blocklist_threshold"`
+	BlocklistThreshold int `json:"blocklist_threshold" yaml:"blocklist_threshold"`
 
 	// When this many workers have tried the task and failed, it will be hard-failed
 	// (even when there are workers left that could technically retry the task).
-	TaskFailAfterSoftFailCount int `yaml:"task_fail_after_softfail_count"`
+	TaskFailAfterSoftFailCount int `json:"task_fail_after_softfail_count" yaml:"task_fail_after_softfail_count"`
 
-	MQTT MQTTConfig `yaml:"mqtt"`
+	MQTT MQTTConfig `json:"mqtt" yaml:"mqtt"`
 }
 
 // MQTTConfig contains the configuration options for MQTT broker (idea for the future) and client.
 type MQTTConfig struct {
-	Client eventbus.MQTTClientConfig `yaml:"client"`
+	Client eventbus.MQTTClientConfig `json:"client" yaml:"client"`
 }
 
 // Conf is the latest version of the configuration.
 // Currently it is version 3.
 type Conf struct {
-	Base `yaml:",inline"`
+	Base `json:",inline" yaml:",inline"`
 
 	// Store GOOS in a variable so it can be modified by unit tests, making the
 	// test independent of the actual platform.
-	currentGOOS VariablePlatform `yaml:"-"`
+	currentGOOS VariablePlatform `json:"-" yaml:"-"`
 
 	// Variable name → Variable definition
-	Variables map[string]Variable `yaml:"variables"`
+	Variables map[string]Variable `json:"variables" yaml:"variables"`
 
 	// Implicit variables work as regular variables, but do not get written to the
 	// configuration file.
-	implicitVariables map[string]Variable `yaml:"-"`
+	implicitVariables map[string]Variable `json:"-" yaml:"-"`
 
 	// audience + platform + variable name → variable value.
 	// Used to look up variables for a given platform and audience.
 	// The 'audience' is never "all" or ""; only concrete audiences are stored here.
-	VariablesLookup map[VariableAudience]map[VariablePlatform]map[string]string `yaml:"-"`
+	VariablesLookup map[VariableAudience]map[VariablePlatform]map[string]string `json:"-" yaml:"-"`
 }
 
 // Variable defines a configuration variable.

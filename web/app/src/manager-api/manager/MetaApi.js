@@ -478,4 +478,49 @@ export default class MetaApi {
     }
 
 
+    /**
+     * Overwrites the configuration file. It does not actively reload the new configuration.
+     * @param {Object.<String, Object>} body The configuration values as a JSON
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing HTTP response
+     */
+    updateConfigurationFileWithHttpInfo(body) {
+      let postBody = body;
+      // verify the required parameter 'body' is set
+      if (body === undefined || body === null) {
+        throw new Error("Missing the required parameter 'body' when calling updateConfigurationFile");
+      }
+
+      let pathParams = {
+      };
+      let queryParams = {
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = [];
+      let contentTypes = ['application/json'];
+      let accepts = ['application/json'];
+      let returnType = null;
+      return this.apiClient.callApi(
+        '/api/v3/configuration/file', 'PUT',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * Overwrites the configuration file. It does not actively reload the new configuration.
+     * @param {Object.<String, Object>} body The configuration values as a JSON
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}
+     */
+    updateConfigurationFile(body) {
+      return this.updateConfigurationFileWithHttpInfo(body)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
 }

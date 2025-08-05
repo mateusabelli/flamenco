@@ -14,6 +14,7 @@ Method | HTTP request | Description
 [**get_variables**](MetaApi.md#get_variables) | **GET** /api/v3/configuration/variables/{audience}/{platform} | Get the variables of this Manager. Used by the Blender add-on to recognise two-way variables, and for the web interface to do variable replacement based on the browser&#39;s platform. 
 [**get_version**](MetaApi.md#get_version) | **GET** /api/v3/version | Get the Flamenco version of this Manager
 [**save_setup_assistant_config**](MetaApi.md#save_setup_assistant_config) | **POST** /api/v3/configuration/setup-assistant | Update the Manager&#39;s configuration, and restart it in fully functional mode.
+[**update_configuration_file**](MetaApi.md#update_configuration_file) | **PUT** /api/v3/configuration/file | Overwrites the configuration file. It does not actively reload the new configuration.
 
 
 # **check_blender_exe_path**
@@ -673,6 +674,71 @@ No authorization required
 |-------------|-------------|------------------|
 **204** | Normal response. The webapp should do a full refresh at this point. |  -  |
 **0** | Something went wrong. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **update_configuration_file**
+> update_configuration_file(body)
+
+Overwrites the configuration file. It does not actively reload the new configuration.
+
+### Example
+
+
+```python
+import time
+import flamenco.manager
+from flamenco.manager.api import meta_api
+from flamenco.manager.model.error import Error
+from pprint import pprint
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = flamenco.manager.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with flamenco.manager.ApiClient() as api_client:
+    # Create an instance of the API class
+    api_instance = meta_api.MetaApi(api_client)
+    body = {} # {str: (bool, date, datetime, dict, float, int, list, str, none_type)} | The configuration values as a JSON
+
+    # example passing only required values which don't have defaults set
+    try:
+        # Overwrites the configuration file. It does not actively reload the new configuration.
+        api_instance.update_configuration_file(body)
+    except flamenco.manager.ApiException as e:
+        print("Exception when calling MetaApi->update_configuration_file: %s\n" % e)
+```
+
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **body** | **{str: (bool, date, datetime, dict, float, int, list, str, none_type)}**| The configuration values as a JSON |
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**204** | The configuration was successfully stored to flamenco-manager.yaml |  -  |
+**0** | Unable to save the configuration file |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

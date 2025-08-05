@@ -193,6 +193,10 @@ type ConfigService interface {
 
 	// Save writes the in-memory configuration to the config file.
 	Save() error
+
+	// Replace attempts to overwrite the configuration file on disk with the given Conf.
+	// If successful, it discards the in-memory configuration, and replaces it with the given Conf.
+	Replace(config.Conf) error
 }
 
 type Shaman interface {

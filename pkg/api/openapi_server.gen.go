@@ -28,6 +28,9 @@ type ServerInterface interface {
 	// Retrieve the configuration of Flamenco Manager.
 	// (GET /api/v3/configuration/file)
 	GetConfigurationFile(ctx echo.Context) error
+	// Overwrites the configuration file. It does not actively reload the new configuration.
+	// (PUT /api/v3/configuration/file)
+	UpdateConfigurationFile(ctx echo.Context) error
 	// Update the Manager's configuration, and restart it in fully functional mode.
 	// (POST /api/v3/configuration/setup-assistant)
 	SaveSetupAssistantConfig(ctx echo.Context) error
@@ -228,6 +231,15 @@ func (w *ServerInterfaceWrapper) GetConfigurationFile(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.GetConfigurationFile(ctx)
+	return err
+}
+
+// UpdateConfigurationFile converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateConfigurationFile(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdateConfigurationFile(ctx)
 	return err
 }
 
@@ -1007,6 +1019,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/api/v3/configuration/check/blender", wrapper.CheckBlenderExePath)
 	router.POST(baseURL+"/api/v3/configuration/check/shared-storage", wrapper.CheckSharedStoragePath)
 	router.GET(baseURL+"/api/v3/configuration/file", wrapper.GetConfigurationFile)
+	router.PUT(baseURL+"/api/v3/configuration/file", wrapper.UpdateConfigurationFile)
 	router.POST(baseURL+"/api/v3/configuration/setup-assistant", wrapper.SaveSetupAssistantConfig)
 	router.GET(baseURL+"/api/v3/configuration/shared-storage/:audience/:platform", wrapper.GetSharedStorage)
 	router.GET(baseURL+"/api/v3/configuration/variables/:audience/:platform", wrapper.GetVariables)

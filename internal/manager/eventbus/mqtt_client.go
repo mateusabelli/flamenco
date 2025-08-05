@@ -44,12 +44,12 @@ var _ Forwarder = (*MQTTForwarder)(nil)
 
 // MQTTClientConfig contains the MQTT client configuration.
 type MQTTClientConfig struct {
-	BrokerURL   string `yaml:"broker"`
-	ClientID    string `yaml:"clientID"`
-	TopicPrefix string `yaml:"topic_prefix"`
+	BrokerURL   string `json:"broker" yaml:"broker"`
+	ClientID    string `json:"clientID" yaml:"clientID"`
+	TopicPrefix string `json:"topic_prefix" yaml:"topic_prefix"`
 
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
+	Username string `json:"username" yaml:"username"`
+	Password string `json:"password" yaml:"password"`
 }
 
 type mqttQueuedMessage struct {
