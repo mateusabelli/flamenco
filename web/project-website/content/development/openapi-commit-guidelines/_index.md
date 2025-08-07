@@ -3,6 +3,19 @@ title: OpenAPI Commit Guidelines
 weight: 30
 ---
 
+{{< hint type=Warning >}}
+**The guideline below has been obsolete since August 2025.** It will be kept
+here for a while for historical reference.
+
+Since the introduction of a `.gitattributes` file, tooling (like
+[projects.blender.org][gitea]) is aware of which files are generated. This means
+that **all changes** (`pkg/api/flamenco-openapi.yaml`, re-generated code, and
+changes to the implementation) can be **commited together**.
+
+[gitea]: https://projects.blender.org/studio/flamenco/
+{{< /hint >}}
+
+
 Typically a change to the OpenAPI definition consists of three steps, namely
 making the change to the OpenAPI file, regenerating code, and then alter
 whatever manually-written code needs altering.
