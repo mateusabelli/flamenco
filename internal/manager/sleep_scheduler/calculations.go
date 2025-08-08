@@ -18,6 +18,9 @@ func scheduledWorkerStatus(now time.Time, sched *persistence.SleepSchedule) api.
 		return api.WorkerStatusAwake
 	}
 
+	// This function should always work with localized time.
+	now = now.In(time.Local)
+
 	tod := time_of_day.MakeTimeOfDay(now)
 
 	if !sched.IsActive {
@@ -58,10 +61,13 @@ func cleanupDaysOfWeek(daysOfWeek string) string {
 
 // Return a timestamp when the next scheck for this schedule is due.
 func calculateNextCheck(now time.Time, schedule persistence.SleepSchedule) time.Time {
+	// This function should always work with localized time.
+	now = now.In(time.Local)
+
 	// calcNext returns the given time of day on "today" if that hasn't passed
 	// yet, otherwise on "tomorrow".
 	calcNext := func(tod time_of_day.TimeOfDay) time.Time {
-		nextCheck := tod.OnDate(now).In(time.Local)
+		nextCheck := tod.OnDate(now)
 		if nextCheck.Before(now) {
 			nextCheck = nextCheck.AddDate(0, 0, 1)
 		}
