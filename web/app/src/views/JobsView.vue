@@ -147,7 +147,7 @@ export default {
      */
     onSioTaskUpdate(taskUpdate) {
       if (this.$refs.tasksTable) this.$refs.tasksTable.processTaskUpdate(taskUpdate);
-
+      this.tasks.updateActiveTask(taskUpdate);
       this.notifs.addTaskUpdate(taskUpdate);
     },
 

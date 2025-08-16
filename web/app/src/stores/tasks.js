@@ -44,6 +44,16 @@ export const useTasks = defineStore('tasks', {
     },
   },
   actions: {
+    updateActiveTask(taskUpdate) {
+      if (!this.activeTask) return;
+
+      // Refuse to handle task update of another task.
+      if (this.activeTask.id != taskUpdate.id) return;
+
+      for (let field in taskUpdate) {
+        this.activeTask[field] = taskUpdate[field];
+      }
+    },
     setSelectedTasks(tasks) {
       this.$patch({
         selectedTasks: tasks,
