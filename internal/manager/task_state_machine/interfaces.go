@@ -19,6 +19,7 @@ type PersistenceService interface {
 	SaveTask(ctx context.Context, task *persistence.Task) error
 	SaveTaskStatus(ctx context.Context, t *persistence.Task) error
 	SaveTaskActivity(ctx context.Context, t *persistence.Task) error
+	SaveTaskStepsCompleted(ctx context.Context, jobID, taskID int64, stepsCompleted int64) error
 	SaveJobStatus(ctx context.Context, j *persistence.Job) error
 
 	JobHasTasksInStatus(ctx context.Context, job *persistence.Job, taskStatus api.TaskStatus) (bool, error)
@@ -32,6 +33,7 @@ type PersistenceService interface {
 	// limited to those tasks with status in `statusesToUpdate`.
 	UpdateJobsTaskStatusesConditional(ctx context.Context, job *persistence.Job,
 		statusesToUpdate []api.TaskStatus, taskStatus api.TaskStatus, activity string) error
+	UpdateJobsTaskStepCounts(ctx context.Context, jobID int64) error
 
 	FetchJob(ctx context.Context, jobUUID string) (*persistence.Job, error)
 	FetchJobByID(ctx context.Context, jobID int64) (*persistence.Job, error)

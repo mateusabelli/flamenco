@@ -36,6 +36,7 @@ export default {
       availableStatuses: [], // Will be filled after data is loaded from the backend.
       jobs: useJobs(),
       lastSelectedJobPosition: null,
+      _interval_id: 0,
     };
   },
   mounted() {
@@ -55,9 +56,18 @@ export default {
           field: 'status',
           sorter: 'string',
           formatter: (cell) => {
+            const data = cell.getData();
             const status = cell.getData().status;
             const dot = indicator(status);
-            return `${dot} ${status}`;
+
+            if (data.steps_total == 0) {
+              return `${dot} ${status}`;
+            }
+
+            const progress = data.steps_completed / data.steps_total;
+            const width = Math.round(progress * 100);
+            const doneClass = (data.steps_completed >= data.steps_total) ? 'done' : '';
+            return `<div class='progress ${doneClass}' style='width: ${width}%'></div><div class='progress-remainder ${doneClass}' style='width: ${100-width}%'></div> ${dot} ${status}`;
           },
         },
         { title: 'Name', field: 'name', sorter: 'string' },
@@ -96,9 +106,21 @@ export default {
     this.tabulator.on('tableBuilt', this._onTableBuilt);
 
     window.addEventListener('resize', this.recalcTableHeight);
+
+    // Redraw visible rows periodically, to ensure relative 'updated' timestamps
+    // are updated.
+    this._interval_id = window.setInterval(() => {
+      if (!this.tabulator.initialized) return;
+      for (let what_is_this of this.tabulator.rowManager.displayRows) {
+        for (let row_ish_object of what_is_this) {
+          row_ish_object.component.reformat();
+        }
+      }
+    }, 1000);
   },
   unmounted() {
     window.removeEventListener('resize', this.recalcTableHeight);
+    if (this._interval_id) window.clearInterval(this._interval_id);
   },
   watch: {
     activeJobID(newJobID, oldJobID) {

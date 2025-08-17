@@ -37,10 +37,12 @@ class Task {
      * @param taskType {String} 
      * @param activity {String} 
      * @param commands {Array.<module:model/Command>} 
+     * @param stepsCompleted {Number} 
+     * @param stepsTotal {Number} 
      */
-    constructor(id, created, updated, jobId, indexInJob, name, status, priority, taskType, activity, commands) { 
+    constructor(id, created, updated, jobId, indexInJob, name, status, priority, taskType, activity, commands, stepsCompleted, stepsTotal) { 
         
-        Task.initialize(this, id, created, updated, jobId, indexInJob, name, status, priority, taskType, activity, commands);
+        Task.initialize(this, id, created, updated, jobId, indexInJob, name, status, priority, taskType, activity, commands, stepsCompleted, stepsTotal);
     }
 
     /**
@@ -48,7 +50,7 @@ class Task {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, id, created, updated, jobId, indexInJob, name, status, priority, taskType, activity, commands) { 
+    static initialize(obj, id, created, updated, jobId, indexInJob, name, status, priority, taskType, activity, commands, stepsCompleted, stepsTotal) { 
         obj['id'] = id;
         obj['created'] = created;
         obj['updated'] = updated;
@@ -60,6 +62,8 @@ class Task {
         obj['task_type'] = taskType;
         obj['activity'] = activity;
         obj['commands'] = commands;
+        obj['steps_completed'] = stepsCompleted;
+        obj['steps_total'] = stepsTotal;
     }
 
     /**
@@ -105,6 +109,12 @@ class Task {
             }
             if (data.hasOwnProperty('commands')) {
                 obj['commands'] = ApiClient.convertToType(data['commands'], [Command]);
+            }
+            if (data.hasOwnProperty('steps_completed')) {
+                obj['steps_completed'] = ApiClient.convertToType(data['steps_completed'], 'Number');
+            }
+            if (data.hasOwnProperty('steps_total')) {
+                obj['steps_total'] = ApiClient.convertToType(data['steps_total'], 'Number');
             }
             if (data.hasOwnProperty('worker')) {
                 obj['worker'] = TaskWorker.constructFromObject(data['worker']);
@@ -178,6 +188,16 @@ Task.prototype['activity'] = undefined;
  * @member {Array.<module:model/Command>} commands
  */
 Task.prototype['commands'] = undefined;
+
+/**
+ * @member {Number} steps_completed
+ */
+Task.prototype['steps_completed'] = undefined;
+
+/**
+ * @member {Number} steps_total
+ */
+Task.prototype['steps_total'] = undefined;
 
 /**
  * @member {module:model/TaskWorker} worker

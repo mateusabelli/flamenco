@@ -467,6 +467,20 @@ func (mr *MockPersistenceServiceMockRecorder) SaveTaskActivity(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTaskActivity", reflect.TypeOf((*MockPersistenceService)(nil).SaveTaskActivity), arg0, arg1)
 }
 
+// SaveTaskStepsCompleted mocks base method.
+func (m *MockPersistenceService) SaveTaskStepsCompleted(arg0 context.Context, arg1, arg2, arg3 int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveTaskStepsCompleted", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveTaskStepsCompleted indicates an expected call of SaveTaskStepsCompleted.
+func (mr *MockPersistenceServiceMockRecorder) SaveTaskStepsCompleted(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTaskStepsCompleted", reflect.TypeOf((*MockPersistenceService)(nil).SaveTaskStepsCompleted), arg0, arg1, arg2, arg3)
+}
+
 // SaveWorker mocks base method.
 func (m *MockPersistenceService) SaveWorker(arg0 context.Context, arg1 *sqlc.Worker) error {
 	m.ctrl.T.Helper()
@@ -690,6 +704,18 @@ func (m *MockChangeBroadcaster) BroadcastNewWorkerTag(arg0 api.EventWorkerTagUpd
 func (mr *MockChangeBroadcasterMockRecorder) BroadcastNewWorkerTag(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastNewWorkerTag", reflect.TypeOf((*MockChangeBroadcaster)(nil).BroadcastNewWorkerTag), arg0)
+}
+
+// BroadcastTaskUpdate mocks base method.
+func (m *MockChangeBroadcaster) BroadcastTaskUpdate(arg0 api.EventTaskUpdate) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "BroadcastTaskUpdate", arg0)
+}
+
+// BroadcastTaskUpdate indicates an expected call of BroadcastTaskUpdate.
+func (mr *MockChangeBroadcasterMockRecorder) BroadcastTaskUpdate(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastTaskUpdate", reflect.TypeOf((*MockChangeBroadcaster)(nil).BroadcastTaskUpdate), arg0)
 }
 
 // BroadcastWorkerTagUpdate mocks base method.

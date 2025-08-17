@@ -37,10 +37,12 @@ class Job {
      * @param updated {Date} Timestamp of last update.
      * @param status {module:model/JobStatus} 
      * @param activity {String} Description of the last activity on this job.
+     * @param stepsCompleted {Number} 
+     * @param stepsTotal {Number} 
      */
-    constructor(name, type, priority, submitterPlatform, id, created, updated, status, activity) { 
-        SubmittedJob.initialize(this, name, type, priority, submitterPlatform);JobAllOf.initialize(this, id, created, updated, status, activity);
-        Job.initialize(this, name, type, priority, submitterPlatform, id, created, updated, status, activity);
+    constructor(name, type, priority, submitterPlatform, id, created, updated, status, activity, stepsCompleted, stepsTotal) { 
+        SubmittedJob.initialize(this, name, type, priority, submitterPlatform);JobAllOf.initialize(this, id, created, updated, status, activity, stepsCompleted, stepsTotal);
+        Job.initialize(this, name, type, priority, submitterPlatform, id, created, updated, status, activity, stepsCompleted, stepsTotal);
     }
 
     /**
@@ -48,7 +50,7 @@ class Job {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, name, type, priority, submitterPlatform, id, created, updated, status, activity) { 
+    static initialize(obj, name, type, priority, submitterPlatform, id, created, updated, status, activity, stepsCompleted, stepsTotal) { 
         obj['name'] = name;
         obj['type'] = type;
         obj['priority'] = priority || 50;
@@ -58,6 +60,8 @@ class Job {
         obj['updated'] = updated;
         obj['status'] = status;
         obj['activity'] = activity;
+        obj['steps_completed'] = stepsCompleted;
+        obj['steps_total'] = stepsTotal;
     }
 
     /**
@@ -117,6 +121,12 @@ class Job {
             }
             if (data.hasOwnProperty('activity')) {
                 obj['activity'] = ApiClient.convertToType(data['activity'], 'String');
+            }
+            if (data.hasOwnProperty('steps_completed')) {
+                obj['steps_completed'] = ApiClient.convertToType(data['steps_completed'], 'Number');
+            }
+            if (data.hasOwnProperty('steps_total')) {
+                obj['steps_total'] = ApiClient.convertToType(data['steps_total'], 'Number');
             }
             if (data.hasOwnProperty('delete_requested_at')) {
                 obj['delete_requested_at'] = ApiClient.convertToType(data['delete_requested_at'], 'Date');
@@ -213,6 +223,16 @@ Job.prototype['status'] = undefined;
 Job.prototype['activity'] = undefined;
 
 /**
+ * @member {Number} steps_completed
+ */
+Job.prototype['steps_completed'] = undefined;
+
+/**
+ * @member {Number} steps_total
+ */
+Job.prototype['steps_total'] = undefined;
+
+/**
  * If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager. 
  * @member {Date} delete_requested_at
  */
@@ -290,6 +310,14 @@ JobAllOf.prototype['status'] = undefined;
  * @member {String} activity
  */
 JobAllOf.prototype['activity'] = undefined;
+/**
+ * @member {Number} steps_completed
+ */
+JobAllOf.prototype['steps_completed'] = undefined;
+/**
+ * @member {Number} steps_total
+ */
+JobAllOf.prototype['steps_total'] = undefined;
 /**
  * If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager. 
  * @member {Date} delete_requested_at

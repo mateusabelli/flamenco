@@ -91,6 +91,131 @@ func TestTaskUpdate(t *testing.T) {
 	assert.Equal(t, "testing", actUpdatedTask.Activity)
 }
 
+func TestTaskUpdateStepsCompleted(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mf := newMockedFlamenco(mockCtrl)
+	worker := testWorker()
+
+	// Construct the JSON request object.
+	taskUpdate := api.TaskUpdateJSONRequestBody{
+		Activity:       ptr("testing"),
+		Log:            ptr("line1\nline2\n"),
+		StepsCompleted: ptr(2),
+	}
+
+	// Construct the task that's supposed to be updated.
+	taskID := "181eab68-1123-4790-93b1-94309a899411"
+	jobID := "e4719398-7cfa-4877-9bab-97c2d6c158b5"
+	mockJob := persistence.Job{
+		ID:             1234,
+		UUID:           jobID,
+		Name:           "mock jobs",
+		StepsCompleted: 0,
+		StepsTotal:     3,
+	}
+	mockTask := persistence.Task{
+		ID:         47,
+		UUID:       taskID,
+		WorkerID:   sql.NullInt64{Int64: worker.ID, Valid: true},
+		JobID:      mockJob.ID,
+		Activity:   "pre-update activity",
+		StepsTotal: 3,
+	}
+
+	// Expect the task to be fetched.
+	taskJobWorker := persistence.TaskJobWorker{
+		Task:       mockTask,
+		JobUUID:    jobID,
+		WorkerUUID: worker.UUID,
+	}
+	mf.persistence.EXPECT().FetchTask(gomock.Any(), taskID).
+		Return(taskJobWorker, nil).
+		Times(2)
+
+	// Expect the activity to be updated.
+	var actUpdatedTask persistence.Task
+	mf.persistence.EXPECT().SaveTaskActivity(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, task *persistence.Task) error {
+			actUpdatedTask = *task
+			return nil
+		}).
+		Times(2)
+
+	// Expect the log to be written and broadcast over SocketIO.
+	mf.logStorage.EXPECT().Write(gomock.Any(), jobID, taskID, "line1\nline2\n").Times(2)
+
+	// Expect the step count to be updated and broadcast.
+	mf.persistence.EXPECT().SaveTaskStepsCompleted(gomock.Any(), mockJob.ID, mockTask.ID, int64(2))
+	mf.broadcaster.EXPECT().BroadcastTaskUpdate(api.EventTaskUpdate{
+		Activity:       "testing",
+		Id:             mockTask.UUID,
+		JobId:          jobID,
+		Name:           mockTask.Name,
+		Status:         mockTask.Status,
+		StepsCompleted: 2,
+		StepsTotal:     3,
+	})
+
+	mockJobWith2CompletedSteps := mockJob
+	mockJobWith2CompletedSteps.StepsCompleted = 2
+	mf.persistence.EXPECT().FetchJobByID(gomock.Any(), mockJob.ID).
+		Return(&mockJobWith2CompletedSteps, nil)
+	mf.broadcaster.EXPECT().BroadcastJobUpdate(api.EventJobUpdate{
+		Id:             mockJob.UUID,
+		Name:           &mockJob.Name,
+		Status:         mockJob.Status,
+		StepsCompleted: 2,
+		StepsTotal:     3,
+	})
+
+	// Expect a 'touch' of the task.
+	mf.persistence.EXPECT().TaskTouchedByWorker(gomock.Any(), taskID).Times(2)
+	mf.persistence.EXPECT().WorkerSeen(gomock.Any(), &worker).Times(2)
+
+	// Do the call.
+	echoCtx := mf.prepareMockedJSONRequest(taskUpdate)
+	requestWorkerStore(echoCtx, &worker)
+	err := mf.flamenco.TaskUpdate(echoCtx, taskID)
+
+	// Check the saved task.
+	require.NoError(t, err)
+	assert.Equal(t, mockTask.UUID, actUpdatedTask.UUID)
+	assert.Equal(t, "testing", actUpdatedTask.Activity)
+
+	// Do another update, the step count should be clamped to the task's total step count.
+	taskUpdate.StepsCompleted = ptr(47)
+	mf.persistence.EXPECT().SaveTaskStepsCompleted(gomock.Any(), mockJob.ID, mockTask.ID, int64(3))
+	mf.broadcaster.EXPECT().BroadcastTaskUpdate(api.EventTaskUpdate{
+		Activity:       "testing",
+		Id:             mockTask.UUID,
+		JobId:          jobID,
+		Name:           mockTask.Name,
+		Status:         mockTask.Status,
+		StepsCompleted: 3,
+		StepsTotal:     3,
+	})
+
+	mockJobWith3CompletedSteps := mockJob
+	mockJobWith3CompletedSteps.StepsCompleted = 3
+	mf.persistence.EXPECT().FetchJobByID(gomock.Any(), mockJob.ID).
+		Return(&mockJobWith3CompletedSteps, nil)
+	mf.broadcaster.EXPECT().BroadcastJobUpdate(api.EventJobUpdate{
+		Id:             mockJob.UUID,
+		Name:           &mockJob.Name,
+		Status:         mockJob.Status,
+		StepsCompleted: 3,
+		StepsTotal:     3,
+	})
+
+	// Do the call.
+	echoCtx = mf.prepareMockedJSONRequest(taskUpdate)
+	requestWorkerStore(echoCtx, &worker)
+	err = mf.flamenco.TaskUpdate(echoCtx, taskID)
+	require.NoError(t, err)
+}
+
 func TestTaskUpdateFailed(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()

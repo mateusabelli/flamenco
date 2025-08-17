@@ -58,6 +58,9 @@ class TaskUpdate {
             if (data.hasOwnProperty('log')) {
                 obj['log'] = ApiClient.convertToType(data['log'], 'String');
             }
+            if (data.hasOwnProperty('steps_completed')) {
+                obj['steps_completed'] = ApiClient.convertToType(data['steps_completed'], 'Number');
+            }
         }
         return obj;
     }
@@ -81,6 +84,12 @@ TaskUpdate.prototype['activity'] = undefined;
  * @member {String} log
  */
 TaskUpdate.prototype['log'] = undefined;
+
+/**
+ * Number of task steps completed. May not exceed the task's steps_total.
+ * @member {Number} steps_completed
+ */
+TaskUpdate.prototype['steps_completed'] = undefined;
 
 
 

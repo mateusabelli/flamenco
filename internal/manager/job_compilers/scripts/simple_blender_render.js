@@ -120,7 +120,7 @@ function authorRenderTasks(settings, renderDir, renderOutput) {
                 "--render-format", settings.format,
                 "--render-frame", chunk.replaceAll("-", ".."), // Convert to Blender frame range notation.
             ])
-        });
+        }, frameCount(chunk));
         task.addCommand(command);
         renderTasks.push(task);
     }

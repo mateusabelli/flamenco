@@ -22,7 +22,7 @@ CREATE TABLE jobs (
   metadata jsonb NOT NULL,
   delete_requested_at datetime,
   storage_shaman_checkout_id varchar(255) DEFAULT '' NOT NULL,
-  worker_tag_id integer,
+  worker_tag_id integer, steps_completed integer DEFAULT 0 NOT NULL, steps_total integer DEFAULT 0 NOT NULL,
   PRIMARY KEY (id),
   CONSTRAINT fk_jobs_worker_tag FOREIGN KEY (worker_tag_id) REFERENCES worker_tags(id) ON DELETE SET NULL
 );
@@ -76,7 +76,7 @@ CREATE TABLE tasks (
   worker_id integer,
   last_touched_at datetime,
   commands jsonb NOT NULL,
-  activity varchar(255) DEFAULT '' NOT NULL,
+  activity varchar(255) DEFAULT '' NOT NULL, steps_completed integer DEFAULT 0 NOT NULL, steps_total integer DEFAULT 0 NOT NULL,
   PRIMARY KEY (id),
   UNIQUE(job_id, index_in_job),
   CONSTRAINT fk_tasks_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,

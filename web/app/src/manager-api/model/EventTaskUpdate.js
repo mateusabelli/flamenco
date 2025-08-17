@@ -30,10 +30,12 @@ class EventTaskUpdate {
      * @param updated {Date} Timestamp of last update
      * @param status {module:model/TaskStatus} 
      * @param activity {String} 
+     * @param stepsCompleted {Number} 
+     * @param stepsTotal {Number} 
      */
-    constructor(id, jobId, name, updated, status, activity) { 
+    constructor(id, jobId, name, updated, status, activity, stepsCompleted, stepsTotal) { 
         
-        EventTaskUpdate.initialize(this, id, jobId, name, updated, status, activity);
+        EventTaskUpdate.initialize(this, id, jobId, name, updated, status, activity, stepsCompleted, stepsTotal);
     }
 
     /**
@@ -41,13 +43,15 @@ class EventTaskUpdate {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, id, jobId, name, updated, status, activity) { 
+    static initialize(obj, id, jobId, name, updated, status, activity, stepsCompleted, stepsTotal) { 
         obj['id'] = id;
         obj['job_id'] = jobId;
         obj['name'] = name;
         obj['updated'] = updated;
         obj['status'] = status;
         obj['activity'] = activity;
+        obj['steps_completed'] = stepsCompleted;
+        obj['steps_total'] = stepsTotal;
     }
 
     /**
@@ -81,6 +85,12 @@ class EventTaskUpdate {
             }
             if (data.hasOwnProperty('activity')) {
                 obj['activity'] = ApiClient.convertToType(data['activity'], 'String');
+            }
+            if (data.hasOwnProperty('steps_completed')) {
+                obj['steps_completed'] = ApiClient.convertToType(data['steps_completed'], 'Number');
+            }
+            if (data.hasOwnProperty('steps_total')) {
+                obj['steps_total'] = ApiClient.convertToType(data['steps_total'], 'Number');
             }
         }
         return obj;
@@ -126,6 +136,16 @@ EventTaskUpdate.prototype['previous_status'] = undefined;
  * @member {String} activity
  */
 EventTaskUpdate.prototype['activity'] = undefined;
+
+/**
+ * @member {Number} steps_completed
+ */
+EventTaskUpdate.prototype['steps_completed'] = undefined;
+
+/**
+ * @member {Number} steps_total
+ */
+EventTaskUpdate.prototype['steps_total'] = undefined;
 
 
 

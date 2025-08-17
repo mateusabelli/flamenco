@@ -117,4 +117,8 @@ func TestProcessLineBlender(t *testing.T) {
 	// This should be recognised as produced output.
 	mocks.listener.EXPECT().OutputProduced(ctx, taskID, "/path/to/file.exr")
 	ce.processLineBlender(ctx, log.Logger, taskID, "Saved: '/path/to/file.exr'")
+
+	// This should be recognised as being done with a frame.
+	mocks.listener.EXPECT().TaskStep(ctx, taskID)
+	ce.processLineBlender(ctx, log.Logger, taskID, "Time: 00:01.06")
 }

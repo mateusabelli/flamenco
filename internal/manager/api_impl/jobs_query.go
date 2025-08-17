@@ -186,26 +186,30 @@ func (f *Flamenco) FetchTask(e echo.Context, taskID string) error {
 
 func taskSummaryDBtoAPI(task persistence.TaskSummary) api.TaskSummary {
 	return api.TaskSummary{
-		Id:         task.UUID,
-		Name:       task.Name,
-		IndexInJob: int(task.IndexInJob),
-		Priority:   int(task.Priority),
-		Status:     task.Status,
-		TaskType:   task.Type,
-		Updated:    task.UpdatedAt.Time,
-		Worker:     &api.TaskWorker{Id: task.WorkerUUID.String},
+		Id:             task.UUID,
+		Name:           task.Name,
+		IndexInJob:     int(task.IndexInJob),
+		Priority:       int(task.Priority),
+		Status:         task.Status,
+		TaskType:       task.Type,
+		Updated:        task.UpdatedAt.Time,
+		Worker:         &api.TaskWorker{Id: task.WorkerUUID.String},
+		StepsCompleted: int(task.StepsCompleted),
+		StepsTotal:     int(task.StepsTotal),
 	}
 }
 
 func taskDBtoSummaryAPI(task persistence.Task, worker *persistence.Worker) api.TaskSummary {
 	return api.TaskSummary{
-		Id:         task.UUID,
-		Name:       task.Name,
-		IndexInJob: int(task.IndexInJob),
-		Priority:   int(task.Priority),
-		Status:     task.Status,
-		TaskType:   task.Type,
-		Updated:    task.UpdatedAt.Time,
-		Worker:     workerToTaskWorker(worker),
+		Id:             task.UUID,
+		Name:           task.Name,
+		IndexInJob:     int(task.IndexInJob),
+		Priority:       int(task.Priority),
+		Status:         task.Status,
+		TaskType:       task.Type,
+		Updated:        task.UpdatedAt.Time,
+		Worker:         workerToTaskWorker(worker),
+		StepsCompleted: int(task.StepsCompleted),
+		StepsTotal:     int(task.StepsTotal),
 	}
 }

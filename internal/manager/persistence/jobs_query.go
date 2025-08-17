@@ -25,17 +25,7 @@ func (db *DB) QueryJobTaskSummaries(ctx context.Context, jobUUID string) ([]Task
 
 	result := make([]TaskSummary, len(summaries))
 	for index, task := range summaries {
-		result[index] = TaskSummary{
-			ID:         task.ID,
-			UpdatedAt:  task.UpdatedAt,
-			UUID:       task.UUID,
-			Name:       task.Name,
-			Type:       task.Type,
-			IndexInJob: task.IndexInJob,
-			Priority:   task.Priority,
-			Status:     task.Status,
-			WorkerUUID: task.WorkerUUID,
-		}
+		result[index] = TaskSummary(task)
 	}
 
 	return result, nil

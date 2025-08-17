@@ -2,10 +2,12 @@
   <h3 class="sub-title">Tasks</h3>
   <div class="btn-bar-group">
     <task-actions-bar />
-    <status-filter-bar
-      :availableStatuses="availableStatuses"
-      :activeStatuses="shownStatuses"
-      @click="toggleStatusFilter" />
+    <div class="align-right">
+      <status-filter-bar
+        :availableStatuses="availableStatuses"
+        :activeStatuses="shownStatuses"
+        @click="toggleStatusFilter" />
+    </div>
   </div>
   <div>
     <div
@@ -62,18 +64,9 @@ export default {
           field: 'status',
           sorter: 'string',
           formatter: (cell) => {
-            const data = cell.getData();
             const status = cell.getData().status;
             const dot = indicator(status);
-
-            if (data.steps_total == 0) {
-              return `${dot} ${status}`;
-            }
-
-            const progress = data.steps_completed / data.steps_total;
-            const width = Math.round(progress * 100);
-            const doneClass = (data.steps_completed >= data.steps_total) ? 'done' : '';
-            return `<div class='progress ${doneClass}' style='width: ${width}%'></div><div class='progress-remainder ${doneClass}' style='width: ${100-width}%'></div> ${dot} ${status}`;
+            return `${dot} ${status}`;
           },
         },
         { title: 'Name', field: 'name', sorter: 'string', minWidth: 104 },
@@ -107,8 +100,7 @@ export default {
       rowFormatter(row) {
         const data = row.getData();
         const isActive = data.id === vueComponent.taskID;
-        const rowElement = row.getElement();
-        rowElement.classList.toggle('active-row', isActive);
+        row.getElement().classList.toggle('active-row', isActive);
       },
       initialSort: [{ column: 'updated', dir: 'desc' }],
       layout: 'fitDataFill',
@@ -243,8 +235,11 @@ export default {
       }
     },
     processTaskUpdate(taskUpdate) {
+<<<<<<< HEAD
+=======
       // console.log("taskUpdate:", taskUpdate);
 
+>>>>>>> e6e10c62 (Webapp: periodically refresh visible rows in the jobs/tasks tables)
       // Any updates to tasks i.e. status changes will need to reflect its changes to the rows on Tabulator here.
       // updateData() will only overwrite properties that are actually set on
       // taskUpdate, and leave the rest as-is.
@@ -253,9 +248,6 @@ export default {
           .updateData([taskUpdate])
           .then(this.sortData)
           .then(() => {
-            // Reformat the row, to ensure the progress bar is updated.
-            this._reformatRow(taskUpdate.id);
-
             this.tabulator.redraw();
           }); // Resize columns based on new data.
       }

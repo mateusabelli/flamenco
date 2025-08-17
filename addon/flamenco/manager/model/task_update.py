@@ -90,6 +90,7 @@ class TaskUpdate(ModelNormal):
             'task_status': (TaskStatus,),  # noqa: E501
             'activity': (str,),  # noqa: E501
             'log': (str,),  # noqa: E501
+            'steps_completed': (int,),  # noqa: E501
         }
 
     @cached_property
@@ -101,6 +102,7 @@ class TaskUpdate(ModelNormal):
         'task_status': 'taskStatus',  # noqa: E501
         'activity': 'activity',  # noqa: E501
         'log': 'log',  # noqa: E501
+        'steps_completed': 'steps_completed',  # noqa: E501
     }
 
     read_only_vars = {
@@ -147,6 +149,7 @@ class TaskUpdate(ModelNormal):
             task_status (TaskStatus): [optional]  # noqa: E501
             activity (str): One-liner to indicate what's currently happening with the task. Overwrites previously sent activity strings.. [optional]  # noqa: E501
             log (str): Log lines for this task, will be appended to logs sent earlier.. [optional]  # noqa: E501
+            steps_completed (int): Number of task steps completed. May not exceed the task's steps_total.. [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)
@@ -231,6 +234,7 @@ class TaskUpdate(ModelNormal):
             task_status (TaskStatus): [optional]  # noqa: E501
             activity (str): One-liner to indicate what's currently happening with the task. Overwrites previously sent activity strings.. [optional]  # noqa: E501
             log (str): Log lines for this task, will be appended to logs sent earlier.. [optional]  # noqa: E501
+            steps_completed (int): Number of task steps completed. May not exceed the task's steps_total.. [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)

@@ -93,6 +93,8 @@ class EventJobUpdate(ModelNormal):
             'type': (str,),  # noqa: E501
             'priority': (int,),  # noqa: E501
             'refresh_tasks': (bool,),  # noqa: E501
+            'steps_completed': (int,),  # noqa: E501
+            'steps_total': (int,),  # noqa: E501
             'name': (str,),  # noqa: E501
             'previous_status': (JobStatus,),  # noqa: E501
             'delete_requested_at': (datetime,),  # noqa: E501
@@ -111,6 +113,8 @@ class EventJobUpdate(ModelNormal):
         'type': 'type',  # noqa: E501
         'priority': 'priority',  # noqa: E501
         'refresh_tasks': 'refresh_tasks',  # noqa: E501
+        'steps_completed': 'steps_completed',  # noqa: E501
+        'steps_total': 'steps_total',  # noqa: E501
         'name': 'name',  # noqa: E501
         'previous_status': 'previous_status',  # noqa: E501
         'delete_requested_at': 'delete_requested_at',  # noqa: E501
@@ -124,7 +128,7 @@ class EventJobUpdate(ModelNormal):
 
     @classmethod
     @convert_js_args_to_python_args
-    def _from_openapi_data(cls, id, updated, status, type, refresh_tasks, *args, **kwargs):  # noqa: E501
+    def _from_openapi_data(cls, id, updated, status, type, refresh_tasks, steps_completed, steps_total, *args, **kwargs):  # noqa: E501
         """EventJobUpdate - a model defined in OpenAPI
 
         Args:
@@ -133,6 +137,8 @@ class EventJobUpdate(ModelNormal):
             status (JobStatus):
             type (str):
             refresh_tasks (bool): Indicates that the client should refresh all the job's tasks. This is sent for mass updates, where updating each individual task would generate too many updates to be practical. 
+            steps_completed (int):
+            steps_total (int):
 
         Keyword Args:
             priority (int): defaults to 50  # noqa: E501
@@ -204,6 +210,8 @@ class EventJobUpdate(ModelNormal):
         self.type = type
         self.priority = priority
         self.refresh_tasks = refresh_tasks
+        self.steps_completed = steps_completed
+        self.steps_total = steps_total
         for var_name, var_value in kwargs.items():
             if var_name not in self.attribute_map and \
                         self._configuration is not None and \
@@ -224,7 +232,7 @@ class EventJobUpdate(ModelNormal):
     ])
 
     @convert_js_args_to_python_args
-    def __init__(self, id, updated, status, type, refresh_tasks, *args, **kwargs):  # noqa: E501
+    def __init__(self, id, updated, status, type, refresh_tasks, steps_completed, steps_total, *args, **kwargs):  # noqa: E501
         """EventJobUpdate - a model defined in OpenAPI
 
         Args:
@@ -233,6 +241,8 @@ class EventJobUpdate(ModelNormal):
             status (JobStatus):
             type (str):
             refresh_tasks (bool): Indicates that the client should refresh all the job's tasks. This is sent for mass updates, where updating each individual task would generate too many updates to be practical. 
+            steps_completed (int):
+            steps_total (int):
 
         Keyword Args:
             priority (int): defaults to 50  # noqa: E501
@@ -302,6 +312,8 @@ class EventJobUpdate(ModelNormal):
         self.type = type
         self.priority = priority
         self.refresh_tasks = refresh_tasks
+        self.steps_completed = steps_completed
+        self.steps_total = steps_total
         for var_name, var_value in kwargs.items():
             if var_name not in self.attribute_map and \
                         self._configuration is not None and \

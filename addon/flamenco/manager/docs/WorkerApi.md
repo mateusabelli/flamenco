@@ -528,6 +528,7 @@ with flamenco.manager.ApiClient(configuration) as api_client:
         task_status=TaskStatus("active"),
         activity="activity_example",
         log="log_example",
+        steps_completed=1,
     ) # TaskUpdate | Task update information
 
     # example passing only required values which don't have defaults set

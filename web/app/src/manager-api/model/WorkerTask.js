@@ -36,11 +36,13 @@ class WorkerTask {
      * @param priority {Number} 
      * @param taskType {String} 
      * @param updated {Date} 
+     * @param stepsCompleted {Number} 
+     * @param stepsTotal {Number} 
      * @param jobId {String} 
      */
-    constructor(id, name, status, indexInJob, priority, taskType, updated, jobId) { 
-        TaskSummary.initialize(this, id, name, status, indexInJob, priority, taskType, updated);WorkerTaskAllOf.initialize(this, jobId);
-        WorkerTask.initialize(this, id, name, status, indexInJob, priority, taskType, updated, jobId);
+    constructor(id, name, status, indexInJob, priority, taskType, updated, stepsCompleted, stepsTotal, jobId) { 
+        TaskSummary.initialize(this, id, name, status, indexInJob, priority, taskType, updated, stepsCompleted, stepsTotal);WorkerTaskAllOf.initialize(this, jobId);
+        WorkerTask.initialize(this, id, name, status, indexInJob, priority, taskType, updated, stepsCompleted, stepsTotal, jobId);
     }
 
     /**
@@ -48,7 +50,7 @@ class WorkerTask {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, id, name, status, indexInJob, priority, taskType, updated, jobId) { 
+    static initialize(obj, id, name, status, indexInJob, priority, taskType, updated, stepsCompleted, stepsTotal, jobId) { 
         obj['id'] = id;
         obj['name'] = name;
         obj['status'] = status;
@@ -56,6 +58,8 @@ class WorkerTask {
         obj['priority'] = priority;
         obj['task_type'] = taskType;
         obj['updated'] = updated;
+        obj['steps_completed'] = stepsCompleted;
+        obj['steps_total'] = stepsTotal;
         obj['job_id'] = jobId;
     }
 
@@ -95,6 +99,12 @@ class WorkerTask {
             }
             if (data.hasOwnProperty('worker')) {
                 obj['worker'] = TaskWorker.constructFromObject(data['worker']);
+            }
+            if (data.hasOwnProperty('steps_completed')) {
+                obj['steps_completed'] = ApiClient.convertToType(data['steps_completed'], 'Number');
+            }
+            if (data.hasOwnProperty('steps_total')) {
+                obj['steps_total'] = ApiClient.convertToType(data['steps_total'], 'Number');
             }
             if (data.hasOwnProperty('job_id')) {
                 obj['job_id'] = ApiClient.convertToType(data['job_id'], 'String');
@@ -147,6 +157,16 @@ WorkerTask.prototype['updated'] = undefined;
 WorkerTask.prototype['worker'] = undefined;
 
 /**
+ * @member {Number} steps_completed
+ */
+WorkerTask.prototype['steps_completed'] = undefined;
+
+/**
+ * @member {Number} steps_total
+ */
+WorkerTask.prototype['steps_total'] = undefined;
+
+/**
  * @member {String} job_id
  */
 WorkerTask.prototype['job_id'] = undefined;
@@ -185,6 +205,14 @@ TaskSummary.prototype['updated'] = undefined;
  * @member {module:model/TaskWorker} worker
  */
 TaskSummary.prototype['worker'] = undefined;
+/**
+ * @member {Number} steps_completed
+ */
+TaskSummary.prototype['steps_completed'] = undefined;
+/**
+ * @member {Number} steps_total
+ */
+TaskSummary.prototype['steps_total'] = undefined;
 // Implement WorkerTaskAllOf interface:
 /**
  * @member {String} job_id

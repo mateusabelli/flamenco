@@ -43,8 +43,9 @@ type StringStringMap map[string]string
 type Commands []Command
 
 type Command struct {
-	Name       string             `json:"name"`
-	Parameters StringInterfaceMap `json:"parameters"`
+	Name           string             `json:"name"`
+	Parameters     StringInterfaceMap `json:"parameters"`
+	TotalStepCount int                `json:"total_step_count"`
 }
 
 func (c Commands) Value() (driver.Value, error) {
@@ -55,7 +56,10 @@ func (c *Commands) Scan(value interface{}) error {
 	if !ok {
 		return errors.New("type assertion to []byte failed")
 	}
-	return json.Unmarshal(b, &c)
+	if err := json.Unmarshal(b, &c); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (js StringInterfaceMap) Value() (driver.Value, error) {
@@ -191,11 +195,16 @@ func (db *DB) storeAuthoredJobTask(
 	for taskIndex, authoredTask := range authoredJob.Tasks {
 		// Marshal commands to JSON.
 		var commands []Command
+		taskStepCount := 0
 		for _, authoredCommand := range authoredTask.Commands {
 			commands = append(commands, Command{
-				Name:       authoredCommand.Name,
-				Parameters: StringInterfaceMap(authoredCommand.Parameters),
+				Name:           authoredCommand.Name,
+				Parameters:     StringInterfaceMap(authoredCommand.Parameters),
+				TotalStepCount: authoredCommand.TotalStepCount,
 			})
+			// When the command doesn't have/support steps, the command itself is
+			// counted as one step.
+			taskStepCount += max(1, authoredCommand.TotalStepCount)
 		}
 		commandsJSON, err := json.Marshal(commands)
 		if err != nil {
@@ -213,6 +222,7 @@ func (db *DB) storeAuthoredJobTask(
 			Priority:   int64(authoredTask.Priority),
 			Status:     api.TaskStatusQueued,
 			Commands:   commandsJSON,
+			StepsTotal: int64(taskStepCount),
 			// dependencies are stored below.
 		}
 
@@ -539,16 +549,18 @@ func (db *DB) SaveTask(ctx context.Context, t *Task) error {
 	}
 
 	param := sqlc.UpdateTaskParams{
-		UpdatedAt:     db.nowNullable(),
-		Name:          t.Name,
-		Type:          t.Type,
-		Priority:      t.Priority,
-		Status:        t.Status,
-		Commands:      commandsJSON,
-		Activity:      t.Activity,
-		ID:            t.ID,
-		WorkerID:      t.WorkerID,
-		LastTouchedAt: t.LastTouchedAt,
+		UpdatedAt:      db.nowNullable(),
+		Name:           t.Name,
+		Type:           t.Type,
+		Priority:       t.Priority,
+		Status:         t.Status,
+		Commands:       commandsJSON,
+		Activity:       t.Activity,
+		ID:             t.ID,
+		WorkerID:       t.WorkerID,
+		LastTouchedAt:  t.LastTouchedAt,
+		StepsTotal:     t.StepsTotal,
+		StepsCompleted: t.StepsCompleted,
 	}
 
 	err = queries.UpdateTask(ctx, param)
@@ -583,6 +595,41 @@ func (db *DB) SaveTaskActivity(ctx context.Context, t *Task) error {
 	if err != nil {
 		return taskError(err, "saving task activity")
 	}
+	return nil
+}
+
+// SaveTaskStepsCompleted updates the task's step completion counter,
+// and updates the job for the new completion count as well.
+func (db *DB) SaveTaskStepsCompleted(ctx context.Context, jobID, taskID int64, stepsCompleted int64) error {
+	qtx, err := db.queriesWithTX()
+	if err != nil {
+		return err
+	}
+	defer qtx.rollback()
+
+	now := db.nowNullable()
+
+	err = qtx.queries.UpdateTaskStepsCompleted(ctx, sqlc.UpdateTaskStepsCompletedParams{
+		UpdatedAt:      now,
+		ID:             taskID,
+		StepsCompleted: stepsCompleted,
+	})
+	if err != nil {
+		return taskError(err, "saving task steps completed")
+	}
+
+	err = qtx.queries.UpdateJobStepsCompleted(ctx, sqlc.UpdateJobStepsCompletedParams{
+		UpdatedAt: now,
+		ID:        jobID,
+	})
+	if err != nil {
+		return jobError(err, "updating job for task steps completed")
+	}
+
+	if err := qtx.commit(); err != nil {
+		return taskError(err, "committing task steps completed")
+	}
+
 	return nil
 }
 
@@ -781,6 +828,46 @@ func (db *DB) UpdateJobsTaskStatusesConditional(ctx context.Context, job *Job,
 		return taskError(err, "updating status of all tasks in status %v of job %s", statusesToUpdate, job.UUID)
 	}
 	return nil
+}
+
+// UpdateJobsTaskStepCounts goes over all tasks of the job, and resets their steps_completed
+// based on their status.
+func (db *DB) UpdateJobsTaskStepCounts(ctx context.Context, jobID int64) error {
+	qtx, err := db.queriesWithTX()
+	if err != nil {
+		return err
+	}
+	defer qtx.rollback()
+
+	now := db.nowNullable()
+
+	err = qtx.queries.UpdateJobsTaskStepCountsComplete(ctx, sqlc.UpdateJobsTaskStepCountsCompleteParams{
+		UpdatedAt:        now,
+		JobID:            jobID,
+		StatusesToUpdate: []api.TaskStatus{api.TaskStatusCompleted},
+	})
+	if err != nil {
+		return taskError(err, "updating completed step count on job %q", jobID)
+	}
+
+	err = qtx.queries.UpdateJobsTaskStepCountsZero(ctx, sqlc.UpdateJobsTaskStepCountsZeroParams{
+		UpdatedAt:        now,
+		JobID:            jobID,
+		StatusesToUpdate: []api.TaskStatus{api.TaskStatusQueued},
+	})
+	if err != nil {
+		return taskError(err, "updating completed step count on job %q", jobID)
+	}
+
+	err = qtx.queries.UpdateJobStepsCompleted(ctx, sqlc.UpdateJobStepsCompletedParams{
+		UpdatedAt: now,
+		ID:        jobID,
+	})
+	if err != nil {
+		return jobError(err, "updating job for task steps completed")
+	}
+
+	return qtx.commit()
 }
 
 // TaskTouchedByWorker marks the task as 'touched' by a worker. This is used for timeout detection.

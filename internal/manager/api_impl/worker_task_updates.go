@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog"
 
+	"projects.blender.org/studio/flamenco/internal/manager/eventbus"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/internal/uuid"
 	"projects.blender.org/studio/flamenco/pkg/api"
@@ -97,6 +98,8 @@ func (f *Flamenco) doTaskUpdate(
 ) error {
 	var dbErrActivity error
 
+	shouldUpdateTaskStatus := update.TaskStatus != nil && *update.TaskStatus != dbTask.Status
+
 	if update.Activity != nil {
 		dbTask.Activity = *update.Activity
 		// The state machine will also save the task, including its activity, but
@@ -112,7 +115,36 @@ func (f *Flamenco) doTaskUpdate(
 		_ = f.logStorage.Write(logger, jobUUID, dbTask.UUID, *update.Log)
 	}
 
-	if update.TaskStatus == nil {
+	// If necessary, update the task update steps.
+	didUpdateSteps := false
+	if update.StepsCompleted != nil {
+		var err error
+		didUpdateSteps, err = f.doTaskUpdateSteps(ctx, logger, dbTask, int64(*update.StepsCompleted))
+		if err != nil {
+			return err
+		}
+
+		if didUpdateSteps {
+			// An update to the steps of a task also reflects on the steps of its job,
+			// so send out a job update to let the world know.
+			dbJob, err := f.persist.FetchJobByID(ctx, dbTask.JobID)
+			if err != nil {
+				logger.Error().
+					AnErr("cause", err).
+					Str("task", dbTask.UUID).
+					Msg("error fetching job of task")
+			} else {
+				jobUpdate := eventbus.NewJobUpdate(dbJob)
+				f.broadcaster.BroadcastJobUpdate(jobUpdate)
+			}
+		}
+	}
+
+	if !shouldUpdateTaskStatus {
+		if didUpdateSteps {
+			taskUpdate := eventbus.NewTaskUpdate(*dbTask, jobUUID)
+			f.broadcaster.BroadcastTaskUpdate(taskUpdate)
+		}
 		return dbErrActivity
 	}
 
@@ -136,6 +168,35 @@ func (f *Flamenco) doTaskUpdate(
 	}
 
 	return nil
+}
+
+func (f *Flamenco) doTaskUpdateSteps(
+	ctx context.Context,
+	logger zerolog.Logger,
+	dbTask *persistence.Task,
+	stepsCompleted int64,
+) (bool, error) {
+	stepsCompleted = min(stepsCompleted, dbTask.StepsTotal)
+
+	if dbTask.StepsCompleted == stepsCompleted {
+		return false, nil
+	}
+
+	logger = logger.With().
+		Int64("stepsCompleted", stepsCompleted).
+		Int64("stepsTotal", dbTask.StepsTotal).
+		Logger()
+
+	if err := f.persist.SaveTaskStepsCompleted(ctx, dbTask.JobID, dbTask.ID, stepsCompleted); err != nil {
+		logger.Error().AnErr("cause", err).Msg("error changing task's completed step count")
+		return false, fmt.Errorf("changing completed step count of task %s to %d: %w",
+			dbTask.UUID, stepsCompleted, err)
+	}
+
+	logger.Info().Msg("task progress updated")
+
+	dbTask.StepsCompleted = stepsCompleted
+	return true, nil
 }
 
 // onTaskFailed decides whether a task is soft- or hard-failed. Note that this

@@ -11,6 +11,8 @@ Name | Type | Description | Notes
 **updated** | **datetime** | Timestamp of last update | 
 **status** | [**TaskStatus**](TaskStatus.md) |  | 
 **activity** | **str** |  | 
+**steps_completed** | **int** |  | 
+**steps_total** | **int** |  | 
 **previous_status** | [**TaskStatus**](TaskStatus.md) |  | [optional] 
 **any string name** | **bool, date, datetime, dict, float, int, list, str, none_type** | any string name can be used but the value must be the correct type | [optional]
 

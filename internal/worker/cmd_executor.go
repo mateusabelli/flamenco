@@ -39,6 +39,9 @@ type CommandListener interface {
 	LogProduced(ctx context.Context, taskID string, logLines ...string) error
 	// OutputProduced tells the Manager there has been some output (most commonly a rendered frame or video).
 	OutputProduced(ctx context.Context, taskID string, outputLocation string) error
+
+	// TaskStep tells the Manager a task step has been performend.
+	TaskStep(ctx context.Context, taskID string) error
 }
 
 // TimeService is a service that operates on time.

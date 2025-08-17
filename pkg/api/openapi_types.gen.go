@@ -180,15 +180,17 @@ const (
 
 // AssignedTask is a task as it is received by the Worker.
 type AssignedTask struct {
-	Commands    []Command  `json:"commands"`
-	Job         string     `json:"job"`
-	JobPriority int        `json:"job_priority"`
-	JobType     string     `json:"job_type"`
-	Name        string     `json:"name"`
-	Priority    int        `json:"priority"`
-	Status      TaskStatus `json:"status"`
-	TaskType    string     `json:"task_type"`
-	Uuid        string     `json:"uuid"`
+	Commands       []Command  `json:"commands"`
+	Job            string     `json:"job"`
+	JobPriority    int        `json:"job_priority"`
+	JobType        string     `json:"job_type"`
+	Name           string     `json:"name"`
+	Priority       int        `json:"priority"`
+	Status         TaskStatus `json:"status"`
+	StepsCompleted int        `json:"steps_completed"`
+	StepsTotal     int        `json:"steps_total"`
+	TaskType       string     `json:"task_type"`
+	Uuid           string     `json:"uuid"`
 }
 
 // Single setting of a Job types.
@@ -292,6 +294,10 @@ type BlenderPathSource string
 type Command struct {
 	Name       string                 `json:"name"`
 	Parameters map[string]interface{} `json:"parameters"`
+
+	// Number of steps this command executes. This has to be implemented in the command's implementation on the Worker (to recognise what a "step" is), as well as given in the authoring code of the job type JavaScript script (to indicate how many steps the command invocation will perform).
+	// If not given, or set to 0, the command is not expected to send any step progress. In this case, the Worker will send a step update at completion of the command.
+	TotalStepCount int `json:"total_step_count"`
 }
 
 // Generic error response.
@@ -319,9 +325,11 @@ type EventJobUpdate struct {
 	Priority       int        `json:"priority"`
 
 	// Indicates that the client should refresh all the job's tasks. This is sent for mass updates, where updating each individual task would generate too many updates to be practical.
-	RefreshTasks bool      `json:"refresh_tasks"`
-	Status       JobStatus `json:"status"`
-	Type         string    `json:"type"`
+	RefreshTasks   bool      `json:"refresh_tasks"`
+	Status         JobStatus `json:"status"`
+	StepsCompleted int       `json:"steps_completed"`
+	StepsTotal     int       `json:"steps_total"`
+	Type           string    `json:"type"`
 
 	// Timestamp of last update
 	Updated time.Time `json:"updated"`
@@ -364,6 +372,8 @@ type EventTaskUpdate struct {
 	Name           string      `json:"name"`
 	PreviousStatus *TaskStatus `json:"previous_status,omitempty"`
 	Status         TaskStatus  `json:"status"`
+	StepsCompleted int         `json:"steps_completed"`
+	StepsTotal     int         `json:"steps_total"`
 
 	// Timestamp of last update
 	Updated time.Time `json:"updated"`
@@ -438,8 +448,10 @@ type Job struct {
 	DeleteRequestedAt *time.Time `json:"delete_requested_at,omitempty"`
 
 	// UUID of the Job
-	Id     string    `json:"id"`
-	Status JobStatus `json:"status"`
+	Id             string    `json:"id"`
+	Status         JobStatus `json:"status"`
+	StepsCompleted int       `json:"steps_completed"`
+	StepsTotal     int       `json:"steps_total"`
 
 	// Timestamp of last update.
 	Updated time.Time `json:"updated"`
@@ -743,11 +755,13 @@ type Task struct {
 	JobId           string        `json:"job_id"`
 
 	// Timestamp of when any worker worked on this task.
-	LastTouched *time.Time `json:"last_touched,omitempty"`
-	Name        string     `json:"name"`
-	Priority    int        `json:"priority"`
-	Status      TaskStatus `json:"status"`
-	TaskType    string     `json:"task_type"`
+	LastTouched    *time.Time `json:"last_touched,omitempty"`
+	Name           string     `json:"name"`
+	Priority       int        `json:"priority"`
+	Status         TaskStatus `json:"status"`
+	StepsCompleted int        `json:"steps_completed"`
+	StepsTotal     int        `json:"steps_total"`
+	TaskType       string     `json:"task_type"`
 
 	// Timestamp of last update.
 	Updated time.Time `json:"updated"`
@@ -780,13 +794,15 @@ type TaskStatusChange struct {
 
 // Just enough information about the task to show in the job's task list.
 type TaskSummary struct {
-	Id         string     `json:"id"`
-	IndexInJob int        `json:"index_in_job"`
-	Name       string     `json:"name"`
-	Priority   int        `json:"priority"`
-	Status     TaskStatus `json:"status"`
-	TaskType   string     `json:"task_type"`
-	Updated    time.Time  `json:"updated"`
+	Id             string     `json:"id"`
+	IndexInJob     int        `json:"index_in_job"`
+	Name           string     `json:"name"`
+	Priority       int        `json:"priority"`
+	Status         TaskStatus `json:"status"`
+	StepsCompleted int        `json:"steps_completed"`
+	StepsTotal     int        `json:"steps_total"`
+	TaskType       string     `json:"task_type"`
+	Updated        time.Time  `json:"updated"`
 
 	// Worker reference, as used in Task objects.
 	Worker *TaskWorker `json:"worker,omitempty"`
@@ -798,8 +814,11 @@ type TaskUpdate struct {
 	Activity *string `json:"activity,omitempty"`
 
 	// Log lines for this task, will be appended to logs sent earlier.
-	Log        *string     `json:"log,omitempty"`
-	TaskStatus *TaskStatus `json:"taskStatus,omitempty"`
+	Log *string `json:"log,omitempty"`
+
+	// Number of task steps completed. May not exceed the task's steps_total.
+	StepsCompleted *int        `json:"steps_completed,omitempty"`
+	TaskStatus     *TaskStatus `json:"taskStatus,omitempty"`
 }
 
 // Worker reference, as used in Task objects.

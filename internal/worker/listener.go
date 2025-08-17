@@ -25,6 +25,8 @@ type Listener struct {
 	client         FlamencoClient
 	buffer         UpstreamBuffer
 	outputUploader *OutputUploader
+
+	taskStepsCompleted int
 }
 
 // UpstreamBuffer can buffer up-stream task updates, in case the Manager cannot be reached.
@@ -54,9 +56,21 @@ func ptr[T any](value T) *T {
 
 // TaskStarted tells the Manager that task execution has started.
 func (l *Listener) TaskStarted(ctx context.Context, taskID string) error {
+	l.taskStepsCompleted = 0
+
 	return l.sendTaskUpdate(ctx, taskID, api.TaskUpdateJSONRequestBody{
 		Activity:   ptr("Started"),
 		TaskStatus: ptr(api.TaskStatusActive),
+	})
+}
+
+// TaskStep tells the Manager a task step has been performend.
+func (l *Listener) TaskStep(ctx context.Context, taskID string) error {
+	l.taskStepsCompleted += 1
+
+	return l.sendTaskUpdate(ctx, taskID, api.TaskUpdateJSONRequestBody{
+		Activity:       ptr("Progress"),
+		StepsCompleted: &l.taskStepsCompleted,
 	})
 }
 

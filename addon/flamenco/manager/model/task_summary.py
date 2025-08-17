@@ -96,6 +96,8 @@ class TaskSummary(ModelNormal):
             'priority': (int,),  # noqa: E501
             'task_type': (str,),  # noqa: E501
             'updated': (datetime,),  # noqa: E501
+            'steps_completed': (int,),  # noqa: E501
+            'steps_total': (int,),  # noqa: E501
             'worker': (TaskWorker,),  # noqa: E501
         }
 
@@ -112,6 +114,8 @@ class TaskSummary(ModelNormal):
         'priority': 'priority',  # noqa: E501
         'task_type': 'task_type',  # noqa: E501
         'updated': 'updated',  # noqa: E501
+        'steps_completed': 'steps_completed',  # noqa: E501
+        'steps_total': 'steps_total',  # noqa: E501
         'worker': 'worker',  # noqa: E501
     }
 
@@ -122,7 +126,7 @@ class TaskSummary(ModelNormal):
 
     @classmethod
     @convert_js_args_to_python_args
-    def _from_openapi_data(cls, id, name, status, index_in_job, priority, task_type, updated, *args, **kwargs):  # noqa: E501
+    def _from_openapi_data(cls, id, name, status, index_in_job, priority, task_type, updated, steps_completed, steps_total, *args, **kwargs):  # noqa: E501
         """TaskSummary - a model defined in OpenAPI
 
         Args:
@@ -133,6 +137,8 @@ class TaskSummary(ModelNormal):
             priority (int):
             task_type (str):
             updated (datetime):
+            steps_completed (int):
+            steps_total (int):
 
         Keyword Args:
             _check_type (bool): if True, values for parameters in openapi_types
@@ -200,6 +206,8 @@ class TaskSummary(ModelNormal):
         self.priority = priority
         self.task_type = task_type
         self.updated = updated
+        self.steps_completed = steps_completed
+        self.steps_total = steps_total
         for var_name, var_value in kwargs.items():
             if var_name not in self.attribute_map and \
                         self._configuration is not None and \
@@ -220,7 +228,7 @@ class TaskSummary(ModelNormal):
     ])
 
     @convert_js_args_to_python_args
-    def __init__(self, id, name, status, index_in_job, priority, task_type, updated, *args, **kwargs):  # noqa: E501
+    def __init__(self, id, name, status, index_in_job, priority, task_type, updated, steps_completed, steps_total, *args, **kwargs):  # noqa: E501
         """TaskSummary - a model defined in OpenAPI
 
         Args:
@@ -231,6 +239,8 @@ class TaskSummary(ModelNormal):
             priority (int):
             task_type (str):
             updated (datetime):
+            steps_completed (int):
+            steps_total (int):
 
         Keyword Args:
             _check_type (bool): if True, values for parameters in openapi_types
@@ -296,6 +306,8 @@ class TaskSummary(ModelNormal):
         self.priority = priority
         self.task_type = task_type
         self.updated = updated
+        self.steps_completed = steps_completed
+        self.steps_total = steps_total
         for var_name, var_value in kwargs.items():
             if var_name not in self.attribute_map and \
                         self._configuration is not None and \

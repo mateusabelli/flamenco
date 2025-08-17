@@ -7,17 +7,18 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
+// Generate mock implementations.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/task_exe_listener.gen.go -package mocks projects.blender.org/studio/flamenco/internal/worker CommandRunner,TaskExecutionListener
+
 type CommandRunner interface {
 	Run(ctx context.Context, taskID string, cmd api.Command) error
 }
-
-// Generate mock implementation of this interface.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/task_exe_listener.gen.go -package mocks projects.blender.org/studio/flamenco/internal/worker TaskExecutionListener
 
 // TaskExecutionListener sends task lifecycle events (start/fail/complete) to the Manager.
 type TaskExecutionListener interface {
@@ -29,6 +30,8 @@ type TaskExecutionListener interface {
 
 	// TaskCompleted tells the Manager the task has been completed.
 	TaskCompleted(ctx context.Context, taskID string) error
+
+	TaskStep(ctx context.Context, taskID string) error
 }
 
 type TaskExecutor struct {
@@ -71,7 +74,8 @@ func (te *TaskExecutor) Run(ctx context.Context, task api.AssignedTask) error {
 
 		runErr := te.cmdRunner.Run(ctx, task.Uuid, cmd)
 		if runErr == nil {
-			// All was fine, go run the next command.
+			// All was fine, report & go run the next command.
+			te.reportCommandCompletion(ctx, logger, task.Uuid, cmd)
 			continue
 		}
 		if errors.Is(runErr, context.Canceled) {
@@ -97,4 +101,22 @@ func (te *TaskExecutor) Run(ctx context.Context, task api.AssignedTask) error {
 	}
 
 	return nil
+}
+
+func (te *TaskExecutor) reportCommandCompletion(
+	ctx context.Context,
+	logger zerolog.Logger,
+	taskUUID string,
+	cmd api.Command,
+) {
+	if cmd.TotalStepCount > 0 {
+		// This command counts it own steps, so it's not necessary to send a task step update now.
+		return
+	}
+
+	if err := te.listener.TaskStep(ctx, taskUUID); err != nil {
+		logger.Warn().
+			AnErr("cause", err).
+			Msg("task step due to command completion could not be sent to Manager")
+	}
 }

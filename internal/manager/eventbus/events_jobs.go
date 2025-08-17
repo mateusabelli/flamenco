@@ -15,12 +15,14 @@ import (
 // the caller.
 func NewJobUpdate(job *persistence.Job) api.EventJobUpdate {
 	jobUpdate := api.EventJobUpdate{
-		Id:       job.UUID,
-		Name:     &job.Name,
-		Updated:  job.UpdatedAt.Time,
-		Status:   job.Status,
-		Type:     job.JobType,
-		Priority: int(job.Priority),
+		Id:             job.UUID,
+		Name:           &job.Name,
+		Updated:        job.UpdatedAt.Time,
+		Status:         job.Status,
+		Type:           job.JobType,
+		Priority:       int(job.Priority),
+		StepsCompleted: int(job.StepsCompleted),
+		StepsTotal:     int(job.StepsTotal),
 	}
 
 	if job.DeleteRequestedAt.Valid {
@@ -36,12 +38,14 @@ func NewJobUpdate(job *persistence.Job) api.EventJobUpdate {
 // the caller.
 func NewTaskUpdate(task persistence.Task, jobUUID string) api.EventTaskUpdate {
 	taskUpdate := api.EventTaskUpdate{
-		Id:       task.UUID,
-		JobId:    jobUUID,
-		Name:     task.Name,
-		Updated:  task.UpdatedAt.Time,
-		Status:   task.Status,
-		Activity: task.Activity,
+		Id:             task.UUID,
+		JobId:          jobUUID,
+		Name:           task.Name,
+		Updated:        task.UpdatedAt.Time,
+		Status:         task.Status,
+		Activity:       task.Activity,
+		StepsCompleted: int(task.StepsCompleted),
+		StepsTotal:     int(task.StepsTotal),
 	}
 	return taskUpdate
 }

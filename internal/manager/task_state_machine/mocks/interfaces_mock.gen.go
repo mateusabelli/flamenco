@@ -210,6 +210,20 @@ func (mr *MockPersistenceServiceMockRecorder) SaveTaskStatus(arg0, arg1 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTaskStatus", reflect.TypeOf((*MockPersistenceService)(nil).SaveTaskStatus), arg0, arg1)
 }
 
+// SaveTaskStepsCompleted mocks base method.
+func (m *MockPersistenceService) SaveTaskStepsCompleted(arg0 context.Context, arg1, arg2, arg3 int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveTaskStepsCompleted", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveTaskStepsCompleted indicates an expected call of SaveTaskStepsCompleted.
+func (mr *MockPersistenceServiceMockRecorder) SaveTaskStepsCompleted(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTaskStepsCompleted", reflect.TypeOf((*MockPersistenceService)(nil).SaveTaskStepsCompleted), arg0, arg1, arg2, arg3)
+}
+
 // UpdateJobsTaskStatuses mocks base method.
 func (m *MockPersistenceService) UpdateJobsTaskStatuses(arg0 context.Context, arg1 *sqlc.Job, arg2 api.TaskStatus, arg3 string) error {
 	m.ctrl.T.Helper()
@@ -236,6 +250,20 @@ func (m *MockPersistenceService) UpdateJobsTaskStatusesConditional(arg0 context.
 func (mr *MockPersistenceServiceMockRecorder) UpdateJobsTaskStatusesConditional(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateJobsTaskStatusesConditional", reflect.TypeOf((*MockPersistenceService)(nil).UpdateJobsTaskStatusesConditional), arg0, arg1, arg2, arg3, arg4)
+}
+
+// UpdateJobsTaskStepCounts mocks base method.
+func (m *MockPersistenceService) UpdateJobsTaskStepCounts(arg0 context.Context, arg1 int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateJobsTaskStepCounts", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateJobsTaskStepCounts indicates an expected call of UpdateJobsTaskStepCounts.
+func (mr *MockPersistenceServiceMockRecorder) UpdateJobsTaskStepCounts(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateJobsTaskStepCounts", reflect.TypeOf((*MockPersistenceService)(nil).UpdateJobsTaskStepCounts), arg0, arg1)
 }
 
 // MockChangeBroadcaster is a mock of ChangeBroadcaster interface.

@@ -135,7 +135,8 @@ INSERT INTO jobs (
   settings,
   metadata,
   storage_shaman_checkout_id,
-  worker_tag_id
+  worker_tag_id,
+  steps_total
 )
 VALUES (
   ?1,
@@ -149,7 +150,8 @@ VALUES (
   ?8,
   ?9,
   ?10,
-  ?11
+  ?11,
+  ?12
 )
 `
 
@@ -165,6 +167,7 @@ type CreateJobParams struct {
 	Metadata                json.RawMessage
 	StorageShamanCheckoutID string
 	WorkerTagID             sql.NullInt64
+	StepsTotal              int64
 }
 
 func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (int64, error) {
@@ -180,6 +183,7 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (int64, er
 		arg.Metadata,
 		arg.StorageShamanCheckoutID,
 		arg.WorkerTagID,
+		arg.StepsTotal,
 	)
 	if err != nil {
 		return 0, err
@@ -198,7 +202,8 @@ INSERT INTO tasks (
   index_in_job,
   priority,
   status,
-  commands
+  commands,
+  steps_total
 ) VALUES (
   ?1,
   ?1,
@@ -209,7 +214,8 @@ INSERT INTO tasks (
   ?6,
   ?7,
   ?8,
-  ?9
+  ?9,
+  ?10
 )
 `
 
@@ -223,6 +229,7 @@ type CreateTaskParams struct {
 	Priority   int64
 	Status     api.TaskStatus
 	Commands   json.RawMessage
+	StepsTotal int64
 }
 
 func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (int64, error) {
@@ -236,6 +243,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (int64, 
 		arg.Priority,
 		arg.Status,
 		arg.Commands,
+		arg.StepsTotal,
 	)
 	if err != nil {
 		return 0, err
@@ -253,7 +261,7 @@ func (q *Queries) DeleteJob(ctx context.Context, uuid string) error {
 }
 
 const fetchJob = `-- name: FetchJob :one
-SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activity, settings, metadata, delete_requested_at, storage_shaman_checkout_id, worker_tag_id FROM jobs
+SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activity, settings, metadata, delete_requested_at, storage_shaman_checkout_id, worker_tag_id, steps_completed, steps_total FROM jobs
 WHERE uuid = ? LIMIT 1
 `
 
@@ -276,6 +284,8 @@ func (q *Queries) FetchJob(ctx context.Context, uuid string) (Job, error) {
 		&i.DeleteRequestedAt,
 		&i.StorageShamanCheckoutID,
 		&i.WorkerTagID,
+		&i.StepsCompleted,
+		&i.StepsTotal,
 	)
 	return i, err
 }
@@ -326,7 +336,7 @@ func (q *Queries) FetchJobBlocklist(ctx context.Context, jobuuid string) ([]Fetc
 }
 
 const fetchJobByID = `-- name: FetchJobByID :one
-SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activity, settings, metadata, delete_requested_at, storage_shaman_checkout_id, worker_tag_id FROM jobs
+SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activity, settings, metadata, delete_requested_at, storage_shaman_checkout_id, worker_tag_id, steps_completed, steps_total FROM jobs
 WHERE id = ? LIMIT 1
 `
 
@@ -349,6 +359,8 @@ func (q *Queries) FetchJobByID(ctx context.Context, id int64) (Job, error) {
 		&i.DeleteRequestedAt,
 		&i.StorageShamanCheckoutID,
 		&i.WorkerTagID,
+		&i.StepsCompleted,
+		&i.StepsTotal,
 	)
 	return i, err
 }
@@ -407,7 +419,7 @@ func (q *Queries) FetchJobUUIDsUpdatedBefore(ctx context.Context, updatedAtMax s
 }
 
 const fetchJobs = `-- name: FetchJobs :many
-SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activity, settings, metadata, delete_requested_at, storage_shaman_checkout_id, worker_tag_id fRoM jobs
+SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activity, settings, metadata, delete_requested_at, storage_shaman_checkout_id, worker_tag_id, steps_completed, steps_total fRoM jobs
 `
 
 // Fetch all jobs in the database.
@@ -435,6 +447,8 @@ func (q *Queries) FetchJobs(ctx context.Context) ([]Job, error) {
 			&i.DeleteRequestedAt,
 			&i.StorageShamanCheckoutID,
 			&i.WorkerTagID,
+			&i.StepsCompleted,
+			&i.StepsTotal,
 		); err != nil {
 			return nil, err
 		}
@@ -479,7 +493,7 @@ func (q *Queries) FetchJobsDeletionRequested(ctx context.Context) ([]string, err
 }
 
 const fetchJobsInStatus = `-- name: FetchJobsInStatus :many
-SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activity, settings, metadata, delete_requested_at, storage_shaman_checkout_id, worker_tag_id FROM jobs WHERE status IN (/*SLICE:statuses*/?)
+SELECT id, created_at, updated_at, uuid, name, job_type, priority, status, activity, settings, metadata, delete_requested_at, storage_shaman_checkout_id, worker_tag_id, steps_completed, steps_total FROM jobs WHERE status IN (/*SLICE:statuses*/?)
 `
 
 func (q *Queries) FetchJobsInStatus(ctx context.Context, statuses []api.JobStatus) ([]Job, error) {
@@ -516,6 +530,8 @@ func (q *Queries) FetchJobsInStatus(ctx context.Context, statuses []api.JobStatu
 			&i.DeleteRequestedAt,
 			&i.StorageShamanCheckoutID,
 			&i.WorkerTagID,
+			&i.StepsCompleted,
+			&i.StepsTotal,
 		); err != nil {
 			return nil, err
 		}
@@ -531,7 +547,7 @@ func (q *Queries) FetchJobsInStatus(ctx context.Context, statuses []api.JobStatu
 }
 
 const fetchTask = `-- name: FetchTask :one
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, jobs.UUID as jobUUID, workers.UUID as workerUUID
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, tasks.steps_completed, tasks.steps_total, jobs.UUID as jobUUID, workers.UUID as workerUUID
 FROM tasks
 LEFT JOIN jobs ON (tasks.job_id = jobs.id)
 LEFT JOIN workers ON (tasks.worker_id = workers.id)
@@ -562,6 +578,8 @@ func (q *Queries) FetchTask(ctx context.Context, uuid string) (FetchTaskRow, err
 		&i.Task.LastTouchedAt,
 		&i.Task.Commands,
 		&i.Task.Activity,
+		&i.Task.StepsCompleted,
+		&i.Task.StepsTotal,
 		&i.JobUUID,
 		&i.WorkerUUID,
 	)
@@ -633,7 +651,7 @@ func (q *Queries) FetchTaskJobUUID(ctx context.Context, uuid string) (sql.NullSt
 }
 
 const fetchTasksOfJob = `-- name: FetchTasksOfJob :many
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, workers.UUID as workerUUID
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, tasks.steps_completed, tasks.steps_total, workers.UUID as workerUUID
 FROM tasks
 LEFT JOIN workers ON (tasks.worker_id = workers.id)
 WHERE tasks.job_id = ?1
@@ -668,6 +686,8 @@ func (q *Queries) FetchTasksOfJob(ctx context.Context, jobID int64) ([]FetchTask
 			&i.Task.LastTouchedAt,
 			&i.Task.Commands,
 			&i.Task.Activity,
+			&i.Task.StepsCompleted,
+			&i.Task.StepsTotal,
 			&i.WorkerUUID,
 		); err != nil {
 			return nil, err
@@ -684,7 +704,7 @@ func (q *Queries) FetchTasksOfJob(ctx context.Context, jobID int64) ([]FetchTask
 }
 
 const fetchTasksOfJobInStatus = `-- name: FetchTasksOfJobInStatus :many
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, workers.UUID as workerUUID
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, tasks.steps_completed, tasks.steps_total, workers.UUID as workerUUID
 FROM tasks
 LEFT JOIN workers ON (tasks.worker_id = workers.id)
 WHERE tasks.job_id = ?1
@@ -736,6 +756,8 @@ func (q *Queries) FetchTasksOfJobInStatus(ctx context.Context, arg FetchTasksOfJ
 			&i.Task.LastTouchedAt,
 			&i.Task.Commands,
 			&i.Task.Activity,
+			&i.Task.StepsCompleted,
+			&i.Task.StepsTotal,
 			&i.WorkerUUID,
 		); err != nil {
 			return nil, err
@@ -752,7 +774,7 @@ func (q *Queries) FetchTasksOfJobInStatus(ctx context.Context, arg FetchTasksOfJ
 }
 
 const fetchTasksOfWorkerInStatus = `-- name: FetchTasksOfWorkerInStatus :many
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, jobs.uuid as jobuuid
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, tasks.steps_completed, tasks.steps_total, jobs.uuid as jobuuid
 FROM tasks
 INNER JOIN jobs ON (tasks.job_id = jobs.id)
 WHERE tasks.worker_id = ?1
@@ -793,6 +815,8 @@ func (q *Queries) FetchTasksOfWorkerInStatus(ctx context.Context, arg FetchTasks
 			&i.Task.LastTouchedAt,
 			&i.Task.Commands,
 			&i.Task.Activity,
+			&i.Task.StepsCompleted,
+			&i.Task.StepsTotal,
 			&i.JobUUID,
 		); err != nil {
 			return nil, err
@@ -809,7 +833,7 @@ func (q *Queries) FetchTasksOfWorkerInStatus(ctx context.Context, arg FetchTasks
 }
 
 const fetchTasksOfWorkerInStatusOfJob = `-- name: FetchTasksOfWorkerInStatusOfJob :many
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, tasks.steps_completed, tasks.steps_total
 FROM tasks
 LEFT JOIN jobs ON (tasks.job_id = jobs.id)
 WHERE tasks.worker_id = ?1
@@ -851,6 +875,8 @@ func (q *Queries) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, arg Fetch
 			&i.Task.LastTouchedAt,
 			&i.Task.Commands,
 			&i.Task.Activity,
+			&i.Task.StepsCompleted,
+			&i.Task.StepsTotal,
 		); err != nil {
 			return nil, err
 		}
@@ -866,7 +892,7 @@ func (q *Queries) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, arg Fetch
 }
 
 const fetchTimedOutTasks = `-- name: FetchTimedOutTasks :many
-SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity,
+SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.uuid, tasks.name, tasks.type, tasks.job_id, tasks.index_in_job, tasks.priority, tasks.status, tasks.worker_id, tasks.last_touched_at, tasks.commands, tasks.activity, tasks.steps_completed, tasks.steps_total,
   -- Cast to remove nullability from the generated structs.
   CAST(jobs.uuid AS VARCHAR(36)) as jobuuid,
   CAST(workers.name AS VARCHAR(64)) as worker_name,
@@ -915,6 +941,8 @@ func (q *Queries) FetchTimedOutTasks(ctx context.Context, arg FetchTimedOutTasks
 			&i.Task.LastTouchedAt,
 			&i.Task.Commands,
 			&i.Task.Activity,
+			&i.Task.StepsCompleted,
+			&i.Task.StepsTotal,
 			&i.JobUUID,
 			&i.WorkerName,
 			&i.WorkerUUID,
@@ -998,7 +1026,18 @@ func (q *Queries) JobCountTasksInStatus(ctx context.Context, arg JobCountTasksIn
 }
 
 const queryJobTaskSummaries = `-- name: QueryJobTaskSummaries :many
-SELECT tasks.id, tasks.uuid, tasks.name, tasks.index_in_job, tasks.priority, tasks.status, tasks.type, tasks.updated_at, workers.UUID as workerUUID
+SELECT
+  tasks.id,
+  tasks.uuid,
+  tasks.name,
+  tasks.index_in_job,
+  tasks.priority,
+  tasks.status,
+  tasks.type,
+  tasks.updated_at,
+  tasks.steps_completed,
+  tasks.steps_total,
+  workers.UUID as workerUUID
 FROM tasks
 LEFT JOIN jobs ON jobs.id = tasks.job_id
 LEFT JOIN workers ON  workers.id = tasks.worker_id
@@ -1006,15 +1045,17 @@ WHERE jobs.uuid=?1
 `
 
 type QueryJobTaskSummariesRow struct {
-	ID         int64
-	UUID       string
-	Name       string
-	IndexInJob int64
-	Priority   int64
-	Status     api.TaskStatus
-	Type       string
-	UpdatedAt  sql.NullTime
-	WorkerUUID sql.NullString
+	ID             int64
+	UUID           string
+	Name           string
+	IndexInJob     int64
+	Priority       int64
+	Status         api.TaskStatus
+	Type           string
+	UpdatedAt      sql.NullTime
+	StepsCompleted int64
+	StepsTotal     int64
+	WorkerUUID     sql.NullString
 }
 
 func (q *Queries) QueryJobTaskSummaries(ctx context.Context, jobUuid string) ([]QueryJobTaskSummariesRow, error) {
@@ -1035,6 +1076,8 @@ func (q *Queries) QueryJobTaskSummaries(ctx context.Context, jobUuid string) ([]
 			&i.Status,
 			&i.Type,
 			&i.UpdatedAt,
+			&i.StepsCompleted,
+			&i.StepsTotal,
 			&i.WorkerUUID,
 		); err != nil {
 			return nil, err
@@ -1403,6 +1446,35 @@ func (q *Queries) Test_FetchTaskFailures(ctx context.Context) ([]TaskFailure, er
 	return items, nil
 }
 
+const updateJobStepsCompleted = `-- name: UpdateJobStepsCompleted :exec
+UPDATE jobs
+SET
+  updated_at = ?1,
+  steps_completed = (
+    SELECT COALESCE(SUM(tasks.steps_completed), 0)
+    FROM tasks
+    WHERE tasks.job_id = ?2
+  ),
+  steps_total = (
+    SELECT COALESCE(SUM(tasks.steps_total), 0)
+    FROM tasks
+    WHERE tasks.job_id = ?2
+  )
+WHERE id = ?2
+`
+
+type UpdateJobStepsCompletedParams struct {
+	UpdatedAt sql.NullTime
+	ID        int64
+}
+
+// Sum the steps_completed of all this job's tasks, and store it on the job.
+// This could use 'UPDATE FROM' syntax, once https://github.com/sqlc-dev/sqlc/issues/3132 is fixed.
+func (q *Queries) UpdateJobStepsCompleted(ctx context.Context, arg UpdateJobStepsCompletedParams) error {
+	_, err := q.db.ExecContext(ctx, updateJobStepsCompleted, arg.UpdatedAt, arg.ID)
+	return err
+}
+
 const updateJobsTaskStatuses = `-- name: UpdateJobsTaskStatuses :exec
 UPDATE tasks SET
   updated_at = ?1,
@@ -1463,6 +1535,68 @@ func (q *Queries) UpdateJobsTaskStatusesConditional(ctx context.Context, arg Upd
 	return err
 }
 
+const updateJobsTaskStepCountsComplete = `-- name: UpdateJobsTaskStepCountsComplete :exec
+UPDATE tasks SET
+  updated_at = ?1,
+  steps_completed = steps_total
+WHERE job_id = ?2 AND status in (/*SLICE:statuses_to_update*/?)
+`
+
+type UpdateJobsTaskStepCountsCompleteParams struct {
+	UpdatedAt        sql.NullTime
+	JobID            int64
+	StatusesToUpdate []api.TaskStatus
+}
+
+// Set the job's tasks with the given status to their total step count.
+func (q *Queries) UpdateJobsTaskStepCountsComplete(ctx context.Context, arg UpdateJobsTaskStepCountsCompleteParams) error {
+	query := updateJobsTaskStepCountsComplete
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.UpdatedAt)
+	queryParams = append(queryParams, arg.JobID)
+	if len(arg.StatusesToUpdate) > 0 {
+		for _, v := range arg.StatusesToUpdate {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:statuses_to_update*/?", strings.Repeat(",?", len(arg.StatusesToUpdate))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:statuses_to_update*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
+}
+
+const updateJobsTaskStepCountsZero = `-- name: UpdateJobsTaskStepCountsZero :exec
+UPDATE tasks SET
+  updated_at = ?1,
+  steps_completed = 0
+WHERE job_id = ?2 AND status in (/*SLICE:statuses_to_update*/?)
+`
+
+type UpdateJobsTaskStepCountsZeroParams struct {
+	UpdatedAt        sql.NullTime
+	JobID            int64
+	StatusesToUpdate []api.TaskStatus
+}
+
+// Set the job's tasks with the given status to zero completed step count.
+func (q *Queries) UpdateJobsTaskStepCountsZero(ctx context.Context, arg UpdateJobsTaskStepCountsZeroParams) error {
+	query := updateJobsTaskStepCountsZero
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.UpdatedAt)
+	queryParams = append(queryParams, arg.JobID)
+	if len(arg.StatusesToUpdate) > 0 {
+		for _, v := range arg.StatusesToUpdate {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:statuses_to_update*/?", strings.Repeat(",?", len(arg.StatusesToUpdate))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:statuses_to_update*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
+}
+
 const updateTask = `-- name: UpdateTask :exec
 UPDATE tasks SET
   updated_at = ?1,
@@ -1473,21 +1607,25 @@ UPDATE tasks SET
   worker_id = ?6,
   last_touched_at = ?7,
   commands = ?8,
-  activity = ?9
-WHERE id=?10
+  activity = ?9,
+  steps_total = ?10,
+  steps_completed = ?11
+WHERE id=?12
 `
 
 type UpdateTaskParams struct {
-	UpdatedAt     sql.NullTime
-	Name          string
-	Type          string
-	Priority      int64
-	Status        api.TaskStatus
-	WorkerID      sql.NullInt64
-	LastTouchedAt sql.NullTime
-	Commands      json.RawMessage
-	Activity      string
-	ID            int64
+	UpdatedAt      sql.NullTime
+	Name           string
+	Type           string
+	Priority       int64
+	Status         api.TaskStatus
+	WorkerID       sql.NullInt64
+	LastTouchedAt  sql.NullTime
+	Commands       json.RawMessage
+	Activity       string
+	StepsTotal     int64
+	StepsCompleted int64
+	ID             int64
 }
 
 // Update a Task, except its id, created_at, uuid, or job_id fields.
@@ -1502,6 +1640,8 @@ func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) error {
 		arg.LastTouchedAt,
 		arg.Commands,
 		arg.Activity,
+		arg.StepsTotal,
+		arg.StepsCompleted,
 		arg.ID,
 	)
 	return err
@@ -1540,6 +1680,24 @@ type UpdateTaskStatusParams struct {
 
 func (q *Queries) UpdateTaskStatus(ctx context.Context, arg UpdateTaskStatusParams) error {
 	_, err := q.db.ExecContext(ctx, updateTaskStatus, arg.UpdatedAt, arg.Status, arg.ID)
+	return err
+}
+
+const updateTaskStepsCompleted = `-- name: UpdateTaskStepsCompleted :exec
+UPDATE tasks SET
+  updated_at = ?1,
+  steps_completed = ?2
+WHERE id=?3
+`
+
+type UpdateTaskStepsCompletedParams struct {
+	UpdatedAt      sql.NullTime
+	StepsCompleted int64
+	ID             int64
+}
+
+func (q *Queries) UpdateTaskStepsCompleted(ctx context.Context, arg UpdateTaskStepsCompletedParams) error {
+	_, err := q.db.ExecContext(ctx, updateTaskStepsCompleted, arg.UpdatedAt, arg.StepsCompleted, arg.ID)
 	return err
 }
 

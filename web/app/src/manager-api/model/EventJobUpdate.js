@@ -30,10 +30,12 @@ class EventJobUpdate {
      * @param type {String} 
      * @param priority {Number} 
      * @param refreshTasks {Boolean} Indicates that the client should refresh all the job's tasks. This is sent for mass updates, where updating each individual task would generate too many updates to be practical. 
+     * @param stepsCompleted {Number} 
+     * @param stepsTotal {Number} 
      */
-    constructor(id, updated, status, type, priority, refreshTasks) { 
+    constructor(id, updated, status, type, priority, refreshTasks, stepsCompleted, stepsTotal) { 
         
-        EventJobUpdate.initialize(this, id, updated, status, type, priority, refreshTasks);
+        EventJobUpdate.initialize(this, id, updated, status, type, priority, refreshTasks, stepsCompleted, stepsTotal);
     }
 
     /**
@@ -41,13 +43,15 @@ class EventJobUpdate {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, id, updated, status, type, priority, refreshTasks) { 
+    static initialize(obj, id, updated, status, type, priority, refreshTasks, stepsCompleted, stepsTotal) { 
         obj['id'] = id;
         obj['updated'] = updated;
         obj['status'] = status;
         obj['type'] = type;
         obj['priority'] = priority || 50;
         obj['refresh_tasks'] = refreshTasks;
+        obj['steps_completed'] = stepsCompleted;
+        obj['steps_total'] = stepsTotal;
     }
 
     /**
@@ -84,6 +88,12 @@ class EventJobUpdate {
             }
             if (data.hasOwnProperty('refresh_tasks')) {
                 obj['refresh_tasks'] = ApiClient.convertToType(data['refresh_tasks'], 'Boolean');
+            }
+            if (data.hasOwnProperty('steps_completed')) {
+                obj['steps_completed'] = ApiClient.convertToType(data['steps_completed'], 'Number');
+            }
+            if (data.hasOwnProperty('steps_total')) {
+                obj['steps_total'] = ApiClient.convertToType(data['steps_total'], 'Number');
             }
             if (data.hasOwnProperty('delete_requested_at')) {
                 obj['delete_requested_at'] = ApiClient.convertToType(data['delete_requested_at'], 'Date');
@@ -142,6 +152,16 @@ EventJobUpdate.prototype['priority'] = 50;
  * @member {Boolean} refresh_tasks
  */
 EventJobUpdate.prototype['refresh_tasks'] = undefined;
+
+/**
+ * @member {Number} steps_completed
+ */
+EventJobUpdate.prototype['steps_completed'] = undefined;
+
+/**
+ * @member {Number} steps_total
+ */
+EventJobUpdate.prototype['steps_total'] = undefined;
 
 /**
  * If job deletion was requested, this is the timestamp at which that request was stored on Flamenco Manager. 

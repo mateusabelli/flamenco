@@ -107,6 +107,7 @@ func TestSimpleBlenderRenderHappy(t *testing.T) {
 		"args":       expectCliArgs,
 		"argsBefore": make([]interface{}, 0),
 	}, t0.Commands[0].Parameters)
+	assert.Equal(t, 3, t0.Commands[0].TotalStepCount)
 
 	tVideo := aj.Tasks[4] // This should be a video encoding task
 	assert.NotEmpty(t, tVideo.UUID)
@@ -120,6 +121,7 @@ func TestSimpleBlenderRenderHappy(t *testing.T) {
 		"fps":        int64(24),
 		"args":       expectedFramesToVideoArgs,
 	}, tVideo.Commands[0].Parameters)
+	assert.Equal(t, 0, tVideo.Commands[0].TotalStepCount)
 
 	for index, task := range aj.Tasks {
 		if index == 0 {
@@ -172,6 +174,7 @@ func TestSimpleBlenderRenderWithScene(t *testing.T) {
 		"args":       expectCliArgs,
 		"argsBefore": make([]interface{}, 0),
 	}, t0.Commands[0].Parameters)
+	assert.Equal(t, 3, t0.Commands[0].TotalStepCount)
 }
 
 func TestJobWithoutTag(t *testing.T) {
@@ -395,10 +398,12 @@ func TestComplexFrameRange(t *testing.T) {
 
 	// Check the Blender CLI matches the expected frame ranges.
 	frameRangesFromCLI := []string{}
+	totalStepCounts := []int{}
 	for _, task := range aj.Tasks[0:3] {
 		args := task.Commands[0].Parameters["args"].([]interface{})
 		require.Equal(t, "--render-frame", args[4])
 		frameRangesFromCLI = append(frameRangesFromCLI, args[5].(string))
+		totalStepCounts = append(totalStepCounts, task.Commands[0].TotalStepCount)
 	}
 
 	assert.Equal(t,
@@ -409,6 +414,11 @@ func TestComplexFrameRange(t *testing.T) {
 		},
 		frameRangesFromCLI,
 	)
+	assert.Equal(t, []int{
+		(12 - 0 + 1) + (40 - 34 + 1),
+		(56 - 41 + 1) + (81 - 78 + 1),
+		(90 - 82 + 1),
+	}, totalStepCounts)
 
 	// Check the FFmpeg output. The frame range should have been simplified to
 	// `first-last` due to the comma in the input range.

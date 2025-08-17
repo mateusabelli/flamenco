@@ -12,7 +12,9 @@
       <dd>{{ taskData.name }}</dd>
 
       <dt class="field-status" title="Status">Status</dt>
-      <dd class="field-status-label" :class="'status-' + taskData.status">{{ taskData.status }}</dd>
+      <dd class="field-status-label" :class="'status-' + taskData.status">{{ taskData.status }}
+        <span v-if="taskData.steps_total && taskData.steps_completed">({{ taskData.steps_completed }}/{{ taskData.steps_total }} steps)</span>
+      </dd>
 
       <dt class="field-worker" title="Assigned To">Assigned To</dt>
       <dd>

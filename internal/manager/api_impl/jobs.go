@@ -683,6 +683,9 @@ func jobDBtoAPI(ctx context.Context, persist PersistenceService, dbJob *persiste
 		Updated:  dbJob.UpdatedAt.Time,
 		Status:   api.JobStatus(dbJob.Status),
 		Activity: dbJob.Activity,
+
+		StepsCompleted: int(dbJob.StepsCompleted),
+		StepsTotal:     int(dbJob.StepsTotal),
 	}
 
 	{ // Parse job settings JSON.
@@ -730,16 +733,18 @@ func taskJobWorkertoAPI(taskJobWorker persistence.TaskJobWorker) api.Task {
 
 func taskToAPI(task *persistence.Task, jobUUID, workerUUID string) api.Task {
 	apiTask := api.Task{
-		Id:         task.UUID,
-		IndexInJob: int(task.IndexInJob),
-		JobId:      jobUUID,
-		Name:       task.Name,
-		Priority:   int(task.Priority),
-		TaskType:   task.Type,
-		Created:    task.CreatedAt,
-		Updated:    task.UpdatedAt.Time,
-		Status:     task.Status,
-		Activity:   task.Activity,
+		Id:             task.UUID,
+		IndexInJob:     int(task.IndexInJob),
+		JobId:          jobUUID,
+		Name:           task.Name,
+		Priority:       int(task.Priority),
+		TaskType:       task.Type,
+		Created:        task.CreatedAt,
+		Updated:        task.UpdatedAt.Time,
+		Status:         task.Status,
+		Activity:       task.Activity,
+		StepsCompleted: int(task.StepsCompleted),
+		StepsTotal:     int(task.StepsTotal),
 
 		// TODO: update the web frontend just use the UUID, as we have not enough
 		// info here to fill the name & address fields.

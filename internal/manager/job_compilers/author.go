@@ -60,8 +60,9 @@ type AuthoredTask struct {
 }
 
 type AuthoredCommand struct {
-	Name       string
-	Parameters AuthoredCommandParameters
+	Name           string
+	Parameters     AuthoredCommandParameters
+	TotalStepCount int
 }
 type AuthoredCommandParameters map[string]interface{}
 
@@ -86,8 +87,15 @@ func (a *Author) Task(name string, taskType string) (*AuthoredTask, error) {
 	return &at, nil
 }
 
-func (a *Author) Command(cmdName string, parameters AuthoredCommandParameters) (*AuthoredCommand, error) {
-	ac := AuthoredCommand{cmdName, parameters}
+func (a *Author) Command(
+	cmdName string,
+	parameters AuthoredCommandParameters,
+	totalStepCount int,
+) (*AuthoredCommand, error) {
+	// If the JavaScript call doesn't include this parameter, it will be set to
+	// zero. That's a fine value, and is interpreted by the Worker as "does not
+	// support steps".
+	ac := AuthoredCommand{cmdName, parameters, totalStepCount}
 	return &ac, nil
 }
 

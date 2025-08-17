@@ -16,6 +16,8 @@ Name | Type | Description | Notes
 **task_type** | **str** |  | 
 **activity** | **str** |  | 
 **commands** | [**[Command]**](Command.md) |  | 
+**steps_completed** | **int** |  | 
+**steps_total** | **int** |  | 
 **worker** | [**TaskWorker**](TaskWorker.md) |  | [optional] 
 **last_touched** | **datetime** | Timestamp of when any worker worked on this task. | [optional] 
 **failed_by_workers** | [**[TaskWorker]**](TaskWorker.md) |  | [optional] 

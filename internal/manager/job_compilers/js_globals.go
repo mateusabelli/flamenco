@@ -125,6 +125,12 @@ func jsFrameChunker(frameRange string, chunkSize int) ([]string, error) {
 	return chunks, nil
 }
 
+// jsFrameCount returns the number of frames in the frame range.
+func jsFrameCount(frameRange string) (int, error) {
+	frames, err := frameRangeExplode(frameRange)
+	return len(frames), err
+}
+
 // Given a range of frames, return an array containing each frame number.
 func frameRangeExplode(frameRange string) ([]int, error) {
 	// Store as map to avoid duplicate frames.

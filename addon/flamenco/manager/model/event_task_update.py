@@ -93,6 +93,8 @@ class EventTaskUpdate(ModelNormal):
             'updated': (datetime,),  # noqa: E501
             'status': (TaskStatus,),  # noqa: E501
             'activity': (str,),  # noqa: E501
+            'steps_completed': (int,),  # noqa: E501
+            'steps_total': (int,),  # noqa: E501
             'previous_status': (TaskStatus,),  # noqa: E501
         }
 
@@ -108,6 +110,8 @@ class EventTaskUpdate(ModelNormal):
         'updated': 'updated',  # noqa: E501
         'status': 'status',  # noqa: E501
         'activity': 'activity',  # noqa: E501
+        'steps_completed': 'steps_completed',  # noqa: E501
+        'steps_total': 'steps_total',  # noqa: E501
         'previous_status': 'previous_status',  # noqa: E501
     }
 
@@ -118,7 +122,7 @@ class EventTaskUpdate(ModelNormal):
 
     @classmethod
     @convert_js_args_to_python_args
-    def _from_openapi_data(cls, id, job_id, name, updated, status, activity, *args, **kwargs):  # noqa: E501
+    def _from_openapi_data(cls, id, job_id, name, updated, status, activity, steps_completed, steps_total, *args, **kwargs):  # noqa: E501
         """EventTaskUpdate - a model defined in OpenAPI
 
         Args:
@@ -128,6 +132,8 @@ class EventTaskUpdate(ModelNormal):
             updated (datetime): Timestamp of last update
             status (TaskStatus):
             activity (str):
+            steps_completed (int):
+            steps_total (int):
 
         Keyword Args:
             _check_type (bool): if True, values for parameters in openapi_types
@@ -194,6 +200,8 @@ class EventTaskUpdate(ModelNormal):
         self.updated = updated
         self.status = status
         self.activity = activity
+        self.steps_completed = steps_completed
+        self.steps_total = steps_total
         for var_name, var_value in kwargs.items():
             if var_name not in self.attribute_map and \
                         self._configuration is not None and \
@@ -214,7 +222,7 @@ class EventTaskUpdate(ModelNormal):
     ])
 
     @convert_js_args_to_python_args
-    def __init__(self, id, job_id, name, updated, status, activity, *args, **kwargs):  # noqa: E501
+    def __init__(self, id, job_id, name, updated, status, activity, steps_completed, steps_total, *args, **kwargs):  # noqa: E501
         """EventTaskUpdate - a model defined in OpenAPI
 
         Args:
@@ -224,6 +232,8 @@ class EventTaskUpdate(ModelNormal):
             updated (datetime): Timestamp of last update
             status (TaskStatus):
             activity (str):
+            steps_completed (int):
+            steps_total (int):
 
         Keyword Args:
             _check_type (bool): if True, values for parameters in openapi_types
@@ -288,6 +298,8 @@ class EventTaskUpdate(ModelNormal):
         self.updated = updated
         self.status = status
         self.activity = activity
+        self.steps_completed = steps_completed
+        self.steps_total = steps_total
         for var_name, var_value in kwargs.items():
             if var_name not in self.attribute_map and \
                         self._configuration is not None and \

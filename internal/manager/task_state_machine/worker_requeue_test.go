@@ -51,6 +51,9 @@ func TestRequeueActiveTasksOfWorker(t *testing.T) {
 	mocks.persist.EXPECT().SaveTaskStatus(ctx, &task1WithActivityAndStatus)
 	mocks.persist.EXPECT().SaveTaskStatus(ctx, &task2WithActivityAndStatus)
 
+	mocks.persist.EXPECT().SaveTaskStepsCompleted(ctx, job.ID, task1.ID, int64(0))
+	mocks.persist.EXPECT().SaveTaskStepsCompleted(ctx, job.ID, task2.ID, int64(0))
+
 	mocks.logStorage.EXPECT().WriteTimestamped(gomock.Any(), job.UUID, task1.UUID, logMsg1)
 	mocks.logStorage.EXPECT().WriteTimestamped(gomock.Any(), job.UUID, task2.UUID, logMsg1)
 
@@ -65,6 +68,8 @@ func TestRequeueActiveTasksOfWorker(t *testing.T) {
 		PreviousStatus: &task1PrevStatus,
 		Status:         api.TaskStatusQueued,
 		Updated:        task1.UpdatedAt.Time,
+		StepsCompleted: 0,
+		StepsTotal:     1,
 	})
 
 	mocks.broadcaster.EXPECT().BroadcastTaskUpdate(api.EventTaskUpdate{
@@ -75,6 +80,8 @@ func TestRequeueActiveTasksOfWorker(t *testing.T) {
 		PreviousStatus: &task2PrevStatus,
 		Status:         api.TaskStatusQueued,
 		Updated:        task2.UpdatedAt.Time,
+		StepsCompleted: 0,
+		StepsTotal:     1,
 	})
 
 	mocks.expectFetchJobOfTask(task1, job)
@@ -136,6 +143,8 @@ func TestPauseActiveTasksOfWorker(t *testing.T) {
 		PreviousStatus: &task1PrevStatus,
 		Status:         api.TaskStatusPaused,
 		Updated:        task1.UpdatedAt.Time,
+		StepsCompleted: 0,
+		StepsTotal:     1,
 	})
 	mocks.broadcaster.EXPECT().BroadcastJobUpdate(api.EventJobUpdate{
 		Id:             job.UUID,

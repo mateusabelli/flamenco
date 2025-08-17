@@ -10,6 +10,8 @@ Name | Type | Description | Notes
 **status** | [**JobStatus**](JobStatus.md) |  | 
 **type** | **str** |  | 
 **refresh_tasks** | **bool** | Indicates that the client should refresh all the job&#39;s tasks. This is sent for mass updates, where updating each individual task would generate too many updates to be practical.  | 
+**steps_completed** | **int** |  | 
+**steps_total** | **int** |  | 
 **priority** | **int** |  | defaults to 50
 **name** | **str** | Name of the job | [optional] 
 **previous_status** | [**JobStatus**](JobStatus.md) |  | [optional] 

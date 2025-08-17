@@ -83,6 +83,7 @@ class Command(ModelNormal):
         return {
             'name': (str,),  # noqa: E501
             'parameters': ({str: (bool, date, datetime, dict, float, int, list, str, none_type)},),  # noqa: E501
+            'total_step_count': (int,),  # noqa: E501
         }
 
     @cached_property
@@ -93,6 +94,7 @@ class Command(ModelNormal):
     attribute_map = {
         'name': 'name',  # noqa: E501
         'parameters': 'parameters',  # noqa: E501
+        'total_step_count': 'total_step_count',  # noqa: E501
     }
 
     read_only_vars = {
@@ -102,12 +104,13 @@ class Command(ModelNormal):
 
     @classmethod
     @convert_js_args_to_python_args
-    def _from_openapi_data(cls, name, parameters, *args, **kwargs):  # noqa: E501
+    def _from_openapi_data(cls, name, parameters, total_step_count, *args, **kwargs):  # noqa: E501
         """Command - a model defined in OpenAPI
 
         Args:
             name (str):
             parameters ({str: (bool, date, datetime, dict, float, int, list, str, none_type)}):
+            total_step_count (int): Number of steps this command executes. This has to be implemented in the command's implementation on the Worker (to recognise what a \"step\" is), as well as given in the authoring code of the job type JavaScript script (to indicate how many steps the command invocation will perform). If not given, or set to 0, the command is not expected to send any step progress. In this case, the Worker will send a step update at completion of the command. 
 
         Keyword Args:
             _check_type (bool): if True, values for parameters in openapi_types
@@ -169,6 +172,7 @@ class Command(ModelNormal):
 
         self.name = name
         self.parameters = parameters
+        self.total_step_count = total_step_count
         for var_name, var_value in kwargs.items():
             if var_name not in self.attribute_map and \
                         self._configuration is not None and \
@@ -189,12 +193,13 @@ class Command(ModelNormal):
     ])
 
     @convert_js_args_to_python_args
-    def __init__(self, name, parameters, *args, **kwargs):  # noqa: E501
+    def __init__(self, name, parameters, total_step_count, *args, **kwargs):  # noqa: E501
         """Command - a model defined in OpenAPI
 
         Args:
             name (str):
             parameters ({str: (bool, date, datetime, dict, float, int, list, str, none_type)}):
+            total_step_count (int): Number of steps this command executes. This has to be implemented in the command's implementation on the Worker (to recognise what a \"step\" is), as well as given in the authoring code of the job type JavaScript script (to indicate how many steps the command invocation will perform). If not given, or set to 0, the command is not expected to send any step progress. In this case, the Worker will send a step update at completion of the command. 
 
         Keyword Args:
             _check_type (bool): if True, values for parameters in openapi_types
@@ -254,6 +259,7 @@ class Command(ModelNormal):
 
         self.name = name
         self.parameters = parameters
+        self.total_step_count = total_step_count
         for var_name, var_value in kwargs.items():
             if var_name not in self.attribute_map and \
                         self._configuration is not None and \

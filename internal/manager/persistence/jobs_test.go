@@ -685,6 +685,43 @@ func TestFetchTasksOfWorkerInStatusOfJob(t *testing.T) {
 	}
 }
 
+func TestUpdateJobsTaskStepCounts(t *testing.T) {
+	ctx, close, db, dbJob, authoredJob := jobTasksTestFixtures(t)
+	defer close()
+
+	taskJobWorker0, _ := db.FetchTask(ctx, authoredJob.Tasks[0].UUID)
+	taskJobWorker1, _ := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
+	taskJobWorker2, _ := db.FetchTask(ctx, authoredJob.Tasks[2].UUID)
+	task0 := taskJobWorker0.Task
+	task1 := taskJobWorker1.Task
+	task2 := taskJobWorker2.Task
+
+	task0.Status = "completed" // Should get max step count.
+	task0.StepsTotal = 3
+	task0.StepsCompleted = 2
+	task1.Status = "active" // Shouldn't touch step count
+	task1.StepsTotal = 3
+	task1.StepsCompleted = 2
+	task2.Status = "queued" // Should get zero step count.
+	task2.StepsTotal = 3
+	task2.StepsCompleted = 2
+
+	require.NoError(t, db.SaveTask(ctx, &task0))
+	require.NoError(t, db.SaveTask(ctx, &task1))
+	require.NoError(t, db.SaveTask(ctx, &task2))
+
+	require.NoError(t, db.UpdateJobsTaskStepCounts(ctx, dbJob.ID))
+
+	// Check the database.
+	taskJobWorker0, _ = db.FetchTask(ctx, task0.UUID)
+	taskJobWorker1, _ = db.FetchTask(ctx, task1.UUID)
+	taskJobWorker2, _ = db.FetchTask(ctx, task2.UUID)
+
+	assert.Equal(t, int64(3), taskJobWorker0.Task.StepsCompleted)
+	assert.Equal(t, int64(2), taskJobWorker1.Task.StepsCompleted)
+	assert.Equal(t, int64(0), taskJobWorker2.Task.StepsCompleted)
+}
+
 func TestTaskTouchedByWorker(t *testing.T) {
 	ctx, close, db, _, authoredJob := jobTasksTestFixtures(t)
 	defer close()

@@ -34,10 +34,12 @@ class AssignedTask {
      * @param jobType {String} 
      * @param taskType {String} 
      * @param commands {Array.<module:model/Command>} 
+     * @param stepsCompleted {Number} 
+     * @param stepsTotal {Number} 
      */
-    constructor(uuid, job, name, status, priority, jobPriority, jobType, taskType, commands) { 
+    constructor(uuid, job, name, status, priority, jobPriority, jobType, taskType, commands, stepsCompleted, stepsTotal) { 
         
-        AssignedTask.initialize(this, uuid, job, name, status, priority, jobPriority, jobType, taskType, commands);
+        AssignedTask.initialize(this, uuid, job, name, status, priority, jobPriority, jobType, taskType, commands, stepsCompleted, stepsTotal);
     }
 
     /**
@@ -45,7 +47,7 @@ class AssignedTask {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, uuid, job, name, status, priority, jobPriority, jobType, taskType, commands) { 
+    static initialize(obj, uuid, job, name, status, priority, jobPriority, jobType, taskType, commands, stepsCompleted, stepsTotal) { 
         obj['uuid'] = uuid;
         obj['job'] = job;
         obj['name'] = name;
@@ -55,6 +57,8 @@ class AssignedTask {
         obj['job_type'] = jobType;
         obj['task_type'] = taskType;
         obj['commands'] = commands;
+        obj['steps_completed'] = stepsCompleted;
+        obj['steps_total'] = stepsTotal;
     }
 
     /**
@@ -94,6 +98,12 @@ class AssignedTask {
             }
             if (data.hasOwnProperty('commands')) {
                 obj['commands'] = ApiClient.convertToType(data['commands'], [Command]);
+            }
+            if (data.hasOwnProperty('steps_completed')) {
+                obj['steps_completed'] = ApiClient.convertToType(data['steps_completed'], 'Number');
+            }
+            if (data.hasOwnProperty('steps_total')) {
+                obj['steps_total'] = ApiClient.convertToType(data['steps_total'], 'Number');
             }
         }
         return obj;
@@ -146,6 +156,16 @@ AssignedTask.prototype['task_type'] = undefined;
  * @member {Array.<module:model/Command>} commands
  */
 AssignedTask.prototype['commands'] = undefined;
+
+/**
+ * @member {Number} steps_completed
+ */
+AssignedTask.prototype['steps_completed'] = undefined;
+
+/**
+ * @member {Number} steps_total
+ */
+AssignedTask.prototype['steps_total'] = undefined;
 
 
 

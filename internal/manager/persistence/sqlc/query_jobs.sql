@@ -12,7 +12,8 @@ INSERT INTO jobs (
   settings,
   metadata,
   storage_shaman_checkout_id,
-  worker_tag_id
+  worker_tag_id,
+  steps_total
 )
 VALUES (
   @created_at,
@@ -26,7 +27,8 @@ VALUES (
   @settings,
   @metadata,
   @storage_shaman_checkout_id,
-  @worker_tag_id
+  @worker_tag_id,
+  @steps_total
 );
 
 -- name: CreateTask :execlastid
@@ -40,7 +42,8 @@ INSERT INTO tasks (
   index_in_job,
   priority,
   status,
-  commands
+  commands,
+  steps_total
 ) VALUES (
   @created_at,
   @created_at,
@@ -51,7 +54,8 @@ INSERT INTO tasks (
   @index_in_job,
   @priority,
   @status,
-  @commands
+  @commands,
+  @steps_total
 );
 
 -- name: StoreTaskDependency :exec
@@ -161,7 +165,9 @@ UPDATE tasks SET
   worker_id = @worker_id,
   last_touched_at = @last_touched_at,
   commands = @commands,
-  activity = @activity
+  activity = @activity,
+  steps_total = @steps_total,
+  steps_completed = @steps_completed
 WHERE id=@id;
 
 -- name: UpdateTaskStatus :exec
@@ -176,11 +182,49 @@ UPDATE tasks SET
   activity = @activity
 WHERE id=@id;
 
+-- name: UpdateJobStepsCompleted :exec
+-- Sum the steps_completed of all this job's tasks, and store it on the job.
+-- This could use 'UPDATE FROM' syntax, once https://github.com/sqlc-dev/sqlc/issues/3132 is fixed.
+UPDATE jobs
+SET
+  updated_at = @updated_at,
+  steps_completed = (
+    SELECT COALESCE(SUM(tasks.steps_completed), 0)
+    FROM tasks
+    WHERE tasks.job_id = @id
+  ),
+  steps_total = (
+    SELECT COALESCE(SUM(tasks.steps_total), 0)
+    FROM tasks
+    WHERE tasks.job_id = @id
+  )
+WHERE id = @id;
+
+-- name: UpdateTaskStepsCompleted :exec
+UPDATE tasks SET
+  updated_at = @updated_at,
+  steps_completed = @steps_completed
+WHERE id=@id;
+
 -- name: UpdateJobsTaskStatusesConditional :exec
 UPDATE tasks SET
   updated_at = @updated_at,
   status = @status,
   activity = @activity
+WHERE job_id = @job_id AND status in (sqlc.slice('statuses_to_update'));
+
+-- name: UpdateJobsTaskStepCountsComplete :exec
+-- Set the job's tasks with the given status to their total step count.
+UPDATE tasks SET
+  updated_at = @updated_at,
+  steps_completed = steps_total
+WHERE job_id = @job_id AND status in (sqlc.slice('statuses_to_update'));
+
+-- name: UpdateJobsTaskStepCountsZero :exec
+-- Set the job's tasks with the given status to zero completed step count.
+UPDATE tasks SET
+  updated_at = @updated_at,
+  steps_completed = 0
 WHERE job_id = @job_id AND status in (sqlc.slice('statuses_to_update'));
 
 -- name: UpdateJobsTaskStatuses :exec
@@ -325,7 +369,18 @@ AND T.type = @task_type;
 
 
 -- name: QueryJobTaskSummaries :many
-SELECT tasks.id, tasks.uuid, tasks.name, tasks.index_in_job, tasks.priority, tasks.status, tasks.type, tasks.updated_at, workers.UUID as workerUUID
+SELECT
+  tasks.id,
+  tasks.uuid,
+  tasks.name,
+  tasks.index_in_job,
+  tasks.priority,
+  tasks.status,
+  tasks.type,
+  tasks.updated_at,
+  tasks.steps_completed,
+  tasks.steps_total,
+  workers.UUID as workerUUID
 FROM tasks
 LEFT JOIN jobs ON jobs.id = tasks.job_id
 LEFT JOIN workers ON  workers.id = tasks.worker_id

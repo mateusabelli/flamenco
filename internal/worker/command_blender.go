@@ -18,7 +18,11 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/crosspath"
 )
 
-var regexpFileSaved = regexp.MustCompile("Saved: '(.*)'")
+var (
+	regexpFileSaved     = regexp.MustCompile(`^Saved: '(.*)'`)
+	regexpFrameRendered = regexp.MustCompile(`^Time: ([0-9:.]+)`)
+	regexpFrameSkipped  = regexp.MustCompile(`^skipping existing frame`)
+)
 
 type BlenderParameters struct {
 	exe        string   // Expansion of `{blender}`: the executable path defined by the Manager.
@@ -166,17 +170,47 @@ func (ce *CommandExecutor) processLineBlender(ctx context.Context, logger zerolo
 	// TODO: check for "Warning: Unable to open" and other indicators of missing
 	// files. Flamenco v2 updated the task.Activity field for such situations.
 
-	match := regexpFileSaved.FindStringSubmatch(line)
-	if len(match) < 2 {
-		return
-	}
-	filename := match[1]
+	{ // Handle "output produced" indicator.
+		match := regexpFileSaved.FindStringSubmatch(line)
+		if len(match) >= 2 {
+			filename := match[1]
 
-	logger = logger.With().Str("outputFile", filename).Logger()
-	logger.Info().Msg("output produced")
+			logger = logger.With().Str("outputFile", filename).Logger()
+			logger.Debug().Msg("blender-render: output produced")
 
-	err := ce.listener.OutputProduced(ctx, taskID, filename)
-	if err != nil {
-		logger.Warn().Err(err).Msg("error submitting produced output to listener")
+			err := ce.listener.OutputProduced(ctx, taskID, filename)
+			if err != nil {
+				logger.Warn().Err(err).Msg("error submitting produced output to listener")
+			}
+		}
 	}
+
+	{ // Handle "frame done rendering" indicator.
+		match := regexpFrameRendered.FindStringSubmatch(line)
+		if len(match) >= 2 {
+			// TODO: send a "frame rendered" statistics event, with the frame duration.
+			duration := match[1]
+			logger.Info().
+				Str("duration", duration).
+				Msg("blender-render: frame rendered")
+
+			err := ce.listener.TaskStep(ctx, taskID)
+			if err != nil {
+				logger.Warn().Err(err).Msg("error submitting task progress to listener")
+			}
+		}
+	}
+
+	{ // Handle "frame skipped" indicator.
+		match := regexpFrameSkipped.FindStringSubmatch(line)
+		if len(match) > 0 {
+			logger.Info().Msg("blender-render: frame skipped")
+
+			err := ce.listener.TaskStep(ctx, taskID)
+			if err != nil {
+				logger.Warn().Err(err).Msg("error submitting task progress to listener")
+			}
+		}
+	}
+
 }

@@ -100,6 +100,8 @@ class WorkerTask(ModelComposed):
             'priority': (int,),  # noqa: E501
             'task_type': (str,),  # noqa: E501
             'updated': (datetime,),  # noqa: E501
+            'steps_completed': (int,),  # noqa: E501
+            'steps_total': (int,),  # noqa: E501
             'job_id': (str,),  # noqa: E501
             'worker': (TaskWorker,),  # noqa: E501
         }
@@ -117,6 +119,8 @@ class WorkerTask(ModelComposed):
         'priority': 'priority',  # noqa: E501
         'task_type': 'task_type',  # noqa: E501
         'updated': 'updated',  # noqa: E501
+        'steps_completed': 'steps_completed',  # noqa: E501
+        'steps_total': 'steps_total',  # noqa: E501
         'job_id': 'job_id',  # noqa: E501
         'worker': 'worker',  # noqa: E501
     }
@@ -137,6 +141,8 @@ class WorkerTask(ModelComposed):
             priority (int):
             task_type (str):
             updated (datetime):
+            steps_completed (int):
+            steps_total (int):
             job_id (str):
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
@@ -245,6 +251,8 @@ class WorkerTask(ModelComposed):
             priority (int):
             task_type (str):
             updated (datetime):
+            steps_completed (int):
+            steps_total (int):
             job_id (str):
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be

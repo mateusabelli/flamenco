@@ -28,6 +28,8 @@ type Job struct {
 	DeleteRequestedAt       sql.NullTime
 	StorageShamanCheckoutID string
 	WorkerTagID             sql.NullInt64
+	StepsCompleted          int64
+	StepsTotal              int64
 }
 
 type JobBlock struct {
@@ -58,20 +60,22 @@ type SleepSchedule struct {
 }
 
 type Task struct {
-	ID            int64
-	CreatedAt     time.Time
-	UpdatedAt     sql.NullTime
-	UUID          string
-	Name          string
-	Type          string
-	JobID         int64
-	IndexInJob    int64
-	Priority      int64
-	Status        api.TaskStatus
-	WorkerID      sql.NullInt64
-	LastTouchedAt sql.NullTime
-	Commands      json.RawMessage
-	Activity      string
+	ID             int64
+	CreatedAt      time.Time
+	UpdatedAt      sql.NullTime
+	UUID           string
+	Name           string
+	Type           string
+	JobID          int64
+	IndexInJob     int64
+	Priority       int64
+	Status         api.TaskStatus
+	WorkerID       sql.NullInt64
+	LastTouchedAt  sql.NullTime
+	Commands       json.RawMessage
+	Activity       string
+	StepsCompleted int64
+	StepsTotal     int64
 }
 
 type TaskDependency struct {

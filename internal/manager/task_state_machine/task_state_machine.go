@@ -106,7 +106,7 @@ func (sm *StateMachine) taskStatusChangeOnly(
 	logger.Debug().Msg("task state changed")
 
 	if err := sm.persist.SaveTaskStatus(ctx, task); err != nil {
-		return fmt.Errorf("saving task to database: %w", err)
+		return fmt.Errorf("saving task status to database: %w", err)
 	}
 
 	if oldTaskStatus != newTaskStatus {
@@ -114,6 +114,21 @@ func (sm *StateMachine) taskStatusChangeOnly(
 		// rest of the function.
 		_ = sm.logStorage.WriteTimestamped(logger, job.UUID, task.UUID,
 			fmt.Sprintf("task changed status %s -> %s", oldTaskStatus, newTaskStatus))
+
+		// Some task status changes imply things about the sub-task steps.
+		switch newTaskStatus {
+		case api.TaskStatusCompleted:
+			task.StepsCompleted = task.StepsTotal // Completing means completing.
+			if err := sm.persist.SaveTaskStepsCompleted(ctx, task.JobID, task.ID, task.StepsCompleted); err != nil {
+				return fmt.Errorf("saving task step count to database: %w", err)
+			}
+
+		case api.TaskStatusQueued:
+			task.StepsCompleted = 0 // Queueing means starting over.
+			if err := sm.persist.SaveTaskStepsCompleted(ctx, task.JobID, task.ID, task.StepsCompleted); err != nil {
+				return fmt.Errorf("saving task step count to database: %w", err)
+			}
+		}
 	}
 
 	// Broadcast this change to the SocketIO clients.
@@ -621,6 +636,10 @@ func (sm *StateMachine) requeueTasks(
 	}
 	if err != nil {
 		return "", fmt.Errorf("queueing tasks of job %s: %w", job.UUID, err)
+	}
+
+	if err := sm.persist.UpdateJobsTaskStepCounts(ctx, job.ID); err != nil {
+		return "", fmt.Errorf("updating completed step count of tasks of job %s: %w", job.UUID, err)
 	}
 
 	// TODO: also reset the 'failed by workers' blocklist.

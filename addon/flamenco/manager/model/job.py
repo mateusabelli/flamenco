@@ -106,6 +106,8 @@ class Job(ModelComposed):
             'updated': (datetime,),  # noqa: E501
             'status': (JobStatus,),  # noqa: E501
             'activity': (str,),  # noqa: E501
+            'steps_completed': (int,),  # noqa: E501
+            'steps_total': (int,),  # noqa: E501
             'type_etag': (str,),  # noqa: E501
             'settings': (JobSettings,),  # noqa: E501
             'metadata': (JobMetadata,),  # noqa: E501
@@ -130,6 +132,8 @@ class Job(ModelComposed):
         'updated': 'updated',  # noqa: E501
         'status': 'status',  # noqa: E501
         'activity': 'activity',  # noqa: E501
+        'steps_completed': 'steps_completed',  # noqa: E501
+        'steps_total': 'steps_total',  # noqa: E501
         'type_etag': 'type_etag',  # noqa: E501
         'settings': 'settings',  # noqa: E501
         'metadata': 'metadata',  # noqa: E501
@@ -157,6 +161,8 @@ class Job(ModelComposed):
             updated (datetime): Timestamp of last update.
             status (JobStatus):
             activity (str): Description of the last activity on this job.
+            steps_completed (int):
+            steps_total (int):
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.
@@ -273,6 +279,8 @@ class Job(ModelComposed):
             updated (datetime): Timestamp of last update.
             status (JobStatus):
             activity (str): Description of the last activity on this job.
+            steps_completed (int):
+            steps_total (int):
             _check_type (bool): if True, values for parameters in openapi_types
                                 will be type checked and a TypeError will be
                                 raised if the wrong type is input.

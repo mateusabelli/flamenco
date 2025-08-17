@@ -25,10 +25,11 @@ class Command {
      * @alias module:model/Command
      * @param name {String} 
      * @param parameters {Object} 
+     * @param totalStepCount {Number} Number of steps this command executes. This has to be implemented in the command's implementation on the Worker (to recognise what a \"step\" is), as well as given in the authoring code of the job type JavaScript script (to indicate how many steps the command invocation will perform). If not given, or set to 0, the command is not expected to send any step progress. In this case, the Worker will send a step update at completion of the command. 
      */
-    constructor(name, parameters) { 
+    constructor(name, parameters, totalStepCount) { 
         
-        Command.initialize(this, name, parameters);
+        Command.initialize(this, name, parameters, totalStepCount);
     }
 
     /**
@@ -36,9 +37,10 @@ class Command {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, name, parameters) { 
+    static initialize(obj, name, parameters, totalStepCount) { 
         obj['name'] = name;
         obj['parameters'] = parameters;
+        obj['total_step_count'] = totalStepCount;
     }
 
     /**
@@ -58,6 +60,9 @@ class Command {
             if (data.hasOwnProperty('parameters')) {
                 obj['parameters'] = ApiClient.convertToType(data['parameters'], Object);
             }
+            if (data.hasOwnProperty('total_step_count')) {
+                obj['total_step_count'] = ApiClient.convertToType(data['total_step_count'], 'Number');
+            }
         }
         return obj;
     }
@@ -74,6 +79,12 @@ Command.prototype['name'] = undefined;
  * @member {Object} parameters
  */
 Command.prototype['parameters'] = undefined;
+
+/**
+ * Number of steps this command executes. This has to be implemented in the command's implementation on the Worker (to recognise what a \"step\" is), as well as given in the authoring code of the job type JavaScript script (to indicate how many steps the command invocation will perform). If not given, or set to 0, the command is not expected to send any step progress. In this case, the Worker will send a step update at completion of the command. 
+ * @member {Number} total_step_count
+ */
+Command.prototype['total_step_count'] = undefined;
 
 
 

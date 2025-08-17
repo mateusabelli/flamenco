@@ -32,10 +32,12 @@ class TaskSummary {
      * @param priority {Number} 
      * @param taskType {String} 
      * @param updated {Date} 
+     * @param stepsCompleted {Number} 
+     * @param stepsTotal {Number} 
      */
-    constructor(id, name, status, indexInJob, priority, taskType, updated) { 
+    constructor(id, name, status, indexInJob, priority, taskType, updated, stepsCompleted, stepsTotal) { 
         
-        TaskSummary.initialize(this, id, name, status, indexInJob, priority, taskType, updated);
+        TaskSummary.initialize(this, id, name, status, indexInJob, priority, taskType, updated, stepsCompleted, stepsTotal);
     }
 
     /**
@@ -43,7 +45,7 @@ class TaskSummary {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, id, name, status, indexInJob, priority, taskType, updated) { 
+    static initialize(obj, id, name, status, indexInJob, priority, taskType, updated, stepsCompleted, stepsTotal) { 
         obj['id'] = id;
         obj['name'] = name;
         obj['status'] = status;
@@ -51,6 +53,8 @@ class TaskSummary {
         obj['priority'] = priority;
         obj['task_type'] = taskType;
         obj['updated'] = updated;
+        obj['steps_completed'] = stepsCompleted;
+        obj['steps_total'] = stepsTotal;
     }
 
     /**
@@ -87,6 +91,12 @@ class TaskSummary {
             }
             if (data.hasOwnProperty('worker')) {
                 obj['worker'] = TaskWorker.constructFromObject(data['worker']);
+            }
+            if (data.hasOwnProperty('steps_completed')) {
+                obj['steps_completed'] = ApiClient.convertToType(data['steps_completed'], 'Number');
+            }
+            if (data.hasOwnProperty('steps_total')) {
+                obj['steps_total'] = ApiClient.convertToType(data['steps_total'], 'Number');
             }
         }
         return obj;
@@ -134,6 +144,16 @@ TaskSummary.prototype['updated'] = undefined;
  * @member {module:model/TaskWorker} worker
  */
 TaskSummary.prototype['worker'] = undefined;
+
+/**
+ * @member {Number} steps_completed
+ */
+TaskSummary.prototype['steps_completed'] = undefined;
+
+/**
+ * @member {Number} steps_total
+ */
+TaskSummary.prototype['steps_total'] = undefined;
 
 
 

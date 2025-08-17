@@ -133,6 +133,7 @@ func newGojaVM(registry *require.Registry) *goja.Runtime {
 	mustSet("print", jsPrint)
 	mustSet("alert", jsAlert)
 	mustSet("frameChunker", jsFrameChunker)
+	mustSet("frameCount", jsFrameCount)
 	mustSet("formatTimestampLocal", jsFormatTimestampLocal)
 	mustSet("shellSplit", func(cliArgs string) []string {
 		return jsShellSplit(vm, cliArgs)

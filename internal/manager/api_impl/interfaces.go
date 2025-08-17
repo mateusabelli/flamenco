@@ -43,6 +43,7 @@ type PersistenceService interface {
 	FetchTaskJobUUID(ctx context.Context, taskID string) (string, error)
 	FetchTaskFailureList(context.Context, *persistence.Task) ([]*persistence.Worker, error)
 	SaveTaskActivity(ctx context.Context, t *persistence.Task) error
+	SaveTaskStepsCompleted(ctx context.Context, jobID, taskID int64, stepsCompleted int64) error
 	// TaskTouchedByWorker marks the task as 'touched' by a worker. This is used for timeout detection.
 	TaskTouchedByWorker(ctx context.Context, taskUUID string) error
 
@@ -119,6 +120,7 @@ type ChangeBroadcaster interface {
 	// Note that there is no BroadcastNewTask. The 'new job' broadcast is sent
 	// after the job's tasks have been created, and thus there is no need for a
 	// separate broadcast per task.
+	BroadcastTaskUpdate(api.EventTaskUpdate)
 
 	// Note that there is no call to BoardcastTaskLogUpdate. It's the
 	// responsibility of `LogStorage.Write` to broadcast the changes to SocketIO

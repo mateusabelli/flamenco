@@ -1644,6 +1644,8 @@ components:
         commands:
           type: array
           items: { $ref: "#/components/schemas/Command" }
+        steps_completed: { type: integer }
+        steps_total: { type: integer }
       required:
         - uuid
         - job
@@ -1654,6 +1656,8 @@ components:
         - job_type
         - task_type
         - commands
+        - steps_completed
+        - steps_total
 
     TaskUpdate:
       type: object
@@ -1672,6 +1676,9 @@ components:
         "log":
           type: string
           description: Log lines for this task, will be appended to logs sent earlier.
+        "steps_completed":
+          type: integer
+          description: Number of task steps completed. May not exceed the task's steps_total.
 
     MayKeepRunning:
       type: object
@@ -1718,7 +1725,19 @@ components:
       properties:
         name: { type: string }
         parameters: { type: object }
-      required: [name, parameters]
+        total_step_count:
+          type: integer
+          description: >
+            Number of steps this command executes. This has to be implemented in
+            the command's implementation on the Worker (to recognise what a
+            "step" is), as well as given in the authoring code of the job type
+            JavaScript script (to indicate how many steps the command invocation
+            will perform).
+
+            If not given, or set to 0, the command is not expected to send any
+            step progress. In this case, the Worker will send a step update at
+            completion of the command.
+      required: [name, parameters, total_step_count]
 
     AvailableJobTypes:
       type: object
@@ -1924,13 +1943,15 @@ components:
             activity:
               type: string
               description: Description of the last activity on this job.
+            "steps_completed": { type: integer }
+            "steps_total": { type: integer }
             delete_requested_at:
               type: string
               format: date-time
               description: >
                 If job deletion was requested, this is the timestamp at which
                 that request was stored on Flamenco Manager.
-          required: [id, created, updated, status, activity]
+          required: [id, created, updated, status, activity, steps_completed, steps_total]
 
     JobSettings:
       type: object
@@ -2041,6 +2062,8 @@ components:
         "commands":
           type: array
           items: { $ref: "#/components/schemas/Command" }
+        "steps_completed": { type: integer }
+        "steps_total": { type: integer }
         "worker": { $ref: "#/components/schemas/TaskWorker" }
         "last_touched":
           type: string
@@ -2061,6 +2084,8 @@ components:
         - task_type
         - activity
         - commands
+        - steps_completed
+        - steps_total
 
     TaskWorker:
       type: object
@@ -2092,7 +2117,9 @@ components:
         task_type: { type: string }
         updated: { type: string, format: date-time }
         worker: { $ref: "#/components/schemas/TaskWorker" }
-      required: [id, name, status, index_in_job, priority, task_type, updated]
+        steps_completed: { type: integer }
+        steps_total: { type: integer }
+      required: [id, name, status, index_in_job, priority, task_type, updated, steps_completed, steps_total]
 
     TaskLogInfo:
       type: object
@@ -2333,6 +2360,8 @@ components:
             Indicates that the client should refresh all the job's tasks. This
             is sent for mass updates, where updating each individual task would
             generate too many updates to be practical.
+        "steps_completed": { type: integer }
+        "steps_total": { type: integer }
 
         # Deletion-related info:
         "delete_requested_at":
@@ -2346,7 +2375,7 @@ components:
           description: >
             When a job was just deleted, this is set to `true`.
             If this is specified, only the 'id' field is set, the rest will be empty.
-      required: [id, updated, status, type, priority, refresh_tasks]
+      required: [id, updated, status, type, priority, refresh_tasks, steps_completed, steps_total]
 
     EventTaskUpdate:
       type: object
@@ -2367,7 +2396,9 @@ components:
         "status": { $ref: "#/components/schemas/TaskStatus" }
         "previous_status": { $ref: "#/components/schemas/TaskStatus" }
         "activity": { type: string }
-      required: [id, job_id, name, updated, status, activity]
+        "steps_completed": { type: integer }
+        "steps_total": { type: integer }
+      required: [id, job_id, name, updated, status, activity, steps_completed, steps_total]
 
     EventTaskLogUpdate:
       type: object
