@@ -71,15 +71,13 @@ can use the above example to create `flamenco-manager.yaml` yourself.
 
 ## Definitions
 
-The configuration is stored in a [YAML](https://spacelift.io/blog/yaml#basic-yaml-syntax) file.
+The configuration is stored in a [YAML](https://spacelift.io/blog/yaml#basic-yaml-syntax) file. Each attribute is defined below.
 
-Each attribute is defined below.
-
-## Durations
+### Duration Format
 
 Durations are written in [Go's notation for durations][ParseDuration]. Examples
 are `1h` for 1 hour, or `1m30s` for 1 minute and 30 seconds. To avoid ambiguity,
-hours are the largest available unit; there are days that not exactly `24h`.
+hours are the largest available unit; there are days that are not exactly `24h`.
 
 [ParseDuration]: https://pkg.go.dev/time#ParseDuration
 
