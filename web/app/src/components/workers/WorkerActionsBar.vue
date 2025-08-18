@@ -1,11 +1,13 @@
 <template>
   <select v-model="selectedAction">
     <option value="" selected>
-      <template v-if="!hasActiveWorker">Select a Worker</template>
+      <template v-if="!workers.selectedWorkers.length">Select a Worker</template>
       <template v-else>Choose an action...</template>
     </option>
     <template v-for="(action, key) in WORKER_ACTIONS">
-      <option :value="key" v-if="action.condition()">{{ action.label }}</option>
+      <option :key="action.label" :value="key" v-if="action.condition()">
+        {{ action.label }}
+      </option>
     </template>
   </select>
   <button :disabled="!canPerformAction" class="btn" @click.prevent="performWorkerAction">
@@ -84,26 +86,30 @@ const WORKER_ACTIONS = Object.freeze({
 
 const selectedAction = ref('');
 const workers = useWorkers();
-const hasActiveWorker = computed(() => !!workers.activeWorkerID);
-const canPerformAction = computed(() => hasActiveWorker && !!selectedAction.value);
+const canPerformAction = computed(() => workers.selectedWorkers.length && !!selectedAction.value);
 const notifs = useNotifs();
 
 function performWorkerAction() {
-  const workerID = workers.activeWorkerID;
-  if (!workerID) {
-    notifs.add('Select a Worker before applying an action.');
+  if (!workers.selectedWorkers.length) {
+    notifs.add('Select at least one Worker before applying an action.');
     return;
   }
 
-  const api = new WorkerMgtApi(getAPIClient());
+  const api = new WorkerMgtApi(getAPIClient()); // Init the api
   const action = WORKER_ACTIONS[selectedAction.value];
   const statuschange = new WorkerStatusChangeRequest(action.target_status, action.lazy);
-  console.log('Requesting worker status change', statuschange);
-  api
-    .requestWorkerStatusChange(workerID, statuschange)
-    .then((result) => notifs.add(`Worker status change to ${action.target_status} confirmed.`))
-    .catch((error) => {
-      notifs.add(`Error requesting worker status change: ${error.body.message}`);
-    });
+
+  const promises = workers.selectedWorkers.map((worker) =>
+    api
+      .requestWorkerStatusChange(worker.id, statuschange)
+      .then(() =>
+        notifs.add(`Worker ${worker.name} status change to ${action.target_status} confirmed.`)
+      )
+      .catch((error) =>
+        notifs.add(`Error requesting worker ${worker.name} status change: ${error.body.message}`)
+      )
+  );
+
+  Promise.allSettled(promises);
 }
 </script>

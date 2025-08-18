@@ -20,6 +20,9 @@ export const useWorkers = defineStore('workers', {
 
     /* Mapping from tag UUID to API.WorkerTag. */
     tagsByID: {},
+
+    /** @type {API.Worker[]} */
+    selectedWorkers: [],
   }),
   actions: {
     setActiveWorkerID(workerID) {
@@ -40,10 +43,20 @@ export const useWorkers = defineStore('workers', {
         state.hasChanged = true;
       });
     },
-    deselectAllWorkers() {
+    clearActiveWorker() {
       this.$patch({
         activeWorker: null,
         activeWorkerID: '',
+      });
+    },
+    setSelectedWorkers(workers) {
+      this.$patch({
+        selectedWorkers: workers,
+      });
+    },
+    clearSelectedWorkers() {
+      this.$patch({
+        selectedWorkers: [],
       });
     },
     /**
@@ -65,10 +78,13 @@ export const useWorkers = defineStore('workers', {
     },
 
     /**
-     * @returns whether the active worker understands how to get restarted.
+     * @returns {bool} whether atleast one selected worker understands how to get restarted.
      */
     canRestart() {
-      return !!this.activeWorker && !!this.activeWorker.can_restart;
+      if (this.selectedWorkers.length) {
+        return this.selectedWorkers.some((worker) => worker.can_restart);
+      }
+      return false;
     },
   },
 });

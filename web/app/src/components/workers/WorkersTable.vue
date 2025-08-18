@@ -39,9 +39,11 @@ export default {
   data: () => {
     return {
       workers: useWorkers(),
+      api: new WorkerMgtApi(getAPIClient()),
 
       shownStatuses: [],
       availableStatuses: [], // Will be filled after data is loaded from the backend.
+      lastSelectedWorkerPosition: null,
     };
   },
   mounted() {
@@ -100,82 +102,210 @@ export default {
       this.$nextTick(this.recalcTableHeight);
     },
   },
-  computed: {
-    selectedIDs() {
-      return this.tabulator.getSelectedData().map((worker) => worker.id);
-    },
-  },
   methods: {
-    onReconnected() {
+    /**
+     * @param {string} workerID worker ID to navigate to, can be empty string for "no active worker".
+     */
+    _routeToWorker(workerID) {
+      const route = { name: 'workers', params: { workerID: workerID } };
+      this.$router.push(route);
+    },
+    async onReconnected() {
       // If the connection to the backend was lost, we have likely missed some
-      // updates. Just fetch the data and start from scratch.
-      this.fetchAllWorkers();
+      // updates. Just re-initialize the data and start from scratch.
+      await this.initAllWorkers();
+      await this.initActiveWorker();
     },
     sortData() {
       const tab = this.tabulator;
       tab.setSort(tab.getSorters()); // This triggers re-sorting.
     },
-    _onTableBuilt() {
+    async _onTableBuilt() {
       this.tabulator.setFilter(this._filterByStatus);
-      this.fetchAllWorkers();
+      await this.initAllWorkers();
+      await this.initActiveWorker();
     },
+    /**
+     * Initializes the active worker. Updates pinia stores and state accordingly.
+     */
+    async initActiveWorker() {
+      // If there's no active Worker, reset the state and Pinia stores
+      if (!this.activeWorkerID) {
+        this.workers.clearActiveWorker();
+        this.workers.clearSelectedWorkers();
+        this.lastSelectedWorkerPosition = null;
+        return;
+      }
+
+      try {
+        const worker = await this.fetchWorker(this.activeWorkerID);
+
+        this.workers.setActiveWorker(worker);
+        this.workers.setSelectedWorkers([worker]);
+
+        const activeRow = this.tabulator.getRow(this.activeWorkerID);
+        // If the page is reloaded, re-initialize the last selected worker (or active worker)
+        // position, allowing the user to multi-select from that worker.
+        this.lastSelectedWorkerPosition = activeRow.getPosition();
+        // Make sure the active row on tabulator has the selected status toggled as well
+        this.tabulator.selectRow(activeRow);
+      } catch (e) {
+        console.error(e);
+      }
+    },
+    /**
+     * Fetch a Worker based on ID
+     */
+    fetchWorker(workerID) {
+      return this.api
+        .fetchWorker(workerID)
+        .then((worker) => worker)
+        .catch((err) => {
+          throw new Error(`Unable to fetch worker with ID ${workerID}:`, err);
+        });
+    },
+    /**
+     * Initializes all workers and sets the Tabulator data. Updates pinia stores and state accordingly.
+     */
+    async initAllWorkers() {
+      try {
+        const workers = await this.fetchAllWorkers();
+        this.tabulator.setData(workers);
+        this._refreshAvailableStatuses();
+        this.recalcTableHeight();
+      } catch (e) {
+        console.error(e);
+      }
+    },
+    /**
+     * Fetch all workers
+     */
     fetchAllWorkers() {
-      const api = new WorkerMgtApi(getAPIClient());
-      api.fetchWorkers().then(this.onWorkersFetched, function (error) {
-        // TODO: error handling.
-        console.error(error);
-      });
+      return this.api
+        .fetchWorkers()
+        .then((data) => data.workers)
+        .catch((e) => {
+          throw new Error('Unable to fetch all workers:', e);
+        });
     },
-    onWorkersFetched(data) {
-      this.tabulator.setData(data.workers);
-      this._refreshAvailableStatuses();
-      this.recalcTableHeight();
-    },
-    processWorkerUpdate(workerUpdate) {
+    async processWorkerUpdate(workerUpdate) {
       if (!this.tabulator.initialized) return;
 
-      // Contrary to tabulator.getRow(), rowManager.findRow() doesn't log a
-      // warning when the row cannot be found,
-      const existingRow = this.tabulator.rowManager.findRow(workerUpdate.id);
+      try {
+        // Contrary to tabulator.getRow(), rowManager.findRow() doesn't log a
+        // warning when the row cannot be found,
+        const existingRow = this.tabulator.rowManager.findRow(workerUpdate.id);
 
-      let promise;
-      // TODO: clean up the code below:
-      if (existingRow) {
-        if (workerUpdate.deleted_at) {
-          // This is a deletion, not a regular update.
-          promise = existingRow.delete();
-        } else {
-          // Tabbulator doesn't update ommitted fields, but if `status_change`
+        // Delete the row
+        if (existingRow && workerUpdate.deleted_at) {
+          // Prevents the issue where deleted rows persist on Tabulator's selectedData
+          this.tabulator.deselectRow(workerUpdate.id);
+          await existingRow.delete();
+
+          // If the deleted worker was active, route to /workers
+          if (workerUpdate.id === this.activeWorkerID) {
+            this._routeToWorker('');
+            // Update Pinia Stores
+            this.workers.clearActiveWorker();
+          }
+          // Update Pinia Stores
+          this.workers.setSelectedWorkers(this.getSelectedWorkers());
+
+          return;
+        }
+
+        if (existingRow) {
+          // Prepare to update an existing row.
+          // Tabulator doesn't update ommitted fields, but if `status_change`
           // is ommitted it means "no status change requested"; this should still
           // force an update of the `status_change` field.
-          if (!workerUpdate.status_change) {
-            workerUpdate.status_change = null;
-          }
-          promise = this.tabulator.updateData([workerUpdate]);
+          workerUpdate.status_change = workerUpdate.status_change || null;
+
+          // Update the existing row.
           // Tabulator doesn't know we're using 'status_change' in the 'status'
           // column, so it also won't know to redraw when that field changes.
-          promise.then(() => existingRow.reinitialize(true));
+          await this.tabulator.updateData([workerUpdate]);
+          existingRow.reinitialize(true);
+        } else {
+          await this.tabulator.addData([workerUpdate]); // Add a new row.
         }
-      } else {
-        promise = this.tabulator.addData([workerUpdate]);
+
+        this.sortData();
+        await this.tabulator.redraw();
+        this._refreshAvailableStatuses(); // Resize columns based on new data.
+
+        // Update Pinia stores
+        this.workers.setSelectedWorkers(this.getSelectedWorkers());
+        if (workerUpdate.id === this.activeWorkerID) {
+          const worker = await this.fetchWorker(this.activeWorkerID);
+          this.workers.setActiveWorker(worker);
+        }
+
+        // TODO: this should also resize the columns, as the status column can
+        // change sizes considerably.
+      } catch (e) {
+        console.error(e);
       }
-      promise
-        .then(this.sortData)
-        .then(() => {
-          this.tabulator.redraw();
-        }) // Resize columns based on new data.
-        .then(this._refreshAvailableStatuses);
-
-      // TODO: this should also resize the columns, as the status column can
-      // change sizes considerably.
     },
+    handleMultiSelect(event, row, tabulator) {
+      const position = row.getPosition();
 
-    onRowClick(event, row) {
+      // Manage the click event and Tabulator row selection
+      if (event.shiftKey && this.lastSelectedWorkerPosition) {
+        // Shift + Click - selects a range of rows
+        let start = Math.min(position, this.lastSelectedWorkerPosition);
+        let end = Math.max(position, this.lastSelectedWorkerPosition);
+        const rowsToSelect = [];
+
+        for (let i = start; i <= end; i++) {
+          const currRow = this.tabulator.getRowFromPosition(i);
+          rowsToSelect.push(currRow);
+        }
+        tabulator.selectRow(rowsToSelect);
+
+        document.getSelection().removeAllRanges();
+      } else if (event.ctrlKey || event.metaKey) {
+        // Supports Cmd key on MacOS
+        // Ctrl + Click - toggles additional rows
+        if (tabulator.getSelectedRows().includes(row)) {
+          tabulator.deselectRow(row);
+        } else {
+          tabulator.selectRow(row);
+        }
+      } else if (!event.ctrlKey && !event.metaKey) {
+        // Regular Click - resets the selection to one row
+        tabulator.deselectRow(); // De-select all rows
+        tabulator.selectRow(row);
+      }
+    },
+    async onRowClick(event, row) {
       // Take a copy of the data, so that it's decoupled from the tabulator data
       // store. There were some issues where navigating to another worker would
       // overwrite the old worker's ID, and this prevents that.
-      const rowData = plain(row.getData());
-      this.$emit('tableRowClicked', rowData);
+
+      this.handleMultiSelect(event, row, this.tabulator);
+
+      // Update the app route, Pinia store, and component state
+      if (this.tabulator.getSelectedRows().includes(row)) {
+        // The row was toggled -> selected
+        const rowData = row.getData();
+        this._routeToWorker(rowData.id);
+
+        const worker = await this.fetchWorker(rowData.id);
+        this.workers.setActiveWorker(worker);
+        this.lastSelectedWorkerPosition = row.getPosition();
+      } else {
+        // The row was toggled -> de-selected
+        this._routeToWorker('');
+        this.workers.clearActiveWorker();
+        this.lastSelectedWorkerPosition = null;
+      }
+
+      // Set the selected jobs according to tabulator's selected rows
+      this.workers.setSelectedWorkers(this.getSelectedWorkers());
+    },
+    getSelectedWorkers() {
+      return this.tabulator.getSelectedData();
     },
     toggleStatusFilter(status) {
       const asSet = new Set(this.shownStatuses);

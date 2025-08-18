@@ -1,9 +1,6 @@
 <template>
   <div class="col col-workers-list">
-    <workers-table
-      ref="workersTable"
-      :activeWorkerID="workerID"
-      @tableRowClicked="onTableWorkerClicked" />
+    <workers-table ref="workersTable" :activeWorkerID="workerID" />
   </div>
   <div class="col col-workers-details">
     <worker-details :workerData="workers.activeWorker" />
@@ -32,10 +29,8 @@
 </style>
 
 <script>
-import { WorkerMgtApi } from '@/manager-api';
 import { useNotifs } from '@/stores/notifications';
 import { useWorkers } from '@/stores/workers';
-import { getAPIClient } from '@/api-client';
 
 import NotificationBar from '@/components/footer/NotificationBar.vue';
 import UpdateListener from '@/components/UpdateListener.vue';
@@ -54,27 +49,19 @@ export default {
   data: () => ({
     workers: useWorkers(),
     notifs: useNotifs(),
-    api: new WorkerMgtApi(getAPIClient()),
   }),
   mounted() {
     window.workersView = this;
-    this._fetchWorker(this.workerID);
 
     document.body.classList.add('is-two-columns');
   },
   unmounted() {
     document.body.classList.remove('is-two-columns');
   },
-  watch: {
-    workerID(newWorkerID, oldWorkerID) {
-      this._fetchWorker(newWorkerID);
-    },
-  },
   methods: {
     // SocketIO connection event handlers:
     onSIOReconnected() {
       this.$refs.workersTable.onReconnected();
-      this._fetchWorker(this.workerID);
     },
     onSIODisconnected(reason) {},
     onSIOWorkerUpdate(workerUpdate) {
@@ -83,43 +70,18 @@ export default {
       if (this.$refs.workersTable) {
         this.$refs.workersTable.processWorkerUpdate(workerUpdate);
       }
-      if (this.workerID != workerUpdate.id) return;
-
-      if (workerUpdate.deleted_at) {
-        this._routeToWorker('');
-        return;
-      }
-
-      this._fetchWorker(this.workerID);
     },
     onSIOWorkerTagsUpdate(workerTagsUpdate) {
-      this.workers.refreshTags().then(() => this._fetchWorker(this.workerID));
-    },
-
-    onTableWorkerClicked(rowData) {
-      if (rowData.id == this.workerID) return;
-      this._routeToWorker(rowData.id);
-    },
-
-    /**
-     * @param {string} workerID worker ID to navigate to, can be empty string for "no active worker".
-     */
-    _routeToWorker(workerID) {
-      const route = { name: 'workers', params: { workerID: workerID } };
-      this.$router.push(route);
-    },
-
-    /**
-     * Fetch worker info and set the active worker once it's received.
-     * @param {string} workerID worker ID, can be empty string for "no worker".
-     */
-    _fetchWorker(workerID) {
-      if (!workerID) {
-        this.workers.deselectAllWorkers();
+      if (!this.workerID) {
+        this.workers.clearActiveWorker();
         return;
       }
 
-      return this.api.fetchWorker(workerID).then((worker) => this.workers.setActiveWorker(worker));
+      this.workers
+        .refreshTags()
+        .then(() =>
+          this.api.fetchWorker(this.workerID).then((worker) => this.workers.setActiveWorker(worker))
+        );
     },
   },
 };
