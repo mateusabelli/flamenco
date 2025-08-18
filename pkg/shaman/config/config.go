@@ -53,9 +53,9 @@ type Config struct {
 // GarbageCollect contains the config options for the GC.
 type GarbageCollect struct {
 	// How frequently garbage collection is performed on the file store:
-	Period duration.Duration `yaml:"period"`
+	Period duration.Duration `json:"period" yaml:"period"`
 	// How old files must be before they are GC'd:
-	MaxAge duration.Duration `yaml:"maxAge"`
+	MaxAge duration.Duration `json:"maxAge" yaml:"maxAge"`
 
 	// Used by the -gc CLI arg to silently disable the garbage collector
 	// while we're performing a manual sweep.
