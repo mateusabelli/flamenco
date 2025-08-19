@@ -1,7 +1,7 @@
 <template>
   <h2 class="column-title">Jobs</h2>
   <div class="btn-bar-group">
-    <job-actions-bar :activeJobID="jobs.activeJobID" />
+    <job-actions-bar :activeJobID="jobs.activeJobID" @mass-select="handleMassSelect" />
     <div class="align-right">
       <status-filter-bar
         :availableStatuses="availableStatuses"
@@ -258,6 +258,34 @@ export default {
         console.error(e);
       }
     },
+    /**
+     * Selects all jobs whose updated timestamp precedes the selected job(s) updated timestamp(s).
+     * Handles the section of rows on Tabulator AND the Pinia store.
+     */
+    handleMassSelect() {
+      // Find the most recent updated timestamp from selected jobs
+      const mostRecentlyUpdatedJob = this.jobs.selectedJobs.reduce((mostRecent, current) => {
+        return current.updated > mostRecent.updated ? current : mostRecent;
+      });
+
+      // Find the job rows whose updated timestamp is less than or equal to the most recent updated timestamp
+      const rowsToSelect = this.tabulator.searchRows(
+        'updated',
+        '<=',
+        mostRecentlyUpdatedJob.updated
+      );
+
+      this.tabulator.selectRow(rowsToSelect);
+      // Unlike handleMultiSelect, this function takes responsibility of updating the Pinia store since it functions independent of row clicks.
+      this.jobs.setSelectedJobs(this.getSelectedJobs()); // Set the selected jobs according to tabulator's selected rows
+    },
+    /**
+     * A helper function for onRowClick.
+     * It handles Shift + left-click and Ctrl/Cmd + left-click events, and the selection of rows on Tabulator.
+     * @param event listen for keyboard events
+     * @param row the row that was clicked
+     * @param tabulator the tabulator to be modified
+     */
     handleMultiSelect(event, row, tabulator) {
       const position = row.getPosition();
 
@@ -290,11 +318,12 @@ export default {
         tabulator.selectRow(row);
       }
     },
+    /**
+     * Handles Tabulator row click events, routes to the active job ID, and updates the Pinia store accordingly for active and selected jobs.
+     * @param event listen for keyboard events
+     * @param row the row that was clicked
+     */
     async onRowClick(event, row) {
-      // Take a copy of the data, so that it's decoupled from the tabulator data
-      // store. There were some issues where navigating to another job would
-      // overwrite the old job's ID, and this prevents that.
-
       // Handles Shift + Click, Ctrl + Click, and regular Click
       this.handleMultiSelect(event, row, this.tabulator);
 

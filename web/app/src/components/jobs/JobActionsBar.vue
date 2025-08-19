@@ -26,6 +26,12 @@
       v-on:click="onButtonDelete">
       Delete...
     </button>
+    <button
+      title="Select all jobs with updated timestamps equal to or less than a selected job's updated timestamp. Helpful for managing jobs updated before a certain timestamp."
+      :disabled="!jobs.selectedJobs.length"
+      v-on:click="onButtonMassSelect">
+      Select Preceding Jobs
+    </button>
   </div>
 </template>
 
@@ -57,7 +63,11 @@ export default {
       this._hideDeleteJobPopup();
     },
   },
+  emits: ['mass-select'],
   methods: {
+    onButtonMassSelect() {
+      this.$emit('mass-select');
+    },
     onButtonDelete() {
       this._startJobDeletionFlow();
     },
