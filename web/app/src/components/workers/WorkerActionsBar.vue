@@ -1,18 +1,20 @@
 <template>
-  <select v-model="selectedAction">
-    <option value="" selected>
-      <template v-if="!workers.selectedWorkers.length">Select a Worker</template>
-      <template v-else>Choose an action...</template>
-    </option>
-    <template v-for="(action, key) in WORKER_ACTIONS">
-      <option :key="action.label" :value="key" v-if="action.condition()">
-        {{ action.label }}
+  <div class="btn-bar workers">
+    <select v-model="selectedAction">
+      <option value="" selected>
+        <template v-if="!workers.selectedWorkers.length">Select a Worker</template>
+        <template v-else>Choose an action...</template>
       </option>
-    </template>
-  </select>
-  <button :disabled="!canPerformAction" class="btn" @click.prevent="performWorkerAction">
-    Apply
-  </button>
+      <template v-for="(action, key) in WORKER_ACTIONS">
+        <option :key="action.label" :value="key" v-if="action.condition()">
+          {{ action.label }}
+        </option>
+      </template>
+    </select>
+    <button :disabled="!canPerformAction" class="btn" @click.prevent="performWorkerAction">
+      Apply
+    </button>
+  </div>
 </template>
 
 <script setup>

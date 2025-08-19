@@ -347,6 +347,8 @@ dl dd:empty {
 .btn-bar {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--spacer-sm) / 3) var(--spacer-sm);
   padding: var(--spacer-sm) 0;
 }
 
@@ -369,13 +371,6 @@ dl dd:empty {
 
 .btn-bar-group .btn-bar {
   padding: 0;
-}
-
-.btn-bar-group select+.btn,
-.btn-bar-group select+button,
-.btn-bar-group .btn+select,
-.btn-bar-group button+select {
-  margin-left: var(--spacer-sm)
 }
 
 label {
@@ -458,10 +453,6 @@ button, input[type='button'], .btn {
   width: 100%;
 }
 
-.btn-bar .btn+.btn,
-.btn-bar button+button {
-  margin-left: var(--spacer-sm);
-}
 
 button[disabled],
 input[type='button'][disabled],
