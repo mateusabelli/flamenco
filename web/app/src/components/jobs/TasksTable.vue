@@ -2,12 +2,10 @@
   <h3 class="sub-title">Tasks</h3>
   <div class="btn-bar-group">
     <task-actions-bar />
-    <div class="align-right">
-      <status-filter-bar
-        :availableStatuses="availableStatuses"
-        :activeStatuses="shownStatuses"
-        @click="toggleStatusFilter" />
-    </div>
+    <status-filter-bar
+      :availableStatuses="availableStatuses"
+      :activeStatuses="shownStatuses"
+      @click="toggleStatusFilter" />
   </div>
   <div>
     <div

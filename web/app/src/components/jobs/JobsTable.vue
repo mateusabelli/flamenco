@@ -2,12 +2,10 @@
   <h2 class="column-title">Jobs</h2>
   <div class="btn-bar-group">
     <job-actions-bar :activeJobID="jobs.activeJobID" @mass-select="handleMassSelect" />
-    <div class="align-right">
-      <status-filter-bar
-        :availableStatuses="availableStatuses"
-        :activeStatuses="shownStatuses"
-        @click="toggleStatusFilter" />
-    </div>
+    <status-filter-bar
+      :availableStatuses="availableStatuses"
+      :activeStatuses="shownStatuses"
+      @click="toggleStatusFilter" />
   </div>
   <div>
     <div class="job-list with-clickable-row" id="flamenco_job_list"></div>

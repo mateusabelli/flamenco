@@ -154,12 +154,17 @@ export default {
   background-color: var(--color-background-popover);
   border-radius: var(--border-radius);
   border: var(--border-color) var(--border-width);
+  box-shadow:
+    inset 0 0 0.3em var(--color-danger),
+    0 0 0.3rem var(--color-background),
+    0 0 3rem var(--color-background);
+  box-sizing: border-box;
   color: var(--color-text);
   display: flex;
-  height: 3.5em;
+  flex-wrap: wrap;
   left: 0;
   margin: 0;
-  padding: 1rem 1rem;
+  padding: 0.5rem 1rem;
   position: absolute;
   right: 0;
   top: 0;

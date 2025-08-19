@@ -347,26 +347,17 @@ dl dd:empty {
 .btn-bar {
   align-items: center;
   display: flex;
+  flex-grow: 1;
   flex-wrap: wrap;
   gap: calc(var(--spacer-sm) / 3) var(--spacer-sm);
   padding: var(--spacer-sm) 0;
-}
-
-.btn-bar .align-right,
-.btn-bar-group .align-right {
-  margin-left: auto;
-}
-
-.btn-bar .align-center,
-.btn-bar-group .align-center {
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .btn-bar-group {
   align-items: center;
   display: flex;
   padding: var(--spacer-sm) 0;
+  position: relative;
 }
 
 .btn-bar-group .btn-bar {

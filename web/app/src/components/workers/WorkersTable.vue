@@ -3,14 +3,11 @@
 
   <div class="btn-bar-group">
     <worker-actions-bar />
-
-    <div class="align-right">
-      <status-filter-bar
-        :availableStatuses="availableStatuses"
-        :activeStatuses="shownStatuses"
-        classPrefix="worker-"
-        @click="toggleStatusFilter" />
-    </div>
+    <status-filter-bar
+      :availableStatuses="availableStatuses"
+      :activeStatuses="shownStatuses"
+      classPrefix="worker-"
+      @click="toggleStatusFilter" />
   </div>
 
   <div>
