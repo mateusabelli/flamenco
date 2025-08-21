@@ -31,6 +31,11 @@ const router = createRouter({
       name: 'last-rendered',
       component: () => import('../views/LastRenderedView.vue'),
     },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: () => import('../views/SettingsView.vue'),
+    },
   ],
 });
 

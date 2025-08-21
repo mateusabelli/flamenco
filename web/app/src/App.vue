@@ -15,6 +15,9 @@
         <li>
           <router-link :to="{ name: 'last-rendered' }">Last Rendered</router-link>
         </li>
+        <li>
+          <router-link :to="{ name: 'settings' }">Settings</router-link>
+        </li>
       </ul>
     </nav>
   </header>

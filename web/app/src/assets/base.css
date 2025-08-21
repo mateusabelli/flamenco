@@ -41,6 +41,7 @@
 
   --table-color-border: var(--color-border);
 
+  --input-height: 35px;
   --header-height: 25px;
   --footer-height: 25px;
   --grid-gap: 6px;
