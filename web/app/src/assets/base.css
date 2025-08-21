@@ -244,6 +244,7 @@ header nav {
 
 .navbar-brand {
   margin-right: var(--spacer);
+  text-wrap: nowrap;
 }
 
 nav > ul {
