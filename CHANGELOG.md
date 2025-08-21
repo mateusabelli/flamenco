@@ -6,6 +6,7 @@ bugs in actually-released versions.
 
 ## 3.8 - in development
 
+- Add a Settings section to the Manager's web interface, which can be used to edit the Manager configuration ([#104399](https://projects.blender.org/studio/flamenco/pulls/104399)).
 - Shift-click & ctrl-click can now be used to select multiple jobs ([#104391](https://projects.blender.org/studio/flamenco/pulls/104391)) and tasks ([#104386](https://projects.blender.org/studio/flamenco/pulls/104386)). The action buttons (requeue/pause/cancel) now work on all selected items.
 - While holding shift, the tasks table will not change the ordering of the tasks, to aid in shift-selecting ranges ([#104388](https://projects.blender.org/studio/flamenco/pulls/104388)).
 - Upgrade Blender Asset Tracer (BAT) to 1.20 to support Blender 5.0 ([BAT#92893](https://projects.blender.org/blender/blender-asset-tracer/pulls/92893) and [BAT@16c208bc8e13](https://projects.blender.org/blender/blender-asset-tracer/commit/16c208bc8e130c8b1233bdb411ecabdab19af3c5)).
