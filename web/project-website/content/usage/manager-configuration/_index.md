@@ -97,6 +97,22 @@ The file path for the SQLite database.
 
 ---
 
+`database_check_period` [duration format](#durations)
+
+How frequently the database is checked for internal consistency.
+
+This check always happens at startup of Flamenco Manager. By setting this to a
+non-zero duration, the check is also performed while Flamenco Manager is
+running.
+
+It is not typically necessary to set this; it was implemented to help find a
+bug, which has been fixed in Flamenco 3.6 ([#104305][bug-104305]). The setting
+may be removed in the future.
+
+[bug-104305]: https://projects.blender.org/studio/flamenco/issues/104305
+
+---
+
 `listen` string
 
 The IP and port (e.g., `:8080`, `192.168.0.1:8080`, or `[::]:8080`) Flamenco Manager will listen on.
@@ -279,6 +295,12 @@ mqtt:
 `client` map
 
 The configuration for the broker and client.
+
+---
+
+`clientID` string
+
+An identifier that each MQTT client uses to identify itself.
 
 ---
 
