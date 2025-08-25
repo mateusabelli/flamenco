@@ -78,16 +78,13 @@ ${BUILDTOOL}: mage.go $(wildcard magefiles/*.go) go.mod
 
 # NOTE: these database migration commands are just for reference / debugging /
 # development purposes. Flamenco Manager and Worker each perform their own
-# migration at startup. In normal use, you'll never need those commands. This is
-# also why the `with-deps` target doesn't install the Goose CLI program.
-#
-# Run `go install github.com/pressly/goose/v3/cmd/goose@latest` to install.
+# migration at startup. In normal use, you'll never need those commands.
 db-migrate-status:
-	goose -dir ./internal/manager/persistence/migrations/ sqlite3 flamenco-manager.sqlite status
+	go tool goose -dir ./internal/manager/persistence/migrations/ sqlite3 flamenco-manager.sqlite status
 db-migrate-up:
-	goose -dir ./internal/manager/persistence/migrations/ sqlite3 flamenco-manager.sqlite up
+	go tool goose -dir ./internal/manager/persistence/migrations/ sqlite3 flamenco-manager.sqlite up
 db-migrate-down:
-	goose -dir ./internal/manager/persistence/migrations/ sqlite3 flamenco-manager.sqlite down
+	go tool goose -dir ./internal/manager/persistence/migrations/ sqlite3 flamenco-manager.sqlite down
 .PHONY: db-migrate-status db-migrate-up db-migrate-down
 
 webapp-static: buildtool
