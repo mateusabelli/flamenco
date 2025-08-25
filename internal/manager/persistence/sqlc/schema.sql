@@ -118,13 +118,5 @@ CREATE TABLE workers (
   PRIMARY KEY (id)
 );
 CREATE INDEX idx_jobs_uuid ON jobs(uuid);
-CREATE INDEX idx_sleep_schedules_is_active ON sleep_schedules(is_active);
-CREATE INDEX idx_sleep_schedules_worker_id ON sleep_schedules(worker_id);
-CREATE INDEX idx_tasks_last_touched_at ON tasks(last_touched_at);
-CREATE INDEX idx_tasks_uuid ON tasks(uuid);
 CREATE INDEX idx_worker_tags_uuid ON worker_tags(uuid);
-CREATE INDEX idx_workers_address ON workers(address);
-CREATE INDEX idx_workers_deleted_at ON workers(deleted_at);
-CREATE INDEX idx_workers_last_seen_at ON workers(last_seen_at);
-CREATE INDEX idx_workers_uuid ON workers(uuid);
 CREATE UNIQUE INDEX job_worker_tasktype ON job_blocks(job_id, worker_id, task_type);
