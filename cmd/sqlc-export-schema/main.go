@@ -174,15 +174,15 @@ func schemaPathFromSqlcYAML() string {
 			Msg("unexpected version in sqlc.yaml")
 	}
 
-	if len(sqlcConfig.SQL) != 1 {
+	if len(sqlcConfig.SQL) == 0 {
 		log.Fatal().
 			Int("sql items", len(sqlcConfig.SQL)).
-			Msg("sqlc.yaml should contain a single item in the 'sql' list")
+			Msg("sqlc.yaml should contain at least one item in the 'sql' list")
 	}
 
 	schema := sqlcConfig.SQL[0].Schema
 	if schema == "" {
-		log.Fatal().Msg("sqlc.yaml should have a 'schema' key in the 'sql' item")
+		log.Fatal().Msg("sqlc.yaml should have a 'schema' key in the first 'sql' item")
 	}
 
 	return schema
