@@ -435,6 +435,7 @@ button, input[type='button'], .btn {
   transition-duration: var(--transition-speed);
   transition-property: background-color, border-color, color;
   user-select: none;
+  white-space: nowrap;
 }
 
 .btn-lg {
