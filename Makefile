@@ -4,7 +4,7 @@ PKG := projects.blender.org/studio/flamenco
 
 # To update the version number in all the relevant places, update the VERSION
 # and RELEASE_CYCLE variables below and run `make update-version`.
-VERSION := 3.8-alpha1
+VERSION := 3.8-alpha2
 # "alpha", "beta", or "release".
 RELEASE_CYCLE := alpha
 

@@ -11,7 +11,7 @@ import (
 // To update the version number in all the relevant places, update the VERSION
 // variable below and run `make update-version`.
 const (
-	version      = "3.8-alpha1"
+	version      = "3.8-alpha2"
 	releaseCycle = "alpha"
 )
 
