@@ -2,7 +2,7 @@
   <div
     :class="{
       hidden: hidden,
-      'form-row': !hidden,
+      'form-col': !hidden,
     }">
     <label v-if="label" :for="id">{{ label }}</label>
     <input
@@ -67,7 +67,7 @@ export default {
       // Supports .lazy
       // Can add validation here
       if (event.target.value === '' && this.required) {
-        this.errorMsg = 'Field required.';
+        this.errorMsg = 'This field is required.';
       } else {
         this.errorMsg = '';
       }

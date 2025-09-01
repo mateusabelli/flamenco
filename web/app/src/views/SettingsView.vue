@@ -1,7 +1,7 @@
 <script>
 import NotificationBar from '@/components/footer/NotificationBar.vue';
 import UpdateListener from '@/components/UpdateListener.vue';
-import DropdownSelect from '@/components/settings/DropdownSelect.vue';
+import FormInputDropdownSelect from '@/components/settings/FormInputDropdownSelect.vue';
 import FormInputSwitchCheckbox from '@/components/settings/FormInputSwitchCheckbox.vue';
 import FormInputText from '@/components/settings/FormInputText.vue';
 import FormInputNumber from '@/components/settings/FormInputNumber.vue';
@@ -91,16 +91,19 @@ const initialFormValues = {
     type: inputTypes.string,
     label: 'Database',
     value: null,
+    required: true,
   },
   database_check_period: {
     type: inputTypes.timeDuration,
     label: 'Database Check Period',
     value: null,
+    required: true,
   },
   listen: {
     type: inputTypes.string,
     label: 'Listening IP and Port Number',
     value: null,
+    required: true,
   },
   autodiscoverable: {
     type: inputTypes.boolean,
@@ -120,6 +123,7 @@ const initialFormValues = {
     type: inputTypes.string,
     label: 'Shared Storage Path',
     value: null,
+    required: true,
   },
   shaman: {
     enabled: {
@@ -136,8 +140,8 @@ const initialFormValues = {
       moreInfoLinkLabel: `Shaman Storage System`,
     },
     garbageCollect: {
-      period: { type: inputTypes.timeDuration, label: 'Period', value: null },
-      maxAge: { type: inputTypes.timeDuration, label: 'Max Age', value: null },
+      period: { type: inputTypes.timeDuration, label: 'Period', value: null, required: true },
+      maxAge: { type: inputTypes.timeDuration, label: 'Max Age', value: null, required: true },
     },
   },
 
@@ -146,21 +150,25 @@ const initialFormValues = {
     type: inputTypes.timeDuration,
     label: 'Task Timeout',
     value: null,
+    required: true,
   },
   worker_timeout: {
     type: inputTypes.timeDuration,
     label: 'Worker Timeout',
     value: null,
+    required: true,
   },
   blocklist_threshold: {
     type: inputTypes.number,
     label: 'Blocklist Threshold',
     value: null,
+    required: true,
   },
   task_fail_after_softfail_count: {
     type: inputTypes.number,
     label: 'Task Fail after Soft Fail Count',
     value: null,
+    required: true,
   },
 
   // MQTT
@@ -198,16 +206,18 @@ export default {
   components: {
     NotificationBar,
     UpdateListener,
-    DropdownSelect,
     FormInputText,
     FormInputNumber,
     FormInputSwitchCheckbox,
+    FormInputDropdownSelect,
   },
   data: () => ({
     // Make a deep copy so it can be compared to the original for isDirty check to work
     config: JSON.parse(JSON.stringify(initialFormValues)),
     originalConfig: JSON.parse(JSON.stringify(initialFormValues)),
     newVariableName: '',
+    newVariableErrorMessage: '',
+    newVariableTouched: false,
     metaAPI: new MetaApi(getAPIClient()),
 
     // Static data
@@ -226,18 +236,36 @@ export default {
     },
   },
   methods: {
+    addVariableOnInput() {
+      this.newVariableTouched = true;
+    },
     canAddVariable() {
+      // Don't show an error message if the field is blank e.g. after a user adds a variable name
+      // but still prevent variable addition
+      if (this.newVariableName === '') {
+        this.newVariableErrorMessage = '';
+        return false;
+      }
+
       // Duplicate variable name
       if (this.newVariableName in this.config.variables) {
-        // TODO: add error message here
+        this.newVariableErrorMessage = 'Duplicate variable name found.';
         return false;
       }
 
       // Whitespace only
       if (!this.newVariableName.trim()) {
-        // TODO: add error message here
+        this.newVariableErrorMessage = 'Must have at least one non-whitespace character.';
         return false;
       }
+
+      // Curly brace detection
+      if (this.newVariableName.match(/[{}]/)) {
+        this.newVariableErrorMessage =
+          'Variable name cannot contain any of the following characters: {}';
+        return false;
+      }
+      this.newVariableErrorMessage = '';
       return true;
     },
     handleAddVariable() {
@@ -444,25 +472,31 @@ export default {
         <a :href="'#' + category.id">{{ category.label }}</a>
       </div>
       <!-- TODO: Add a "Reset to Previous Value button" -->
-      <button type="submit" form="config-form" class="save-button" :disabled="!canSave()">
+      <button
+        type="submit"
+        form="config-form"
+        class="action-button margin-left-auto"
+        :disabled="!canSave()">
         Save
       </button>
     </nav>
     <aside class="side-container">
       <div class="dialog">
-        <div class="dialog-content">
-          <h2>Settings</h2>
-          <p>
-            This editor allows you to configure the settings for the Flamenco Server. These changes
-            will directly edit the
-            <span class="file-name"> flamenco-manager.yaml </span>
-            file. For more information, see
-            <a class="link" href="https://flamenco.blender.org/usage/manager-configuration/">
-              Manager Configuration
-            </a>
-          </p>
+        <div class="flex-col gap-col-spacer">
+          <div class="flex-col">
+            <h2>Settings</h2>
+            <p class="text-color-hint">
+              This editor allows you to configure the settings for the Flamenco Server. These
+              changes will directly edit the
+              <span class="file-name"> flamenco-manager.yaml </span>
+              file. For more information, see
+              <a class="link" href="https://flamenco.blender.org/usage/manager-configuration/">
+                Manager Configuration</a
+              >
+            </p>
+          </div>
+          <!-- TODO: add attribute descriptions when onFocus -->
         </div>
-        <!-- TODO: add attribute descriptions when onFocus -->
       </div>
     </aside>
     <form id="config-form" class="form-container" @submit.prevent="saveConfig">
@@ -471,9 +505,10 @@ export default {
         <h2 :id="category.id">{{ category.label }}</h2>
         <!-- Variables -->
         <template v-if="category.id === 'variables'">
-          <div class="form-row">
-            <div class="form-variable-row">
+          <div class="form-col">
+            <div class="form-row gap-col-spacer">
               <input
+                @input="addVariableOnInput"
                 @keydown.enter.prevent="canAddVariable() ? handleAddVariable() : null"
                 placeholder="variableName"
                 type="text"
@@ -487,6 +522,15 @@ export default {
                 Add Variable
               </button>
             </div>
+            <span
+              :class="[
+                'error',
+                {
+                  hidden: !newVariableErrorMessage || !newVariableTouched,
+                },
+              ]"
+              >{{ newVariableErrorMessage }}
+            </span>
           </div>
           <section
             class="form-variable-section"
@@ -496,37 +540,51 @@ export default {
               <h3>
                 <pre>{{ variableName }}</pre>
               </h3>
-              <button type="button" @click="handleDeleteVariable(variableName)">Delete</button>
+              <button
+                type="button"
+                class="delete-button"
+                @click="handleDeleteVariable(variableName)">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25">
+                  <g id="trash">
+                    <path
+                      class="trash"
+                      d="M20.5 4h-3.64l-.69-2.06a1.37 1.37 0 0 0-1.3-.94h-4.74a1.37 1.37 0 0 0-1.3.94L8.14 4H4.5a.5.5 0 0 0 0 1h.34l1 17.59A1.45 1.45 0 0 0 7.2 24h10.6a1.45 1.45 0 0 0 1.41-1.41L20.16 5h.34a.5.5 0 0 0 0-1zM9.77 2.26a.38.38 0 0 1 .36-.26h4.74a.38.38 0 0 1 .36.26L15.81 4H9.19zm8.44 20.27a.45.45 0 0 1-.41.47H7.2a.45.45 0 0 1-.41-.47L5.84 5h13.32z" />
+                    <path
+                      class="trash"
+                      d="M9.5 10a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 1 0v-7a.5.5 0 0 0-.5-.5zM12.5 9a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 1 0v-9a.5.5 0 0 0-.5-.5zM15.5 10a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 1 0v-7a.5.5 0 0 0-.5-.5z" />
+                  </g>
+                </svg>
+              </button>
             </div>
             <div class="form-variable-row" v-for="(entry, index) in variable.values" :key="index">
               <FormInputText
-                required
                 :id="variableName + '[' + index + ']' + '.value'"
                 v-model:value="entry.value.value"
                 :label="index === 0 ? entry.value.label : ''" />
-              <div class="form-row-secondary">
-                <label v-if="index === 0" :for="variableName + index + '.platform'">{{
-                  entry.platform.label
-                }}</label>
-                <DropdownSelect
-                  :options="platformOptions"
-                  v-model="entry.platform.value"
-                  :id="variableName + index + '.platform'" />
-              </div>
-              <div class="form-row-secondary">
-                <label v-if="index === 0" :for="variableName + index + '.audience'">{{
-                  entry.audience.label
-                }}</label>
-                <DropdownSelect
-                  :options="audienceOptions"
-                  v-model="entry.audience.value"
-                  :id="variableName + index + '.audience'" />
-              </div>
-              <button type="button" @click="handleDeleteVariableConfig(variableName, index)">
-                Delete
+              <FormInputDropdownSelect
+                required
+                :label="index === 0 ? entry.platform.label : ''"
+                :options="platformOptions"
+                v-model="entry.platform.value"
+                :id="variableName + index + '.platform'" />
+              <FormInputDropdownSelect
+                required
+                strict
+                :label="index === 0 ? entry.audience.label : ''"
+                :options="audienceOptions"
+                v-model="entry.audience.value"
+                :id="variableName + index + '.audience'" />
+              <button
+                type="button"
+                class="delete-button with-error-message"
+                :class="['delete-button', { 'margin-top': index === 0 }]"
+                @click="handleDeleteVariableConfig(variableName, index)">
+                -
               </button>
             </div>
-            <button type="button" @click="handleAddVariableConfig(variableName)">Add</button>
+            <button type="button" class="add-button" @click="handleAddVariableConfig(variableName)">
+              +
+            </button>
           </section>
         </template>
         <!-- Render all other sections dynamically -->
@@ -550,20 +608,18 @@ export default {
                   <template v-else-if="key === 'garbageCollect'">
                     <span>Garbage Collection Settings</span>
                     <template
-                      v-for="(garbageCollectSetting, key) in shamanSetting"
-                      :key="'garbageCollect' + key">
-                      <div
-                        class="form-row"
-                        v-if="garbageCollectSetting.type === inputTypes.timeDuration">
-                        <label :for="'shaman.garbageCollect.' + key">{{
-                          garbageCollectSetting.label
-                        }}</label>
-                        <DropdownSelect
+                      v-for="(garbageCollectSetting, garbageCollectKey) in shamanSetting"
+                      :key="'garbageCollect' + garbageCollectKey">
+                      <template v-if="garbageCollectSetting.type === inputTypes.timeDuration">
+                        <FormInputDropdownSelect
+                          strict
+                          :required="config.shaman.garbageCollect[garbageCollectKey].required"
+                          :label="garbageCollectSetting.label"
                           :disabled="!config.shaman.enabled.value"
                           :options="timeDurationOptions"
                           v-model="garbageCollectSetting.value"
-                          :id="'shaman.garbageCollect.' + key" />
-                      </div>
+                          :id="'shaman.garbageCollect.' + garbageCollectKey" />
+                      </template>
                     </template>
                   </template>
                 </template>
@@ -587,6 +643,7 @@ export default {
                     :key="clientKey">
                     <template v-if="clientSetting.type === inputTypes.string">
                       <FormInputText
+                        :required="config.mqtt.client[clientKey].required"
                         :disabled="!config.mqtt.enabled.value"
                         :id="'mqtt.client.' + clientKey"
                         v-model:value="clientSetting.value"
@@ -598,6 +655,7 @@ export default {
               <!-- Render all other input types dynamically -->
               <template v-else-if="config[key].type === inputTypes.string">
                 <FormInputText
+                  :required="config[key].required"
                   :id="key"
                   v-model:value="config[key].value"
                   :label="config[key].label" />
@@ -610,20 +668,20 @@ export default {
               </template>
               <template v-if="config[key].type === inputTypes.number">
                 <FormInputNumber
+                  :required="config[key].required"
                   :label="config[key].label"
                   :min="0"
                   v-model:value="config[key].value"
                   :id="key" />
               </template>
-              <div v-else-if="config[key].type === inputTypes.timeDuration" class="form-row">
-                <label :for="key">
-                  {{ config[key].label }}
-                </label>
-                <DropdownSelect
+              <template v-else-if="config[key].type === inputTypes.timeDuration">
+                <FormInputDropdownSelect
+                  :required="config[key].required"
+                  :label="config[key].label"
                   :options="timeDurationOptions"
                   v-model="config[key].value"
                   :id="key" />
-              </div>
+              </template>
             </template>
           </section>
         </template>
@@ -645,8 +703,9 @@ export default {
 .yaml-view-container {
   --nav-height: 35px;
   --button-height: 35px;
+  --delete-button-width: 35px;
 
-  --min-form-area-width: 525px;
+  --min-form-area-width: 600px;
   --max-form-area-width: 1fr;
   --min-side-area-width: 250px;
   --max-side-area-width: 425px;
@@ -659,6 +718,22 @@ export default {
   --column-item-spacer: 25px;
   --section-spacer: 25px;
   --container-padding: 25px;
+  --text-spacer: 8px;
+
+  grid-column-start: col-1;
+  grid-column-end: col-3;
+
+  display: grid;
+  grid-gap: var(--grid-gap);
+  grid-template-areas:
+    'header header'
+    'side main'
+    'footer footer';
+  grid-template-columns: minmax(var(--min-side-area-width), var(--max-side-area-width)) minmax(
+      var(--min-form-area-width),
+      var(--max-form-area-width)
+    );
+  grid-template-rows: var(--nav-height) 1fr;
 }
 
 .hidden {
@@ -689,27 +764,76 @@ export default {
 #variables:target {
   color: var(--color-accent-text);
 }
-.save-button {
+
+.error {
+  color: var(--color-status-failed);
+}
+
+button.delete-button {
+  border: var(--color-danger) 1px solid;
+  color: var(--color-danger);
+  background-color: var(--color-background-column);
+  width: var(--delete-button-width);
+  height: var(--delete-button-width);
+}
+
+button.delete-button .trash {
+  fill: var(--color-danger);
+  width: 25px;
+  height: 25px;
+}
+
+button.delete-button.margin-top {
+  /* This is calculated by subtracting the button height from the form row height, 
+  aligning it properly with the inputs */
+  margin-top: 25px;
+}
+
+button.add-button {
+  border: var(--color-success) 1px solid;
+  color: var(--color-success);
+  background-color: var(--color-background-column);
+}
+
+button.delete-button:hover,
+button.delete-button:hover .trash,
+button.add-button:hover {
+  fill: var(--color-accent);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+
+.margin-left-auto {
+  margin-left: auto;
+}
+
+.margin-top-auto {
+  margin-top: auto;
+}
+
+button.action-button {
   background-color: var(--color-accent-background);
   color: var(--color-accent-text);
   padding: 5px 64px;
   border-radius: var(--border-radius);
-  margin-left: auto;
   border: var(--border-width) solid var(--color-accent);
 }
-.save-button:hover {
+button.action-button:hover {
   background-color: var(--color-accent);
 }
-.save-button:active {
+button.action-button:active {
   color: var(--color-accent);
   background-color: var(--color-accent-background);
 }
 
 p {
   line-height: 1.5;
-  color: var(--color-text-hint);
   margin: 0;
   white-space: pre-line;
+  color: var(--color-text);
+}
+.text-color-hint {
+  color: var(--color-text-hint);
 }
 
 button {
@@ -729,22 +853,7 @@ button {
   background-color: var(--color-background-column);
   padding: 2px 10px;
   z-index: 100;
-}
-.yaml-view-container {
-  grid-column-start: col-1;
-  grid-column-end: col-3;
-
-  display: grid;
-  grid-gap: var(--grid-gap);
-  grid-template-areas:
-    'header header'
-    'side main'
-    'footer footer';
-  grid-template-columns: minmax(var(--min-side-area-width), var(--max-side-area-width)) minmax(
-      var(--min-form-area-width),
-      var(--max-form-area-width)
-    );
-  grid-template-rows: var(--nav-height) 1fr;
+  border-radius: var(--border-radius);
 }
 
 .side-container {
@@ -758,8 +867,19 @@ button {
   position: sticky;
   top: 70px;
   padding: var(--side-padding);
-  flex: 1;
+  display: flex;
 }
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+.gap-text-spacer {
+  gap: var(--text-spacer);
+}
+.gap-col-spacer {
+  gap: var(--column-item-spacer);
+}
+
 .form-container {
   display: flex;
   flex-direction: column;
@@ -790,11 +910,16 @@ h3 {
   margin-bottom: 50px;
 }
 
-.form-row {
+.form-col {
   display: flex;
   align-items: start;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--text-spacer);
+  width: 100%;
+}
+
+.form-row {
+  display: flex;
   width: 100%;
 }
 
@@ -807,12 +932,23 @@ h3 {
 }
 
 .form-variable-row {
-  display: flex;
-  flex-direction: row;
-  align-items: end;
+  display: grid;
+  grid-template-columns: 1fr minmax(0, max-content) minmax(0, max-content) var(
+      --delete-button-width
+    );
+  grid-template-areas: 'value platform audience button';
+  align-items: start;
+  justify-items: center;
   margin-bottom: 15px;
-  gap: var(--row-item-spacer);
+  column-gap: var(--row-item-spacer);
   width: 100%;
+}
+
+.form-variable-col {
+  display: flex;
+  align-items: start;
+  flex-direction: column;
+  gap: var(--text-spacer);
 }
 
 .form-variable-header {
@@ -826,13 +962,6 @@ h3 {
 
 .form-variable-header h3 {
   margin: 0;
-}
-
-.form-row-secondary {
-  display: flex;
-  align-items: start;
-  flex-direction: column;
-  gap: 8px;
 }
 
 input {

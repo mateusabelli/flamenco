@@ -1,5 +1,5 @@
 <template>
-  <div class="form-row">
+  <div class="form-col">
     <label class="form-switch-row">
       <span>{{ label }}</span>
       <span class="switch">
@@ -7,7 +7,7 @@
         <span class="slider round"></span>
       </span>
     </label>
-    <p>
+    <p class="text-color-hint">
       {{ description }}
       <template v-if="moreInfoText">
         {{ moreInfoText }}
