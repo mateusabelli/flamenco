@@ -87,7 +87,6 @@ func NewMQTTForwarder(config MQTTClientConfig) *MQTTForwarder {
 		ConnectRetryDelay: connectRetryDelay,
 		OnConnectionUp:    client.onConnectionUp,
 		OnConnectError:    client.onConnectionError,
-		Debug:             paho.NOOPLogger{},
 		ClientConfig: paho.ClientConfig{
 			ClientID:           config.ClientID,
 			OnClientError:      client.onClientError,
