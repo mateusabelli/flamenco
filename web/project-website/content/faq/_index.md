@@ -129,6 +129,15 @@ Storage Services][cloud-storage].
 
 [cloud-storage]: {{< ref "/usage/shared-storage" >}}#cloud-storage-services
 
+### Does Flamenco have an API?
+
+Flamenco is implemented via OpenAPI, so not only does it have an API, it is also
+self-documenting. All communication between Flamenco Manager and the Worker, the
+web interface, and the Blender add-on is done via this API.
+
+In the Flamenco Manager web interface, in the top-right corner, is a link to the
+API documentation. This includes a way to run API commands directly from that
+web interface.
 
 ## Troubleshooting
 
