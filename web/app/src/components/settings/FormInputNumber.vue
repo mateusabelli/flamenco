@@ -67,7 +67,7 @@ export default {
   methods: {
     onInput(event) {
       // Update the v-model value
-      this.$emit('update:value', event.target.value);
+      this.$emit('update:value', Number(event.target.value));
     },
     onChange(event) {
       // Supports .lazy
