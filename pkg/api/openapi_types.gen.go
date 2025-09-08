@@ -723,10 +723,10 @@ type SubmittedJob struct {
 	Type              string `json:"type"`
 
 	// Hash of the job type, copied from the `AvailableJobType.etag` property of the job type. The job will be rejected if this field doesn't match the actual job type on the Manager. This prevents job submission with old settings, after the job compiler script has been updated.
-	// If this field is ommitted, the check is bypassed.
+	// If this field is omitted, the check is bypassed.
 	TypeEtag *string `json:"type_etag,omitempty"`
 
-	// Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job.
+	// Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or omitted, all workers can work on this job.
 	WorkerTag *string `json:"worker_tag,omitempty"`
 }
 
@@ -901,7 +901,7 @@ type WorkerSummary struct {
 type WorkerTag struct {
 	Description *string `json:"description,omitempty"`
 
-	// UUID of the tag. Can be ommitted when creating a new tag, in which case a random UUID will be assigned.
+	// UUID of the tag. Can be omitted when creating a new tag, in which case a random UUID will be assigned.
 	Id   *string `json:"id,omitempty"`
 	Name string  `json:"name"`
 }

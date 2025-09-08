@@ -80,7 +80,7 @@ This follows a few standard steps:
    do this once; after that you can call as many functions on it as you want.
 4. **Call** the function. The function name comes from the `operationId` in the YAML
    file.
-5. **Handle** the succesful return (`.then(...)`) and any errors (`.catch(...)`).
+5. **Handle** the successful return (`.then(...)`) and any errors (`.catch(...)`).
 
 All API function calls, like the `metaAPI.getVersion()` function above,
 immediately return a [promise][promise]. This means that any code after the API

@@ -139,7 +139,7 @@ Job.prototype['name'] = undefined;
 Job.prototype['type'] = undefined;
 
 /**
- * Hash of the job type, copied from the `AvailableJobType.etag` property of the job type. The job will be rejected if this field doesn't match the actual job type on the Manager. This prevents job submission with old settings, after the job compiler script has been updated. If this field is ommitted, the check is bypassed. 
+ * Hash of the job type, copied from the `AvailableJobType.etag` property of the job type. The job will be rejected if this field doesn't match the actual job type on the Manager. This prevents job submission with old settings, after the job compiler script has been updated. If this field is omitted, the check is bypassed. 
  * @member {String} type_etag
  */
 Job.prototype['type_etag'] = undefined;
@@ -173,7 +173,7 @@ Job.prototype['submitter_platform'] = undefined;
 Job.prototype['storage'] = undefined;
 
 /**
- * Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job. 
+ * Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or omitted, all workers can work on this job. 
  * @member {String} worker_tag
  */
 Job.prototype['worker_tag'] = undefined;
@@ -229,7 +229,7 @@ SubmittedJob.prototype['name'] = undefined;
  */
 SubmittedJob.prototype['type'] = undefined;
 /**
- * Hash of the job type, copied from the `AvailableJobType.etag` property of the job type. The job will be rejected if this field doesn't match the actual job type on the Manager. This prevents job submission with old settings, after the job compiler script has been updated. If this field is ommitted, the check is bypassed. 
+ * Hash of the job type, copied from the `AvailableJobType.etag` property of the job type. The job will be rejected if this field doesn't match the actual job type on the Manager. This prevents job submission with old settings, after the job compiler script has been updated. If this field is omitted, the check is bypassed. 
  * @member {String} type_etag
  */
 SubmittedJob.prototype['type_etag'] = undefined;
@@ -257,7 +257,7 @@ SubmittedJob.prototype['submitter_platform'] = undefined;
  */
 SubmittedJob.prototype['storage'] = undefined;
 /**
- * Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job. 
+ * Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or omitted, all workers can work on this job. 
  * @member {String} worker_tag
  */
 SubmittedJob.prototype['worker_tag'] = undefined;

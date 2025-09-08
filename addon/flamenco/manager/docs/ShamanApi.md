@@ -82,7 +82,7 @@ No authorization required
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Checkout was created succesfully. |  -  |
+**200** | Checkout was created successfully. |  -  |
 **424** | There were files missing. Use &#x60;shamanCheckoutRequirements&#x60; to figure out which ones. |  -  |
 **409** | Checkout already exists. |  -  |
 **0** | unexpected error |  -  |

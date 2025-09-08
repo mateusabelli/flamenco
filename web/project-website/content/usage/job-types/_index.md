@@ -123,7 +123,7 @@ following names:
   `n` directory parts of some file's path. For example,
   `last_n_dir_parts(2, '/complex/path/to/a/file.blend')` will return `to/a`, as
   those are the last `2` components of the directory. If `file_path` is
-  ommitted, it uses the current blend file, i.e. `bpy.data.filepath`.
+  omitted, it uses the current blend file, i.e. `bpy.data.filepath`.
 
 [bpy]: https://docs.blender.org/api/master/
 [context]: https://docs.blender.org/api/master/bpy.context.html

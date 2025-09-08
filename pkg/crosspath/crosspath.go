@@ -31,7 +31,7 @@ func Dir(path string) string {
 	slashed := ToSlash(path)
 
 	// Don't use path.Dir(), as that cleans up the path and removes double
-	// slashes. However, Windows UNC paths start with double blackslashes, which
+	// slashes. However, Windows UNC paths start with double backslashes, which
 	// will translate to double slashes and should not be removed.
 	dir, _ := path_module.Split(slashed)
 	switch {
@@ -154,7 +154,7 @@ func isPathSep(r rune) bool {
 	return r == '/' || r == '\\'
 }
 
-// TrimTrailingSep removes any trailling path separator.
+// TrimTrailingSep removes any trailing path separator.
 func TrimTrailingSep(path string) string {
 	if path == "" {
 		return ""

@@ -33,7 +33,7 @@ Immediately
 
 Both the 'Shut Down' and 'Restart' actions stop the Worker process.
 
-Shutting down the worker will make it exit succesfully, with status code `0`.
+Shutting down the worker will make it exit successfully, with status code `0`.
 
 Restarting the worker is only possible if it was started or configured with a
 'restart exit code'. This can be done by using the `-restart-exit-status 47`

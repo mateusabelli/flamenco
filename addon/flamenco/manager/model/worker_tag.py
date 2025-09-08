@@ -141,7 +141,7 @@ class WorkerTag(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            id (str): UUID of the tag. Can be ommitted when creating a new tag, in which case a random UUID will be assigned. . [optional]  # noqa: E501
+            id (str): UUID of the tag. Can be omitted when creating a new tag, in which case a random UUID will be assigned. . [optional]  # noqa: E501
             description (str): [optional]  # noqa: E501
         """
 
@@ -228,7 +228,7 @@ class WorkerTag(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            id (str): UUID of the tag. Can be ommitted when creating a new tag, in which case a random UUID will be assigned. . [optional]  # noqa: E501
+            id (str): UUID of the tag. Can be omitted when creating a new tag, in which case a random UUID will be assigned. . [optional]  # noqa: E501
             description (str): [optional]  # noqa: E501
         """
 

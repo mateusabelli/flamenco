@@ -154,7 +154,7 @@ No authorization required
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**204** | Jobs were succesfully marked for deletion. |  -  |
+**204** | Jobs were successfully marked for deletion. |  -  |
 **416** | There were no jobs that match the request. |  -  |
 **0** | Error message |  -  |
 
@@ -1315,7 +1315,7 @@ No authorization required
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Job was succesfully compiled into individual tasks. |  -  |
+**200** | Job was successfully compiled into individual tasks. |  -  |
 **412** | The given job type etag does not match the job type etag on the Manager. This is likely due to the client caching the job type for too long.  |  -  |
 **0** | Error message |  -  |
 
@@ -1397,7 +1397,7 @@ No authorization required
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**204** | Job was succesfully compiled into individual tasks. The job and tasks have NOT been stored in the database, though. |  -  |
+**204** | Job was successfully compiled into individual tasks. The job and tasks have NOT been stored in the database, though. |  -  |
 **412** | The given job type etag does not match the job type etag on the Manager. This is likely due to the client caching the job type for too long.  |  -  |
 **0** | Error message |  -  |
 

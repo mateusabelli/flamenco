@@ -34,7 +34,7 @@ import (
 )
 
 // ErrFileAlreadyExists indicates that a file already exists in the Shaman
-// storage. It can also be returned during upload, when someone else succesfully
+// storage. It can also be returned during upload, when someone else successfully
 // uploaded the same file at the same time.
 var ErrFileAlreadyExists = errors.New("uploaded file already exists")
 
@@ -130,7 +130,7 @@ func (fs *FileServer) ReceiveFile(
 			logger.Error().
 				AnErr("copyError", err).
 				AnErr("closeError", closeErr).
-				Msg("error closing local file after other I/O error occured")
+				Msg("error closing local file after other I/O error occurred")
 		}
 
 		logger = logger.With().Err(err).Logger()

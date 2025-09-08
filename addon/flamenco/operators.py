@@ -73,7 +73,7 @@ class FLAMENCO_OT_ping_manager(FlamencoOpMixin, bpy.types.Operator):
 
 class FLAMENCO_OT_eval_setting(FlamencoOpMixin, bpy.types.Operator):
     bl_idname = "flamenco.eval_setting"
-    bl_label = "Flamenco: Evalutate Setting Value"
+    bl_label = "Flamenco: Evaluate Setting Value"
     bl_description = "Automatically determine a suitable value"
     bl_options = {"REGISTER", "INTERNAL", "UNDO"}
 
@@ -240,7 +240,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         # Un-set the 'flamenco_version_mismatch' when the versions match or when
         # one forced submission is done. Each submission has to go through the
         # same cycle of submitting, seeing the warning, then explicitly ignoring
-        # the mismatch, to make it a concious decision to keep going with
+        # the mismatch, to make it a conscious decision to keep going with
         # potentially incompatible versions.
         context.window_manager.flamenco_version_mismatch = False
 
@@ -318,7 +318,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         try:
             # The file extension should be determined by the render settings, not necessarily
-            # by the setttings in the output panel.
+            # by the settings in the output panel.
             render.use_file_extension = True
 
             # Rescheduling should not overwrite existing frames.
@@ -328,7 +328,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             # To work around a shortcoming of BAT, ensure that all
             # indirectly-linked data is still saved as directly-linked.
             #
-            # See `133dde41bb5b: Improve handling of (in)direclty linked status
+            # See `133dde41bb5b: Improve handling of (in)directly linked status
             # for linked IDs` in Blender's Git repository.
             if old_use_all_linked_data_direct is not None:
                 self.log.info(

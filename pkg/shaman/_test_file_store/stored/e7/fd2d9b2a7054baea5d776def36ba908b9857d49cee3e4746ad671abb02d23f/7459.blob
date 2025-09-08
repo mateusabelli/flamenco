@@ -215,7 +215,7 @@ def main():
     if failed_paths:
         raise SystemExit('Aborted due to repeated upload failure')
     else:
-        print(f'All files uploaded succesfully in {try_count+1} iterations')
+        print(f'All files uploaded successfully in {try_count+1} iterations')
 
     if cli_args.checkout:
         print(f'Going to ask for a checkout with ID {cli_args.checkout}')

@@ -170,11 +170,11 @@ class SubmittedJob(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            type_etag (str): Hash of the job type, copied from the `AvailableJobType.etag` property of the job type. The job will be rejected if this field doesn't match the actual job type on the Manager. This prevents job submission with old settings, after the job compiler script has been updated. If this field is ommitted, the check is bypassed. . [optional]  # noqa: E501
+            type_etag (str): Hash of the job type, copied from the `AvailableJobType.etag` property of the job type. The job will be rejected if this field doesn't match the actual job type on the Manager. This prevents job submission with old settings, after the job compiler script has been updated. If this field is omitted, the check is bypassed. . [optional]  # noqa: E501
             settings (JobSettings): [optional]  # noqa: E501
             metadata (JobMetadata): [optional]  # noqa: E501
             storage (JobStorageInfo): [optional]  # noqa: E501
-            worker_tag (str): Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job. . [optional]  # noqa: E501
+            worker_tag (str): Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or omitted, all workers can work on this job. . [optional]  # noqa: E501
             initial_status (JobStatus): [optional]  # noqa: E501
         """
 
@@ -268,11 +268,11 @@ class SubmittedJob(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            type_etag (str): Hash of the job type, copied from the `AvailableJobType.etag` property of the job type. The job will be rejected if this field doesn't match the actual job type on the Manager. This prevents job submission with old settings, after the job compiler script has been updated. If this field is ommitted, the check is bypassed. . [optional]  # noqa: E501
+            type_etag (str): Hash of the job type, copied from the `AvailableJobType.etag` property of the job type. The job will be rejected if this field doesn't match the actual job type on the Manager. This prevents job submission with old settings, after the job compiler script has been updated. If this field is omitted, the check is bypassed. . [optional]  # noqa: E501
             settings (JobSettings): [optional]  # noqa: E501
             metadata (JobMetadata): [optional]  # noqa: E501
             storage (JobStorageInfo): [optional]  # noqa: E501
-            worker_tag (str): Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or ommitted, all workers can work on this job. . [optional]  # noqa: E501
+            worker_tag (str): Worker tag that should execute this job. When a tag ID is given, only Workers in that tag will be scheduled to work on it. If empty or omitted, all workers can work on this job. . [optional]  # noqa: E501
             initial_status (JobStatus): [optional]  # noqa: E501
         """
 

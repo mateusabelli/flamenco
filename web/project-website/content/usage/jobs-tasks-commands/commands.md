@@ -14,7 +14,7 @@ Runs Blender. Command parameters:
 
 | Parameter    | Type       | Description                                                                                                                                                                                                                                            |
 |--------------|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `exe`        | `string`   | Path to a Blender exeuctable. Typically the expansion of the `{blender}` [variable][variables]. If set to `"blender"`, the Worker performs a search on `$PATH` and on Windows will use the file association for the `.blend` extension to find Blender |
+| `exe`        | `string`   | Path to a Blender executable. Typically the expansion of the `{blender}` [variable][variables]. If set to `"blender"`, the Worker performs a search on `$PATH` and on Windows will use the file association for the `.blend` extension to find Blender |
 | `exeArgs`    | `string`   | CLI arguments to use before any other argument. Typically the expansion of the `{blenderargs}` [variable][variables]                                                                                                                                   |
 | `argsBefore` | `[]string` | Additional CLI arguments defined by the job compiler script, to go before the blend file.                                                                                                                                                              |
 | `blendfile`  | `string`   | Path of the blend file to open.                                                                                                                                                                                                                        |
@@ -51,7 +51,7 @@ Moves a directory from one path to another.
 | `src`     | `string` | Path of the directory to move. |
 | `dest`    | `string` | Destination to move it to.     |
 
-If the destination directory already exists, it is first moved aside to a timestamped path  `{dest}-{YYYY-MM-DD_HHMMSS}` to its name. The tiemstamp is the 'last modified' timestamp of that existing directory.
+If the destination directory already exists, it is first moved aside to a timestamped path  `{dest}-{YYYY-MM-DD_HHMMSS}` to its name. The timestamp is the 'last modified' timestamp of that existing directory.
 
 ## File Management: `copy-file`
 

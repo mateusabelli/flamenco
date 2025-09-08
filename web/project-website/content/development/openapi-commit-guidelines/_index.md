@@ -10,7 +10,7 @@ here for a while for historical reference.
 Since the introduction of a `.gitattributes` file, tooling (like
 [projects.blender.org][gitea]) is aware of which files are generated. This means
 that **all changes** (`pkg/api/flamenco-openapi.yaml`, re-generated code, and
-changes to the implementation) can be **commited together**.
+changes to the implementation) can be **committed together**.
 
 [gitea]: https://projects.blender.org/studio/flamenco/
 {{< /hint >}}

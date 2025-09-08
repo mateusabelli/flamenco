@@ -175,7 +175,7 @@ func TestGCComponents(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, len(expectRemovable), len(oldFiles))
 
-	// Touching a file before requesting deletion should prevent its deletetion.
+	// Touching a file before requesting deletion should prevent its deletion.
 	now := time.Now()
 	err = os.Chtimes(absPaths["6001.blob"], now, now)
 	require.NoError(t, err)

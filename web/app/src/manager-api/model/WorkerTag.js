@@ -67,7 +67,7 @@ class WorkerTag {
 }
 
 /**
- * UUID of the tag. Can be ommitted when creating a new tag, in which case a random UUID will be assigned. 
+ * UUID of the tag. Can be omitted when creating a new tag, in which case a random UUID will be assigned. 
  * @member {String} id
  */
 WorkerTag.prototype['id'] = undefined;

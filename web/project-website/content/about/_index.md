@@ -45,7 +45,7 @@ The following principles guide the design of Flamenco:
 ### Blender.org Project
 Flamenco is a true blender.org project. This means that it's Free and Open
 Source, made by the community, lead by Blender HQ. Its development will fall
-under the umbrella of the [Pipline, Assets & IO][PAIO] module.
+under the umbrella of the [Pipeline, Assets & IO][PAIO] module.
 
 [PAIO]: https://projects.blender.org/blender/blender/wiki/Module:%20Pipeline,%20Assets%20&%20I/O
 

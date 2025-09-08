@@ -33,7 +33,7 @@ The following table shows the meaning of the different task statuses:
 | ------------- | ------- | ----------- |
 | `queued`      | Ready to be assigned to an available Worker | `active`, `canceled` |
 | `active`      | Assigned to a Worker for execution | `completed`, `canceled`, `failed`, `soft-failed` |
-| `completed`   | Task executed succesfully | `queued` |
+| `completed`   | Task executed successfully | `queued` |
 | `soft-failed` | Same as `queued`, but has been failed by a Worker in an earlier execution | `queued`, `completed`, `failed`, `canceled` |
 | `failed`      | Execution failed after multiple retries by different Workers | `queued`, `canceled` |
 | `canceled`    | Canceled by the user, task terminated immediately | `queued` |

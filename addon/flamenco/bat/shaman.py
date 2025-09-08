@@ -159,7 +159,7 @@ class Transferrer(submodules.transfer.FileTransferer):  # type: ignore
             self.error_set("Giving up after multiple attempts to upload the files")
             return
 
-        self.log.info("All files uploaded succesfully")
+        self.log.info("All files uploaded successfully")
         checkout_result = self._request_checkout(shaman_file_specs)
         assert checkout_result is not None
 

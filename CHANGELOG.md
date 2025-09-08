@@ -43,7 +43,7 @@ bugs in actually-released versions.
 - Number the tasks in a job, indicating their creation order. This gives the web interface something to sort on that doesn't change on task updates.
 - Add `shellSplit(someString)` function to the job compiler scripts. This splits a string into an array of strings using shell/CLI semantics.
 - Make it possible to script job submissions in Blender, by executing the `bpy.ops.flamenco.submit_job(job_name="jobname")` operator.
-- Security updates of some deendencies:
+- Security updates of some dependencies:
   - [GO-2024-2937: Parsing a corrupt or malicious image with invalid color indices can cause a panic](https://pkg.go.dev/vuln/GO-2024-2937)
 - Web interface: list the job's worker tag in the job details.
 - Ensure the submitted scene is rendered in a multi-scene blend file.

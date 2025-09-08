@@ -82,7 +82,7 @@ immediately.
 Such assumptions no longer hold true when using an asynchronous service like
 SyncThing, Dropbox, etc.
 
-Note that this is not just about the initally submitted files. Flamenco creates
+Note that this is not just about the initially submitted files. Flamenco creates
 a video from the rendered images; this also assumes that those images are
 accessible after they've been rendered and saved to the storage.
 

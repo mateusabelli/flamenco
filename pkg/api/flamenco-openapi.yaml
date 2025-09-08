@@ -792,7 +792,7 @@ paths:
               $ref: "#/components/schemas/SubmittedJob"
       responses:
         "200":
-          description: Job was succesfully compiled into individual tasks.
+          description: Job was successfully compiled into individual tasks.
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Job" }
@@ -832,7 +832,7 @@ paths:
               $ref: "#/components/schemas/JobMassDeletionSelection"
       responses:
         "204":
-          description: Jobs were succesfully marked for deletion.
+          description: Jobs were successfully marked for deletion.
         "416":
           description: There were no jobs that match the request.
           content:
@@ -859,7 +859,7 @@ paths:
               $ref: "#/components/schemas/SubmittedJob"
       responses:
         "204":
-          description: Job was succesfully compiled into individual tasks. The job and tasks have NOT been stored in the database, though.
+          description: Job was successfully compiled into individual tasks. The job and tasks have NOT been stored in the database, though.
         "412":
           description: >
             The given job type etag does not match the job type etag on the
@@ -1253,7 +1253,7 @@ paths:
               $ref: "#/components/schemas/ShamanCheckout"
       responses:
         "200":
-          description: Checkout was created succesfully.
+          description: Checkout was created successfully.
           content:
             application/json:
               schema:
@@ -1857,7 +1857,7 @@ components:
             submission with old settings, after the job compiler script has been
             updated.
 
-            If this field is ommitted, the check is bypassed.
+            If this field is omitted, the check is bypassed.
         "priority": { type: integer, default: 50 }
         "settings": { $ref: "#/components/schemas/JobSettings" }
         "metadata": { $ref: "#/components/schemas/JobMetadata" }
@@ -1881,7 +1881,7 @@ components:
           description: >
             Worker tag that should execute this job. When a tag ID is
             given, only Workers in that tag will be scheduled to work on it.
-            If empty or ommitted, all workers can work on this job.
+            If empty or omitted, all workers can work on this job.
         "initial_status": { $ref: "#/components/schemas/JobStatus" }
       required: [name, type, priority, submitter_platform]
       example:
@@ -2598,7 +2598,7 @@ components:
           type: string
           format: uuid
           description: >
-            UUID of the tag. Can be ommitted when creating a new tag, in
+            UUID of the tag. Can be omitted when creating a new tag, in
             which case a random UUID will be assigned.
         "name":
           type: string
