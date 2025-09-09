@@ -19,9 +19,12 @@ import (
 )
 
 var (
-	regexpFileSaved     = regexp.MustCompile(`^Saved: '(.*)'`)
-	regexpFrameRendered = regexp.MustCompile(`^Time: ([0-9:.]+)`)
-	regexpFrameSkipped  = regexp.MustCompile(`^skipping existing frame`)
+	// These regexpses should either be anchored to the start of the line (Blender
+	// 4.5 and older) or be prefixed with "<anything here> render | " (Blender 5.0
+	// and newer).
+	regexpFileSaved     = regexp.MustCompile(`(?:^|(?:render\s+\|\s+))Saved: '(.*)'`)
+	regexpFrameRendered = regexp.MustCompile(`(?:^|(?:render\s+\|\s+))Time: ([0-9:.]+)`)
+	regexpFrameSkipped  = regexp.MustCompile(`(?:^|(?:render\s+\|\s+))[sS]kipping existing frame`)
 )
 
 type BlenderParameters struct {

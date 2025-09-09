@@ -103,7 +103,8 @@ func TestCmdBlenderNoBlendfile(t *testing.T) {
 	assert.Equal(t, ErrNoExecCmd, err, "nil *exec.Cmd should result in ErrNoExecCmd")
 }
 
-func TestProcessLineBlender(t *testing.T) {
+// TestProcessLineBlender45 tests Blender 4.5 (and older) logging output.
+func TestProcessLineBlender45(t *testing.T) {
 	ctx := context.Background()
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -121,4 +122,36 @@ func TestProcessLineBlender(t *testing.T) {
 	// This should be recognised as being done with a frame.
 	mocks.listener.EXPECT().TaskStep(ctx, taskID)
 	ce.processLineBlender(ctx, log.Logger, taskID, "Time: 00:01.06")
+
+	// This should be recognised as skipping a frame.
+	mocks.listener.EXPECT().TaskStep(ctx, taskID)
+	ce.processLineBlender(ctx, log.Logger, taskID, `Skipping existing frame "/path/to/running-default-cube0001.jpg"`)
+}
+
+// TestProcessLineBlender50 tests Blender 5.0 logging output.
+func TestProcessLineBlender50(t *testing.T) {
+	ctx := context.Background()
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	ce, mocks := testCommandExecutor(t, mockCtrl)
+	taskID := "c194ea21-1fda-46f6-bc9a-34bd302cfb19"
+
+	// This shouldn't call anything on the mocks.
+	ce.processLineBlender(ctx, log.Logger, taskID, "starting Blender")
+
+	// This should be recognised as produced output.
+	mocks.listener.EXPECT().OutputProduced(ctx, taskID, "/path/to/file.exr")
+	ce.processLineBlender(ctx, log.Logger, taskID,
+		"00:00.327  render           | Saved: '/path/to/file.exr'")
+
+	// This should be recognised as being done with a frame.
+	mocks.listener.EXPECT().TaskStep(ctx, taskID)
+	ce.processLineBlender(ctx, log.Logger, taskID,
+		"00:00.419  render           | Time: 00:01.06 (Saving: 00:00.02)")
+
+	// This should be recognised as skipping a frame.
+	mocks.listener.EXPECT().TaskStep(ctx, taskID)
+	ce.processLineBlender(ctx, log.Logger, taskID,
+		`00:00.419  render           | Skipping existing frame "/path/to/running-default-cube0001.jpg"`)
 }
