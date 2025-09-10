@@ -40,15 +40,19 @@ When you submit a file from the shared storage, say
 `S:\WorkArea\project\scene\shot\anim.blend`, Flamenco will detect this and
 assume the Workers can reach the file there. No copy will be made.
 
-## Creating a Copy for Each Render Job
-
-The "work on shared storage" approach has the downside that render jobs are not
+This "work on shared storage" approach has the downside that render jobs are not
 fully separated from each other. For example, when you change a texture while a
 render job is running, the subsequently rendered frames will be using that
-altered texture. If this is an issue for you, and you cannot use the [Shaman
-Storage System][shaman], the approach described in this section is for you.
+altered texture. If this is an issue for you, keep reading.
 
-As an example, if `C:\WorkArea` is where you work on your blend files, and
+## Creating a Copy for Each Render Job
+
+This approach will create a directory for the job, on the shared storage. It
+will copy the submitted blend file, and all its dependencies, to that directory.
+Because of this, each render job has its own set of files, and is independent
+from other render jobs.
+
+As an example, when `C:\WorkArea` is where you work on your blend files, and
 `S:\Flamenco` is the shared storage for Flamenco, you will automatically use
 this approach. You can update your `flamenco-manager.yaml` like this:
 
@@ -62,9 +66,16 @@ As you can see, you do not have to tell Flamenco about `C:\WorkArea`, it'll
 automatically detect which storage approach to use from the path of the blend
 file you're submitting.
 
+The downside of this approach is that each render job has a completely
+independent set of files. This means that file submission can be slow, because
+for each render job all its dependencies will be copied. This can be avoided
+with the Shaman system, explained below.
+
 ## Shaman Storage System
 
-This requires a bit more to explain. See [Shaman Storage System][shaman].
+The Shaman system ensures that files are only copied once to the render farm.
+
+This is explained in a page of its own; see [Shaman Storage System][shaman].
 
 [shaman]: {{< relref "shaman" >}}
 

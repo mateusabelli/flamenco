@@ -14,7 +14,7 @@ What you need to run Flamenco is:
 
 [blender]: https://www.blender.org/
 
-In broad terms, to render with Flamenco, follow these steps:
+In broad terms, to start rendering with Flamenco, follow the steps below.
 
 1. [Download Flamenco][download].
 2. Create a directory on some storage, like a NAS, and make sure it's available at the same path on each computer.
@@ -27,6 +27,14 @@ In broad terms, to render with Flamenco, follow these steps:
 9. Tell Flamenco to render it. You can find the Flamenco panel in Blender's Output Properties.
 
 [download]: {{< ref "download" >}}
+
+{{< hint type=info >}}
+
+The above steps will get you started, but are not the only way to use Flamenco.
+Continue reading about [shared storage][storage].
+
+[storage]: {{< ref "usage/shared-storage" >}}
+{{< /hint >}}
 
 ## Setup Flamenco in 5 minutes on Windows
 
