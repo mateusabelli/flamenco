@@ -41,7 +41,7 @@ export default {
       required: false,
     },
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue, focus'],
   methods: {
     onChange(event) {
       // Update the value from the parent component
@@ -52,7 +52,13 @@ export default {
 </script>
 
 <template>
-  <select :required="required" :id="id" :value="modelValue" @change="onChange" :disabled="disabled">
+  <select
+    :required="required"
+    :id="id"
+    :value="modelValue"
+    @change="onChange"
+    @focus="$emit('focus', id)"
+    :disabled="disabled">
     <!-- The default to show and select if modelValue is a non-option and either an empty string, null, or undefined -->
     <option
       :value="''"

@@ -7,6 +7,7 @@
       :disabled="disabled"
       :options="options"
       v-model="model"
+      @focus="$emit('focus', id)"
       @change="onChange"
       :id="id" />
     <span :class="{ hidden: !errorMsg, error: errorMsg }">{{ errorMsg }}</span>
@@ -54,7 +55,7 @@ export default {
       required: false,
     },
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue, focus'],
   data() {
     return {
       errorMsg: '',

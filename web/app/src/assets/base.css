@@ -425,6 +425,11 @@ select {
   padding: var(--spacer-xs) var(--spacer-sm);
 }
 
+/* Default focus outlines currently do not show on Firefox */
+select:focus {
+  outline: 2px solid var(--color-accent);
+}
+
 button, input[type='button'], .btn {
   align-items: center;
   background-color: var(--color-button-background);

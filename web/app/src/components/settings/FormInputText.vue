@@ -12,6 +12,7 @@
       :disabled="disabled"
       :id="id"
       :value="value"
+      @focus="$emit('focus', id)"
       @input="onInput"
       @change="onChange" />
     <span :class="{ hidden: !errorMsg, error: errorMsg }">{{ errorMsg }}</span>
@@ -51,7 +52,7 @@ export default {
       required: false,
     },
   },
-  emits: ['update:value'],
+  emits: ['update:value, focus'],
   data() {
     return {
       errorMsg: '',

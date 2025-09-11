@@ -86,31 +86,34 @@ const initialFormValues = {
     type: inputTypes.string,
     label: 'Name',
     value: null,
+    description: `The name of the Flamenco Manager.`,
   },
   database: {
     type: inputTypes.string,
     label: 'Database',
     value: null,
+    description: `The file path for the SQLite database.`,
     required: true,
   },
   database_check_period: {
     type: inputTypes.timeDuration,
     label: 'Database Check Period',
     value: null,
+    description: `How frequently the database is checked for internal consistency.\n\nThis check always happens at startup of Flamenco Manager. By setting this to a non-zero duration, the check is also performed while Flamenco Manager is running.\n\nIt is not typically necessary to set this; it was implemented to help find a bug, which has been fixed in Flamenco 3.6. The setting may be removed in the future.`,
     required: true,
   },
   listen: {
     type: inputTypes.string,
     label: 'Listening IP and Port Number',
     value: null,
+    description: `The IP and port (e.g., :8080, 192.168.0.1:8080, or [::]:8080) Flamenco Manager will listen on.\n\nThis is the only port that is needed for Flamenco Manager, and will be used for the web interface, the API, and file submission via the Shaman system.`,
     required: true,
   },
   autodiscoverable: {
     type: inputTypes.boolean,
     label: 'Auto Discoverable',
     value: null,
-    description:
-      'This enables the autodiscovery. The manager uses UPnP/SSDP to broadcast its location on the network so it can be discovered by workers. Enabled by default.',
+    description: `This enables the autodiscovery. The manager uses UPnP/SSDP to broadcast its location on the network so it can be discovered by workers. Enabled by default.`,
   },
 
   // Storage
@@ -118,11 +121,13 @@ const initialFormValues = {
     type: inputTypes.string,
     label: 'Local Manager Storage Path',
     value: null,
+    description: `The path where the Manager stores local files (e.g., logs, last-rendered images, etc.).\n\nThese files are only necessary for the manager. Workers never need to access this directly, as the files are accessible via the web interface.`,
   },
   shared_storage_path: {
     type: inputTypes.string,
     label: 'Shared Storage Path',
     value: null,
+    description: `The Shared Storage path where files shared between Manager and Worker(s) live (e.g., rendered output files, or the .blend files of render jobs).`,
     required: true,
   },
   shaman: {
@@ -130,18 +135,26 @@ const initialFormValues = {
       type: inputTypes.boolean,
       label: 'Enable Shaman Storage',
       value: null,
-      description: `Shaman is a file storage server built into Flamenco Manager. It accepts uploaded files via HTTP, and stores them based on their SHA256-checksum and their file length. It can recreate directory structures by symlinking those files. Effectively, it ensures that when you create a new render job, you only have to upload files that are new or have changed.
-
-                    Note that Shaman uses symlinking, and thus is incompatible with platforms or storage systems that do not support symbolic links.
-
-                    `,
+      description: `Shaman is a file storage server built into Flamenco Manager. It accepts uploaded files via HTTP, and stores them based on their SHA256-checksum and their file length. It can recreate directory structures by symlinking those files. Effectively, it ensures that when you create a new render job, you only have to upload files that are new or have changed.\n\nNote that Shaman uses symlinking, and thus is incompatible with platforms or storage systems that do not support symbolic links.\n\n`,
       moreInfoText: `For more information, see`,
       moreInfoLinkUrl: `https://flamenco.blender.org/usage/shared-storage/shaman/`,
       moreInfoLinkLabel: `Shaman Storage System`,
     },
     garbageCollect: {
-      period: { type: inputTypes.timeDuration, label: 'Period', value: null, required: true },
-      maxAge: { type: inputTypes.timeDuration, label: 'Max Age', value: null, required: true },
+      period: {
+        type: inputTypes.timeDuration,
+        label: 'Period',
+        value: null,
+        description: `The period of time determining the frequency of garbage collection performed on file store.`,
+        required: true,
+      },
+      maxAge: {
+        type: inputTypes.timeDuration,
+        label: 'Max Age',
+        value: null,
+        description: `The minimum lifespan of files required in order to be garbage collected.`,
+        required: true,
+      },
     },
   },
 
@@ -150,24 +163,28 @@ const initialFormValues = {
     type: inputTypes.timeDuration,
     label: 'Task Timeout',
     value: null,
+    description: `The Manager will consider a Worker to be “problematic” if it hasn't heard anything from that Worker for this amount of time. When that happens, the Worker will be shown on the Manager in error status.`,
     required: true,
   },
   worker_timeout: {
     type: inputTypes.timeDuration,
     label: 'Worker Timeout',
     value: null,
+    description: `The amount of time since the worker's last sign of life (e.g., asking for a task to perform, or checking if it's allowed to perform its current task) before getting marked “timed out” and sent to error status`,
     required: true,
   },
   blocklist_threshold: {
     type: inputTypes.number,
     label: 'Blocklist Threshold',
     value: null,
+    description: `The number of failures allowed on a type of task per job before banning a worker from that task type on that job.\n\nFor example, when a worker fails multiple blender tasks on one job, it's concluded that the job is too heavy for its hardware, and thus it gets blocked from doing more of those. It is then still allowed to do file management, video encoding tasks, or blender tasks on another job.`,
     required: true,
   },
   task_fail_after_softfail_count: {
     type: inputTypes.number,
     label: 'Task Fail after Soft Fail Count',
     value: null,
+    description: `The number of workers allowed to have failed a task before hard-failing the task.`,
     required: true,
   },
 
@@ -177,23 +194,42 @@ const initialFormValues = {
       type: inputTypes.boolean,
       label: 'Enable MQTT Client',
       value: null,
-      description: `Flamenco Manager can send its internal events to an MQTT broker. Other MQTT clients can listen to those events, in order to respond to what happens on the render farm.
-
-                    `,
+      description: `Flamenco Manager can send its internal events to an MQTT broker. Other MQTT clients can listen to those events, in order to respond to what happens on the render farm.\n\n`,
       moreInfoText: 'For more information about the built-in MQTT client, see',
       moreInfoLinkUrl: 'https://flamenco.blender.org/usage/manager-configuration/mqtt/',
       moreInfoLinkLabel: `Manager Configuration: MQTT`,
     },
     client: {
-      broker: { type: inputTypes.string, label: 'Broker', value: null },
-      clientID: { type: inputTypes.string, label: 'Client ID', value: null },
+      broker: {
+        type: inputTypes.string,
+        label: 'Broker',
+        value: null,
+        description: `The URL for the MQTT server.`,
+      },
+      clientID: {
+        type: inputTypes.string,
+        label: 'Client ID',
+        value: null,
+        description: `An identifier that each MQTT client uses to identify itself.`,
+      },
       topic_prefix: {
         type: inputTypes.string,
         label: 'Topic Prefix',
         value: null,
+        description: `The word to prefix each topic (e.g., flamenco).`,
       },
-      username: { type: inputTypes.string, label: 'Username', value: null },
-      password: { type: inputTypes.string, label: 'Password', value: null },
+      username: {
+        type: inputTypes.string,
+        label: 'Username',
+        value: null,
+        description: `The username of the broker/client.`,
+      },
+      password: {
+        type: inputTypes.string,
+        label: 'Password',
+        value: null,
+        description: `The password of the broker/client.`,
+      },
     },
   },
 
@@ -219,6 +255,7 @@ export default {
     newVariableErrorMessage: '',
     newVariableTouched: false,
     metaAPI: new MetaApi(getAPIClient()),
+    focusedSetting: {},
 
     // Static data
     inputTypes,
@@ -236,6 +273,48 @@ export default {
     },
   },
   methods: {
+    // Sets the boilerplate description on the focus of a variable value
+    handleFocusVariableValue() {
+      this.focusedSetting = {
+        label: 'Value',
+        description: 'The contents of the variable.',
+      };
+    },
+    // Sets the boilerplate description on the focus of a variable value
+    handleFocusVariablePlatform() {
+      this.focusedSetting = {
+        label: 'Platform',
+        description: 'The operating system in which this variable configuration will be used.',
+      };
+    },
+    // Sets the boilerplate description on the focus of a variable value
+    handleFocusVariableAudience() {
+      this.focusedSetting = {
+        label: 'Audience',
+        description: 'The audience who this variable configuration will be used for.',
+      };
+    },
+    /**
+     * Grabs the information of the setting on focus and stores its state
+     * @param id the id of the element that was focused on
+     */
+    handleFocus(id) {
+      // If the id has a period, break it into tokens to access nested attributes
+      if (id.includes('.')) {
+        const tokens = id.split('.');
+
+        let val = {};
+
+        tokens.forEach((token, i) => {
+          if (i === 0) val = this.config[token];
+          else val = val[token];
+        });
+
+        this.focusedSetting = val;
+      } else {
+        this.focusedSetting = this.config[id];
+      }
+    },
     addVariableOnInput() {
       this.newVariableTouched = true;
     },
@@ -484,7 +563,6 @@ export default {
       <div class="dialog">
         <div class="flex-col gap-col-spacer">
           <div class="flex-col">
-            <h2>Settings</h2>
             <p class="text-color-hint">
               This editor allows you to configure the settings for the Flamenco Server. These
               changes will directly edit the
@@ -495,7 +573,10 @@ export default {
               >
             </p>
           </div>
-          <!-- TODO: add attribute descriptions when onFocus -->
+          <div class="flex-col gap-text-spacer">
+            <h3>{{ focusedSetting.label }}</h3>
+            <p>{{ focusedSetting.description }}</p>
+          </div>
         </div>
       </div>
     </aside>
@@ -560,20 +641,23 @@ export default {
               <FormInputText
                 :id="variableName + '[' + index + ']' + '.value'"
                 v-model:value="entry.value.value"
-                :label="index === 0 ? entry.value.label : ''" />
+                :label="index === 0 ? entry.value.label : ''"
+                @focus="handleFocusVariableValue" />
               <FormInputDropdownSelect
                 required
                 :label="index === 0 ? entry.platform.label : ''"
                 :options="platformOptions"
                 v-model="entry.platform.value"
-                :id="variableName + index + '.platform'" />
+                :id="variableName + index + '.platform'"
+                @focus="handleFocusVariablePlatform" />
               <FormInputDropdownSelect
                 required
                 strict
                 :label="index === 0 ? entry.audience.label : ''"
                 :options="audienceOptions"
                 v-model="entry.audience.value"
-                :id="variableName + index + '.audience'" />
+                :id="variableName + index + '.audience'"
+                @focus="handleFocusVariableAudience" />
               <button
                 type="button"
                 class="delete-button with-error-message"
@@ -612,6 +696,7 @@ export default {
                       :key="'garbageCollect' + garbageCollectKey">
                       <template v-if="garbageCollectSetting.type === inputTypes.timeDuration">
                         <FormInputDropdownSelect
+                          @focus="handleFocus"
                           strict
                           :required="config.shaman.garbageCollect[garbageCollectKey].required"
                           :label="garbageCollectSetting.label"
@@ -647,7 +732,8 @@ export default {
                         :disabled="!config.mqtt.enabled.value"
                         :id="'mqtt.client.' + clientKey"
                         v-model:value="clientSetting.value"
-                        :label="clientSetting.label" />
+                        :label="clientSetting.label"
+                        @focus="handleFocus" />
                     </template>
                   </template>
                 </template>
@@ -655,6 +741,7 @@ export default {
               <!-- Render all other input types dynamically -->
               <template v-else-if="config[key].type === inputTypes.string">
                 <FormInputText
+                  @focus="handleFocus"
                   :required="config[key].required"
                   :id="key"
                   v-model:value="config[key].value"
@@ -668,6 +755,7 @@ export default {
               </template>
               <template v-if="config[key].type === inputTypes.number">
                 <FormInputNumber
+                  @focus="handleFocus"
                   :required="config[key].required"
                   :label="config[key].label"
                   :min="0"
@@ -676,6 +764,7 @@ export default {
               </template>
               <template v-else-if="config[key].type === inputTypes.timeDuration">
                 <FormInputDropdownSelect
+                  @focus="handleFocus"
                   :required="config[key].required"
                   :label="config[key].label"
                   :options="timeDurationOptions"
