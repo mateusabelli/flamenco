@@ -55,7 +55,7 @@ func (f *Flamenco) GetConfiguration(e echo.Context) error {
 
 func (f *Flamenco) UpdateConfigurationFile(e echo.Context) error {
 	logger := requestLogger(e)
-	
+
 	var newConf config.Conf
 	if err := e.Bind(&newConf); err != nil {
 		logger.Warn().Err(err).Msg("bad request received")
