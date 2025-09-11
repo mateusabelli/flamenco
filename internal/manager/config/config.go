@@ -661,7 +661,7 @@ func (c *Conf) Write(filename string) error {
 		return err
 	}
 	fmt.Fprintf(f, "# Configuration file for %s.\n", appinfo.ApplicationName)
-	fmt.Fprintln(f, "# For an explanation of the fields, refer to flamenco-manager-example.yaml")
+	fmt.Fprintln(f, "# For an explanation of the fields, refer to the Settings tab in the Manager web interface.")
 	fmt.Fprintln(f, "#")
 	fmt.Fprintln(f, "# NOTE: this file will be overwritten by Flamenco Manager's web-based configuration system.")
 	fmt.Fprintln(f, "#")
