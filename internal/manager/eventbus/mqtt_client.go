@@ -44,6 +44,7 @@ var _ Forwarder = (*MQTTForwarder)(nil)
 
 // MQTTClientConfig contains the MQTT client configuration.
 type MQTTClientConfig struct {
+	Enabled     bool   `json:"enabled" yaml:"enabled"`
 	BrokerURL   string `json:"broker" yaml:"broker"`
 	ClientID    string `json:"clientID" yaml:"clientID"`
 	TopicPrefix string `json:"topic_prefix" yaml:"topic_prefix"`
@@ -61,11 +62,12 @@ func NewMQTTForwarder(config MQTTClientConfig) *MQTTForwarder {
 	config.BrokerURL = strings.TrimSpace(config.BrokerURL)
 	config.ClientID = strings.TrimSpace(config.ClientID)
 
-	if config.BrokerURL == "" {
+	if !config.Enabled {
 		return nil
 	}
-	if config.ClientID == "" {
-		config.ClientID = MQTTDefaultClientID
+	if config.BrokerURL == "" {
+		log.Error().Msg("mqtt client: broker URL not configured, MQTT connection will not work")
+		return nil
 	}
 
 	brokerURL, err := url.Parse(config.BrokerURL)
@@ -75,6 +77,10 @@ func NewMQTTForwarder(config MQTTClientConfig) *MQTTForwarder {
 			Str("brokerURL", config.BrokerURL).
 			Msg("mqtt client: could not parse MQTT broker URL, skipping creation of MQTT client")
 		return nil
+	}
+
+	if config.ClientID == "" {
+		config.ClientID = MQTTDefaultClientID
 	}
 
 	client := MQTTForwarder{

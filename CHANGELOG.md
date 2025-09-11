@@ -6,6 +6,7 @@ bugs in actually-released versions.
 
 ## 3.8 - in development
 
+- Flamenco Manager's MQTT Client can now be enabled & disabled explicitly in the configuration. **This is a backward-incompatible change.** If you are using the MQTT client feature, a new setting needs to be added to `flamenco-manager.yaml` to re-enable the MQTT client; next to `mqtt.client.broker`, also add `mqtt.client.enabled: true`.
 - Add a Settings section to the Manager's web interface, which can be used to edit the Manager configuration ([#104399](https://projects.blender.org/studio/flamenco/pulls/104399)).
 - Shift-click & ctrl-click can now be used to select multiple jobs ([#104391](https://projects.blender.org/studio/flamenco/pulls/104391)) and tasks ([#104386](https://projects.blender.org/studio/flamenco/pulls/104386)). The action buttons (requeue/pause/cancel) now work on all selected items.
 - While holding shift, the tasks table will not change the ordering of the tasks, to aid in shift-selecting ranges ([#104388](https://projects.blender.org/studio/flamenco/pulls/104388)).
