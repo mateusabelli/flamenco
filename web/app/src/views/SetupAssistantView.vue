@@ -572,7 +572,7 @@ export default {
 
 .progress-bar {
   --width-each-segment: calc(100% / calc(v-bind('totalSetupSteps') - 1));
-  /* Substract 1 because the first step has no progress. */
+  /* Subtract 1 because the first step has no progress. */
   --progress-bar-width-at-current-step: calc(
     var(--width-each-segment) * calc(v-bind('currentSetupStep') - 1)
   );

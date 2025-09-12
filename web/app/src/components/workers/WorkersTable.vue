@@ -213,8 +213,8 @@ export default {
 
         if (existingRow) {
           // Prepare to update an existing row.
-          // Tabulator doesn't update ommitted fields, but if `status_change`
-          // is ommitted it means "no status change requested"; this should still
+          // Tabulator doesn't update omitted fields, but if `status_change`
+          // is omitted it means "no status change requested"; this should still
           // force an update of the `status_change` field.
           workerUpdate.status_change = workerUpdate.status_change || null;
 
