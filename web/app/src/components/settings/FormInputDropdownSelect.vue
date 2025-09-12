@@ -16,6 +16,7 @@
 
 <script>
 import DropdownSelect from '@/components/settings/DropdownSelect.vue';
+
 export default {
   name: 'FormInputDropdownSelect',
   components: {
@@ -73,8 +74,7 @@ export default {
   },
   watch: {
     modelValue() {
-      // If the value gets populated after component creation, check for strictness again
-      this.enforceStrict();
+      this.validateInput();
     },
   },
   created() {
@@ -95,15 +95,19 @@ export default {
       }
     },
     onChange(event) {
+      // Update the value from the parent component
+      this.$emit('update:modelValue', event.target.value);
+    },
+    validateInput() {
       // If required is enabled, and the value is empty, print the error message
-      if (event.target.value === '' && this.required) {
+      if (this.modelValue === '' && this.required) {
         this.errorMsg = 'Selection required.';
       } else {
         this.errorMsg = '';
       }
 
-      // Update the value from the parent component
-      this.$emit('update:modelValue', event.target.value);
+      // If the value gets populated after component creation, check for strictness again
+      this.enforceStrict();
     },
   },
 };

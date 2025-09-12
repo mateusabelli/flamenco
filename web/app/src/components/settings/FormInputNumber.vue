@@ -9,9 +9,8 @@
       :value="value"
       :min="min"
       :max="max"
-      @focus="$emit('focus', id)"
       @input="onInput"
-      @change="onChange" />
+      @focus="$emit('focus', id)" />
     <span :class="{ hidden: !errorMsg, error: errorMsg }">{{ errorMsg }}</span>
   </div>
 </template>
@@ -64,25 +63,27 @@ export default {
       return this.label.toLowerCase();
     },
   },
-  watch: {},
+  watch: {
+    value() {
+      this.validateInput();
+    },
+  },
   methods: {
     onInput(event) {
       // Update the v-model value
       this.$emit('update:value', Number(event.target.value));
     },
-    onChange(event) {
-      // Supports .lazy
-      // Can add validation here
-      if (event.target.value === '' && this.required) {
+    validateInput() {
+      if (this.value === '' && this.required) {
         this.errorMsg = 'This field is required.';
       } else {
         this.errorMsg = '';
       }
 
-      if (event.target.value < this.min) {
+      if (this.value < this.min) {
         this.errorMsg = `The value cannot be below ${this.min}`;
       }
-      if (event.target.value > this.max) {
+      if (this.value > this.max) {
         this.errorMsg = `The value cannot be above ${this.max}`;
       }
     },

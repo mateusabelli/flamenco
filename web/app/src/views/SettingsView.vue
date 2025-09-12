@@ -273,6 +273,10 @@ export default {
     },
   },
   methods: {
+    undoEdits() {
+      // Restore the original config that was imported upon page load or last succssfully exported on form submission
+      this.config = JSON.parse(JSON.stringify(this.originalConfig));
+    },
     // Sets the boilerplate description on the focus of a variable value
     handleFocusVariableValue() {
       this.focusedSetting = {
@@ -550,7 +554,6 @@ export default {
       <div v-for="category in categories" :key="category">
         <a :href="'#' + category.id">{{ category.label }}</a>
       </div>
-      <!-- TODO: Add a "Reset to Previous Value button" -->
       <button
         type="submit"
         form="config-form"
@@ -577,6 +580,13 @@ export default {
             <h3>{{ focusedSetting.label }}</h3>
             <p>{{ focusedSetting.description }}</p>
           </div>
+          <button
+            title="Restore form to match the settings on flamenco-manager.yaml"
+            class="action-button margin-top-auto"
+            @click="undoEdits()"
+            :disabled="!isDirty">
+            Undo Edits
+          </button>
         </div>
       </div>
     </aside>

@@ -58,16 +58,18 @@ export default {
       errorMsg: '',
     };
   },
-  watch: {},
+  watch: {
+    value() {
+      this.validateInput();
+    },
+  },
   methods: {
     onInput(event) {
       // Update the v-model value
       this.$emit('update:value', event.target.value);
     },
-    onChange(event) {
-      // Supports .lazy
-      // Can add validation here
-      if (event.target.value === '' && this.required) {
+    validateInput() {
+      if (this.value === '' && this.required) {
         this.errorMsg = 'This field is required.';
       } else {
         this.errorMsg = '';
