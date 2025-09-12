@@ -690,7 +690,9 @@ export default {
                   </template>
                   <!-- Shaman Garbage Collect -->
                   <template v-else-if="key === 'garbageCollect'">
-                    <span>Garbage Collection Settings</span>
+                    <label :class="{ disabled: !this.config.shaman.enabled.value }">
+                      Garbage Collection Settings
+                    </label>
                     <template
                       v-for="(garbageCollectSetting, garbageCollectKey) in shamanSetting"
                       :key="'garbageCollect' + garbageCollectKey">

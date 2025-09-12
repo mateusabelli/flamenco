@@ -1,6 +1,6 @@
 <template>
   <div class="form-col">
-    <label v-if="label" :for="id">{{ label }}</label>
+    <label :class="{ disabled: disabled }" v-if="label" :for="id">{{ label }}</label>
     <DropdownSelect
       :required="required"
       :strict="strict"

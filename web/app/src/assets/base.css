@@ -375,6 +375,11 @@ label {
   display: block;
 }
 
+label:has(+ input[disabled]),
+label.disabled {
+  color: var(--color-text-muted);
+}
+
 fieldset {
   background-color: var(--color-background-column-highlight);
   border: none;

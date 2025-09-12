@@ -1,6 +1,6 @@
 <template>
   <div class="form-col">
-    <label class="form-switch-row">
+    <label class="form-switch-row" :class="{ disabled: !model }">
       <span>{{ label }}</span>
       <span class="switch">
         <input v-model="model" :value="value" :name="name" type="checkbox" />
