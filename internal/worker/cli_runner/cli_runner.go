@@ -81,7 +81,7 @@ func (cli *CLIRunner) RunWithTextOutput(
 	var returnErr error = nil
 
 	// If a line longer than our buffer is received, it will be trimmed to the
-	// bufffer length. This means that it may not end on a valid character
+	// buffer length. This means that it may not end on a valid character
 	// boundary. Any leftover bytes are collected here, and prepended to the next
 	// line.
 	leftovers := []byte{}
@@ -148,7 +148,7 @@ readloop:
 		return returnErr
 	}
 
-	logger.Info().Msg("command exited succesfully")
+	logger.Info().Msg("command exited successfully")
 	return nil
 }
 

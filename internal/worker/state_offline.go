@@ -30,7 +30,7 @@ func (w *Worker) requestShutdown(requestRestart bool) {
 }
 
 // SignOff forces the worker in shutdown state and acknlowedges this to the Manager.
-// Does NOT actually peform a shutdown; is intended to be called while shutdown is in progress.
+// Does NOT actually perform a shutdown; is intended to be called while shutdown is in progress.
 func (w *Worker) SignOff(ctx context.Context) {
 	w.stateMutex.Lock()
 	w.state = api.WorkerStatusOffline

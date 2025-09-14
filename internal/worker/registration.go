@@ -82,7 +82,7 @@ func RegisterOrSignOn(ctx context.Context, configWrangler WorkerConfigWithCreden
 }
 
 // (Re-)register ourselves at the Manager.
-// Logs a fatal error if unsuccesful.
+// Logs a fatal error if unsuccessful.
 func register(ctx context.Context, cfg WorkerConfig, client FlamencoClient) WorkerCredentials {
 	// Construct our new password.
 	secret := make([]byte, 32)
@@ -121,7 +121,7 @@ func register(ctx context.Context, cfg WorkerConfig, client FlamencoClient) Work
 }
 
 // repeatSignOnUntilAnswer tries to sign on, and only returns when it has been able to reach the Manager.
-// Return still doesn't mean that the sign-on was succesful; inspect the returned error.
+// Return still doesn't mean that the sign-on was successful; inspect the returned error.
 func repeatSignOnUntilAnswer(ctx context.Context, cfg WorkerConfig, client FlamencoClient) (api.WorkerStatus, error) {
 	waitTime := 0 * time.Second
 	for {
@@ -133,11 +133,11 @@ func repeatSignOnUntilAnswer(ctx context.Context, cfg WorkerConfig, client Flame
 
 		status, err := signOn(ctx, cfg, client)
 		if err == nil {
-			// Sign-on was succesful, we're done!
+			// Sign-on was successful, we're done!
 			return status, nil
 		}
 		if err != errSignOnRepeatableFailure {
-			// We shouldn't repeat the sign-on; communication was succesful but somehow our credentials were rejected.
+			// We shouldn't repeat the sign-on; communication was successful but somehow our credentials were rejected.
 			return status, err
 		}
 

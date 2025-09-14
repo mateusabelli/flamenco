@@ -48,7 +48,7 @@ func OpenDB(ctx context.Context, dsn string) (*DB, error) {
 		return nil, err
 	}
 
-	// Perfom some maintenance at startup, before trying to migrate the database.
+	// Perform some maintenance at startup, before trying to migrate the database.
 	if !db.performIntegrityCheck(ctx) {
 		return nil, ErrIntegrity
 	}
@@ -58,9 +58,9 @@ func OpenDB(ctx context.Context, dsn string) (*DB, error) {
 	if err := db.migrate(ctx); err != nil {
 		return nil, err
 	}
-	log.Debug().Msg("database automigration succesful")
+	log.Debug().Msg("database automigration successful")
 
-	// Perfom post-migration integrity check, just to be sure.
+	// Perform post-migration integrity check, just to be sure.
 	if !db.performIntegrityCheck(ctx) {
 		return nil, ErrIntegrity
 	}

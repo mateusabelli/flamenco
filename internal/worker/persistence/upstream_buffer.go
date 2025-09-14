@@ -37,7 +37,7 @@ func (db *DB) UpstreamBufferQueueSize(ctx context.Context) (int, error) {
 	return int(queueSize), nil
 }
 
-// UpstreamBufferQueue queues a task update in the upstrema buffer.
+// UpstreamBufferQueue queues a task update in the upstream buffer.
 func (db *DB) UpstreamBufferQueue(ctx context.Context, taskID string, apiTaskUpdate api.TaskUpdateJSONRequestBody) error {
 	blob, err := json.Marshal(apiTaskUpdate)
 	if err != nil {
