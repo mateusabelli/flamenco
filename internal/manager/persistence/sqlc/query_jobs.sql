@@ -1,4 +1,3 @@
-
 -- name: CreateJob :execlastid
 INSERT INTO jobs (
   created_at,
@@ -284,7 +283,7 @@ WHERE TF.task_id=@task_id;
 -- Fetch the job's database ID by its UUID.
 --
 -- This query is here to keep the SetLastRendered query below simpler,
--- mostly because that query is alread hitting a limitation of sqlc.
+-- mostly because that query is already hitting a limitation of sqlc.
 SELECT id FROM jobs WHERE uuid=@jobuuid;
 
 -- name: SetLastRendered :exec

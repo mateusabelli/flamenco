@@ -79,7 +79,7 @@ func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker
 	}
 	workerID := sql.NullInt64{Int64: int64(w.ID), Valid: true}
 
-	// If a task is alreay active & assigned to this worker, return just that.
+	// If a task is already active & assigned to this worker, return just that.
 	// Note that this task type could be blocklisted or no longer supported by the
 	// Worker, but since it's active that is unlikely.
 	{

@@ -321,7 +321,7 @@ func TestPreviouslyFailed(t *testing.T) {
 		att1, att2)
 	job := constructTestJob(ctx, t, db, atj)
 
-	// Mimick that this worker already failed the first task.
+	// Mimic that this worker already failed the first task.
 	taskJobWorkers, err := db.FetchTasksOfJob(ctx, job)
 	require.NoError(t, err)
 	numFailed, err := db.AddWorkerToTaskFailedList(ctx, &taskJobWorkers[0].Task, &w)
@@ -429,7 +429,7 @@ func TestBlocklisted(t *testing.T) {
 		att1, att2)
 	job := constructTestJob(ctx, t, db, atj)
 
-	// Mimick that this worker was already blocked for 'blender' tasks of this job.
+	// Mimic that this worker was already blocked for 'blender' tasks of this job.
 	err := db.AddWorkerToJobBlocklist(ctx, job.ID, w.ID, "blender")
 	require.NoError(t, err)
 

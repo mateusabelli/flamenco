@@ -227,7 +227,7 @@ func TestWorkersLeftToRunWithTags(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, uuidMap(workerC13), left)
 
-	// All taged workers blocked.
+	// All tagged workers blocked.
 	_ = db.AddWorkerToJobBlocklist(ctx, job.ID, workerC13.ID, "blender")
 	left, err = db.WorkersLeftToRun(ctx, job, "blender")
 	require.NoError(t, err)

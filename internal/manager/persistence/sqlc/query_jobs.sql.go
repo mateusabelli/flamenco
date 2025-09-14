@@ -372,7 +372,7 @@ SELECT id FROM jobs WHERE uuid=?1
 // Fetch the job's database ID by its UUID.
 //
 // This query is here to keep the SetLastRendered query below simpler,
-// mostly because that query is alread hitting a limitation of sqlc.
+// mostly because that query is already hitting a limitation of sqlc.
 func (q *Queries) FetchJobIDFromUUID(ctx context.Context, jobuuid string) (int64, error) {
 	row := q.db.QueryRowContext(ctx, fetchJobIDFromUUID, jobuuid)
 	var id int64
