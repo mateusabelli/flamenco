@@ -450,6 +450,34 @@ func TestJobPauseWithSomeActiveTasks(t *testing.T) {
 	require.NoError(t, sm.jobStatusChange(ctx, job, api.JobStatusPauseRequested, "someone wrote a unittest"))
 }
 
+func TestJobCancelWhilePauseRequested(t *testing.T) {
+	mockCtrl, ctx, sm, mocks := taskStateMachineTestFixtures(t)
+	defer mockCtrl.Finish()
+
+	task1, job := taskWithStatus(api.JobStatusPauseRequested, api.TaskStatusActive)
+	task2 := taskOfSameJob(task1, api.TaskStatusCompleted)
+	task3 := taskOfSameJob(task2, api.TaskStatusPaused)
+	_ = task3
+
+	mocks.expectSaveJobWithStatus(t, job, api.JobStatusCancelRequested)
+	mocks.expectSaveJobWithStatus(t, job, api.JobStatusCanceled)
+
+	// Expect cancellation of the job to trigger cancellation of all its running/runnable tasks.
+	mocks.persist.EXPECT().UpdateJobsTaskStatusesConditional(ctx, job,
+		[]api.TaskStatus{
+			api.TaskStatusActive,
+			api.TaskStatusQueued,
+			api.TaskStatusSoftFailed,
+		},
+		api.TaskStatusCanceled,
+		"Manager cancelled this task because the job got status \"cancel-requested\".",
+	)
+	mocks.expectBroadcastJobChangeWithTaskRefresh(job, api.JobStatusPauseRequested, api.JobStatusCancelRequested)
+	mocks.expectBroadcastJobChange(job, api.JobStatusCancelRequested, api.JobStatusCanceled)
+
+	require.NoError(t, sm.jobStatusChange(ctx, job, api.JobStatusCancelRequested, "someone wrote a unittest"))
+}
+
 func TestCheckStuck(t *testing.T) {
 	mockCtrl, ctx, sm, mocks := taskStateMachineTestFixtures(t)
 	defer mockCtrl.Finish()

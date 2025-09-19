@@ -16,6 +16,7 @@ bugs in actually-released versions.
 - When the Worker starts up, it now correctly logs its configuration with the same keys as in the `flamenco-worker.yaml` file ([37b073b8d56b](https://projects.blender.org/studio/flamenco/commit/37b073b8d56bafc19f1bbf8abd79ee1f7a75d336))
 - Add support for absolute paths for the manager-local storage ([dbf23f1a41a7](https://projects.blender.org/studio/flamenco/commit/dbf23f1a41a77403ee679a4287c3bdaa63cca11c)). Earlier this was always taken as relative to the Manager's executable.
 - Add support for "steps" to commands, tasks, and jobs, and show the per-step progress in the jobs and tasks lists ([26ab8879](https://projects.blender.org/studio/flamenco/commit/26ab8879efcbe4abb7b0a42e6e39ac0fa69b3e24)).
+- Allow cancelling a job while it is in `pause-requested` state. Instead of waiting until all `active` tasks are done, it will cancel them immediately.
 - Update Go & dependencies to fix security vulnerabilities:
   - https://pkg.go.dev/vuln/GO-2025-3751
   - https://pkg.go.dev/vuln/GO-2025-3750
