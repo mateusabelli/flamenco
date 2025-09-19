@@ -8,7 +8,7 @@ const jobsAPI = new API.JobsApi(getAPIClient());
 const JOB_ACTIONS = Object.freeze({
   CANCEL: {
     status: 'cancel-requested',
-    prerequisiteStatuses: ['active', 'paused', 'failed', 'queued', 'pause-requested'],
+    prerequisiteStatuses: ['active', 'failed', 'paused', 'pause-requested', 'queued'],
   },
   PAUSE: {
     status: 'pause-requested',
