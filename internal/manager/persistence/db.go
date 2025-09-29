@@ -8,14 +8,27 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/powerman/fileuri"
 	"github.com/rs/zerolog/log"
 	_ "modernc.org/sqlite"
 
 	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
+)
+
+const (
+	// busyTimeout is the global timeout for database queries.
+	busyTimeout = 20 * time.Second
+
+	// connMaxIdleDuration sets the maximum length of time a connection can be idle before it is closed.
+	connMaxIdleDuration = 10 * time.Minute
+	// connMaxLifeDuration sets the maximum length of time a connection can be held open before it is closed.
+	connMaxLifeDuration = 1 * time.Hour
 )
 
 // DB provides the database interface.
@@ -37,18 +50,18 @@ type Model struct {
 	UpdatedAt time.Time
 }
 
-func OpenDB(ctx context.Context, dsn string) (*DB, error) {
-	log.Info().Str("dsn", dsn).Msg("opening database")
+func OpenDB(ctx context.Context, sqliteFile string) (*DB, error) {
+	log.Info().Str("file", sqliteFile).Msg("opening database")
 
-	// 'dsn' should just be a file path to a sqlite file. If its directory doesn't
-	// exist yet, create it. Otherwise sqlite will come back with a cryptic error
-	// message "unable to open database file: out of memory (14)".
-	dbDirectory := filepath.Dir(dsn)
+	// 'sqliteFile' should just be a file path to a sqlite file. If its directory
+	// doesn't exist yet, create it. Otherwise sqlite will come back with a
+	// cryptic error message "unable to open database file: out of memory".
+	dbDirectory := filepath.Dir(sqliteFile)
 	if err := os.MkdirAll(dbDirectory, os.ModePerm); err != nil {
 		return nil, fmt.Errorf("creating database directory %s: %w", dbDirectory, err)
 	}
 
-	db, err := openDB(ctx, dsn)
+	db, err := openDB(ctx, sqliteFile)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +78,7 @@ func OpenDB(ctx context.Context, dsn string) (*DB, error) {
 		}
 	}()
 
-	if err := db.setBusyTimeout(ctx, 20*time.Second); err != nil {
+	if err := db.setBusyTimeout(ctx, busyTimeout); err != nil {
 		return nil, err
 	}
 
@@ -94,9 +107,37 @@ func OpenDB(ctx context.Context, dsn string) (*DB, error) {
 	return db, nil
 }
 
-func openDB(ctx context.Context, dsn string) (*DB, error) {
-	// Connect to the database.
-	sqlDB, err := sql.Open("sqlite", dsn)
+func openDB(ctx context.Context, sqliteFile string) (*DB, error) {
+	var (
+		dsnURL *url.URL
+		err    error
+	)
+
+	// Before converting a file path to a URL, it has to be made absolute. This
+	// shouldn't happen to `file::memory:` "files" though.
+	if !strings.HasPrefix(sqliteFile, "file:") {
+		sqliteFile, err = filepath.Abs(sqliteFile)
+		if err != nil {
+			return nil, err
+		}
+
+		// Connect to the database, forcing foreign keys to be turned on via the DSN.
+		// This ensures that re-connections made by the sql package always start out
+		// with foreign keys enabled.
+		dsnURL, err = fileuri.FromFilePath(sqliteFile)
+	} else {
+		dsnURL, err = url.Parse(sqliteFile)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("converting path to sqlite (%q) to a URL: %w", sqliteFile, err)
+	}
+
+	query := dsnURL.Query()
+	query.Add("_pragma", "foreign_keys(1)")
+	dsnURL.RawQuery = query.Encode()
+
+	log.Debug().Stringer("dsnURL", dsnURL).Msg("database: opening database URL")
+	sqlDB, err := sql.Open("sqlite", dsnURL.String())
 	if err != nil {
 		return nil, err
 	}
@@ -117,6 +158,8 @@ func openDB(ctx context.Context, dsn string) (*DB, error) {
 	// It's not certain that this'll improve the situation, but it's worth a try.
 	sqlDB.SetMaxIdleConns(1) // Max num of connections in the idle connection pool.
 	sqlDB.SetMaxOpenConns(1) // Max num of open connections to the database.
+	sqlDB.SetConnMaxIdleTime(connMaxIdleDuration)
+	sqlDB.SetConnMaxLifetime(connMaxLifeDuration)
 
 	db := DB{
 		sqlDB:   sqlDB,
@@ -128,11 +171,13 @@ func openDB(ctx context.Context, dsn string) (*DB, error) {
 		consistencyCheckRequests: make(chan struct{}, 1),
 	}
 
-	// Always enable foreign key checks, to make SQLite behave like a real database.
+	//
 	pragmaCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	if err := db.pragmaForeignKeys(pragmaCtx, true); err != nil {
+	if fkEnabled, err := db.areForeignKeysEnabled(pragmaCtx); err != nil {
 		return nil, err
+	} else if !fkEnabled {
+		return nil, errors.New("foreign keys are disabled, refusing to start")
 	}
 
 	queries := db.queries()
