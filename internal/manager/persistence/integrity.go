@@ -185,9 +185,7 @@ func (db *DB) PeriodicWALCheckpoint(ctx context.Context) {
 		Stringer("period", walCheckpointPeriod).
 		Msg("database: will perform periodic checkpoint")
 
-	defer log.Info().
-		Stringer("period", walCheckpointPeriod).
-		Msg("database: stopped periodic checkpoint")
+	defer log.Info().Msg("database: stopped periodic checkpoint")
 
 	ticker := time.NewTicker(walCheckpointPeriod)
 	defer ticker.Stop()
