@@ -7,13 +7,18 @@ import (
 	"errors"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"projects.blender.org/studio/flamenco/pkg/website"
 )
 
 var ErrIntegrity = errors.New("database integrity check failed")
 
 const (
 	integrityCheckTimeout = 10 * time.Second
+
+	// How often the database write-ahead log is checkpointed.
+	walCheckpointPeriod = 1 * time.Hour
 )
 
 // PeriodicIntegrityCheck periodically checks the database integrity.
@@ -165,4 +170,93 @@ func (db *DB) ensureForeignKeysEnabled(ctx context.Context) {
 		log.Error().AnErr("cause", err).Msg("database: error re-enabling foreign keys")
 		return
 	}
+}
+
+func (db *DB) PeriodicWALCheckpoint(ctx context.Context) {
+
+	if err := db.walCheckpoint(ctx); err != nil {
+		log.Error().
+			AnErr("cause", err).
+			Msgf("database: could not perform checkpointing operation on write-ahead log at startup. Please report a bug at %s", website.BugReportURL)
+		// Still keep going, to enable the periodic checkpointing.
+	}
+
+	log.Info().
+		Stringer("period", walCheckpointPeriod).
+		Msg("database: will perform periodic checkpoint")
+
+	defer log.Info().
+		Stringer("period", walCheckpointPeriod).
+		Msg("database: stopped periodic checkpoint")
+
+	ticker := time.NewTicker(walCheckpointPeriod)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-ticker.C:
+			err := db.walCheckpoint(ctx)
+
+			switch {
+			case err == nil:
+				// Yay
+			case errors.Is(err, context.Canceled) && ctx.Err() != nil:
+				// Main context got cancelled, which means a shutdown. That's fine, so
+				// just log a debug message that this happened during a checkpoint.
+				log.Debug().Msg("database: application is shutting down during a checkpoint operation")
+				// Just continue and let the normal `<-ctx.Done()` case above handle the
+				// main context closing. That way there's one point where that's done.
+			default:
+				log.Error().
+					AnErr("cause", err).
+					Msgf("database: could not perform checkpointing operation on write-ahead log. Please report a bug at %s", website.BugReportURL)
+			}
+		}
+	}
+}
+
+// walCheckpoint performs a checkpoint of the write-ahead log (WAL).
+// See https://sqlite.org/wal.html and https://sqlite.org/pragma.html#pragma_wal_checkpoint
+func (db *DB) walCheckpoint(ctx context.Context) error {
+	queries := db.queries()
+	result, err := queries.WALCheckpointFull(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Number of pages that can be in the WAL log before operations show up at
+	// INFO level.
+	//
+	// Having pages in the WAL is expected (it's what it's for), and by default
+	// sqlite should auto-checkpoint at 1000 pages. However, at Blender Studio
+	// there was an issue where this did not happen, or at least did not kick in
+	// before the WAL file became >10 GB. That shouldn't happen now that Flamenco
+	// is doing periodic checkpointing, but it's still nice to be able to see any
+	// gradual increase before that 1000 pages is hit.
+	//
+	// Maybe this threshold should be increased at some point, if it turns out
+	// that the logging is confusing users.
+	const threshold = 250
+
+	// The log level is determined by what happened.
+	var logLevel zerolog.Level
+	switch {
+	case result.Busy > 0:
+		logLevel = zerolog.WarnLevel
+	case result.Log > threshold || result.Checkpointed > threshold:
+		logLevel = zerolog.InfoLevel
+	default:
+		logLevel = zerolog.DebugLevel
+	}
+
+	log.WithLevel(logLevel).
+		Bool("busy", result.Busy > 0).
+		Int64("pagesInWAL", result.Log).
+		Int64("checkpointedPages", result.Checkpointed).
+		Msg("database: checkpoint complete")
+
+	return nil
 }

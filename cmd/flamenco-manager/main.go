@@ -244,6 +244,13 @@ func runFlamencoManager() bool {
 			mainCtxCancel)
 	}()
 
+	// Run a periodic WAL checkpoint on the database.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		persist.PeriodicWALCheckpoint(mainCtx)
+	}()
+
 	// Start the web server.
 	wg.Add(1)
 	go func() {

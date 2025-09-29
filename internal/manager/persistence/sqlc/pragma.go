@@ -129,3 +129,34 @@ func (q *Queries) Vacuum(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, vacuum)
 	return err
 }
+
+// See https://sqlite.org/pragma.html#pragma_wal_checkpoint
+const walCheckpointFull = `PRAGMA wal_checkpoint(FULL)`
+
+type WALCheckpointResult struct {
+	// Busy is usually 0, but will be 1 if a RESTART or FULL or TRUNCATE
+	// checkpoint was blocked from completing, for example because another thread
+	// or process was actively using the database.
+	Busy uint8
+	// Log is the number of modified pages that have been written to the
+	// write-ahead log file.
+	Log int64
+	// Checkpointed is the number of pages in the write-ahead log file that have
+	// been successfully moved back into the database file at the conclusion of
+	// the checkpoint.
+	Checkpointed int64
+
+	// Log and Checkpointed are -1 if there is no write-ahead log, for example if
+	// this pragma is invoked on a database connection that is not in WAL mode.
+}
+
+func (q *Queries) WALCheckpointFull(ctx context.Context) (WALCheckpointResult, error) {
+	row := q.db.QueryRowContext(ctx, walCheckpointFull)
+	var i WALCheckpointResult
+	err := row.Scan(
+		&i.Busy,
+		&i.Log,
+		&i.Checkpointed,
+	)
+	return i, err
+}
