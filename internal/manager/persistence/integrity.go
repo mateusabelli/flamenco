@@ -10,6 +10,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/pkg/website"
 )
 
@@ -19,7 +20,8 @@ const (
 	integrityCheckTimeout = 10 * time.Second
 
 	// How often the database write-ahead log is checkpointed.
-	walCheckpointPeriod = 15 * time.Minute
+	walCheckpointPeriod     = 15 * time.Minute
+	walCheckpointPeriodFast = 15 * time.Second
 )
 
 // PeriodicIntegrityCheck periodically checks the database integrity.
@@ -174,8 +176,10 @@ func (db *DB) ensureForeignKeysEnabled(ctx context.Context) {
 }
 
 func (db *DB) PeriodicWALCheckpoint(ctx context.Context) {
+	var checkpointResult sqlc.WALCheckpointResult
 
-	if err := db.walCheckpoint(ctx); err != nil {
+	var err error
+	if checkpointResult, err = db.walCheckpoint(ctx); err != nil {
 		log.Error().
 			AnErr("cause", err).
 			Msgf("database: could not perform checkpointing operation on write-ahead log at startup. Please report a bug at %s", website.BugReportURL)
@@ -190,14 +194,41 @@ func (db *DB) PeriodicWALCheckpoint(ctx context.Context) {
 
 	ticker := time.NewTicker(walCheckpointPeriod)
 	defer ticker.Stop()
+	tickerIsFast := false
 
 	for {
+		// Depending on whether there's still work to do, do another checkpoint
+		// soon, or go back to the default period.
+		switch {
+		case checkpointResult.Busy > 0 && !tickerIsFast:
+			// Switch to the faster checkpointing, to keep up with what the database is doing.
+			log.Info().
+				Bool("busy", checkpointResult.Busy > 0).
+				Int64("pagesInWAL", checkpointResult.Log).
+				Int64("checkpointedPages", checkpointResult.Checkpointed).
+				Stringer("period", walCheckpointPeriodFast).
+				Msg("database: switching to fast checkpointing schedule to catch up")
+			ticker.Reset(walCheckpointPeriodFast)
+			tickerIsFast = true
+		case checkpointResult.Busy == 0 && tickerIsFast:
+			// Checkpointer caught up, we can go slower again.
+			log.Info().
+				Bool("busy", checkpointResult.Busy > 0).
+				Int64("pagesInWAL", checkpointResult.Log).
+				Int64("checkpointedPages", checkpointResult.Checkpointed).
+				Stringer("period", walCheckpointPeriodFast).
+				Msg("database: checkpointing has caught up, switching to regular schedule")
+			ticker.Reset(walCheckpointPeriod)
+			tickerIsFast = false
+		}
+
 		select {
 		case <-ctx.Done():
 			return
 
 		case <-ticker.C:
-			err := db.walCheckpoint(ctx)
+			var err error
+			checkpointResult, err = db.walCheckpoint(ctx)
 
 			switch {
 			case err == nil:
@@ -208,30 +239,34 @@ func (db *DB) PeriodicWALCheckpoint(ctx context.Context) {
 				log.Debug().Msg("database: application is shutting down during a checkpoint operation")
 				// Just continue and let the normal `<-ctx.Done()` case above handle the
 				// main context closing. That way there's one point where that's done.
+				continue
 			default:
 				log.Error().
 					AnErr("cause", err).
-					Msgf("database: could not perform checkpointing operation on write-ahead log. Please report a bug at %s", website.BugReportURL)
+					Msgf("database: could not perform checkpointing operation on write-ahead log. This can happen when the database is very busy")
+				ticker.Reset(walCheckpointPeriod)
+				continue
 			}
+
 		}
 	}
 }
 
 // walCheckpoint performs a checkpoint of the write-ahead log (WAL).
 // See https://sqlite.org/wal.html and https://sqlite.org/pragma.html#pragma_wal_checkpoint
-func (db *DB) walCheckpoint(ctx context.Context) error {
+func (db *DB) walCheckpoint(ctx context.Context) (sqlc.WALCheckpointResult, error) {
 	qtx, err := db.queriesWithTX()
 	defer qtx.rollback()
 	if err != nil {
-		return fmt.Errorf("starting database transaction: %w", err)
+		return sqlc.WALCheckpointResult{}, fmt.Errorf("starting database transaction: %w", err)
 	}
 
 	result, err := qtx.queries.WALCheckpointFull(ctx)
 	if err != nil {
-		return err
+		return sqlc.WALCheckpointResult{}, err
 	}
 	if err := qtx.commit(); err != nil {
-		return fmt.Errorf("committing database transaction: %w", err)
+		return sqlc.WALCheckpointResult{}, fmt.Errorf("committing database transaction: %w", err)
 	}
 
 	// Number of pages that can be in the WAL log before operations show up at
@@ -265,5 +300,5 @@ func (db *DB) walCheckpoint(ctx context.Context) error {
 		Int64("checkpointedPages", result.Checkpointed).
 		Msg("database: checkpoint complete")
 
-	return nil
+	return result, nil
 }
