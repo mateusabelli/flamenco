@@ -10,6 +10,7 @@
 # sys.setrecursionlimit(n)
 
 from flamenco.manager.model.assigned_task import AssignedTask
+from flamenco.manager.model.assigned_worker import AssignedWorker
 from flamenco.manager.model.available_job_setting import AvailableJobSetting
 from flamenco.manager.model.available_job_setting_eval_info import AvailableJobSettingEvalInfo
 from flamenco.manager.model.available_job_setting_subtype import AvailableJobSettingSubtype

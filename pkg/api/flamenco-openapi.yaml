@@ -2388,6 +2388,7 @@ components:
           format: uuid
           description: UUID of the Task
         "job_id": { type: string, format: uuid }
+        "worker": { $ref: "#/components/schemas/AssignedWorker" }
         "name": { type: string, description: "Name of the task" }
         "updated":
           type: string
@@ -2399,6 +2400,13 @@ components:
         "steps_completed": { type: integer }
         "steps_total": { type: integer }
       required: [id, job_id, name, updated, status, activity, steps_completed, steps_total]
+
+    AssignedWorker:
+      type: object
+      properties:
+        "name": { type: string }
+        "uuid": { type: string, format: uuid }
+      required: [name, uuid]
 
     EventTaskLogUpdate:
       type: object

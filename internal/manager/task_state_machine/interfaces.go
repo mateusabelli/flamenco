@@ -40,6 +40,7 @@ type PersistenceService interface {
 	FetchJobsInStatus(ctx context.Context, jobStatuses ...api.JobStatus) ([]*persistence.Job, error)
 	FetchTasksOfWorkerInStatus(context.Context, *persistence.Worker, api.TaskStatus) ([]persistence.TaskJob, error)
 	FetchTasksOfWorkerInStatusOfJob(ctx context.Context, worker *persistence.Worker, status api.TaskStatus, jobUUID string) ([]*persistence.Task, error)
+	FetchWorkerByID(ctx context.Context, workerID int64) (*persistence.Worker, error)
 }
 
 // PersistenceService should be a subset of persistence.DB

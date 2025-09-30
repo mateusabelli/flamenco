@@ -12,6 +12,7 @@
  */
 
 import ApiClient from '../ApiClient';
+import AssignedWorker from './AssignedWorker';
 import TaskStatus from './TaskStatus';
 
 /**
@@ -71,6 +72,9 @@ class EventTaskUpdate {
             if (data.hasOwnProperty('job_id')) {
                 obj['job_id'] = ApiClient.convertToType(data['job_id'], 'String');
             }
+            if (data.hasOwnProperty('worker')) {
+                obj['worker'] = AssignedWorker.constructFromObject(data['worker']);
+            }
             if (data.hasOwnProperty('name')) {
                 obj['name'] = ApiClient.convertToType(data['name'], 'String');
             }
@@ -109,6 +113,11 @@ EventTaskUpdate.prototype['id'] = undefined;
  * @member {String} job_id
  */
 EventTaskUpdate.prototype['job_id'] = undefined;
+
+/**
+ * @member {module:model/AssignedWorker} worker
+ */
+EventTaskUpdate.prototype['worker'] = undefined;
 
 /**
  * Name of the task

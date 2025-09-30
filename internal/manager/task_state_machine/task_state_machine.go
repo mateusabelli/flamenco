@@ -133,6 +133,20 @@ func (sm *StateMachine) taskStatusChangeOnly(
 
 	// Broadcast this change to the SocketIO clients.
 	taskUpdate := eventbus.NewTaskUpdate(*task, job.UUID)
+	if task.WorkerID.Valid {
+		if worker, err := sm.persist.FetchWorkerByID(ctx, task.WorkerID.Int64); err != nil {
+			logger.Warn().
+				Int64("workerID", task.WorkerID.Int64).
+				Str("task", task.UUID).
+				AnErr("cause", err).
+				Msg("task state machine: could not fetch worker assigned to task")
+		} else if worker != nil {
+			taskUpdate.Worker = &api.AssignedWorker{
+				Name: worker.Name,
+				Uuid: worker.UUID,
+			}
+		}
+	}
 	taskUpdate.PreviousStatus = &oldTaskStatus
 	sm.broadcaster.BroadcastTaskUpdate(taskUpdate)
 

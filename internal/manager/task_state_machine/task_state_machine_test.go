@@ -4,6 +4,7 @@ package task_state_machine
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"testing"
@@ -476,6 +477,47 @@ func TestJobCancelWhilePauseRequested(t *testing.T) {
 	mocks.expectBroadcastJobChange(job, api.JobStatusCancelRequested, api.JobStatusCanceled)
 
 	require.NoError(t, sm.jobStatusChange(ctx, job, api.JobStatusCancelRequested, "someone wrote a unittest"))
+}
+
+func TestTaskAssignedToWorker(t *testing.T) {
+	mockCtrl, ctx, sm, mocks := taskStateMachineTestFixtures(t)
+	defer mockCtrl.Finish()
+
+	worker := persistence.Worker{
+		ID:   47,
+		UUID: "cec0ecb2-5d22-4afe-b836-b20092c5909d",
+		Name: "werkertje",
+	}
+
+	// T: queued > active  --> J: queued > active
+	task, job := taskWithStatus(api.JobStatusQueued, api.TaskStatusQueued)
+	task.WorkerID = sql.NullInt64{Int64: worker.ID, Valid: true}
+
+	mocks.persist.EXPECT().FetchWorkerByID(ctx, worker.ID).Return(&worker, nil)
+	mocks.expectSaveTaskWithStatus(t, task, api.TaskStatusActive)
+	mocks.expectWriteTaskLogTimestamped(t, task, job.UUID, "task changed status queued -> active")
+	mocks.expectSaveJobWithStatus(t, job, api.JobStatusActive)
+	mocks.expectBroadcastJobChange(job, api.JobStatusQueued, api.JobStatusActive)
+
+	prevStatus := api.TaskStatusQueued
+	expectUpdate := api.EventTaskUpdate{
+		Id:             task.UUID,
+		JobId:          job.UUID,
+		Name:           task.Name,
+		Updated:        task.UpdatedAt.Time,
+		PreviousStatus: &prevStatus,
+		Status:         api.TaskStatusActive,
+		StepsCompleted: int(task.StepsCompleted),
+		StepsTotal:     int(task.StepsTotal),
+		Worker: &api.AssignedWorker{
+			Name: worker.Name,
+			Uuid: worker.UUID,
+		},
+	}
+	mocks.broadcaster.EXPECT().BroadcastTaskUpdate(expectUpdate)
+
+	mocks.expectFetchJobOfTask(task, job)
+	require.NoError(t, sm.TaskStatusChange(ctx, task, api.TaskStatusActive))
 }
 
 func TestCheckStuck(t *testing.T) {

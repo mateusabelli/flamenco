@@ -139,6 +139,21 @@ func (mr *MockPersistenceServiceMockRecorder) FetchTasksOfWorkerInStatusOfJob(ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchTasksOfWorkerInStatusOfJob", reflect.TypeOf((*MockPersistenceService)(nil).FetchTasksOfWorkerInStatusOfJob), arg0, arg1, arg2, arg3)
 }
 
+// FetchWorkerByID mocks base method.
+func (m *MockPersistenceService) FetchWorkerByID(arg0 context.Context, arg1 int64) (*sqlc.Worker, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchWorkerByID", arg0, arg1)
+	ret0, _ := ret[0].(*sqlc.Worker)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchWorkerByID indicates an expected call of FetchWorkerByID.
+func (mr *MockPersistenceServiceMockRecorder) FetchWorkerByID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchWorkerByID", reflect.TypeOf((*MockPersistenceService)(nil).FetchWorkerByID), arg0, arg1)
+}
+
 // JobHasTasksInStatus mocks base method.
 func (m *MockPersistenceService) JobHasTasksInStatus(arg0 context.Context, arg1 *sqlc.Job, arg2 api.TaskStatus) (bool, error) {
 	m.ctrl.T.Helper()

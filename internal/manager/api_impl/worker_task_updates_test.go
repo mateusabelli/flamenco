@@ -96,7 +96,12 @@ func TestTaskUpdateStepsCompleted(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mf := newMockedFlamenco(mockCtrl)
+
 	worker := testWorker()
+	assignedWorker := api.AssignedWorker{
+		Name: worker.Name,
+		Uuid: worker.UUID,
+	}
 
 	// Construct the JSON request object.
 	taskUpdate := api.TaskUpdateJSONRequestBody{
@@ -156,6 +161,7 @@ func TestTaskUpdateStepsCompleted(t *testing.T) {
 		Status:         mockTask.Status,
 		StepsCompleted: 2,
 		StepsTotal:     3,
+		Worker:         &assignedWorker,
 	})
 
 	mockJobWith2CompletedSteps := mockJob
@@ -195,6 +201,7 @@ func TestTaskUpdateStepsCompleted(t *testing.T) {
 		Status:         mockTask.Status,
 		StepsCompleted: 3,
 		StepsTotal:     3,
+		Worker:         &assignedWorker,
 	})
 
 	mockJobWith3CompletedSteps := mockJob

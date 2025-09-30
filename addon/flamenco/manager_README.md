@@ -136,6 +136,7 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [AssignedTask](flamenco/manager/docs/AssignedTask.md)
+ - [AssignedWorker](flamenco/manager/docs/AssignedWorker.md)
  - [AvailableJobSetting](flamenco/manager/docs/AvailableJobSetting.md)
  - [AvailableJobSettingEvalInfo](flamenco/manager/docs/AvailableJobSettingEvalInfo.md)
  - [AvailableJobSettingSubtype](flamenco/manager/docs/AvailableJobSettingSubtype.md)

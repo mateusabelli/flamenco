@@ -58,6 +58,17 @@ func (db *DB) FetchWorker(ctx context.Context, uuid string) (*Worker, error) {
 	return &worker, nil
 }
 
+func (db *DB) FetchWorkerByID(ctx context.Context, workerID int64) (*Worker, error) {
+	queries := db.queries()
+
+	worker, err := queries.FetchWorkerByID(ctx, workerID)
+	if err != nil {
+		return nil, workerError(err, "fetching worker by ID %d", workerID)
+	}
+
+	return &worker, nil
+}
+
 func (db *DB) DeleteWorker(ctx context.Context, uuid string) error {
 	// As a safety measure, refuse to delete unless foreign key constraints are active.
 	fkEnabled, err := db.areForeignKeysEnabled(ctx)

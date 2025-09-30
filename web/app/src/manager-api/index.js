@@ -14,6 +14,7 @@
 
 import ApiClient from './ApiClient';
 import AssignedTask from './model/AssignedTask';
+import AssignedWorker from './model/AssignedWorker';
 import AvailableJobSetting from './model/AvailableJobSetting';
 import AvailableJobSettingEvalInfo from './model/AvailableJobSettingEvalInfo';
 import AvailableJobSettingSubtype from './model/AvailableJobSettingSubtype';
@@ -144,6 +145,12 @@ export {
      * @property {module:model/AssignedTask}
      */
     AssignedTask,
+
+    /**
+     * The AssignedWorker model constructor.
+     * @property {module:model/AssignedWorker}
+     */
+    AssignedWorker,
 
     /**
      * The AvailableJobSetting model constructor.

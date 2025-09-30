@@ -143,6 +143,10 @@ func (f *Flamenco) doTaskUpdate(
 	if !shouldUpdateTaskStatus {
 		if didUpdateSteps {
 			taskUpdate := eventbus.NewTaskUpdate(*dbTask, jobUUID)
+			taskUpdate.Worker = &api.AssignedWorker{
+				Name: w.Name,
+				Uuid: w.UUID,
+			}
 			f.broadcaster.BroadcastTaskUpdate(taskUpdate)
 		}
 		return dbErrActivity
