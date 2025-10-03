@@ -5,6 +5,7 @@ package worker
 import (
 	"context"
 	"errors"
+	"math/rand/v2"
 	"net/http"
 	"sync"
 	"time"
@@ -103,10 +104,15 @@ func (w *Worker) runStateAwake(ctx context.Context) {
 func (w *Worker) fetchTask(ctx context.Context) *api.AssignedTask {
 	logger := w.loggerWithStatus()
 
-	// Initially don't wait at all.
-	var wait time.Duration
+	// Start with a small wait time, just to stagger simultaneously-started
+	// Workers (in combination with the wait time randomization below).
+	var wait time.Duration = 3 * time.Second
 
 	for {
+		// Randomize the wait time by ±10% so that Workers don't sync up too much.
+		randomizeRangeMS := int64(wait.Milliseconds() / 5)
+		randomizedWait := wait + time.Duration(rand.Int64N(randomizeRangeMS)-randomizeRangeMS/2)*time.Millisecond
+
 		select {
 		case <-ctx.Done():
 			logger.Debug().Msg("task fetching interrupted by context cancellation")
@@ -114,7 +120,7 @@ func (w *Worker) fetchTask(ctx context.Context) *api.AssignedTask {
 		case <-w.doneChan:
 			logger.Debug().Msg("task fetching interrupted by shutdown")
 			return nil
-		case <-time.After(wait):
+		case <-time.After(randomizedWait):
 		}
 
 		logger.Debug().Msg("fetching tasks")
