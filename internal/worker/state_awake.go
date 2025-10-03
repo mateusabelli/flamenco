@@ -16,8 +16,8 @@ import (
 
 const (
 	// How long to wait to fetch another task...
-	durationNoTask       = 2 * time.Second  // ... if there is no task now.
-	durationFetchFailed  = 10 * time.Second // ... if fetching failed somehow.
+	durationNoTask       = 20 * time.Second // ... if there is no task now.
+	durationFetchFailed  = 1 * time.Minute  // ... if fetching failed somehow.
 	durationTaskComplete = 2 * time.Second  // ... when a task was completed.
 
 	mayKeepRunningPeriod = 10 * time.Second
