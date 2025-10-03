@@ -103,7 +103,7 @@ func (b *Broker) BroadcastTaskUpdate(taskUpdate api.EventTaskUpdate) {
 func (b *Broker) BroadcastTaskLogUpdate(taskLogUpdate api.EventTaskLogUpdate) {
 	// Don't log the contents here; logs can get big.
 	topic := topicForTaskLog(taskLogUpdate.TaskId)
-	log.Debug().
+	log.Trace().
 		Str("task", taskLogUpdate.TaskId).
 		Str("topic", string(topic)).
 		Msg("eventbus: broadcasting task log")
