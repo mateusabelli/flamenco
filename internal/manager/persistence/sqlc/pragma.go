@@ -131,7 +131,39 @@ func (q *Queries) Vacuum(ctx context.Context) error {
 }
 
 // See https://sqlite.org/pragma.html#pragma_wal_checkpoint
-const walCheckpointFull = `PRAGMA wal_checkpoint(FULL)`
+// SQLite doesn't seem to like SQL parameters for `PRAGMA`, so `PRAGMA wal_checkpoint(?)` doesn't work.
+const walCheckpoint = `PRAGMA wal_checkpoint(%s)`
+
+// WALCheckpointType determines the write-ahead-log checkpoint type.
+type WALCheckpointType string
+
+// The explanations below are from the SQLite documentation (https://sqlite.org/pragma.html#pragma_wal_checkpoint):
+const (
+	// PASSIVE checkpoints as many frames as possible without waiting for any
+	// database readers or writers to finish. Sync the db file if all frames in
+	// the log are checkpointed. The busy-handler callback is never invoked in
+	// this mode.
+	WALCheckpointTypePassive WALCheckpointType = "PASSIVE"
+
+	// FULL blocks (invokes the busy-handler callback) until there is no database
+	// writer and all readers are reading from the most recent database snapshot.
+	// It then checkpoints all frames in the log file and syncs the database file.
+	// FULL blocks concurrent writers while it is running, but readers can
+	// proceed.
+	WALCheckpointTypeFull WALCheckpointType = "FULL"
+
+	// RESTART works the same way as FULL with the addition that after
+	// checkpointing the log file it blocks (calls the busy-handler callback)
+	// until all readers are finished with the log file. This ensures that the
+	// next client to write to the database file restarts the log file from the
+	// beginning. RESTART blocks concurrent writers while it is running, but
+	// allows readers to proceed.
+	WALCheckpointTypeRestart WALCheckpointType = "RESTART"
+
+	// TRUNCATE works the same way as RESTART with the addition that the WAL file
+	// is truncated to zero bytes upon successful completion.
+	WALCheckpointTypeTruncate WALCheckpointType = "TRUNCATE"
+)
 
 type WALCheckpointResult struct {
 	// Busy is usually 0, but will be 1 if a RESTART or FULL or TRUNCATE
@@ -150,8 +182,9 @@ type WALCheckpointResult struct {
 	// this pragma is invoked on a database connection that is not in WAL mode.
 }
 
-func (q *Queries) WALCheckpointFull(ctx context.Context) (WALCheckpointResult, error) {
-	row := q.db.QueryRowContext(ctx, walCheckpointFull)
+func (q *Queries) WALCheckpoint(ctx context.Context, checkpointType WALCheckpointType) (WALCheckpointResult, error) {
+	formattedSQL := fmt.Sprintf(walCheckpoint, checkpointType)
+	row := q.db.QueryRowContext(ctx, formattedSQL)
 	var i WALCheckpointResult
 	err := row.Scan(
 		&i.Busy,

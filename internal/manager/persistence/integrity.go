@@ -176,10 +176,10 @@ func (db *DB) ensureForeignKeysEnabled(ctx context.Context) {
 }
 
 func (db *DB) PeriodicWALCheckpoint(ctx context.Context) {
-	var checkpointResult sqlc.WALCheckpointResult
+	const checkpointType = sqlc.WALCheckpointTypeFull
 
-	var err error
-	if checkpointResult, err = db.walCheckpoint(ctx); err != nil {
+	checkpointResult, err := db.walCheckpoint(ctx, checkpointType)
+	if err != nil {
 		log.Error().
 			AnErr("cause", err).
 			Msgf("database: could not perform checkpointing operation on write-ahead log at startup. Please report a bug at %s", website.BugReportURL)
@@ -228,7 +228,7 @@ func (db *DB) PeriodicWALCheckpoint(ctx context.Context) {
 
 		case <-ticker.C:
 			var err error
-			checkpointResult, err = db.walCheckpoint(ctx)
+			checkpointResult, err = db.walCheckpoint(ctx, checkpointType)
 
 			switch {
 			case err == nil:
@@ -254,14 +254,14 @@ func (db *DB) PeriodicWALCheckpoint(ctx context.Context) {
 
 // walCheckpoint performs a checkpoint of the write-ahead log (WAL).
 // See https://sqlite.org/wal.html and https://sqlite.org/pragma.html#pragma_wal_checkpoint
-func (db *DB) walCheckpoint(ctx context.Context) (sqlc.WALCheckpointResult, error) {
+func (db *DB) walCheckpoint(ctx context.Context, checkpointType sqlc.WALCheckpointType) (sqlc.WALCheckpointResult, error) {
 	qtx, err := db.queriesWithTX()
 	defer qtx.rollback()
 	if err != nil {
 		return sqlc.WALCheckpointResult{}, fmt.Errorf("starting database transaction: %w", err)
 	}
 
-	result, err := qtx.queries.WALCheckpointFull(ctx)
+	result, err := qtx.queries.WALCheckpoint(ctx, checkpointType)
 	if err != nil {
 		return sqlc.WALCheckpointResult{}, err
 	}
