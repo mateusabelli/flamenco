@@ -267,6 +267,44 @@ export default {
   created() {
     this.importConfig();
   },
+  /**
+   * Confirm with the user about unsaved edits before navigating to another route within the web app 
+   * (and in Chrome back/forward arrows)
+   */
+  beforeRouteLeave(to, from, next) {
+    // If the form hasn't been modified, allow navigation
+    if (!this.isDirty) {
+      next();
+      return;
+    }
+
+    if (this.isDirty) {
+      const answer = window.confirm(
+        'Are you sure you want to leave this page? Changes you made may not be saved.'
+      );
+      if (answer) {
+        next(); // Allow navigation
+      } else {
+        next(false); // Prevent navigation
+      }
+    }
+  },
+  mounted() {
+    // Confirm with the user about unsaved edits before leaving the page through refresh and tab close
+    // (Windows: and in Firefox back/forward arrows)
+    // (MAC: refresh, tab close, and back arrow for Firefox/Chrome)
+    window.onbeforeunload = (event) => {
+      if (this.isDirty) {
+        event.preventDefault();
+        event.returnValue = true;
+        return true;
+      }
+    };
+  },
+  beforeUnmount() {
+    // Remove the event listener
+    window.onbeforeunload = null;
+  },
   computed: {
     isDirty() {
       return JSON.stringify(this.originalConfig) !== JSON.stringify(this.config);
