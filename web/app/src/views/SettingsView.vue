@@ -254,6 +254,8 @@ export default {
     newVariableName: '',
     newVariableErrorMessage: '',
     newVariableTouched: false,
+    showSubmissionBanner: false,
+    submissionErrorMessage: '',
     metaAPI: new MetaApi(getAPIClient()),
     focusedSetting: {},
 
@@ -428,7 +430,6 @@ export default {
       this.config.variables[variableName].values.splice(index, 1);
     },
     canSave() {
-      // TODO: include checks for form validation
       return this.isDirty;
     },
     /**
@@ -508,8 +509,22 @@ export default {
 
         // Update the original config so that isDirty reads false after a successful save
         this.originalConfig = JSON.parse(JSON.stringify(this.config));
+
+        // Discard any existing error message on the banner
+        this.submissionErrorMessage = '';
+
+        // Hide the success banner after 3 seconds
+        setTimeout(() => {
+          this.showSubmissionBanner = false;
+        }, 3000);
       } catch (e) {
-        console.error(e);
+        console.error(e)
+        // Pass on the error message to the banner
+        const errorMessage = e.body?.message ?? e.error.message
+        this.submissionErrorMessage = `Failed to save: ${errorMessage}`;
+      } finally {
+        // Always show the banner on submit whether successful or not
+        this.showSubmissionBanner = true;
       }
     },
     /**
@@ -599,6 +614,34 @@ export default {
         :disabled="!canSave()">
         Save
       </button>
+      <div
+        class="banner"
+        :class="{
+          success: !this.submissionErrorMessage,
+          error: this.submissionErrorMessage,
+          hidden: !showSubmissionBanner,
+        }">
+        <svg
+          @click="this.showSubmissionBanner = false"
+          xmlns="http://www.w3.org/2000/svg"
+          width="1.5em"
+          height="1.5em"
+          viewBox="0 0 24 24"
+          fill="none">
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M5.29289 5.29289C5.68342 4.90237 6.31658 4.90237 6.70711 5.29289L12 10.5858L17.2929 5.29289C17.6834 4.90237 18.3166 4.90237 18.7071 5.29289C19.0976 5.68342 19.0976 6.31658 18.7071 6.70711L13.4142 12L18.7071 17.2929C19.0976 17.6834 19.0976 18.3166 18.7071 18.7071C18.3166 19.0976 17.6834 19.0976 17.2929 18.7071L12 13.4142L6.70711 18.7071C6.31658 19.0976 5.68342 19.0976 5.29289 18.7071C4.90237 18.3166 4.90237 17.6834 5.29289 17.2929L10.5858 12L5.29289 6.70711C4.90237 6.31658 4.90237 5.68342 5.29289 5.29289Z"
+            fill="#fff" />
+        </svg>
+        <p>
+          {{
+            this.submissionErrorMessage
+              ? this.submissionErrorMessage
+              : 'Settings successfully saved.'
+          }}
+        </p>
+      </div>
     </nav>
     <aside class="side-container">
       <div class="dialog">
@@ -839,8 +882,44 @@ export default {
 </template>
 
 <style>
+.banner {
+  position: absolute;
+  top: 0;
+  min-width: 200px;
+  min-height: var(--nav-height);
+  background-color: var(--color-background-column);
+  border-radius: var(--border-radius);
+  padding: var(--nav-padding);
+  max-width: 100%;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.banner svg {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.banner p {
+  text-align: center;
+  padding: 0px var(--container-padding);
+}
+
+.banner.success {
+  border: 1px solid var(--color-success);
+  background-color: #325328;
+}
+.banner.error {
+  border: 1px solid var(--color-status-failed);
+  background-color: #551719;
+}
+
 .yaml-view-container {
   --nav-height: 35px;
+  --nav-padding: 2px 10px;
   --button-height: 35px;
   --delete-button-width: 35px;
 
@@ -990,8 +1069,8 @@ button {
   align-items: center;
   justify-content: center;
   background-color: var(--color-background-column);
-  padding: 2px 10px;
-  z-index: 100;
+  padding: var(--nav-padding);
+  z-index: 10;
   border-radius: var(--border-radius);
 }
 
