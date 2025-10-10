@@ -80,6 +80,20 @@ export const useJobs = defineStore('jobs', {
         state.hasChanged = true;
       });
     },
+    // Apply this job update to the active job.
+    // This of course only updates the fields from the update, and not the entire job.
+    // For that, fetch the job from the back-end and call setActiveJob(job). This has
+    // to be done carefully, though, as when every update trigers a back-end call, it
+    // can stress the back-end when many front-ends are open in various clients.
+    updateActiveJob(jobUpdate) {
+      if (jobUpdate.id != this.activeJobID) {
+        console.warn("updateActiveJob() called with update for another job than the active one");
+        return;
+      }
+      this.$patch({
+        activeJob: jobUpdate,
+      });
+    },
     clearActiveJob() {
       this.$patch({
         activeJob: null,

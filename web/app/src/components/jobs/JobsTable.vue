@@ -243,7 +243,12 @@ export default {
       try {
         const row = this.tabulator.rowManager.findRow(jobUpdate.id);
         // If the row update is for deletion, delete the row and route to /jobs
-        if (jobUpdate.was_deleted && row) {
+        if (jobUpdate.was_deleted) {
+          // If the job wasn't known yet, don't bother handling this update.
+          if (!row) {
+            return;
+          }
+
           // Prevents the issue where deleted rows persist on Tabulator's selectedData
           // (this should technically not happen -- need to investigate more)
           this.tabulator.deselectRow(jobUpdate.id);
@@ -270,8 +275,7 @@ export default {
         this._refreshAvailableStatuses();
 
         if (jobUpdate.id === this.activeJobID && row) {
-          const job = await this.fetchJob(jobUpdate.id);
-          this.jobs.setActiveJob(job);
+          this.jobs.updateActiveJob(jobUpdate);
         }
         this.jobs.setSelectedJobs(this.tabulator.getSelectedData()); // Update Pinia stores
       } catch (e) {
