@@ -925,7 +925,7 @@ export default {
 
   --min-form-area-width: 600px;
   --max-form-area-width: 1fr;
-  --min-side-area-width: 250px;
+  --min-side-area-width: 300px;
   --max-side-area-width: 425px;
   --max-form-width: 650px;
   --form-padding: 75px;
