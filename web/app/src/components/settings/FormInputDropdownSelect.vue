@@ -16,6 +16,7 @@
 
 <script>
 import DropdownSelect from '@/components/settings/DropdownSelect.vue';
+import { debounce } from '@/components/settings/validation';
 
 export default {
   name: 'FormInputDropdownSelect',
@@ -60,6 +61,7 @@ export default {
   data() {
     return {
       errorMsg: '',
+      validation_timeout_handle: 0,
     };
   },
   computed: {
@@ -74,7 +76,7 @@ export default {
   },
   watch: {
     modelValue() {
-      this.validateInput();
+      this.validation_timeout_handle = debounce(this.validateInput, this.validation_timeout_handle);
     },
   },
   created() {

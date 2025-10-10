@@ -20,6 +20,8 @@
 </template>
 
 <script>
+import { debounce } from '@/components/settings/validation';
+
 export default {
   name: 'FormInputText',
   props: {
@@ -56,11 +58,12 @@ export default {
   data() {
     return {
       errorMsg: '',
+      validation_timeout_handle: 0,
     };
   },
   watch: {
     value() {
-      this.validateInput();
+      this.validation_timeout_handle = debounce(this.validateInput, this.validation_timeout_handle);
     },
   },
   methods: {
