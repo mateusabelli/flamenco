@@ -343,6 +343,7 @@ func (f *Flamenco) ScheduleTask(e echo.Context) error {
 		return sendAPIError(e, http.StatusInternalServerError, "internal error finding a task for you: %v", err)
 	}
 	if scheduledTask == nil {
+		logger.Trace().Msg("task scheduler: no task for worker")
 		return e.NoContent(http.StatusNoContent)
 	}
 
@@ -374,14 +375,16 @@ func (f *Flamenco) ScheduleTask(e echo.Context) error {
 
 	// Convert database objects to API objects:
 	apiTask := api.AssignedTask{
-		Uuid:        scheduledTask.Task.UUID,
-		Job:         scheduledTask.JobUUID,
-		JobPriority: int(scheduledTask.JobPriority),
-		JobType:     scheduledTask.JobType,
-		Name:        scheduledTask.Task.Name,
-		Priority:    int(scheduledTask.Task.Priority),
-		Status:      api.TaskStatus(scheduledTask.Task.Status),
-		TaskType:    scheduledTask.Task.Type,
+		Uuid:           scheduledTask.Task.UUID,
+		Job:            scheduledTask.JobUUID,
+		JobPriority:    int(scheduledTask.JobPriority),
+		JobType:        scheduledTask.JobType,
+		Name:           scheduledTask.Task.Name,
+		Priority:       int(scheduledTask.Task.Priority),
+		Status:         api.TaskStatus(scheduledTask.Task.Status),
+		TaskType:       scheduledTask.Task.Type,
+		StepsTotal:     int(scheduledTask.Task.StepsTotal),
+		StepsCompleted: int(scheduledTask.Task.StepsCompleted),
 	}
 
 	if err := json.Unmarshal(scheduledTask.Task.Commands, &apiTask.Commands); err != nil {
@@ -391,6 +394,10 @@ func (f *Flamenco) ScheduleTask(e echo.Context) error {
 			Msg("could not parse task commands JSON")
 		return sendAPIError(e, http.StatusInternalServerError, "internal error parsing task commands JSON: %v", err)
 	}
+
+	logger.Trace().
+		Str("task", scheduledTask.Task.UUID).
+		Msg("task scheduler: handed task to worker")
 
 	// Perform variable replacement before sending to the Worker.
 	customisedTask := replaceTaskVariables(f.config, apiTask, *worker)
