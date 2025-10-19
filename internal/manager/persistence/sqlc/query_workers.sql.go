@@ -401,6 +401,26 @@ func (q *Queries) FetchWorkerTagByID(ctx context.Context, workerTagID int64) (Wo
 	return i, err
 }
 
+const fetchWorkerTagByName = `-- name: FetchWorkerTagByName :one
+SELECT id, created_at, updated_at, uuid, name, description
+FROM worker_tags
+WHERE worker_tags.name = ?1
+`
+
+func (q *Queries) FetchWorkerTagByName(ctx context.Context, name string) (WorkerTag, error) {
+	row := q.db.QueryRowContext(ctx, fetchWorkerTagByName, name)
+	var i WorkerTag
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UUID,
+		&i.Name,
+		&i.Description,
+	)
+	return i, err
+}
+
 const fetchWorkerTagByUUID = `-- name: FetchWorkerTagByUUID :one
 SELECT id, created_at, updated_at, uuid, name, description
 FROM worker_tags

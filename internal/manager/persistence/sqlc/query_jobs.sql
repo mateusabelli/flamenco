@@ -109,6 +109,9 @@ UPDATE jobs SET updated_at=@now, status=@status, activity=@activity WHERE id=@id
 -- name: SaveJobPriority :exec
 UPDATE jobs SET updated_at=@now, priority=@priority WHERE id=@id;
 
+-- name: SaveJobWorkerTag :exec
+UPDATE jobs SET updated_at=@now, worker_tag_id=@worker_tag_id WHERE id=@id;
+
 -- name: SaveJobStorageInfo :exec
 UPDATE jobs SET storage_shaman_checkout_id=@storage_shaman_checkout_id WHERE id=@id;
 

@@ -23,6 +23,7 @@ import JobLastRenderedImageInfo from '../model/JobLastRenderedImageInfo';
 import JobMassDeletionSelection from '../model/JobMassDeletionSelection';
 import JobPriorityChange from '../model/JobPriorityChange';
 import JobStatusChange from '../model/JobStatusChange';
+import JobTagChange from '../model/JobTagChange';
 import JobTasksSummary from '../model/JobTasksSummary';
 import JobsQueryResult from '../model/JobsQueryResult';
 import SubmittedJob from '../model/SubmittedJob';
@@ -817,6 +818,56 @@ export default class JobsApi {
      */
     setJobStatus(jobId, jobStatusChange) {
       return this.setJobStatusWithHttpInfo(jobId, jobStatusChange)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * @param {String} jobId 
+     * @param {module:model/JobTagChange} jobTagChange The name or the UUID of the new tag. It replaces the old tag.
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing HTTP response
+     */
+    setJobTagWithHttpInfo(jobId, jobTagChange) {
+      let postBody = jobTagChange;
+      // verify the required parameter 'jobId' is set
+      if (jobId === undefined || jobId === null) {
+        throw new Error("Missing the required parameter 'jobId' when calling setJobTag");
+      }
+      // verify the required parameter 'jobTagChange' is set
+      if (jobTagChange === undefined || jobTagChange === null) {
+        throw new Error("Missing the required parameter 'jobTagChange' when calling setJobTag");
+      }
+
+      let pathParams = {
+        'job_id': jobId
+      };
+      let queryParams = {
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = [];
+      let contentTypes = ['application/json'];
+      let accepts = ['application/json'];
+      let returnType = null;
+      return this.apiClient.callApi(
+        '/api/v3/jobs/{job_id}/settag', 'POST',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * @param {String} jobId 
+     * @param {module:model/JobTagChange} jobTagChange The name or the UUID of the new tag. It replaces the old tag.
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}
+     */
+    setJobTag(jobId, jobTagChange) {
+      return this.setJobTagWithHttpInfo(jobId, jobTagChange)
         .then(function(response_and_data) {
           return response_and_data.data;
         });

@@ -1016,6 +1016,46 @@ func (mr *MockFlamencoClientMockRecorder) SetJobStatusWithResponse(arg0, arg1, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetJobStatusWithResponse", reflect.TypeOf((*MockFlamencoClient)(nil).SetJobStatusWithResponse), varargs...)
 }
 
+// SetJobTagWithBodyWithResponse mocks base method.
+func (m *MockFlamencoClient) SetJobTagWithBodyWithResponse(arg0 context.Context, arg1, arg2 string, arg3 io.Reader, arg4 ...api.RequestEditorFn) (*api.SetJobTagResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2, arg3}
+	for _, a := range arg4 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SetJobTagWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*api.SetJobTagResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetJobTagWithBodyWithResponse indicates an expected call of SetJobTagWithBodyWithResponse.
+func (mr *MockFlamencoClientMockRecorder) SetJobTagWithBodyWithResponse(arg0, arg1, arg2, arg3 interface{}, arg4 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetJobTagWithBodyWithResponse", reflect.TypeOf((*MockFlamencoClient)(nil).SetJobTagWithBodyWithResponse), varargs...)
+}
+
+// SetJobTagWithResponse mocks base method.
+func (m *MockFlamencoClient) SetJobTagWithResponse(arg0 context.Context, arg1 string, arg2 api.SetJobTagJSONRequestBody, arg3 ...api.RequestEditorFn) (*api.SetJobTagResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SetJobTagWithResponse", varargs...)
+	ret0, _ := ret[0].(*api.SetJobTagResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetJobTagWithResponse indicates an expected call of SetJobTagWithResponse.
+func (mr *MockFlamencoClientMockRecorder) SetJobTagWithResponse(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetJobTagWithResponse", reflect.TypeOf((*MockFlamencoClient)(nil).SetJobTagWithResponse), varargs...)
+}
+
 // SetTaskStatusWithBodyWithResponse mocks base method.
 func (m *MockFlamencoClient) SetTaskStatusWithBodyWithResponse(arg0 context.Context, arg1, arg2 string, arg3 io.Reader, arg4 ...api.RequestEditorFn) (*api.SetTaskStatusResponse, error) {
 	m.ctrl.T.Helper()

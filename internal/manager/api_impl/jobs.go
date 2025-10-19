@@ -4,6 +4,7 @@ package api_impl
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -372,6 +373,88 @@ func (f *Flamenco) SetJobPriority(e echo.Context, jobID string) error {
 	}
 
 	// Broadcast this change to the SocketIO clients.
+	jobUpdate := eventbus.NewJobUpdate(dbJob)
+	f.broadcaster.BroadcastJobUpdate(jobUpdate)
+
+	return e.NoContent(http.StatusNoContent)
+}
+
+// SetJobTag changes (or clears) a job's tag.
+func (f *Flamenco) SetJobTag(e echo.Context, jobID string) error {
+	logger := requestLogger(e).With().
+		Str("job", jobID).
+		Logger()
+
+	var tagChange api.SetJobTagJSONRequestBody
+	if err := e.Bind(&tagChange); err != nil {
+		logger.Warn().Err(err).Msg("bad request received")
+		return sendAPIError(e, http.StatusBadRequest, "invalid format")
+	}
+
+	dbJob, err := f.fetchJob(e, logger, jobID)
+	if dbJob == nil {
+		// f.fetchJob already sent a response.
+		return err
+	}
+
+	logger = logger.With().Str("jobName", dbJob.Name).Logger()
+
+	ctx := e.Request().Context()
+	if dbJob.WorkerTagID.Valid {
+		currentTag, err := f.persist.FetchWorkerTagByID(ctx, dbJob.WorkerTagID.Int64)
+		if err != nil {
+			logger.Warn().AnErr("cause", err).Msg("job tag change requested, but could not get this job's current tag")
+		} else {
+			logger = logger.With().Str("prevTag", currentTag.Name).Logger()
+		}
+	}
+
+	// From here on, the request can be handled even when the client disconnects.
+	bgCtx, bgCtxCancel := bgContext()
+	defer bgCtxCancel()
+
+	newWorkerTagID := sql.NullInt64{}
+	{
+		var (
+			newWorkerTag persistence.WorkerTag
+			err          error
+		)
+		switch {
+		case tagChange.Id != nil:
+			logger = logger.With().Str("tagUUID", *tagChange.Id).Logger()
+			newWorkerTag, err = f.persist.FetchWorkerTag(ctx, *tagChange.Id)
+			newWorkerTagID.Valid = err == nil
+
+		case tagChange.Name != nil:
+			logger = logger.With().Str("tagName", *tagChange.Name).Logger()
+			newWorkerTag, err = f.persist.FetchWorkerTagByName(ctx, *tagChange.Name)
+			newWorkerTagID.Valid = err == nil
+		}
+
+		if err != nil {
+			logger.Error().AnErr("cause", err).Msg("job tag change requested, but could not find requested tag")
+			return sendAPIError(e, http.StatusNotAcceptable, "tag not found")
+		}
+
+		if newWorkerTagID.Valid {
+			logger.Info().Msg("setting worker tag of job")
+		} else {
+			logger.Info().Msg("un-setting worker tag of job")
+		}
+
+		newWorkerTagID.Int64 = newWorkerTag.ID
+	}
+
+	dbJob.WorkerTagID = newWorkerTagID
+	err = f.persist.SaveJobWorkerTag(bgCtx, dbJob)
+	if err != nil {
+		logger.Error().Err(err).Msg("error changing job's worker tag")
+		return sendAPIError(e, http.StatusInternalServerError, "unexpected error changing job's worker tag")
+	}
+
+	// Broadcast this change to the SocketIO clients.
+	// TODO: include some info in the job update to signal that a field was
+	// modified that's not part of the jobUpdate.
 	jobUpdate := eventbus.NewJobUpdate(dbJob)
 	f.broadcaster.BroadcastJobUpdate(jobUpdate)
 

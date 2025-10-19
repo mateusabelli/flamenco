@@ -21,6 +21,7 @@ Method | HTTP request | Description
 [**remove_job_blocklist**](JobsApi.md#remove_job_blocklist) | **DELETE** /api/v3/jobs/{job_id}/blocklist | Remove entries from a job blocklist.
 [**set_job_priority**](JobsApi.md#set_job_priority) | **POST** /api/v3/jobs/{job_id}/setpriority | 
 [**set_job_status**](JobsApi.md#set_job_status) | **POST** /api/v3/jobs/{job_id}/setstatus | 
+[**set_job_tag**](JobsApi.md#set_job_tag) | **POST** /api/v3/jobs/{job_id}/settag | 
 [**set_task_status**](JobsApi.md#set_task_status) | **POST** /api/v3/tasks/{task_id}/setstatus | 
 [**submit_job**](JobsApi.md#submit_job) | **POST** /api/v3/jobs | Submit a new job for Flamenco Manager to execute.
 [**submit_job_check**](JobsApi.md#submit_job_check) | **POST** /api/v3/jobs/check | Submit a new job for Flamenco Manager to check.
@@ -1162,6 +1163,77 @@ No authorization required
 |-------------|-------------|------------------|
 **204** | Status change was accepted. |  -  |
 **422** | The requested status change is not valid for the current status of the job. |  -  |
+**0** | Unexpected error. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **set_job_tag**
+> set_job_tag(job_id, job_tag_change)
+
+
+
+### Example
+
+
+```python
+import time
+import flamenco.manager
+from flamenco.manager.api import jobs_api
+from flamenco.manager.model.error import Error
+from flamenco.manager.model.job_tag_change import JobTagChange
+from pprint import pprint
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = flamenco.manager.Configuration(
+    host = "http://localhost"
+)
+
+
+# Enter a context with an instance of the API client
+with flamenco.manager.ApiClient() as api_client:
+    # Create an instance of the API class
+    api_instance = jobs_api.JobsApi(api_client)
+    job_id = "job_id_example" # str | 
+    job_tag_change = JobTagChange(
+        id="id_example",
+        name="name_example",
+    ) # JobTagChange | The name or the UUID of the new tag. It replaces the old tag.
+
+    # example passing only required values which don't have defaults set
+    try:
+        api_instance.set_job_tag(job_id, job_tag_change)
+    except flamenco.manager.ApiException as e:
+        print("Exception when calling JobsApi->set_job_tag: %s\n" % e)
+```
+
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **job_id** | **str**|  |
+ **job_tag_change** | [**JobTagChange**](JobTagChange.md)| The name or the UUID of the new tag. It replaces the old tag. |
+
+### Return type
+
+void (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**204** | Tag change was accepted. |  -  |
+**422** | The requested tag is not acceptable. |  -  |
 **0** | Unexpected error. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

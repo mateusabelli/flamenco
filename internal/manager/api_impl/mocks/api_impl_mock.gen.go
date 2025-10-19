@@ -350,6 +350,21 @@ func (mr *MockPersistenceServiceMockRecorder) FetchWorkerTagByID(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchWorkerTagByID", reflect.TypeOf((*MockPersistenceService)(nil).FetchWorkerTagByID), arg0, arg1)
 }
 
+// FetchWorkerTagByName mocks base method.
+func (m *MockPersistenceService) FetchWorkerTagByName(arg0 context.Context, arg1 string) (sqlc.WorkerTag, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchWorkerTagByName", arg0, arg1)
+	ret0, _ := ret[0].(sqlc.WorkerTag)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchWorkerTagByName indicates an expected call of FetchWorkerTagByName.
+func (mr *MockPersistenceServiceMockRecorder) FetchWorkerTagByName(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchWorkerTagByName", reflect.TypeOf((*MockPersistenceService)(nil).FetchWorkerTagByName), arg0, arg1)
+}
+
 // FetchWorkerTags mocks base method.
 func (m *MockPersistenceService) FetchWorkerTags(arg0 context.Context) ([]sqlc.WorkerTag, error) {
 	m.ctrl.T.Helper()
@@ -451,6 +466,20 @@ func (m *MockPersistenceService) SaveJobPriority(arg0 context.Context, arg1 *sql
 func (mr *MockPersistenceServiceMockRecorder) SaveJobPriority(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveJobPriority", reflect.TypeOf((*MockPersistenceService)(nil).SaveJobPriority), arg0, arg1)
+}
+
+// SaveJobWorkerTag mocks base method.
+func (m *MockPersistenceService) SaveJobWorkerTag(arg0 context.Context, arg1 *sqlc.Job) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveJobWorkerTag", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveJobWorkerTag indicates an expected call of SaveJobWorkerTag.
+func (mr *MockPersistenceServiceMockRecorder) SaveJobWorkerTag(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveJobWorkerTag", reflect.TypeOf((*MockPersistenceService)(nil).SaveJobWorkerTag), arg0, arg1)
 }
 
 // SaveTaskActivity mocks base method.

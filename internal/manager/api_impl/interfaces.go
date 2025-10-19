@@ -37,6 +37,7 @@ type PersistenceService interface {
 	FetchJobByID(ctx context.Context, jobID int64) (*persistence.Job, error)
 
 	SaveJobPriority(ctx context.Context, job *persistence.Job) error
+	SaveJobWorkerTag(ctx context.Context, job *persistence.Job) error
 	// FetchTask fetches the given task and the accompanying job.
 	FetchTask(ctx context.Context, taskID string) (persistence.TaskJobWorker, error)
 	// FetchTaskJobUUID fetches the UUID of the job this task belongs to.
@@ -76,6 +77,7 @@ type PersistenceService interface {
 	CreateWorkerTag(ctx context.Context, tag *persistence.WorkerTag) error
 	FetchWorkerTag(ctx context.Context, uuid string) (persistence.WorkerTag, error)
 	FetchWorkerTagByID(ctx context.Context, id int64) (persistence.WorkerTag, error)
+	FetchWorkerTagByName(ctx context.Context, name string) (persistence.WorkerTag, error)
 	FetchWorkerTags(ctx context.Context) ([]persistence.WorkerTag, error)
 	DeleteWorkerTag(ctx context.Context, uuid string) error
 	SaveWorkerTag(ctx context.Context, tag *persistence.WorkerTag) error

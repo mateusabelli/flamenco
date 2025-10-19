@@ -46,6 +46,7 @@ import JobPriorityChange from './model/JobPriorityChange';
 import JobStatus from './model/JobStatus';
 import JobStatusChange from './model/JobStatusChange';
 import JobStorageInfo from './model/JobStorageInfo';
+import JobTagChange from './model/JobTagChange';
 import JobTasksSummary from './model/JobTasksSummary';
 import JobsQuery from './model/JobsQuery';
 import JobsQueryResult from './model/JobsQueryResult';
@@ -337,6 +338,12 @@ export {
      * @property {module:model/JobStorageInfo}
      */
     JobStorageInfo,
+
+    /**
+     * The JobTagChange model constructor.
+     * @property {module:model/JobTagChange}
+     */
+    JobTagChange,
 
     /**
      * The JobTasksSummary model constructor.

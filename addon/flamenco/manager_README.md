@@ -42,6 +42,7 @@ from flamenco.manager.model.job_last_rendered_image_info import JobLastRenderedI
 from flamenco.manager.model.job_mass_deletion_selection import JobMassDeletionSelection
 from flamenco.manager.model.job_priority_change import JobPriorityChange
 from flamenco.manager.model.job_status_change import JobStatusChange
+from flamenco.manager.model.job_tag_change import JobTagChange
 from flamenco.manager.model.job_tasks_summary import JobTasksSummary
 from flamenco.manager.model.jobs_query_result import JobsQueryResult
 from flamenco.manager.model.submitted_job import SubmittedJob
@@ -92,6 +93,7 @@ Class | Method | HTTP request | Description
 *JobsApi* | [**remove_job_blocklist**](flamenco/manager/docs/JobsApi.md#remove_job_blocklist) | **DELETE** /api/v3/jobs/{job_id}/blocklist | Remove entries from a job blocklist.
 *JobsApi* | [**set_job_priority**](flamenco/manager/docs/JobsApi.md#set_job_priority) | **POST** /api/v3/jobs/{job_id}/setpriority | 
 *JobsApi* | [**set_job_status**](flamenco/manager/docs/JobsApi.md#set_job_status) | **POST** /api/v3/jobs/{job_id}/setstatus | 
+*JobsApi* | [**set_job_tag**](flamenco/manager/docs/JobsApi.md#set_job_tag) | **POST** /api/v3/jobs/{job_id}/settag | 
 *JobsApi* | [**set_task_status**](flamenco/manager/docs/JobsApi.md#set_task_status) | **POST** /api/v3/tasks/{task_id}/setstatus | 
 *JobsApi* | [**submit_job**](flamenco/manager/docs/JobsApi.md#submit_job) | **POST** /api/v3/jobs | Submit a new job for Flamenco Manager to execute.
 *JobsApi* | [**submit_job_check**](flamenco/manager/docs/JobsApi.md#submit_job_check) | **POST** /api/v3/jobs/check | Submit a new job for Flamenco Manager to check.
@@ -173,6 +175,7 @@ Class | Method | HTTP request | Description
  - [JobStatus](flamenco/manager/docs/JobStatus.md)
  - [JobStatusChange](flamenco/manager/docs/JobStatusChange.md)
  - [JobStorageInfo](flamenco/manager/docs/JobStorageInfo.md)
+ - [JobTagChange](flamenco/manager/docs/JobTagChange.md)
  - [JobTasksSummary](flamenco/manager/docs/JobTasksSummary.md)
  - [JobsQuery](flamenco/manager/docs/JobsQuery.md)
  - [JobsQueryResult](flamenco/manager/docs/JobsQueryResult.md)

@@ -82,6 +82,9 @@ type ServerInterface interface {
 
 	// (POST /api/v3/jobs/{job_id}/setstatus)
 	SetJobStatus(ctx echo.Context, jobId string) error
+
+	// (POST /api/v3/jobs/{job_id}/settag)
+	SetJobTag(ctx echo.Context, jobId string) error
 	// Fetch a summary of all tasks of the given job.
 	// (GET /api/v3/jobs/{job_id}/tasks)
 	FetchJobTasks(ctx echo.Context, jobId string) error
@@ -479,6 +482,22 @@ func (w *ServerInterfaceWrapper) SetJobStatus(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.SetJobStatus(ctx, jobId)
+	return err
+}
+
+// SetJobTag converts echo context to params.
+func (w *ServerInterfaceWrapper) SetJobTag(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "job_id" -------------
+	var jobId string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "job_id", runtime.ParamLocationPath, ctx.Param("job_id"), &jobId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter job_id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.SetJobTag(ctx, jobId)
 	return err
 }
 
@@ -1037,6 +1056,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/api/v3/jobs/:job_id/last-rendered", wrapper.FetchJobLastRenderedInfo)
 	router.POST(baseURL+"/api/v3/jobs/:job_id/setpriority", wrapper.SetJobPriority)
 	router.POST(baseURL+"/api/v3/jobs/:job_id/setstatus", wrapper.SetJobStatus)
+	router.POST(baseURL+"/api/v3/jobs/:job_id/settag", wrapper.SetJobTag)
 	router.GET(baseURL+"/api/v3/jobs/:job_id/tasks", wrapper.FetchJobTasks)
 	router.GET(baseURL+"/api/v3/jobs/:job_id/what-would-delete-do", wrapper.DeleteJobWhatWouldItDo)
 	router.POST(baseURL+"/api/v3/shaman/checkout/create", wrapper.ShamanCheckout)

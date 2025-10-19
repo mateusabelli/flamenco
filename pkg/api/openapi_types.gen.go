@@ -523,6 +523,15 @@ type JobStorageInfo struct {
 	ShamanCheckoutId *string `json:"shaman_checkout_id,omitempty"`
 }
 
+// New tag to assign to a job. Can be empty to remove the tag (and thus make the job available to all workers).
+type JobTagChange struct {
+	// UUID of the tag. If this is given, 'name' should not be given.
+	Id *string `json:"id,omitempty"`
+
+	// Name of the tag. If this is given, 'id' should not be given.
+	Name *string `json:"name,omitempty"`
+}
+
 // Simplified list of tasks of a job. Contains all tasks, but not all info of each task.
 type JobTasksSummary struct {
 	Tasks *[]TaskSummary `json:"tasks,omitempty"`
@@ -980,6 +989,9 @@ type SetJobPriorityJSONBody JobPriorityChange
 // SetJobStatusJSONBody defines parameters for SetJobStatus.
 type SetJobStatusJSONBody JobStatusChange
 
+// SetJobTagJSONBody defines parameters for SetJobTag.
+type SetJobTagJSONBody JobTagChange
+
 // ShamanCheckoutJSONBody defines parameters for ShamanCheckout.
 type ShamanCheckoutJSONBody ShamanCheckout
 
@@ -1054,6 +1066,9 @@ type SetJobPriorityJSONRequestBody SetJobPriorityJSONBody
 
 // SetJobStatusJSONRequestBody defines body for SetJobStatus for application/json ContentType.
 type SetJobStatusJSONRequestBody SetJobStatusJSONBody
+
+// SetJobTagJSONRequestBody defines body for SetJobTag for application/json ContentType.
+type SetJobTagJSONRequestBody SetJobTagJSONBody
 
 // ShamanCheckoutJSONRequestBody defines body for ShamanCheckout for application/json ContentType.
 type ShamanCheckoutJSONRequestBody ShamanCheckoutJSONBody

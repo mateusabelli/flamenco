@@ -1028,6 +1028,35 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /api/v3/jobs/{job_id}/settag:
+    summary: Request a tag change for a job.
+    post:
+      operationId: setJobTag
+      tags: [jobs]
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        description: The name or the UUID of the new tag. It replaces the old tag.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobTagChange"
+      responses:
+        "204":
+          description: Tag change was accepted.
+        "422":
+          description: The requested tag is not acceptable.
+        default:
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /api/v3/jobs/{job_id}/tasks:
     summary: Access tasks of this job.
     get:
@@ -2178,6 +2207,20 @@ components:
           minimum: 0
           maximum: 100
       required: [priority]
+
+    JobTagChange:
+      type: object
+      description: New tag to assign to a job. Can be empty to remove the tag (and thus make the job available to all workers).
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID of the tag. If this is given, 'name' should not be given.
+        name:
+          type: string
+          description: Name of the tag. If this is given, 'id' should not be given.
+      example:
+        name: "NewTag"
 
     TaskStatusChange:
       type: object

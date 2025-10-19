@@ -1207,6 +1207,21 @@ func (q *Queries) SaveJobStorageInfo(ctx context.Context, arg SaveJobStorageInfo
 	return err
 }
 
+const saveJobWorkerTag = `-- name: SaveJobWorkerTag :exec
+UPDATE jobs SET updated_at=?1, worker_tag_id=?2 WHERE id=?3
+`
+
+type SaveJobWorkerTagParams struct {
+	Now         sql.NullTime
+	WorkerTagID sql.NullInt64
+	ID          int64
+}
+
+func (q *Queries) SaveJobWorkerTag(ctx context.Context, arg SaveJobWorkerTagParams) error {
+	_, err := q.db.ExecContext(ctx, saveJobWorkerTag, arg.Now, arg.WorkerTagID, arg.ID)
+	return err
+}
+
 const setLastRendered = `-- name: SetLastRendered :exec
 INSERT INTO last_rendereds (id, created_at, updated_at, job_id)
 VALUES (1, ?1, ?2, ?3)

@@ -648,6 +648,99 @@ func TestSetJobPrio(t *testing.T) {
 	assertResponseNoContent(t, echoCtx)
 }
 
+func TestSetJobWorkerTagSet(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mf := newMockedFlamenco(mockCtrl)
+
+	jobID := "18a9b096-d77e-438c-9be2-74397038298b"
+	dbJob := persistence.Job{
+		UUID:     jobID,
+		Name:     "test job",
+		Priority: 50,
+	}
+	dbTag := persistence.WorkerTag{
+		ID:   5,
+		UUID: "2eefbcd0-dcd9-4eb0-95a6-303ec1f14d2c",
+		Name: "tikkie",
+	}
+
+	tagUpdateByName := api.JobTagChange{Name: ptr("tikkie")}
+	echoCtx := mf.prepareMockedJSONRequest(tagUpdateByName)
+
+	// Set up expectations.
+	ctx := echoCtx.Request().Context()
+	mf.persistence.EXPECT().FetchJob(moremock.ContextWithDeadline(), jobID).Return(&dbJob, nil)
+	mf.persistence.EXPECT().FetchWorkerTagByName(ctx, "tikkie").Return(dbTag, nil)
+	jobWithNewTag := dbJob
+	jobWithNewTag.WorkerTagID = sql.NullInt64{Int64: dbTag.ID, Valid: true}
+	mf.persistence.EXPECT().SaveJobWorkerTag(gomock.Not(ctx), &jobWithNewTag)
+
+	// Expect the change to be broadcast over SocketIO.
+	expectUpdate := api.EventJobUpdate{
+		Id:           dbJob.UUID,
+		Name:         &dbJob.Name,
+		RefreshTasks: false,
+		Priority:     int(dbJob.Priority),
+		Status:       dbJob.Status,
+		Updated:      dbJob.UpdatedAt.Time,
+	}
+	mf.broadcaster.EXPECT().BroadcastJobUpdate(expectUpdate)
+
+	err := mf.flamenco.SetJobTag(echoCtx, jobID)
+	require.NoError(t, err)
+
+	assertResponseNoContent(t, echoCtx)
+}
+
+func TestSetJobWorkerTagClear(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mf := newMockedFlamenco(mockCtrl)
+
+	jobID := "18a9b096-d77e-438c-9be2-74397038298b"
+	dbTag := persistence.WorkerTag{
+		ID:   5,
+		UUID: "2eefbcd0-dcd9-4eb0-95a6-303ec1f14d2c",
+		Name: "tikkie",
+	}
+	dbJob := persistence.Job{
+		UUID:        jobID,
+		Name:        "test job",
+		Priority:    50,
+		WorkerTagID: sql.NullInt64{Int64: dbTag.ID, Valid: true},
+	}
+
+	tagUpdateEmpty := api.JobTagChange{}
+	echoCtx := mf.prepareMockedJSONRequest(tagUpdateEmpty)
+
+	// Set up expectations.
+	ctx := echoCtx.Request().Context()
+	mf.persistence.EXPECT().FetchJob(moremock.ContextWithDeadline(), jobID).Return(&dbJob, nil)
+	mf.persistence.EXPECT().FetchWorkerTagByID(ctx, dbTag.ID).Return(dbTag, nil)
+	jobWithNewTag := dbJob
+	jobWithNewTag.WorkerTagID = sql.NullInt64{}
+	mf.persistence.EXPECT().SaveJobWorkerTag(gomock.Not(ctx), &jobWithNewTag)
+
+	// Expect the change to be broadcast over SocketIO.
+	expectUpdate := api.EventJobUpdate{
+		Id:           dbJob.UUID,
+		Name:         &dbJob.Name,
+		RefreshTasks: false,
+		Priority:     int(dbJob.Priority),
+		Status:       dbJob.Status,
+		Updated:      dbJob.UpdatedAt.Time,
+	}
+	mf.broadcaster.EXPECT().BroadcastJobUpdate(expectUpdate)
+
+	err := mf.flamenco.SetJobTag(echoCtx, jobID)
+	require.NoError(t, err)
+
+	assertResponseNoContent(t, echoCtx)
+}
+
 func TestSetJobStatusFailedToRequeueing(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()

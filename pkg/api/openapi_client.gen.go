@@ -181,6 +181,11 @@ type ClientInterface interface {
 
 	SetJobStatus(ctx context.Context, jobId string, body SetJobStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SetJobTag request with any body
+	SetJobTagWithBody(ctx context.Context, jobId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SetJobTag(ctx context.Context, jobId string, body SetJobTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// FetchJobTasks request
 	FetchJobTasks(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -691,6 +696,30 @@ func (c *Client) SetJobStatusWithBody(ctx context.Context, jobId string, content
 
 func (c *Client) SetJobStatus(ctx context.Context, jobId string, body SetJobStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetJobStatusRequest(c.Server, jobId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SetJobTagWithBody(ctx context.Context, jobId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetJobTagRequestWithBody(c.Server, jobId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SetJobTag(ctx context.Context, jobId string, body SetJobTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetJobTagRequest(c.Server, jobId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2076,6 +2105,53 @@ func NewSetJobStatusRequestWithBody(server string, jobId string, contentType str
 	return req, nil
 }
 
+// NewSetJobTagRequest calls the generic SetJobTag builder with application/json body
+func NewSetJobTagRequest(server string, jobId string, body SetJobTagJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetJobTagRequestWithBody(server, jobId, "application/json", bodyReader)
+}
+
+// NewSetJobTagRequestWithBody generates requests for SetJobTag with any type of body
+func NewSetJobTagRequestWithBody(server string, jobId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "job_id", runtime.ParamLocationPath, jobId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v3/jobs/%s/settag", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewFetchJobTasksRequest generates requests for FetchJobTasks
 func NewFetchJobTasksRequest(server string, jobId string) (*http.Request, error) {
 	var err error
@@ -3435,6 +3511,11 @@ type ClientWithResponsesInterface interface {
 
 	SetJobStatusWithResponse(ctx context.Context, jobId string, body SetJobStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*SetJobStatusResponse, error)
 
+	// SetJobTag request with any body
+	SetJobTagWithBodyWithResponse(ctx context.Context, jobId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetJobTagResponse, error)
+
+	SetJobTagWithResponse(ctx context.Context, jobId string, body SetJobTagJSONRequestBody, reqEditors ...RequestEditorFn) (*SetJobTagResponse, error)
+
 	// FetchJobTasks request
 	FetchJobTasksWithResponse(ctx context.Context, jobId string, reqEditors ...RequestEditorFn) (*FetchJobTasksResponse, error)
 
@@ -4071,6 +4152,28 @@ func (r SetJobStatusResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r SetJobStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type SetJobTagResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r SetJobTagResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetJobTagResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -5108,6 +5211,23 @@ func (c *ClientWithResponses) SetJobStatusWithResponse(ctx context.Context, jobI
 		return nil, err
 	}
 	return ParseSetJobStatusResponse(rsp)
+}
+
+// SetJobTagWithBodyWithResponse request with arbitrary body returning *SetJobTagResponse
+func (c *ClientWithResponses) SetJobTagWithBodyWithResponse(ctx context.Context, jobId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetJobTagResponse, error) {
+	rsp, err := c.SetJobTagWithBody(ctx, jobId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetJobTagResponse(rsp)
+}
+
+func (c *ClientWithResponses) SetJobTagWithResponse(ctx context.Context, jobId string, body SetJobTagJSONRequestBody, reqEditors ...RequestEditorFn) (*SetJobTagResponse, error) {
+	rsp, err := c.SetJobTag(ctx, jobId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetJobTagResponse(rsp)
 }
 
 // FetchJobTasksWithResponse request returning *FetchJobTasksResponse
@@ -6156,6 +6276,32 @@ func ParseSetJobStatusResponse(rsp *http.Response) (*SetJobStatusResponse, error
 	}
 
 	response := &SetJobStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetJobTagResponse parses an HTTP response from a SetJobTagWithResponse call
+func ParseSetJobTagResponse(rsp *http.Response) (*SetJobTagResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetJobTagResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

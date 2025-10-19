@@ -485,6 +485,23 @@ func (db *DB) SaveJobPriority(ctx context.Context, j *Job) error {
 	return nil
 }
 
+// SaveJobWorkerTag saves the job's WorkerTagID field.
+func (db *DB) SaveJobWorkerTag(ctx context.Context, j *Job) error {
+	queries := db.queries()
+
+	params := sqlc.SaveJobWorkerTagParams{
+		Now:         db.nowNullable(),
+		ID:          int64(j.ID),
+		WorkerTagID: j.WorkerTagID,
+	}
+
+	err := queries.SaveJobWorkerTag(ctx, params)
+	if err != nil {
+		return jobError(err, "saving job priority")
+	}
+	return nil
+}
+
 // SaveJobStorageInfo saves the job's Storage field.
 // NOTE: this function does NOT update the job's `UpdatedAt` field. This is
 // necessary for `cmd/shaman-checkout-id-setter` to do its work quietly.

@@ -78,6 +78,11 @@ SELECT *
 FROM worker_tags
 WHERE worker_tags.uuid = @uuid;
 
+-- name: FetchWorkerTagByName :one
+SELECT *
+FROM worker_tags
+WHERE worker_tags.name = @name;
+
 -- name: FetchWorkerTagsByUUIDs :many
 SELECT *
 FROM worker_tags
