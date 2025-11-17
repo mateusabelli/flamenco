@@ -193,3 +193,14 @@ func (q *Queries) WALCheckpoint(ctx context.Context, checkpointType WALCheckpoin
 	)
 	return i, err
 }
+
+const pragmaAutoCheckpointGet = `PRAGMA wal_autocheckpoint`
+
+// PragmaAutoCheckpointGet returns the current value of wal_autocheckpoint.
+// See https://sqlite.org/pragma.html#pragma_wal_autocheckpoint
+func (q *Queries) PragmaAutoCheckpointGet(ctx context.Context) (int, error) {
+	row := q.db.QueryRowContext(ctx, pragmaAutoCheckpointGet)
+	var interval int
+	err := row.Scan(&interval)
+	return interval, err
+}
