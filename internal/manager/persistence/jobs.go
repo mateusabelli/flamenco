@@ -90,14 +90,6 @@ type TaskFailure = sqlc.TaskFailure
 // StoreJob stores an AuthoredJob and its tasks, and saves it to the database.
 // The job will be in 'under construction' status. It is up to the caller to transition it to its desired initial status.
 func (db *DB) StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.AuthoredJob) error {
-
-	// Run all queries in a single transaction.
-	qtx, err := db.queriesWithTX()
-	if err != nil {
-		return err
-	}
-	defer qtx.rollback()
-
 	// Serialise the embedded JSON.
 	settings, err := json.Marshal(authoredJob.Settings)
 	if err != nil {
@@ -108,48 +100,49 @@ func (db *DB) StoreAuthoredJob(ctx context.Context, authoredJob job_compilers.Au
 		return fmt.Errorf("converting job metadata to JSON: %w", err)
 	}
 
-	// Create the job itself.
-	params := sqlc.CreateJobParams{
-		CreatedAt:               db.now(),
-		UUID:                    authoredJob.JobID,
-		Name:                    authoredJob.Name,
-		JobType:                 authoredJob.JobType,
-		Priority:                int64(authoredJob.Priority),
-		Status:                  authoredJob.Status,
-		Settings:                settings,
-		Metadata:                metadata,
-		StorageShamanCheckoutID: authoredJob.Storage.ShamanCheckoutID,
-	}
-
-	if authoredJob.WorkerTagUUID != "" {
-		workerTag, err := qtx.queries.FetchWorkerTagByUUID(ctx, authoredJob.WorkerTagUUID)
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return fmt.Errorf("no worker tag %q found", authoredJob.WorkerTagUUID)
-		case err != nil:
-			return fmt.Errorf("could not find worker tag %q: %w", authoredJob.WorkerTagUUID, err)
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		// Create the job itself.
+		params := sqlc.CreateJobParams{
+			CreatedAt:               db.now(),
+			UUID:                    authoredJob.JobID,
+			Name:                    authoredJob.Name,
+			JobType:                 authoredJob.JobType,
+			Priority:                int64(authoredJob.Priority),
+			Status:                  authoredJob.Status,
+			Settings:                settings,
+			Metadata:                metadata,
+			StorageShamanCheckoutID: authoredJob.Storage.ShamanCheckoutID,
 		}
-		params.WorkerTagID = sql.NullInt64{Int64: workerTag.ID, Valid: true}
-	}
 
-	log.Debug().
-		Str("job", params.UUID).
-		Str("type", params.JobType).
-		Str("name", params.Name).
-		Str("status", string(params.Status)).
-		Msg("persistence: storing authored job")
+		if authoredJob.WorkerTagUUID != "" {
+			workerTag, err := q.FetchWorkerTagByUUID(ctx, authoredJob.WorkerTagUUID)
+			switch {
+			case errors.Is(err, sql.ErrNoRows):
+				return fmt.Errorf("no worker tag %q found", authoredJob.WorkerTagUUID)
+			case err != nil:
+				return fmt.Errorf("could not find worker tag %q: %w", authoredJob.WorkerTagUUID, err)
+			}
+			params.WorkerTagID = sql.NullInt64{Int64: workerTag.ID, Valid: true}
+		}
 
-	jobID, err := qtx.queries.CreateJob(ctx, params)
-	if err != nil {
-		return jobError(err, "storing job")
-	}
+		log.Debug().
+			Str("job", params.UUID).
+			Str("type", params.JobType).
+			Str("name", params.Name).
+			Str("status", string(params.Status)).
+			Msg("persistence: storing authored job")
 
-	err = db.storeAuthoredJobTask(ctx, qtx, jobID, &authoredJob)
-	if err != nil {
-		return err
-	}
+		jobID, err := q.CreateJob(ctx, params)
+		if err != nil {
+			return jobError(err, "storing job")
+		}
 
-	return qtx.commit()
+		err = db.storeAuthoredJobTask(ctx, q, jobID, &authoredJob)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 // StoreAuthoredJobTask is a low-level function that is only used for recreating an existing job's tasks.
@@ -159,18 +152,9 @@ func (db *DB) StoreAuthoredJobTask(
 	job *Job,
 	authoredJob *job_compilers.AuthoredJob,
 ) error {
-	qtx, err := db.queriesWithTX()
-	if err != nil {
-		return err
-	}
-	defer qtx.rollback()
-
-	err = db.storeAuthoredJobTask(ctx, qtx, int64(job.ID), authoredJob)
-	if err != nil {
-		return err
-	}
-
-	return qtx.commit()
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return db.storeAuthoredJobTask(ctx, q, int64(job.ID), authoredJob)
+	})
 }
 
 // storeAuthoredJobTask stores the tasks of the authored job.
@@ -178,7 +162,7 @@ func (db *DB) StoreAuthoredJobTask(
 // to the caller.
 func (db *DB) storeAuthoredJobTask(
 	ctx context.Context,
-	qtx *queriesTX,
+	q *sqlc.Queries,
 	jobID int64,
 	authoredJob *job_compilers.AuthoredJob,
 ) error {
@@ -233,7 +217,7 @@ func (db *DB) storeAuthoredJobTask(
 			Str("status", string(taskParams.Status)).
 			Msg("persistence: storing authored task")
 
-		taskID, err := qtx.queries.CreateTask(ctx, taskParams)
+		taskID, err := q.CreateTask(ctx, taskParams)
 		if err != nil {
 			return taskError(err, "storing task: %v", err)
 		}
@@ -263,7 +247,7 @@ func (db *DB) storeAuthoredJobTask(
 				return taskError(nil, "finding task with UUID %q; a task depends on a task that is not part of this job", authoredDep.UUID)
 			}
 
-			err := qtx.queries.StoreTaskDependency(ctx, sqlc.StoreTaskDependencyParams{
+			err := q.StoreTaskDependency(ctx, sqlc.StoreTaskDependencyParams{
 				TaskID:       taskInfo.ID,
 				DependencyID: depTask.ID,
 			})
@@ -292,9 +276,12 @@ func (db *DB) storeAuthoredJobTask(
 
 // FetchJob fetches a single job, without fetching its tasks.
 func (db *DB) FetchJob(ctx context.Context, jobUUID string) (*Job, error) {
-	queries := db.queries()
+	var job Job
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		job, err = q.FetchJob(ctx, jobUUID)
+		return
+	})
 
-	job, err := queries.FetchJob(ctx, jobUUID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, ErrJobNotFound
@@ -307,9 +294,12 @@ func (db *DB) FetchJob(ctx context.Context, jobUUID string) (*Job, error) {
 
 // FetchJob fetches a single job by its database ID, without fetching its tasks.
 func (db *DB) FetchJobByID(ctx context.Context, jobID int64) (*Job, error) {
-	queries := db.queries()
+	var job Job
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		job, err = q.FetchJobByID(ctx, jobID)
+		return
+	})
 
-	job, err := queries.FetchJobByID(ctx, jobID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, ErrJobNotFound
@@ -321,9 +311,12 @@ func (db *DB) FetchJobByID(ctx context.Context, jobID int64) (*Job, error) {
 }
 
 func (db *DB) FetchJobs(ctx context.Context) ([]*Job, error) {
-	queries := db.queries()
+	var sqlcJobs []sqlc.Job
 
-	sqlcJobs, err := queries.FetchJobs(ctx)
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		sqlcJobs, err = q.FetchJobs(ctx)
+		return
+	})
 	if err != nil {
 		return nil, jobError(err, "fetching all jobs")
 	}
@@ -339,9 +332,12 @@ func (db *DB) FetchJobs(ctx context.Context) ([]*Job, error) {
 
 // FetchJobShamanCheckoutID fetches the job's Shaman Checkout ID.
 func (db *DB) FetchJobShamanCheckoutID(ctx context.Context, jobUUID string) (string, error) {
-	queries := db.queries()
+	var checkoutID string
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		checkoutID, err = q.FetchJobShamanCheckoutID(ctx, jobUUID)
+		return
+	})
 
-	checkoutID, err := queries.FetchJobShamanCheckoutID(ctx, jobUUID)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return "", ErrJobNotFound
@@ -363,23 +359,17 @@ func (db *DB) DeleteJob(ctx context.Context, jobUUID string) error {
 		return ErrDeletingWithoutFK
 	}
 
-	queries := db.queries()
+	err = db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.DeleteJob(ctx, jobUUID)
+	})
 
-	if err := queries.DeleteJob(ctx, jobUUID); err != nil {
-		return jobError(err, "deleting job")
-	}
-	return nil
+	return jobError(err, "deleting job")
 }
 
 // RequestJobDeletion sets the job's "DeletionRequestedAt" field to "now".
 func (db *DB) RequestJobDeletion(ctx context.Context, j *Job) error {
-	queries := db.queries()
-
-	// Update the given job itself, so we don't have to re-fetch it from the database.
-	j.DeleteRequestedAt = db.nowNullable()
-
 	params := sqlc.RequestJobDeletionParams{
-		Now:   j.DeleteRequestedAt,
+		Now:   db.nowNullable(),
 		JobID: int64(j.ID),
 	}
 
@@ -387,56 +377,69 @@ func (db *DB) RequestJobDeletion(ctx context.Context, j *Job) error {
 		Str("job", j.UUID).
 		Time("deletedAt", params.Now.Time).
 		Msg("database: marking job as deletion-requested")
-	if err := queries.RequestJobDeletion(ctx, params); err != nil {
+
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.RequestJobDeletion(ctx, params)
+	})
+	if err != nil {
 		return jobError(err, "queueing job for deletion")
 	}
+
+	// Update the given job itself, so we don't have to re-fetch it from the database.
+	j.DeleteRequestedAt = params.Now
+
 	return nil
 }
 
 // RequestJobMassDeletion sets multiple job's "DeletionRequestedAt" field to "now".
 // The list of affected job UUIDs is returned.
 func (db *DB) RequestJobMassDeletion(ctx context.Context, lastUpdatedMax time.Time) ([]string, error) {
-	queries := db.queries()
+	var uuids []string
 
-	// In order to be able to report which jobs were affected, first fetch the
-	// list of jobs, then update them.
-	uuids, err := queries.FetchJobUUIDsUpdatedBefore(ctx, sql.NullTime{
-		Time:  lastUpdatedMax,
-		Valid: true,
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		// In order to be able to report which jobs were affected, first fetch the
+		// list of jobs, then update them.
+		var err error
+		uuids, err = q.FetchJobUUIDsUpdatedBefore(ctx, sql.NullTime{
+			Time:  lastUpdatedMax,
+			Valid: true,
+		})
+		switch {
+		case err != nil:
+			return jobError(err, "fetching jobs by last-modified timestamp")
+		case len(uuids) == 0:
+			return ErrJobNotFound
+		}
+
+		// Update the selected jobs.
+		params := sqlc.RequestMassJobDeletionParams{
+			Now:   db.nowNullable(),
+			UUIDs: uuids,
+		}
+		if err := q.RequestMassJobDeletion(ctx, params); err != nil {
+			return jobError(err, "marking jobs as deletion-requested")
+		}
+		return nil
 	})
-	switch {
-	case err != nil:
-		return nil, jobError(err, "fetching jobs by last-modified timestamp")
-	case len(uuids) == 0:
-		return nil, ErrJobNotFound
-	}
 
-	// Update the selected jobs.
-	params := sqlc.RequestMassJobDeletionParams{
-		Now:   db.nowNullable(),
-		UUIDs: uuids,
-	}
-	if err := queries.RequestMassJobDeletion(ctx, params); err != nil {
-		return nil, jobError(err, "marking jobs as deletion-requested")
-	}
-
-	return uuids, nil
+	return uuids, err
 }
 
 func (db *DB) FetchJobsDeletionRequested(ctx context.Context) ([]string, error) {
-	queries := db.queries()
-
-	uuids, err := queries.FetchJobsDeletionRequested(ctx)
-	if err != nil {
-		return nil, jobError(err, "fetching jobs marked for deletion")
-	}
-	return uuids, nil
+	var uuids []string
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		uuids, err = q.FetchJobsDeletionRequested(ctx)
+		return
+	})
+	return uuids, jobError(err, "fetching jobs marked for deletion")
 }
 
 func (db *DB) FetchJobsInStatus(ctx context.Context, jobStatuses ...api.JobStatus) ([]*Job, error) {
-	queries := db.queries()
-
-	jobs, err := queries.FetchJobsInStatus(ctx, jobStatuses)
+	var jobs []sqlc.Job
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		jobs, err = q.FetchJobsInStatus(ctx, jobStatuses)
+		return
+	})
 	if err != nil {
 		return nil, jobError(err, "fetching jobs in status %q", jobStatuses)
 	}
@@ -452,8 +455,6 @@ func (db *DB) FetchJobsInStatus(ctx context.Context, jobStatuses ...api.JobStatu
 
 // SaveJobStatus saves the job's Status and Activity fields.
 func (db *DB) SaveJobStatus(ctx context.Context, j *Job) error {
-	queries := db.queries()
-
 	params := sqlc.SaveJobStatusParams{
 		Now:      db.nowNullable(),
 		ID:       int64(j.ID),
@@ -461,69 +462,61 @@ func (db *DB) SaveJobStatus(ctx context.Context, j *Job) error {
 		Activity: j.Activity,
 	}
 
-	err := queries.SaveJobStatus(ctx, params)
-	if err != nil {
-		return jobError(err, "saving job status")
-	}
-	return nil
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.SaveJobStatus(ctx, params)
+	})
+	return jobError(err, "saving job status")
 }
 
 // SaveJobPriority saves the job's Priority field.
 func (db *DB) SaveJobPriority(ctx context.Context, j *Job) error {
-	queries := db.queries()
-
 	params := sqlc.SaveJobPriorityParams{
 		Now:      db.nowNullable(),
 		ID:       int64(j.ID),
 		Priority: int64(j.Priority),
 	}
 
-	err := queries.SaveJobPriority(ctx, params)
-	if err != nil {
-		return jobError(err, "saving job priority")
-	}
-	return nil
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.SaveJobPriority(ctx, params)
+	})
+	return jobError(err, "saving job priority")
 }
 
 // SaveJobWorkerTag saves the job's WorkerTagID field.
 func (db *DB) SaveJobWorkerTag(ctx context.Context, j *Job) error {
-	queries := db.queries()
-
 	params := sqlc.SaveJobWorkerTagParams{
 		Now:         db.nowNullable(),
 		ID:          int64(j.ID),
 		WorkerTagID: j.WorkerTagID,
 	}
 
-	err := queries.SaveJobWorkerTag(ctx, params)
-	if err != nil {
-		return jobError(err, "saving job priority")
-	}
-	return nil
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.SaveJobWorkerTag(ctx, params)
+	})
+	return jobError(err, "saving job worker tag")
 }
 
 // SaveJobStorageInfo saves the job's Storage field.
 // NOTE: this function does NOT update the job's `UpdatedAt` field. This is
 // necessary for `cmd/shaman-checkout-id-setter` to do its work quietly.
 func (db *DB) SaveJobStorageInfo(ctx context.Context, j *Job) error {
-	queries := db.queries()
-
 	params := sqlc.SaveJobStorageInfoParams{
 		ID:                      int64(j.ID),
 		StorageShamanCheckoutID: j.StorageShamanCheckoutID,
 	}
 
-	err := queries.SaveJobStorageInfo(ctx, params)
-	if err != nil {
-		return jobError(err, "saving job storage")
-	}
-	return nil
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.SaveJobStorageInfo(ctx, params)
+	})
+	return jobError(err, "saving job storage")
 }
 
 func (db *DB) FetchTask(ctx context.Context, taskUUID string) (TaskJobWorker, error) {
-	queries := db.queries()
-
-	taskRow, err := queries.FetchTask(ctx, taskUUID)
+	var taskRow sqlc.FetchTaskRow
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		taskRow, err = q.FetchTask(ctx, taskUUID)
+		return
+	})
 	if err != nil {
 		return TaskJobWorker{}, taskError(err, "fetching task %s", taskUUID)
 	}
@@ -539,9 +532,12 @@ func (db *DB) FetchTask(ctx context.Context, taskUUID string) (TaskJobWorker, er
 
 // FetchTaskJobUUID fetches the job UUID of the given task.
 func (db *DB) FetchTaskJobUUID(ctx context.Context, taskUUID string) (string, error) {
-	queries := db.queries()
+	var jobUUID sql.NullString
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		jobUUID, err = q.FetchTaskJobUUID(ctx, taskUUID)
+		return
+	})
 
-	jobUUID, err := queries.FetchTaskJobUUID(ctx, taskUUID)
 	if err != nil {
 		return "", taskError(err, "fetching job UUID of task %s", taskUUID)
 	}
@@ -557,8 +553,6 @@ func (db *DB) SaveTask(ctx context.Context, t *Task) error {
 	if t.ID == 0 {
 		panic(fmt.Errorf("cannot use this function to insert a task"))
 	}
-
-	queries := db.queries()
 
 	commandsJSON, err := json.Marshal(t.Commands)
 	if err != nil {
@@ -580,105 +574,101 @@ func (db *DB) SaveTask(ctx context.Context, t *Task) error {
 		StepsCompleted: t.StepsCompleted,
 	}
 
-	err = queries.UpdateTask(ctx, param)
-	if err != nil {
-		return taskError(err, "updating task")
-	}
-	return nil
+	err = db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.UpdateTask(ctx, param)
+	})
+	return taskError(err, "updating task")
 }
 
 func (db *DB) SaveTaskStatus(ctx context.Context, t *Task) error {
-	queries := db.queries()
-
-	err := queries.UpdateTaskStatus(ctx, sqlc.UpdateTaskStatusParams{
+	params := sqlc.UpdateTaskStatusParams{
 		UpdatedAt: db.nowNullable(),
 		Status:    t.Status,
 		ID:        int64(t.ID),
-	})
-	if err != nil {
-		return taskError(err, "saving task status")
 	}
-	return nil
+
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.UpdateTaskStatus(ctx, params)
+	})
+	return taskError(err, "saving task status")
 }
 
 func (db *DB) SaveTaskActivity(ctx context.Context, t *Task) error {
-	queries := db.queries()
-
-	err := queries.UpdateTaskActivity(ctx, sqlc.UpdateTaskActivityParams{
+	params := sqlc.UpdateTaskActivityParams{
 		UpdatedAt: db.nowNullable(),
 		Activity:  t.Activity,
 		ID:        int64(t.ID),
-	})
-	if err != nil {
-		return taskError(err, "saving task activity")
 	}
-	return nil
+
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.UpdateTaskActivity(ctx, params)
+	})
+	return taskError(err, "saving task activity")
 }
 
 // SaveTaskStepsCompleted updates the task's step completion counter,
 // and updates the job for the new completion count as well.
 func (db *DB) SaveTaskStepsCompleted(ctx context.Context, jobID, taskID int64, stepsCompleted int64) error {
-	qtx, err := db.queriesWithTX()
-	if err != nil {
-		return err
-	}
-	defer qtx.rollback()
-
 	now := db.nowNullable()
 
-	err = qtx.queries.UpdateTaskStepsCompleted(ctx, sqlc.UpdateTaskStepsCompletedParams{
-		UpdatedAt:      now,
-		ID:             taskID,
-		StepsCompleted: stepsCompleted,
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		err := q.UpdateTaskStepsCompleted(ctx, sqlc.UpdateTaskStepsCompletedParams{
+			UpdatedAt:      now,
+			ID:             taskID,
+			StepsCompleted: stepsCompleted,
+		})
+		if err != nil {
+			return taskError(err, "saving task steps completed")
+		}
+
+		err = q.UpdateJobStepsCompleted(ctx, sqlc.UpdateJobStepsCompletedParams{
+			UpdatedAt: now,
+			ID:        jobID,
+		})
+		if err != nil {
+			return jobError(err, "updating job for task steps completed")
+		}
+		return nil
 	})
-	if err != nil {
-		return taskError(err, "saving task steps completed")
-	}
-
-	err = qtx.queries.UpdateJobStepsCompleted(ctx, sqlc.UpdateJobStepsCompletedParams{
-		UpdatedAt: now,
-		ID:        jobID,
-	})
-	if err != nil {
-		return jobError(err, "updating job for task steps completed")
-	}
-
-	if err := qtx.commit(); err != nil {
-		return taskError(err, "committing task steps completed")
-	}
-
-	return nil
 }
 
 // TaskAssignToWorker assigns the given task to the given worker.
 // This function is only used by unit tests. During normal operation, Flamenco
 // uses the code in task_scheduler.go to assign tasks to workers.
 func (db *DB) TaskAssignToWorker(ctx context.Context, t *Task, w *Worker) error {
-	queries := db.queries()
-
-	t.WorkerID = sql.NullInt64{Int64: w.ID, Valid: true}
-
-	err := queries.TaskAssignToWorker(ctx, sqlc.TaskAssignToWorkerParams{
+	params := sqlc.TaskAssignToWorkerParams{
 		UpdatedAt: db.nowNullable(),
-		WorkerID:  t.WorkerID,
+		WorkerID:  sql.NullInt64{Int64: w.ID, Valid: true},
 		ID:        t.ID,
+	}
+
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.TaskAssignToWorker(ctx, params)
 	})
+
 	if err != nil {
 		return taskError(err, "assigning task %s to worker %s", t.UUID, w.UUID)
 	}
+
+	t.WorkerID = params.WorkerID
 	return nil
 }
 
 func (db *DB) FetchTasksOfWorkerInStatus(ctx context.Context, worker *Worker, taskStatus api.TaskStatus) ([]TaskJob, error) {
-	queries := db.queries()
-
-	rows, err := queries.FetchTasksOfWorkerInStatus(ctx, sqlc.FetchTasksOfWorkerInStatusParams{
+	params := sqlc.FetchTasksOfWorkerInStatusParams{
 		WorkerID: sql.NullInt64{
 			Int64: int64(worker.ID),
 			Valid: true,
 		},
 		TaskStatus: taskStatus,
+	}
+
+	var rows []sqlc.FetchTasksOfWorkerInStatusRow
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		rows, err = q.FetchTasksOfWorkerInStatus(ctx, params)
+		return
 	})
+
 	if err != nil {
 		return nil, taskError(err, "finding tasks of worker %s in status %q", worker.UUID, taskStatus)
 	}
@@ -692,15 +682,17 @@ func (db *DB) FetchTasksOfWorkerInStatus(ctx context.Context, worker *Worker, ta
 }
 
 func (db *DB) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, worker *Worker, taskStatus api.TaskStatus, jobUUID string) ([]*Task, error) {
-	queries := db.queries()
-
-	rows, err := queries.FetchTasksOfWorkerInStatusOfJob(ctx, sqlc.FetchTasksOfWorkerInStatusOfJobParams{
-		WorkerID: sql.NullInt64{
-			Int64: int64(worker.ID),
-			Valid: true,
-		},
-		JobUUID:    jobUUID,
-		TaskStatus: taskStatus,
+	var rows []sqlc.FetchTasksOfWorkerInStatusOfJobRow
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		rows, err = q.FetchTasksOfWorkerInStatusOfJob(ctx, sqlc.FetchTasksOfWorkerInStatusOfJobParams{
+			WorkerID: sql.NullInt64{
+				Int64: int64(worker.ID),
+				Valid: true,
+			},
+			JobUUID:    jobUUID,
+			TaskStatus: taskStatus,
+		})
+		return err
 	})
 	if err != nil {
 		return nil, taskError(err, "finding tasks of worker %s in status %q and job %s", worker.UUID, taskStatus, jobUUID)
@@ -715,16 +707,18 @@ func (db *DB) FetchTasksOfWorkerInStatusOfJob(ctx context.Context, worker *Worke
 }
 
 func (db *DB) JobHasTasksInStatus(ctx context.Context, job *Job, taskStatus api.TaskStatus) (bool, error) {
-	queries := db.queries()
-
-	count, err := queries.JobCountTasksInStatus(ctx, sqlc.JobCountTasksInStatusParams{
-		JobID:      int64(job.ID),
-		TaskStatus: taskStatus,
+	var count int64
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		count, err = q.JobCountTasksInStatus(ctx, sqlc.JobCountTasksInStatusParams{
+			JobID:      int64(job.ID),
+			TaskStatus: taskStatus,
+		})
+		return
 	})
+
 	if err != nil {
 		return false, taskError(err, "counting tasks of job %s in status %q", job.UUID, taskStatus)
 	}
-
 	return count > 0, nil
 }
 
@@ -736,9 +730,11 @@ func (db *DB) CountTasksOfJobInStatus(
 	job *Job,
 	taskStatuses ...api.TaskStatus,
 ) (numInStatus, numTotal int, err error) {
-	queries := db.queries()
-
-	results, err := queries.JobCountTaskStatuses(ctx, int64(job.ID))
+	var results []sqlc.JobCountTaskStatusesRow
+	err = db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		results, err = q.JobCountTaskStatuses(ctx, int64(job.ID))
+		return
+	})
 	if err != nil {
 		return 0, 0, jobError(err, "count tasks of job %s in status %q", job.UUID, taskStatuses)
 	}
@@ -762,9 +758,12 @@ func (db *DB) CountTasksOfJobInStatus(
 
 // FetchTaskIDsOfJob returns all tasks of the given job.
 func (db *DB) FetchTasksOfJob(ctx context.Context, job *Job) ([]TaskJobWorker, error) {
-	queries := db.queries()
+	var rows []sqlc.FetchTasksOfJobRow
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		rows, err = q.FetchTasksOfJob(ctx, int64(job.ID))
+		return
+	})
 
-	rows, err := queries.FetchTasksOfJob(ctx, int64(job.ID))
 	if err != nil {
 		return nil, taskError(err, "fetching tasks of job %s", job.UUID)
 	}
@@ -780,11 +779,13 @@ func (db *DB) FetchTasksOfJob(ctx context.Context, job *Job) ([]TaskJobWorker, e
 
 // FetchTasksOfJobInStatus returns those tasks of the given job that have any of the given statuses.
 func (db *DB) FetchTasksOfJobInStatus(ctx context.Context, job *Job, taskStatuses ...api.TaskStatus) ([]TaskJobWorker, error) {
-	queries := db.queries()
-
-	rows, err := queries.FetchTasksOfJobInStatus(ctx, sqlc.FetchTasksOfJobInStatusParams{
-		JobID:      int64(job.ID),
-		TaskStatus: taskStatuses,
+	var rows []sqlc.FetchTasksOfJobInStatusRow
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		rows, err = q.FetchTasksOfJobInStatus(ctx, sqlc.FetchTasksOfJobInStatusParams{
+			JobID:      int64(job.ID),
+			TaskStatus: taskStatuses,
+		})
+		return
 	})
 	if err != nil {
 		return nil, taskError(err, "fetching tasks of job %s in status %q", job.UUID, taskStatuses)
@@ -807,19 +808,16 @@ func (db *DB) UpdateJobsTaskStatuses(ctx context.Context, job *Job,
 		return taskError(nil, "empty status not allowed")
 	}
 
-	queries := db.queries()
-
-	err := queries.UpdateJobsTaskStatuses(ctx, sqlc.UpdateJobsTaskStatusesParams{
-		UpdatedAt: db.nowNullable(),
-		Status:    taskStatus,
-		Activity:  activity,
-		JobID:     int64(job.ID),
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.UpdateJobsTaskStatuses(ctx, sqlc.UpdateJobsTaskStatusesParams{
+			UpdatedAt: db.nowNullable(),
+			Status:    taskStatus,
+			Activity:  activity,
+			JobID:     int64(job.ID),
+		})
 	})
 
-	if err != nil {
-		return taskError(err, "updating status of all tasks of job %s", job.UUID)
-	}
-	return nil
+	return taskError(err, "updating status of all tasks of job %s", job.UUID)
 }
 
 // UpdateJobsTaskStatusesConditional updates the status & activity of the tasks of `job`,
@@ -831,76 +829,65 @@ func (db *DB) UpdateJobsTaskStatusesConditional(ctx context.Context, job *Job,
 		return taskError(nil, "empty status not allowed")
 	}
 
-	queries := db.queries()
-
-	err := queries.UpdateJobsTaskStatusesConditional(ctx, sqlc.UpdateJobsTaskStatusesConditionalParams{
-		UpdatedAt:        db.nowNullable(),
-		Status:           taskStatus,
-		Activity:         activity,
-		JobID:            int64(job.ID),
-		StatusesToUpdate: statusesToUpdate,
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.UpdateJobsTaskStatusesConditional(ctx, sqlc.UpdateJobsTaskStatusesConditionalParams{
+			UpdatedAt:        db.nowNullable(),
+			Status:           taskStatus,
+			Activity:         activity,
+			JobID:            int64(job.ID),
+			StatusesToUpdate: statusesToUpdate,
+		})
 	})
 
-	if err != nil {
-		return taskError(err, "updating status of all tasks in status %v of job %s", statusesToUpdate, job.UUID)
-	}
-	return nil
+	return taskError(err, "updating status of all tasks in status %v of job %s", statusesToUpdate, job.UUID)
 }
 
 // UpdateJobsTaskStepCounts goes over all tasks of the job, and resets their steps_completed
 // based on their status.
 func (db *DB) UpdateJobsTaskStepCounts(ctx context.Context, jobID int64) error {
-	qtx, err := db.queriesWithTX()
-	if err != nil {
-		return err
-	}
-	defer qtx.rollback()
-
 	now := db.nowNullable()
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		err := q.UpdateJobsTaskStepCountsComplete(ctx, sqlc.UpdateJobsTaskStepCountsCompleteParams{
+			UpdatedAt:        now,
+			JobID:            jobID,
+			StatusesToUpdate: []api.TaskStatus{api.TaskStatusCompleted},
+		})
+		if err != nil {
+			return taskError(err, "updating completed step count on job %q", jobID)
+		}
 
-	err = qtx.queries.UpdateJobsTaskStepCountsComplete(ctx, sqlc.UpdateJobsTaskStepCountsCompleteParams{
-		UpdatedAt:        now,
-		JobID:            jobID,
-		StatusesToUpdate: []api.TaskStatus{api.TaskStatusCompleted},
+		err = q.UpdateJobsTaskStepCountsZero(ctx, sqlc.UpdateJobsTaskStepCountsZeroParams{
+			UpdatedAt:        now,
+			JobID:            jobID,
+			StatusesToUpdate: []api.TaskStatus{api.TaskStatusQueued},
+		})
+		if err != nil {
+			return taskError(err, "updating completed step count on job %q", jobID)
+		}
+
+		err = q.UpdateJobStepsCompleted(ctx, sqlc.UpdateJobStepsCompletedParams{
+			UpdatedAt: now,
+			ID:        jobID,
+		})
+		if err != nil {
+			return jobError(err, "updating job for task steps completed")
+		}
+		return nil
 	})
-	if err != nil {
-		return taskError(err, "updating completed step count on job %q", jobID)
-	}
-
-	err = qtx.queries.UpdateJobsTaskStepCountsZero(ctx, sqlc.UpdateJobsTaskStepCountsZeroParams{
-		UpdatedAt:        now,
-		JobID:            jobID,
-		StatusesToUpdate: []api.TaskStatus{api.TaskStatusQueued},
-	})
-	if err != nil {
-		return taskError(err, "updating completed step count on job %q", jobID)
-	}
-
-	err = qtx.queries.UpdateJobStepsCompleted(ctx, sqlc.UpdateJobStepsCompletedParams{
-		UpdatedAt: now,
-		ID:        jobID,
-	})
-	if err != nil {
-		return jobError(err, "updating job for task steps completed")
-	}
-
-	return qtx.commit()
 }
 
 // TaskTouchedByWorker marks the task as 'touched' by a worker. This is used for timeout detection.
 func (db *DB) TaskTouchedByWorker(ctx context.Context, taskUUID string) error {
-	queries := db.queries()
-
 	now := db.nowNullable()
-	err := queries.TaskTouchedByWorker(ctx, sqlc.TaskTouchedByWorkerParams{
-		UpdatedAt:     now,
-		LastTouchedAt: now,
-		UUID:          taskUUID,
+
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.TaskTouchedByWorker(ctx, sqlc.TaskTouchedByWorkerParams{
+			UpdatedAt:     now,
+			LastTouchedAt: now,
+			UUID:          taskUUID,
+		})
 	})
-	if err != nil {
-		return taskError(err, "saving task 'last touched at'")
-	}
-	return nil
+	return taskError(err, "saving task 'last touched at'")
 }
 
 // AddWorkerToTaskFailedList records that the given worker failed the given task.
@@ -912,21 +899,20 @@ func (db *DB) TaskTouchedByWorker(ctx context.Context, taskUUID string) error {
 //
 // Returns the new number of workers that failed this task.
 func (db *DB) AddWorkerToTaskFailedList(ctx context.Context, t *Task, w *Worker) (numFailed int, err error) {
-	queries := db.queries()
+	var numFailed64 int64
+	err = db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		err := q.AddWorkerToTaskFailedList(ctx, sqlc.AddWorkerToTaskFailedListParams{
+			CreatedAt: db.nowNullable().Time,
+			TaskID:    int64(t.ID),
+			WorkerID:  int64(w.ID),
+		})
+		if err != nil {
+			return err
+		}
 
-	err = queries.AddWorkerToTaskFailedList(ctx, sqlc.AddWorkerToTaskFailedListParams{
-		CreatedAt: db.nowNullable().Time,
-		TaskID:    int64(t.ID),
-		WorkerID:  int64(w.ID),
+		numFailed64, err = q.CountWorkersFailingTask(ctx, int64(t.ID))
+		return err
 	})
-	if err != nil {
-		return 0, err
-	}
-
-	numFailed64, err := queries.CountWorkersFailingTask(ctx, int64(t.ID))
-	if err != nil {
-		return 0, err
-	}
 
 	// Integer literals are of type `int`, so that's just a bit nicer to work with
 	// than `int64`.
@@ -939,23 +925,26 @@ func (db *DB) AddWorkerToTaskFailedList(ctx context.Context, t *Task, w *Worker)
 
 // ClearFailureListOfTask clears the list of workers that failed this task.
 func (db *DB) ClearFailureListOfTask(ctx context.Context, t *Task) error {
-	queries := db.queries()
-
-	return queries.ClearFailureListOfTask(ctx, int64(t.ID))
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.ClearFailureListOfTask(ctx, int64(t.ID))
+	})
 }
 
 // ClearFailureListOfJob en-mass, for all tasks of this job, clears the list of
 // workers that failed those tasks.
 func (db *DB) ClearFailureListOfJob(ctx context.Context, j *Job) error {
-	queries := db.queries()
-
-	return queries.ClearFailureListOfJob(ctx, int64(j.ID))
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.ClearFailureListOfJob(ctx, int64(j.ID))
+	})
 }
 
 func (db *DB) FetchTaskFailureList(ctx context.Context, t *Task) ([]*Worker, error) {
-	queries := db.queries()
+	var failureList []sqlc.FetchTaskFailureListRow
 
-	failureList, err := queries.FetchTaskFailureList(ctx, int64(t.ID))
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		failureList, err = q.FetchTaskFailureList(ctx, int64(t.ID))
+		return
+	})
 	if err != nil {
 		return nil, err
 	}

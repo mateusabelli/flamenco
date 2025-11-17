@@ -32,8 +32,8 @@ func (e PersistenceError) Error() string {
 	return fmt.Sprintf("%s: %v", e.Message, e.Err)
 }
 
-func (e PersistenceError) Is(err error) bool {
-	return err == e.Err
+func (e PersistenceError) Unwrap() error {
+	return e.Err
 }
 
 func jobError(errorToWrap error, message string, msgArgs ...interface{}) error {
@@ -53,6 +53,10 @@ func workerTagError(errorToWrap error, message string, msgArgs ...interface{}) e
 }
 
 func wrapError(errorToWrap error, message string, format ...interface{}) error {
+	if errorToWrap == nil {
+		return nil
+	}
+
 	// Only format if there are arguments for formatting.
 	var formattedMsg string
 	if len(format) > 0 {

@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/powerman/fileuri"
@@ -38,6 +39,8 @@ type DB struct {
 
 	// See PeriodicIntegrityCheck().
 	consistencyCheckRequests chan struct{}
+
+	mutex *sync.RWMutex
 }
 
 // Model contains the common database fields for most model structs.
@@ -120,10 +123,6 @@ func openDB(ctx context.Context, sqliteFile string) (*DB, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		// Connect to the database, forcing foreign keys to be turned on via the DSN.
-		// This ensures that re-connections made by the sql package always start out
-		// with foreign keys enabled.
 		dsnURL, err = fileuri.FromFilePath(sqliteFile)
 	} else {
 		dsnURL, err = url.Parse(sqliteFile)
@@ -132,8 +131,13 @@ func openDB(ctx context.Context, sqliteFile string) (*DB, error) {
 		return nil, fmt.Errorf("converting path to sqlite (%q) to a URL: %w", sqliteFile, err)
 	}
 
+	// Connect to the database, setting various PRAGMAs via the DSN. This ensures
+	// that re-connections made by the sql package always start out with foreign
+	// keys enabled, the right journal mode, etc.
 	query := dsnURL.Query()
-	query.Add("_pragma", "foreign_keys(1)")
+	query.Add("_pragma", "foreign_keys = 1")
+	query.Add("_pragma", "journal_mode = WAL")
+	query.Add("_pragma", "synchronous = normal")
 	dsnURL.RawQuery = query.Encode()
 
 	log.Debug().Stringer("dsnURL", dsnURL).Msg("database: opening database URL")
@@ -154,10 +158,8 @@ func openDB(ctx context.Context, sqliteFile string) (*DB, error) {
 		}
 	}()
 
-	// Only allow a single database connection, to avoid SQLITE_BUSY errors.
-	// It's not certain that this'll improve the situation, but it's worth a try.
-	sqlDB.SetMaxIdleConns(1) // Max num of connections in the idle connection pool.
-	sqlDB.SetMaxOpenConns(1) // Max num of open connections to the database.
+	sqlDB.SetMaxIdleConns(5)  // Max num of connections in the idle connection pool.
+	sqlDB.SetMaxOpenConns(10) // Max num of open connections to the database.
 	sqlDB.SetConnMaxIdleTime(connMaxIdleDuration)
 	sqlDB.SetConnMaxLifetime(connMaxLifeDuration)
 
@@ -169,6 +171,8 @@ func openDB(ctx context.Context, sqliteFile string) (*DB, error) {
 		// running, another can be queued without blocking. Queueing more than one
 		// doesn't make sense, though.
 		consistencyCheckRequests: make(chan struct{}, 1),
+
+		mutex: new(sync.RWMutex),
 	}
 
 	//
@@ -178,19 +182,6 @@ func openDB(ctx context.Context, sqliteFile string) (*DB, error) {
 		return nil, err
 	} else if !fkEnabled {
 		return nil, errors.New("foreign keys are disabled, refusing to start")
-	}
-
-	queries := db.queries()
-
-	// Write-ahead-log journal may improve writing speed.
-	log.Trace().Msg("enabling SQLite write-ahead-log journal mode")
-	if err := queries.PragmaJournalModeWAL(pragmaCtx); err != nil {
-		return nil, fmt.Errorf("enabling SQLite write-ahead-log journal mode: %w", err)
-	}
-	// Switching from 'full' (default) to 'normal' sync may improve writing speed.
-	log.Trace().Msg("enabling SQLite 'normal' synchronisation")
-	if err := queries.PragmaSynchronousNormal(pragmaCtx); err != nil {
-		return nil, fmt.Errorf("enabling SQLite 'normal' sync mode: %w", err)
 	}
 
 	closeConnOnReturn = false
@@ -211,9 +202,88 @@ func (db *DB) Close() error {
 }
 
 // queries returns the SQLC Queries struct, connected to this database.
+//
+// This does NOT run in any transaction. It is preferred to use db.queriesRW()
+// or db.queriesRO().
 func (db *DB) queries() *sqlc.Queries {
 	loggingWrapper := LoggingDBConn{db.sqlDB}
 	return sqlc.New(&loggingWrapper)
+}
+
+// queriesRW creates a read/write transaction.
+func (db *DB) queriesRW(
+	ctx context.Context,
+	callback func(*sqlc.Queries) error,
+) error {
+	// Only allow a single writing transaction at a time. Doing this on the Go
+	// side makes things much simpler than doing it via SQLite (which would
+	// require responding to SQLITE_BUSY errors and re-trying queries until they
+	// succeed).
+	//
+	// Also see
+	// https://berthub.eu/articles/posts/a-brief-post-on-sqlite3-database-locked-despite-timeout/:
+	// it describes that this can also be solved by starting transactions with
+	// `BEGIN IMMEDIATE` when you know they'll have to write. However, with the
+	// database/sql it's hard to do this on a per-transaction basis. And then
+	// still you can get SQLITE_BUSY errors. Hence the lock on the Go side.
+	db.mutex.Lock()
+	defer db.mutex.Unlock()
+
+	queriesTX, err := db._queriesCtx(ctx, false)
+	if err != nil {
+		return err
+	}
+
+	if err = callback(queriesTX.queries); err != nil {
+		queriesTX.rollback()
+		return err
+	}
+
+	return queriesTX.commit()
+}
+
+// queriesRO creates a read-only transaction.
+//
+// NOTE: if the query accidentally does write to the database it will NOT cause
+// any error. This seems to be a limitation of the SQLite driver. To prevent
+// such queries from modifying the database, the transaction is always rolled
+// back.
+func (db *DB) queriesRO(
+	ctx context.Context,
+	callback func(*sqlc.Queries) error,
+) error {
+	db.mutex.RLock()
+	defer db.mutex.RUnlock()
+
+	queriesTX, err := db._queriesCtx(ctx, true)
+	if err != nil {
+		return err
+	}
+
+	// Read-only transactions are always rolled back, as there is nothing to commit.
+	defer queriesTX.rollback()
+
+	return callback(queriesTX.queries)
+}
+
+func (db *DB) _queriesCtx(ctx context.Context, readOnly bool) (*queriesTX, error) {
+	tx, err := db.sqlDB.BeginTx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+		ReadOnly:  readOnly,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not begin database transaction: %w", err)
+	}
+
+	loggingWrapper := LoggingDBConn{tx}
+
+	qtx := queriesTX{
+		queries:  sqlc.New(&loggingWrapper),
+		commit:   commitWrapper(tx.Commit),
+		rollback: rollbackWrapper(tx.Rollback),
+	}
+
+	return &qtx, nil
 }
 
 type queriesTX struct {
@@ -237,11 +307,23 @@ func (db *DB) queriesWithTX() (*queriesTX, error) {
 
 	qtx := queriesTX{
 		queries:  sqlc.New(&loggingWrapper),
-		commit:   tx.Commit,
+		commit:   commitWrapper(tx.Commit),
 		rollback: rollbackWrapper(tx.Rollback),
 	}
 
 	return &qtx, nil
+}
+
+// commitWrapper wraps any error returned by `commit()` to make it explicit that
+// it's from a commit function.
+func commitWrapper(commit func() error) func() error {
+	return func() error {
+		err := commit()
+		if err != nil {
+			return fmt.Errorf("commit: %w", err)
+		}
+		return nil
+	}
 }
 
 func rollbackWrapper(rollback func() error) func() {

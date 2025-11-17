@@ -601,7 +601,7 @@ func TestFetchTasksOfWorkerInStatus(t *testing.T) {
 
 	tasksJobsWorkers, err := db.FetchTasksOfWorkerInStatus(ctx, w, task.Status)
 	require.NoError(t, err)
-	assert.Len(t, tasksJobsWorkers, 1, "worker should have one task in status %q", task.Status)
+	require.Len(t, tasksJobsWorkers, 1, "worker should have one task in status %q", task.Status)
 	assert.Equal(t, task.ID, tasksJobsWorkers[0].Task.ID)
 	assert.Equal(t, task.UUID, tasksJobsWorkers[0].Task.UUID)
 	assert.Equal(t, authoredJob.JobID, tasksJobsWorkers[0].JobUUID)

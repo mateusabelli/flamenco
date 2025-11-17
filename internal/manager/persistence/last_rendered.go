@@ -16,26 +16,28 @@ import (
 
 // SetLastRendered sets this job as the one with the most recent rendered image.
 func (db *DB) SetLastRendered(ctx context.Context, jobUUID string) error {
-	queries := db.queries()
-
-	jobID, err := queries.FetchJobIDFromUUID(ctx, jobUUID)
-	if err != nil {
-		return jobError(err, "finding job with UUID %q", jobUUID)
-	}
-
 	now := db.nowNullable()
-	return queries.SetLastRendered(ctx, sqlc.SetLastRenderedParams{
-		CreatedAt: now.Time,
-		UpdatedAt: now,
-		JobID:     jobID,
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		jobID, err := q.FetchJobIDFromUUID(ctx, jobUUID)
+		if err != nil {
+			return jobError(err, "finding job with UUID %q", jobUUID)
+		}
+
+		return q.SetLastRendered(ctx, sqlc.SetLastRenderedParams{
+			CreatedAt: now.Time,
+			UpdatedAt: now,
+			JobID:     jobID,
+		})
 	})
 }
 
 // GetLastRendered returns the UUID of the job with the most recent rendered image.
 func (db *DB) GetLastRenderedJobUUID(ctx context.Context) (string, error) {
-	queries := db.queries()
-
-	jobUUID, err := queries.GetLastRenderedJobUUID(ctx)
+	var jobUUID string
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		jobUUID, err = q.GetLastRenderedJobUUID(ctx)
+		return
+	})
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}

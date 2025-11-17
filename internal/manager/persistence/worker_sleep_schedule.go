@@ -28,9 +28,11 @@ func (db *DB) FetchWorkerSleepSchedule(ctx context.Context, workerUUID string) (
 	logger := log.With().Str("worker", workerUUID).Logger()
 	logger.Trace().Msg("fetching worker sleep schedule")
 
-	queries := db.queries()
-
-	schedule, err := queries.FetchWorkerSleepSchedule(ctx, workerUUID)
+	var schedule SleepSchedule
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		schedule, err = q.FetchWorkerSleepSchedule(ctx, workerUUID)
+		return
+	})
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, nil
@@ -44,43 +46,48 @@ func (db *DB) SetWorkerSleepSchedule(ctx context.Context, workerUUID string, sch
 	logger := log.With().Str("worker", workerUUID).Logger()
 	logger.Trace().Msg("setting worker sleep schedule")
 
-	worker, err := db.FetchWorker(ctx, workerUUID)
-	if err != nil {
-		return fmt.Errorf("fetching worker %q: %w", workerUUID, err)
-	}
-	schedule.WorkerID = worker.ID
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		worker, err := q.FetchWorker(ctx, workerUUID)
+		if err != nil {
+			return workerError(err, "fetching worker %q", workerUUID)
+		}
+		schedule.WorkerID = worker.ID
 
-	queries := db.queries()
-	params := sqlc.SetWorkerSleepScheduleParams{
-		CreatedAt:  db.now(),
-		UpdatedAt:  db.nowNullable(),
-		WorkerID:   schedule.WorkerID,
-		IsActive:   schedule.IsActive,
-		DaysOfWeek: schedule.DaysOfWeek,
-		StartTime:  schedule.StartTime,
-		EndTime:    schedule.EndTime,
-		NextCheck:  nullTimeToUTC(schedule.NextCheck),
-	}
+		params := sqlc.SetWorkerSleepScheduleParams{
+			CreatedAt:  db.now(),
+			UpdatedAt:  db.nowNullable(),
+			WorkerID:   schedule.WorkerID,
+			IsActive:   schedule.IsActive,
+			DaysOfWeek: schedule.DaysOfWeek,
+			StartTime:  schedule.StartTime,
+			EndTime:    schedule.EndTime,
+			NextCheck:  nullTimeToUTC(schedule.NextCheck),
+		}
 
-	id, err := queries.SetWorkerSleepSchedule(ctx, params)
-	if err != nil {
-		return fmt.Errorf("storing worker %q sleep schedule: %w", workerUUID, err)
-	}
-	schedule.ID = id
-	schedule.NextCheck = params.NextCheck
-	schedule.CreatedAt = params.CreatedAt
-	schedule.UpdatedAt = params.UpdatedAt
-	return nil
+		id, err := q.SetWorkerSleepSchedule(ctx, params)
+		if err != nil {
+			return fmt.Errorf("storing worker %q sleep schedule: %w", workerUUID, err)
+		}
+		schedule.ID = id
+		schedule.NextCheck = params.NextCheck
+		schedule.CreatedAt = params.CreatedAt
+		schedule.UpdatedAt = params.UpdatedAt
+		return nil
+	})
 }
 
 func (db *DB) SetWorkerSleepScheduleNextCheck(ctx context.Context, schedule SleepSchedule) error {
-	queries := db.queries()
-	numAffected, err := queries.SetWorkerSleepScheduleNextCheck(
-		ctx,
-		sqlc.SetWorkerSleepScheduleNextCheckParams{
-			ScheduleID: int64(schedule.ID),
-			NextCheck:  nullTimeToUTC(schedule.NextCheck),
-		})
+	var numAffected int64
+
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) (err error) {
+		numAffected, err = q.SetWorkerSleepScheduleNextCheck(
+			ctx,
+			sqlc.SetWorkerSleepScheduleNextCheckParams{
+				ScheduleID: int64(schedule.ID),
+				NextCheck:  nullTimeToUTC(schedule.NextCheck),
+			})
+		return
+	})
 	if err != nil {
 		return fmt.Errorf("updating worker sleep schedule: %w", err)
 	}
@@ -92,9 +99,11 @@ func (db *DB) SetWorkerSleepScheduleNextCheck(ctx context.Context, schedule Slee
 
 // FetchSleepScheduleWorker returns the given schedule's associated Worker.
 func (db *DB) FetchSleepScheduleWorker(ctx context.Context, schedule SleepSchedule) (*Worker, error) {
-	queries := db.queries()
-
-	worker, err := queries.FetchWorkerByID(ctx, schedule.WorkerID)
+	var worker Worker
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		worker, err = q.FetchWorkerByID(ctx, schedule.WorkerID)
+		return
+	})
 	if err != nil {
 		return nil, workerError(err, "finding worker by their sleep schedule")
 	}
@@ -109,8 +118,11 @@ func (db *DB) FetchSleepSchedulesToCheck(ctx context.Context) ([]SleepScheduleOw
 		Str("timeout", now.Time.String()).
 		Msg("fetching sleep schedules that need checking")
 
-	queries := db.queries()
-	rows, err := queries.FetchSleepSchedulesToCheck(ctx, now)
+	var rows []sqlc.FetchSleepSchedulesToCheckRow
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		rows, err = q.FetchSleepSchedulesToCheck(ctx, now)
+		return
+	})
 	if err != nil {
 		return nil, err
 	}

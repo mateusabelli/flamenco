@@ -17,8 +17,11 @@ func (db *DB) QueryJobTaskSummaries(ctx context.Context, jobUUID string) ([]Task
 	logger := log.Ctx(ctx)
 	logger.Debug().Str("job", jobUUID).Msg("querying task summaries")
 
-	queries := db.queries()
-	summaries, err := queries.QueryJobTaskSummaries(ctx, jobUUID)
+	var summaries []sqlc.QueryJobTaskSummariesRow
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		summaries, err = q.QueryJobTaskSummaries(ctx, jobUUID)
+		return
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -38,8 +41,12 @@ func (db *DB) SummarizeJobStatuses(ctx context.Context) (JobStatusCount, error) 
 	logger := log.Ctx(ctx)
 	logger.Debug().Msg("database: summarizing job statuses")
 
-	queries := db.queries()
-	result, err := queries.SummarizeJobStatuses(ctx)
+	var result []sqlc.SummarizeJobStatusesRow
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		result, err = q.SummarizeJobStatuses(ctx)
+		return
+	})
+
 	if err != nil {
 		return nil, jobError(err, "summarizing job statuses")
 	}

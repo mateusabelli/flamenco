@@ -24,40 +24,43 @@ func (db *DB) AddWorkerToJobBlocklist(ctx context.Context, jobID int64, workerID
 		panic("Cannot add worker to job blocklist with empty task type")
 	}
 
-	queries := db.queries()
-
-	return queries.AddWorkerToJobBlocklist(ctx, sqlc.AddWorkerToJobBlocklistParams{
-		CreatedAt: db.nowNullable().Time,
-		JobID:     jobID,
-		WorkerID:  workerID,
-		TaskType:  taskType,
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.AddWorkerToJobBlocklist(ctx, sqlc.AddWorkerToJobBlocklistParams{
+			CreatedAt: db.nowNullable().Time,
+			JobID:     jobID,
+			WorkerID:  workerID,
+			TaskType:  taskType,
+		})
 	})
 }
 
 // FetchJobBlocklist fetches the blocklist for the given job.
 // Workers are fetched too, and embedded in the returned list.
 func (db *DB) FetchJobBlocklist(ctx context.Context, jobUUID string) ([]JobBlockListEntry, error) {
-	queries := db.queries()
+	var rows []JobBlockListEntry
 
-	rows, err := queries.FetchJobBlocklist(ctx, jobUUID)
-	if err != nil {
-		return nil, err
-	}
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		rows, err = q.FetchJobBlocklist(ctx, jobUUID)
+		return
+	})
+
 	return rows, err
 }
 
 // ClearJobBlocklist removes the entire blocklist of this job.
 func (db *DB) ClearJobBlocklist(ctx context.Context, job *Job) error {
-	queries := db.queries()
-	return queries.ClearJobBlocklist(ctx, job.UUID)
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.ClearJobBlocklist(ctx, job.UUID)
+	})
 }
 
 func (db *DB) RemoveFromJobBlocklist(ctx context.Context, jobUUID, workerUUID, taskType string) error {
-	queries := db.queries()
-	return queries.RemoveFromJobBlocklist(ctx, sqlc.RemoveFromJobBlocklistParams{
-		JobUUID:    jobUUID,
-		WorkerUUID: workerUUID,
-		TaskType:   taskType,
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		return q.RemoveFromJobBlocklist(ctx, sqlc.RemoveFromJobBlocklistParams{
+			JobUUID:    jobUUID,
+			WorkerUUID: workerUUID,
+			TaskType:   taskType,
+		})
 	})
 }
 
@@ -66,25 +69,24 @@ func (db *DB) RemoveFromJobBlocklist(ctx context.Context, jobUUID, workerUUID, t
 // NOTE: this does NOT consider the task failure list, which blocks individual
 // workers from individual tasks. This is ONLY concerning the job blocklist.
 func (db *DB) WorkersLeftToRun(ctx context.Context, job *Job, taskType string) (map[string]bool, error) {
-	queries := db.queries()
+	var workerUUIDs []string
 
-	var (
-		workerUUIDs []string
-		err         error
-	)
-	if job.WorkerTagID.Valid {
-		workerUUIDs, err = queries.WorkersLeftToRunWithWorkerTag(ctx,
-			sqlc.WorkersLeftToRunWithWorkerTagParams{
-				JobID:       job.ID,
-				TaskType:    taskType,
-				WorkerTagID: job.WorkerTagID.Int64,
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		if job.WorkerTagID.Valid {
+			workerUUIDs, err = q.WorkersLeftToRunWithWorkerTag(ctx,
+				sqlc.WorkersLeftToRunWithWorkerTagParams{
+					JobID:       job.ID,
+					TaskType:    taskType,
+					WorkerTagID: job.WorkerTagID.Int64,
+				})
+		} else {
+			workerUUIDs, err = q.WorkersLeftToRun(ctx, sqlc.WorkersLeftToRunParams{
+				JobID:    job.ID,
+				TaskType: taskType,
 			})
-	} else {
-		workerUUIDs, err = queries.WorkersLeftToRun(ctx, sqlc.WorkersLeftToRunParams{
-			JobID:    job.ID,
-			TaskType: taskType,
-		})
-	}
+		}
+		return
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -102,11 +104,13 @@ func (db *DB) WorkersLeftToRun(ctx context.Context, job *Job, taskType string) (
 func (db *DB) CountTaskFailuresOfWorker(ctx context.Context, jobUUID string, workerID int64, taskType string) (int, error) {
 	var numFailures int64
 
-	queries := db.queries()
-	numFailures, err := queries.CountTaskFailuresOfWorker(ctx, sqlc.CountTaskFailuresOfWorkerParams{
-		JobUUID:  jobUUID,
-		WorkerID: workerID,
-		TaskType: taskType,
+	err := db.queriesRO(ctx, func(q *sqlc.Queries) (err error) {
+		numFailures, err = q.CountTaskFailuresOfWorker(ctx, sqlc.CountTaskFailuresOfWorkerParams{
+			JobUUID:  jobUUID,
+			WorkerID: workerID,
+			TaskType: taskType,
+		})
+		return
 	})
 
 	if numFailures > math.MaxInt {
