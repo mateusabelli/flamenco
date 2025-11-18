@@ -59,7 +59,7 @@ func Run(ctx context.Context, client worker.FlamencoClient) {
 			return
 		}
 
-		stepsCompleted := int(time.Since(startTime) / time.Second)
+		stepsCompleted := int(time.Since(startTime))
 		stepsCompleted %= task.StepsTotal
 		stressBySendingTaskUpdate(ctx, client, task, &stepsCompleted)
 		// stressByRequestingTask(ctx, client)
