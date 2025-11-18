@@ -5,7 +5,6 @@ package persistence
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -255,18 +254,13 @@ func (db *DB) PeriodicWALCheckpoint(ctx context.Context) {
 // walCheckpoint performs a checkpoint of the write-ahead log (WAL).
 // See https://sqlite.org/wal.html and https://sqlite.org/pragma.html#pragma_wal_checkpoint
 func (db *DB) walCheckpoint(ctx context.Context, checkpointType sqlc.WALCheckpointType) (sqlc.WALCheckpointResult, error) {
-	qtx, err := db.queriesWithTX()
-	defer qtx.rollback()
-	if err != nil {
-		return sqlc.WALCheckpointResult{}, fmt.Errorf("starting database transaction: %w", err)
-	}
-
-	result, err := qtx.queries.WALCheckpoint(ctx, checkpointType)
+	var result sqlc.WALCheckpointResult
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) (err error) {
+		result, err = q.WALCheckpoint(ctx, checkpointType)
+		return
+	})
 	if err != nil {
 		return sqlc.WALCheckpointResult{}, err
-	}
-	if err := qtx.commit(); err != nil {
-		return sqlc.WALCheckpointResult{}, fmt.Errorf("committing database transaction: %w", err)
 	}
 
 	// Number of pages that can be in the WAL log before operations show up at

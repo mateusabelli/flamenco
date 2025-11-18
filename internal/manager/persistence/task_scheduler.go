@@ -41,36 +41,12 @@ func (db *DB) ScheduleTask(ctx context.Context, w *Worker) (*ScheduledTask, erro
 	logger := log.With().Str("worker", w.UUID).Logger()
 	logger.Trace().Msg("finding task for worker")
 
-	// Run all queries in a single transaction.
-	//
-	// After this point, all queries should use this transaction. Otherwise SQLite
-	// will deadlock, as it will make any other query wait until this transaction
-	// is done.
-	qtx, err := db.queriesWithTX()
-	if err != nil {
-		return nil, err
-	}
-
-	defer qtx.rollback()
-
-	scheduledTask, err := db.scheduleTask(ctx, qtx.queries, w, logger)
-	if err != nil {
-		return nil, err
-	}
-
-	if scheduledTask == nil {
-		// No task means no changes to the database.
-		// It's fine to just roll back the transaction.
-		return nil, nil
-	}
-
-	if err := qtx.commit(); err != nil {
-		return nil, fmt.Errorf(
-			"could not commit database transaction after scheduling task %s for worker %s: %w",
-			scheduledTask.Task.UUID, w.UUID, err)
-	}
-
-	return scheduledTask, nil
+	var scheduledTask *ScheduledTask
+	err := db.queriesRW(ctx, func(q *sqlc.Queries) (err error) {
+		scheduledTask, err = db.scheduleTask(ctx, q, w, logger)
+		return
+	})
+	return scheduledTask, err
 }
 
 func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker, logger zerolog.Logger) (*ScheduledTask, error) {

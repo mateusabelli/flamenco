@@ -292,28 +292,6 @@ type queriesTX struct {
 	rollback func()
 }
 
-// queries returns the SQLC Queries struct, connected to this database.
-//
-// After calling this function, all queries should use this transaction until it
-// is closed (either committed or rolled back). Otherwise SQLite will deadlock,
-// as it will make any other query wait until this transaction is done.
-func (db *DB) queriesWithTX() (*queriesTX, error) {
-	tx, err := db.sqlDB.Begin()
-	if err != nil {
-		return nil, fmt.Errorf("could not begin database transaction: %w", err)
-	}
-
-	loggingWrapper := LoggingDBConn{tx}
-
-	qtx := queriesTX{
-		queries:  sqlc.New(&loggingWrapper),
-		commit:   commitWrapper(tx.Commit),
-		rollback: rollbackWrapper(tx.Rollback),
-	}
-
-	return &qtx, nil
-}
-
 // commitWrapper wraps any error returned by `commit()` to make it explicit that
 // it's from a commit function.
 func commitWrapper(commit func() error) func() error {
