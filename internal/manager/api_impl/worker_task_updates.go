@@ -31,11 +31,14 @@ func (f *Flamenco) TaskUpdate(e echo.Context, taskID string) error {
 	// Fetch the task, to see if this worker is even allowed to send us updates.
 	ctx := e.Request().Context()
 	taskJobWorker, err := f.persist.FetchTask(ctx, taskID)
-	if err != nil {
-		logger.Warn().Err(err).Msg("cannot fetch task")
-		if errors.Is(err, persistence.ErrTaskNotFound) {
-			return sendAPIError(e, http.StatusNotFound, "task %+v not found", taskID)
-		}
+	switch {
+	case err == nil:
+	case errors.Is(err, context.Canceled):
+		return nil // Remote closed the connection, no need to send a reply.
+	case errors.Is(err, persistence.ErrTaskNotFound):
+		return sendAPIError(e, http.StatusNotFound, "task %+v not found", taskID)
+	default:
+		logger.Warn().Err(err).Msg("internal error fetching task")
 		return sendAPIError(e, http.StatusInternalServerError, "error fetching task")
 	}
 
