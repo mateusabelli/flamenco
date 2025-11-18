@@ -72,17 +72,12 @@ func main() {
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(cliArgs.numWorkers + 1)
-
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		stresser.ReportStatisticsLoop(mainCtx)
-	}()
+	})
 
 	for i, workerInfo := range workerInfoes[:cliArgs.numWorkers] {
-		go func() {
-			defer wg.Done()
-
+		wg.Go(func() {
 			config := stresser.NewFakeConfig(workerInfo.Name, workerInfo.UUID, workerInfo.Secret)
 			workerInfoes[i].config = config
 
@@ -95,7 +90,7 @@ func main() {
 			if _, err := client.SignOffWithResponse(shutdownCtx); err != nil {
 				log.Warn().Err(err).Msg("error signing off at Manager")
 			}
-		}()
+		})
 	}
 	wg.Wait()
 
