@@ -176,7 +176,7 @@ func (db *DB) ensureForeignKeysEnabled(ctx context.Context) {
 }
 
 func (db *DB) PeriodicWALCheckpoint(ctx context.Context) {
-	const checkpointType = sqlc.WALCheckpointTypeFull
+	const checkpointType = sqlc.WALCheckpointTypeTruncate
 
 	checkpointResult, err := db.walCheckpoint(ctx, checkpointType)
 	if err != nil {
