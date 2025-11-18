@@ -7,6 +7,7 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
+	"math/rand/v2"
 	"os"
 	"os/signal"
 	"runtime"
@@ -82,6 +83,10 @@ func main() {
 			workerInfoes[i].config = config
 
 			client := stresser.GetFlamencoClient(mainCtx, config)
+
+			// Stagger the startup of the workers a bit, to get a more realistic behaviour.
+			time.Sleep(time.Duration(rand.Int32N(500)) * time.Millisecond)
+
 			stresser.Run(mainCtx, client)
 
 			log.Info().Msg("signing off at Manager")
