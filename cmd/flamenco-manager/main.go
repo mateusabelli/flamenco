@@ -236,11 +236,12 @@ func runFlamencoManager() bool {
 
 	// Run a periodic integrity check on the database.
 	// When that check fails, the entire application should shut down.
+	dbIntegrityCheckInterval := time.Duration(configService.Get().DBIntegrityCheck)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		persist.PeriodicIntegrityCheck(mainCtx,
-			time.Duration(configService.Get().DBIntegrityCheck),
+			dbIntegrityCheckInterval,
 			mainCtxCancel)
 	}()
 
