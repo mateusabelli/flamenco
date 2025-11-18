@@ -98,12 +98,14 @@ func stressBySendingTaskUpdate(
 	increaseNumRequests()
 	err := sendTaskUpdate(ctx, client, task.Uuid, update)
 	switch {
+	case err == nil:
+		// Fine!
 	case errors.Is(err, ctx.Err()):
 		// Shutting down, this is fine.
 		increaseNumFailed()
 		return
-	case err != nil:
-		log.Info().Err(err).Str("task", task.Uuid).Msg("Manager rejected task update")
+	default:
+		log.Warn().Err(err).Str("task", task.Uuid).Msg("Manager rejected task update")
 		increaseNumFailed()
 	}
 }
