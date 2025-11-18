@@ -230,20 +230,21 @@ func (s *Storage) Tail(jobID, taskID string) (string, error) {
 
 func (s *Storage) taskLock(taskID string) {
 	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
 	mutex := s.taskLocks[taskID]
 	if mutex == nil {
 		mutex = new(sync.Mutex)
 		s.taskLocks[taskID] = mutex
 	}
+	s.mutex.Unlock()
+
 	mutex.Lock()
 }
 
 func (s *Storage) taskUnlock(taskID string) {
-	// This code doesn't modify s.taskLocks, and the task should have been locked
-	// already by now.
+	s.mutex.Lock()
 	mutex := s.taskLocks[taskID]
+	s.mutex.Unlock()
+
 	if mutex == nil {
 		panic("trying to unlock task that is not yet locked")
 	}
