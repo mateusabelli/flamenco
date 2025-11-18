@@ -90,7 +90,7 @@ func (db *DB) performIntegrityCheck(ctx context.Context) (ok bool) {
 //
 // See https: //www.sqlite.org/pragma.html#pragma_integrity_check
 func (db *DB) pragmaIntegrityCheck(ctx context.Context) (ok bool) {
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 	issues, err := queries.PragmaIntegrityCheck(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("database: error checking integrity")
@@ -128,7 +128,7 @@ func (db *DB) pragmaIntegrityCheck(ctx context.Context) (ok bool) {
 //
 // See https: //www.sqlite.org/pragma.html#pragma_foreign_key_check
 func (db *DB) pragmaForeignKeyCheck(ctx context.Context) (ok bool) {
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 
 	issues, err := queries.PragmaForeignKeyCheck(ctx)
 	if err != nil {

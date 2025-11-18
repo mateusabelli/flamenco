@@ -100,7 +100,7 @@ func TestAssignUnassignWorkerTags(t *testing.T) {
 		w, err := f.db.FetchWorker(f.ctx, f.worker.UUID)
 		require.NoError(t, err)
 
-		tags, err := f.db.queries().FetchTagsOfWorker(f.ctx, w.UUID)
+		tags, err := f.db.queriesWithoutTX().FetchTagsOfWorker(f.ctx, w.UUID)
 		require.NoError(t, err)
 
 		// Catch doubly-reported tags, as the maps below would hide those cases.
@@ -173,7 +173,7 @@ func TestDeleteWorkerTagWithWorkersAssigned(t *testing.T) {
 	require.NoError(t, f.db.DeleteWorkerTag(f.ctx, f.tag.UUID))
 
 	// Check the Worker has been unassigned from the tag.
-	tags, err := f.db.queries().FetchTagsOfWorker(f.ctx, f.worker.UUID)
+	tags, err := f.db.queriesWithoutTX().FetchTagsOfWorker(f.ctx, f.worker.UUID)
 	require.NoError(t, err)
 	assert.Empty(t, tags)
 }

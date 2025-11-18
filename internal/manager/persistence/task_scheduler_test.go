@@ -544,7 +544,7 @@ func saveTestWorker(t *testing.T, db *DB, worker *Worker) {
 		CanRestart:         worker.CanRestart,
 	}
 
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 	id, err := queries.CreateWorker(context.TODO(), params)
 	require.NoError(t, err, "cannot save worker %q", worker.Name)
 

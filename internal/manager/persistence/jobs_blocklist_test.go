@@ -14,7 +14,7 @@ func TestAddWorkerToJobBlocklist(t *testing.T) {
 	defer close()
 
 	worker := createWorker(ctx, t, db)
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 
 	{
 		// Add a worker to the block list.

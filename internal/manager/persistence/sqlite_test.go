@@ -19,7 +19,7 @@ func TestSQLiteAutoCheckpoint(t *testing.T) {
 	ctx, cancel, db := persistenceTestFixtures(sqliteTestTimeout)
 	defer cancel()
 
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 	interval, err := queries.PragmaAutoCheckpointGet(ctx)
 	require.NoError(t, err)
 

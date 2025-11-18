@@ -24,7 +24,7 @@ import (
 func TestStoreAuthoredJob(t *testing.T) {
 	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 
 	job := createTestAuthoredJobWithTasks()
 	err := db.StoreAuthoredJob(ctx, job)
@@ -182,7 +182,7 @@ func TestSaveJobPriority(t *testing.T) {
 func TestDeleteJob(t *testing.T) {
 	ctx, cancel, db := persistenceTestFixtures(1 * time.Second)
 	defer cancel()
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 
 	authJob := createTestAuthoredJobWithTasks()
 	authJob.Name = "Job to delete"
@@ -784,7 +784,7 @@ func TestAddWorkerToTaskFailedList(t *testing.T) {
 func TestClearFailureListOfTask(t *testing.T) {
 	ctx, close, db, _, authoredJob := jobTasksTestFixtures(t)
 	defer close()
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 
 	taskJobWorker1, _ := db.FetchTask(ctx, authoredJob.Tasks[1].UUID)
 	taskJobWorker2, _ := db.FetchTask(ctx, authoredJob.Tasks[2].UUID)
@@ -820,7 +820,7 @@ func TestClearFailureListOfTask(t *testing.T) {
 func TestClearFailureListOfJob(t *testing.T) {
 	ctx, close, db, dbJob1, authoredJob1 := jobTasksTestFixtures(t)
 	defer close()
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 
 	// Construct a cloned version of the job.
 	authoredJob2 := duplicateJobAndTasks(authoredJob1)
@@ -1115,7 +1115,7 @@ func createWorkerFrom(ctx context.Context, t *testing.T, db *DB, worker Worker) 
 }
 
 func countTaskFailures(ctx context.Context, db *DB) int {
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 	numFailures, err := queries.Test_CountTaskFailures(ctx)
 	if err != nil {
 		panic(err)

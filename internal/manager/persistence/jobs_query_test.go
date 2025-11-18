@@ -19,7 +19,7 @@ import (
 func TestQueryJobTaskSummaries(t *testing.T) {
 	ctx, close, db, job, authoredJob := jobTasksTestFixtures(t)
 	defer close()
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 
 	expectTaskUUIDs := map[string]bool{}
 	for _, task := range authoredJob.Tasks {

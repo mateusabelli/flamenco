@@ -190,7 +190,7 @@ func openDB(ctx context.Context, sqliteFile string) (*DB, error) {
 
 // vacuum executes the SQL "VACUUM" command, and logs any errors.
 func (db *DB) vacuum(ctx context.Context) {
-	err := db.queries().Vacuum(ctx)
+	err := db.queriesWithoutTX().Vacuum(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("error vacuuming database")
 	}
@@ -201,11 +201,11 @@ func (db *DB) Close() error {
 	return db.sqlDB.Close()
 }
 
-// queries returns the SQLC Queries struct, connected to this database.
+// queriesWithoutTX returns the SQLC Queries struct, connected to this database.
 //
 // This does NOT run in any transaction. It is preferred to use db.queriesRW()
 // or db.queriesRO().
-func (db *DB) queries() *sqlc.Queries {
+func (db *DB) queriesWithoutTX() *sqlc.Queries {
 	loggingWrapper := LoggingDBConn{db.sqlDB}
 	return sqlc.New(&loggingWrapper)
 }
@@ -369,7 +369,7 @@ func (db *DB) pragmaForeignKeys(ctx context.Context, enabled bool) error {
 
 	log.Trace().Msgf("%sing SQLite foreign key checks", noun)
 
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 	if err := queries.PragmaForeignKeysSet(ctx, enabled); err != nil {
 		return fmt.Errorf("%sing foreign keys: %w", noun, err)
 	}
@@ -387,7 +387,7 @@ func (db *DB) pragmaForeignKeys(ctx context.Context, enabled bool) error {
 func (db *DB) areForeignKeysEnabled(ctx context.Context) (bool, error) {
 	log.Trace().Msg("checking whether SQLite foreign key checks are enabled")
 
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 	fkEnabled, err := queries.PragmaForeignKeysGet(ctx)
 	if err != nil {
 		return false, fmt.Errorf("checking whether the database has foreign key checks are enabled: %w", err)

@@ -12,7 +12,7 @@ import (
 func TestSetLastRendered(t *testing.T) {
 	ctx, close, db, job1, _ := jobTasksTestFixtures(t)
 	defer close()
-	queries := db.queries()
+	queries := db.queriesWithoutTX()
 
 	authoredJob2 := authorTestJob("1295757b-e668-4c49-8b89-f73db8270e42", "just-a-job")
 	job2 := persistAuthoredJob(t, ctx, db, authoredJob2)
