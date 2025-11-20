@@ -913,6 +913,9 @@ func (db *DB) AddWorkerToTaskFailedList(ctx context.Context, t *Task, w *Worker)
 		numFailed64, err = q.CountWorkersFailingTask(ctx, int64(t.ID))
 		return err
 	})
+	if err != nil {
+		return 0, err
+	}
 
 	// Integer literals are of type `int`, so that's just a bit nicer to work with
 	// than `int64`.
