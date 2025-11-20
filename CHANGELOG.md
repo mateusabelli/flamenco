@@ -18,6 +18,7 @@ bugs in actually-released versions.
 - Add support for "steps" to commands, tasks, and jobs, and show the per-step progress in the jobs and tasks lists ([26ab8879](https://projects.blender.org/studio/flamenco/commit/26ab8879efcbe4abb7b0a42e6e39ac0fa69b3e24)).
 - Allow cancelling a job while it is in `pause-requested` state. Instead of waiting until all `active` tasks are done, it will cancel them immediately.
 - When the Manager doesn't have a task for the Worker, it now waits longer (20 seconds instead of 2) before asking again.
+- Fix an issue where the database write-ahead log file could grow huge (>10 GB while the database itself is a few MB).
 - Update Go & dependencies to fix security vulnerabilities:
   - https://pkg.go.dev/vuln/GO-2025-3751
   - https://pkg.go.dev/vuln/GO-2025-3750
