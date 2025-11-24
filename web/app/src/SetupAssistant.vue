@@ -3,7 +3,7 @@
     <router-link :to="{ name: 'index' }" class="navbar-brand">{{ flamencoName }}</router-link>
     <nav></nav>
     <api-spinner />
-    <span class="app-version">
+    <span class="header-links-right">
       <a href="/api/v3/swagger-ui/">API</a>
       | version: {{ flamencoVersion }}
     </span>

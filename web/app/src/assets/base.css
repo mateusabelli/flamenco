@@ -189,9 +189,27 @@ body.is-two-columns #app {
   grid-area: col-3;
 }
 
-.app-version {
+.header-links-right {
   font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
+}
+
+.header-links-right .settings-cog {
+  height: 1em;
+  width: auto;
+  vertical-align: middle;
+  padding-left: 0.2em;
+  padding-right: 0.2em;
+}
+
+.header-links-right .settings-cog path {
+  /* Use 'muted' color, because the cogwheel is much thicker than typical text,
+   * and will thus appear brighter when rendered with var(--color-text). */
+  fill: var(--color-text-muted);
+}
+
+.header-links-right .settings-cog:hover path {
+  fill: var(--color-accent);
 }
 
 a {
