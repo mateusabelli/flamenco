@@ -225,8 +225,9 @@ header.farmstatus {
 }
 @media (max-width: 1280px) {
   header.farmstatus {
-    grid-area: header-L;
-    margin-right: 0;
+    grid-area: header-R;
+    margin-left: 0;
+    margin-right: auto;
   }
 }
 @media (max-width: 1070px) {
