@@ -14,11 +14,13 @@ import (
 type Service struct {
 	config        Conf
 	forceFirstRun bool
+	filename      string
 }
 
 func NewService() *Service {
 	return &Service{
-		config: DefaultConfig(),
+		config:   DefaultConfig(),
+		filename: configFilename,
 	}
 }
 
@@ -27,20 +29,21 @@ func (s *Service) ForceFirstRun() {
 }
 
 func (s *Service) Replace(config Conf) error {
-	if err := config.Overwrite(); err != nil {
+	if err := config.Overwrite(s.filename); err != nil {
 		return err
 	}
 
 	// Replace the in-memory config with the new one
+	config.processAfterLoading()
 	s.config = config
-	log.Info().Str("filename", configFilename).Msg("in-memory configuration file replaced")
+	log.Info().Str("filename", s.filename).Msg("in-memory configuration file replaced")
 	return nil
 }
 
 // Load parses the flamenco-manager.yaml file, and returns whether this is
 // likely to be the first run or not.
 func (s *Service) Load() (bool, error) {
-	config, err := getConf()
+	config, err := loadConf(s.filename)
 	s.config = config
 
 	switch {
@@ -48,7 +51,7 @@ func (s *Service) Load() (bool, error) {
 		// No configuration means first run.
 		return true, nil
 	case err != nil:
-		return false, fmt.Errorf("loading %s: %w", configFilename, err)
+		return false, fmt.Errorf("loading %s: %w", s.filename, err)
 	}
 
 	// No shared storage configured means first run.
@@ -57,7 +60,7 @@ func (s *Service) Load() (bool, error) {
 
 // ConfigFilename returns the filename of the configuration file.
 func (s *Service) ConfigFilename() string {
-	return configFilename
+	return s.filename
 }
 
 func (s *Service) Get() *Conf {
@@ -66,13 +69,12 @@ func (s *Service) Get() *Conf {
 
 // Save writes the in-memory configuration to the config file.
 func (s *Service) Save() error {
-	err := s.config.Write(configFilename)
+	err := s.config.Write(s.filename)
 	if err != nil {
 		return err
 	}
 
-	// Do the logging here, as our caller doesn't know `configFilename``.
-	log.Info().Str("filename", configFilename).Msg("configuration file written")
+	log.Info().Str("filename", s.filename).Msg("configuration file written")
 	return nil
 }
 

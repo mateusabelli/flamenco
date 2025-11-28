@@ -132,6 +132,9 @@ type Conf struct {
 	// Used to look up variables for a given platform and audience.
 	// The 'audience' is never "all" or ""; only concrete audiences are stored here.
 	VariablesLookup map[VariableAudience]map[VariablePlatform]map[string]string `json:"-" yaml:"-"`
+
+	// filename where this configuration was loaded from, if any.
+	filename string
 }
 
 // Variable defines a configuration variable.
@@ -161,11 +164,6 @@ type VariableValue struct {
 type ResolvedVariable struct {
 	IsTwoWay bool
 	Value    string
-}
-
-// getConf parses flamenco-manager.yaml and returns its contents as a Conf object.
-func getConf() (Conf, error) {
-	return loadConf(configFilename)
 }
 
 // DefaultConfig returns a copy of the default configuration.
@@ -224,6 +222,7 @@ func loadConf(filename string, overrides ...func(c *Conf)) (Conf, error) {
 		return c, fmt.Errorf("unable to parse %s: %w", filename, err)
 	}
 
+	c.filename = filename
 	c.processAfterLoading(overrides...)
 
 	return c, nil
@@ -616,7 +615,7 @@ func (c *Conf) checkBlenderVariable() {
 	}
 
 	logger := log.With().
-		Str("filename", configFilename).
+		Str("filename", c.filename).
 		Logger()
 	switch len(missingPlatforms) {
 	case 0: // Fine.
@@ -636,16 +635,16 @@ func (c *Conf) checkDatabase() {
 }
 
 // Overwrite stores this configuration object as flamenco-manager.yaml.
-func (c *Conf) Overwrite() error {
-	tempFilename := configFilename + "~"
+func (c *Conf) Overwrite(filename string) error {
+	tempFilename := filename + "~"
 	if err := c.Write(tempFilename); err != nil {
 		return fmt.Errorf("writing config to %s: %w", tempFilename, err)
 	}
-	if err := os.Rename(tempFilename, configFilename); err != nil {
-		return fmt.Errorf("moving %s to %s: %w", tempFilename, configFilename, err)
+	if err := os.Rename(tempFilename, filename); err != nil {
+		return fmt.Errorf("moving %s to %s: %w", tempFilename, filename, err)
 	}
 
-	log.Info().Str("filename", configFilename).Msg("saved configuration to file")
+	log.Info().Str("filename", filename).Msg("saved configuration to file")
 	return nil
 }
 
