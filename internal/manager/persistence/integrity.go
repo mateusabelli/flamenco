@@ -255,6 +255,8 @@ func (db *DB) PeriodicWALCheckpoint(ctx context.Context) {
 // See https://sqlite.org/wal.html and https://sqlite.org/pragma.html#pragma_wal_checkpoint
 func (db *DB) walCheckpoint(ctx context.Context, checkpointType sqlc.WALCheckpointType) (sqlc.WALCheckpointResult, error) {
 	var result sqlc.WALCheckpointResult
+
+	startTime := time.Now()
 	err := db.queriesRW(ctx, func(q *sqlc.Queries) (err error) {
 		result, err = q.WALCheckpoint(ctx, checkpointType)
 		return
@@ -262,6 +264,7 @@ func (db *DB) walCheckpoint(ctx context.Context, checkpointType sqlc.WALCheckpoi
 	if err != nil {
 		return sqlc.WALCheckpointResult{}, err
 	}
+	checkpointDuration := time.Since(startTime)
 
 	// Number of pages that can be in the WAL log before operations show up at
 	// INFO level.
@@ -292,6 +295,7 @@ func (db *DB) walCheckpoint(ctx context.Context, checkpointType sqlc.WALCheckpoi
 		Bool("busy", result.Busy > 0).
 		Int64("pagesInWAL", result.Log).
 		Int64("checkpointedPages", result.Checkpointed).
+		Stringer("duration", checkpointDuration).
 		Msg("database: checkpoint complete")
 
 	return result, nil
