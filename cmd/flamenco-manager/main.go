@@ -118,6 +118,8 @@ func runFlamencoManager() bool {
 	if cliArgs.setupAssistant {
 		configService.ForceFirstRun()
 	}
+
+	log.Info().Str("file", configService.ConfigFilename()).Msg("loading configuration")
 	isFirstRun, err := configService.Load()
 	switch {
 	case err != nil:

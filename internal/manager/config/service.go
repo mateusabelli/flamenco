@@ -55,6 +55,11 @@ func (s *Service) Load() (bool, error) {
 	return s.forceFirstRun || config.SharedStoragePath == "", nil
 }
 
+// ConfigFilename returns the filename of the configuration file.
+func (s *Service) ConfigFilename() string {
+	return configFilename
+}
+
 func (s *Service) Get() *Conf {
 	return &s.config
 }

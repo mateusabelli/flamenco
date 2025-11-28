@@ -192,7 +192,7 @@ func loadConf(filename string, overrides ...func(c *Conf)) (Conf, error) {
 		}
 	}
 
-	log.Info().Str("file", filename).Msg("loading configuration")
+	log.Debug().Str("file", filename).Msg("loading configuration")
 	yamlFile, err := os.ReadFile(filename)
 	if err != nil {
 		var evt *zerolog.Event
