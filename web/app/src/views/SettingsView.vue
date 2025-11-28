@@ -247,10 +247,12 @@ export default {
     FormInputSwitchCheckbox,
     FormInputDropdownSelect,
   },
+
   data: () => ({
     // Make a deep copy so it can be compared to the original for isDirty check to work
     config: JSON.parse(JSON.stringify(initialFormValues)),
     originalConfig: JSON.parse(JSON.stringify(initialFormValues)),
+    isEditingVariableName: {}, // the var name(s) being edited gets stored here
     newVariableName: '',
     newVariableErrorMessage: '',
     newVariableTouched: false,
@@ -311,6 +313,9 @@ export default {
     isDirty() {
       return JSON.stringify(this.originalConfig) !== JSON.stringify(this.config);
     },
+    sortedVariableNames() {
+      return Object.keys(this.config.variables).sort();
+    },
   },
   methods: {
     undoEdits() {
@@ -362,34 +367,46 @@ export default {
     addVariableOnInput() {
       this.newVariableTouched = true;
     },
+    editVariableOnInput(variableName) {
+      this.isEditingVariableName[variableName].touched = true;
+    },
+    canEditVariable(variableName) {
+      const newName = this.isEditingVariableName[variableName].name;
+      const errorMessage = this.validateVariableName(newName);
+
+      // Only show an error message if the field has been touched AND the edited var name is different than the original
+      if (this.isEditingVariableName[variableName].touched && variableName !== newName) {
+        this.isEditingVariableName[variableName].errorMessage = errorMessage;
+      }
+      // returns false if there is an errorMessage or if the variable name is empty
+      return !errorMessage && newName !== '';
+    },
     canAddVariable() {
+      // Validate the variable name
+      const errorMessage = this.validateVariableName(this.newVariableName);
+      // Set the error message, if any
+      this.newVariableErrorMessage = errorMessage;
+
       // Don't show an error message if the field is blank e.g. after a user adds a variable name
       // but still prevent variable addition
-      if (this.newVariableName === '') {
-        this.newVariableErrorMessage = '';
-        return false;
-      }
-
+      return !errorMessage && this.newVariableName !== ''; // returns false if there is an errorMessage or if the variable name is empty
+    },
+    validateVariableName(variableName) {
       // Duplicate variable name
-      if (this.newVariableName in this.config.variables) {
-        this.newVariableErrorMessage = 'Duplicate variable name found.';
-        return false;
+      if (variableName in this.config.variables) {
+        return 'Duplicate variable name found.';
       }
 
       // Whitespace only
-      if (!this.newVariableName.trim()) {
-        this.newVariableErrorMessage = 'Must have at least one non-whitespace character.';
-        return false;
+      if (!variableName.trim()) {
+        return 'Must have at least one non-whitespace character.';
       }
 
       // Curly brace detection
-      if (this.newVariableName.match(/[{}]/)) {
-        this.newVariableErrorMessage =
-          'Variable name cannot contain any of the following characters: {}';
-        return false;
+      if (variableName.match(/[{}]/)) {
+        return 'Variable name cannot contain any of the following characters: {}';
       }
-      this.newVariableErrorMessage = '';
-      return true;
+      return '';
     },
     handleAddVariable() {
       this.config.variables = {
@@ -409,6 +426,33 @@ export default {
     },
     handleDeleteVariable(variableName) {
       delete this.config.variables[variableName];
+    },
+    showVariableNameEditor(variableName) {
+      this.isEditingVariableName[variableName] = {
+        name: variableName,
+        errorMessage: '',
+        touched: false,
+      };
+    },
+    /**
+     * Save the variable under its new name.
+     * This just updates the in-memory config, and doesn't save it to the back-end.
+      */
+    saveEditVariable(variableName) {
+      // Leading & trailing whitespace should be removed.
+      variableName = variableName.trim();
+
+      // Copy the current variable data to the new variable.
+      const copyData = this.config.variables[variableName];
+      this.config.variables[this.isEditingVariableName[variableName].name] = copyData;
+
+      // Delete the current variable name from config.
+      this.handleDeleteVariable(variableName);
+
+      delete this.isEditingVariableName[variableName];
+    },
+    cancelEditVariable(variableName) {
+      delete this.isEditingVariableName[variableName];
     },
     /**
      * Adds a blank config for the specified variable
@@ -518,9 +562,9 @@ export default {
           this.showSubmissionBanner = false;
         }, 3000);
       } catch (e) {
-        console.error(e)
+        console.error(e);
         // Pass on the error message to the banner
-        const errorMessage = e.body?.message ?? e.error.message
+        const errorMessage = e.body?.message ?? e.error.message;
         this.submissionErrorMessage = `Failed to save: ${errorMessage}`;
       } finally {
         // Always show the banner on submit whether successful or not
@@ -678,7 +722,7 @@ export default {
         <!-- Variables -->
         <template v-if="category.id === 'variables'">
           <div class="form-col">
-            <div class="form-row gap-col-spacer">
+            <div class="form-row gap-text-spacer">
               <input
                 @input="addVariableOnInput"
                 @keydown.enter.prevent="canAddVariable() ? handleAddVariable() : null"
@@ -706,12 +750,74 @@ export default {
           </div>
           <section
             class="form-variable-section"
-            v-for="(variable, variableName) in config.variables"
+            v-for="variableName in sortedVariableNames"
             :key="variableName">
-            <div class="form-variable-header">
-              <h3>
-                <pre>{{ variableName }}</pre>
-              </h3>
+            {{ void(variable = config.variables[variableName]) }}
+            <div
+              :class="[
+                {
+                  'form-variable-header': !isEditingVariableName[variableName],
+                  'form-variable-header-edit': isEditingVariableName[variableName],
+                },
+              ]">
+              <template v-if="!isEditingVariableName[variableName]">
+                <h3>
+                  <pre>{{ variableName }}</pre>
+                  <button
+                    type="button"
+                    class="edit-button"
+                    @click="showVariableNameEditor(variableName)">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <g id="SVGRepo_bgCarrier" stroke-width="0" />
+                      <g
+                        id="SVGRepo_tracerCarrier"
+                        stroke-linecap="round"
+                        stroke-linejoin="round" />
+                      <g id="SVGRepo_iconCarrier">
+                        <path
+                          d="M12 5H9C7.11438 5 6.17157 5 5.58579 5.58579C5 6.17157 5 7.11438 5 9V15C5 16.8856 5 17.8284 5.58579 18.4142C6.17157 19 7.11438 19 9 19H15C16.8856 19 17.8284 19 18.4142 18.4142C19 17.8284 19 16.8856 19 15V12M9.31899 12.6911L15.2486 6.82803C15.7216 6.36041 16.4744 6.33462 16.9782 6.76876C17.5331 7.24688 17.5723 8.09299 17.064 8.62034L11.2329 14.6702L9 15L9.31899 12.6911Z"
+                          stroke-linecap="round"
+                          stroke-linejoin="round" />
+                      </g>
+                    </svg>
+                  </button>
+                </h3>
+              </template>
+              <template v-else>
+                <div class="form-col">
+                  <div class="form-row gap-text-spacer">
+                    <input
+                      @input="editVariableOnInput(variableName)"
+                      @keydown.enter.prevent="
+                        canEditVariable(variableName) ? saveEditVariable(variableName) : null
+                      "
+                      placeholder="variableName"
+                      type="text"
+                      :id="'edit_'+variableName"
+                      v-model="isEditingVariableName[variableName].name" />
+                    <div class="form-row gap-text-spacer">
+                      <button
+                        type="button"
+                        :disabled="!canEditVariable(variableName)"
+                        @click="saveEditVariable(variableName)">
+                        Save
+                      </button>
+                      <button type="button" @click="cancelEditVariable(variableName)">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                  <span
+                    :class="[
+                      'error',
+                      {
+                        hidden: !isEditingVariableName[variableName].errorMessage,
+                      },
+                    ]"
+                    >{{ isEditingVariableName[variableName].errorMessage }}
+                  </span>
+                </div>
+              </template>
               <button
                 type="button"
                 class="delete-button"
@@ -987,12 +1093,22 @@ export default {
   color: var(--color-status-failed);
 }
 
+button.edit-button {
+  stroke: white;
+  background-color: var(--color-background-column);
+  outline: none;
+  border: none;
+  width: 30px;
+  padding: 0;
+}
+
 button.delete-button {
   border: var(--color-danger) 1px solid;
   color: var(--color-danger);
   background-color: var(--color-background-column);
   width: var(--delete-button-width);
   height: var(--delete-button-width);
+  flex-shrink: 0;
 }
 
 button.delete-button .trash {
@@ -1011,6 +1127,10 @@ button.add-button {
   border: var(--color-success) 1px solid;
   color: var(--color-success);
   background-color: var(--color-background-column);
+}
+
+button.edit-button:hover {
+  stroke: var(--color-accent);
 }
 
 button.delete-button:hover,
@@ -1178,8 +1298,21 @@ h3 {
   margin: var(--section-spacer) 0 5px 0;
 }
 
+.form-variable-header-edit {
+  display: flex;
+  flex-direction: row;
+  align-items: start;
+  justify-content: space-between;
+  width: 100%;
+  margin: var(--section-spacer) 0 22px 0;
+}
+
 .form-variable-header h3 {
   margin: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
 }
 
 input {
