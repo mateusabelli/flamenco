@@ -270,7 +270,7 @@ export default {
     this.importConfig();
   },
   /**
-   * Confirm with the user about unsaved edits before navigating to another route within the web app 
+   * Confirm with the user about unsaved edits before navigating to another route within the web app
    * (and in Chrome back/forward arrows)
    */
   beforeRouteLeave(to, from, next) {
@@ -1002,7 +1002,7 @@ button.delete-button .trash {
 }
 
 button.delete-button.margin-top {
-  /* This is calculated by subtracting the button height from the form row height, 
+  /* This is calculated by subtracting the button height from the form row height,
   aligning it properly with the inputs */
   margin-top: 25px;
 }
