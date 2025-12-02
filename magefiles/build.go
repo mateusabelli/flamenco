@@ -108,7 +108,12 @@ func build(exePackage string, extraArgs ...string) error {
 	args = append(args, flags...)
 	args = append(args, extraArgs...)
 	args = append(args, exePackage)
-	return sh.RunV(mg.GoCmd(), args...)
+
+	// Make sure CGO is disabled, which gives us a static binary.
+	env := map[string]string{
+		"CGOENABLED": "0",
+	}
+	return sh.RunWithV(env, mg.GoCmd(), args...)
 }
 
 func buildFlags() ([]string, error) {
