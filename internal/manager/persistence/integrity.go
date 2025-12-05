@@ -274,18 +274,13 @@ func (db *DB) walCheckpoint(ctx context.Context, checkpointType sqlc.WALCheckpoi
 	// there was an issue where this did not happen, or at least did not kick in
 	// before the WAL file became >10 GB. That shouldn't happen now that Flamenco
 	// is doing periodic checkpointing, but it's still nice to be able to see any
-	// gradual increase before that 1000 pages is hit.
-	//
-	// Maybe this threshold should be increased at some point, if it turns out
-	// that the logging is confusing users.
-	const threshold = 250
+	// increase above the auto-checkpointing level.
+	const threshold = 1000
 
 	// The log level is determined by what happened.
 	var logLevel zerolog.Level
 	switch {
-	case result.Busy > 0:
-		logLevel = zerolog.WarnLevel
-	case result.Log > threshold || result.Checkpointed > threshold:
+	case result.Busy > 0 || result.Log > threshold || result.Checkpointed > threshold:
 		logLevel = zerolog.InfoLevel
 	default:
 		logLevel = zerolog.DebugLevel
