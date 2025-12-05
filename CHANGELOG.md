@@ -4,7 +4,7 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
-## 3.8 - in development
+## 3.8 - released 2025-12-05
 
 - Flamenco Manager's MQTT Client can now be enabled & disabled explicitly in the configuration. **This is a backward-incompatible change.** If you are using the MQTT client feature, a new setting needs to be added to `flamenco-manager.yaml` to re-enable the MQTT client; next to `mqtt.client.broker`, also add `mqtt.client.enabled: true`.
 - Add a Settings section to the Manager's web interface, which can be used to edit the Manager configuration ([#104399](https://projects.blender.org/studio/flamenco/pulls/104399)).
