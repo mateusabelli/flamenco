@@ -557,10 +557,10 @@ export default {
         // Discard any existing error message on the banner
         this.submissionErrorMessage = '';
 
-        // Hide the success banner after 3 seconds
+        // Hide the success banner after 10 seconds
         setTimeout(() => {
           this.showSubmissionBanner = false;
-        }, 3000);
+        }, 10000);
       } catch (e) {
         console.error(e);
         // Pass on the error message to the banner
@@ -682,7 +682,7 @@ export default {
           {{
             this.submissionErrorMessage
               ? this.submissionErrorMessage
-              : 'Settings successfully saved.'
+              : 'Settings successfully saved, restart Flamenco Manager to make them active.'
           }}
         </p>
       </div>
