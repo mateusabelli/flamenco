@@ -27,6 +27,8 @@ bugs in actually-released versions.
   - https://pkg.go.dev/vuln/GO-2025-3533
   - https://pkg.go.dev/vuln/GO-2025-3503
   - https://pkg.go.dev/vuln/GO-2025-3447
+  - https://pkg.go.dev/vuln/GO-2025-4175
+  - https://pkg.go.dev/vuln/GO-2025-4155
 
 
 ## 3.7 - released 2025-04-03
