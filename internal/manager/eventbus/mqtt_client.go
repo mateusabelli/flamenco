@@ -89,6 +89,8 @@ func NewMQTTForwarder(config MQTTClientConfig) *MQTTForwarder {
 	}
 	client.config = autopaho.ClientConfig{
 		BrokerUrls:        []*url.URL{brokerURL},
+		ConnectUsername:   config.Username,
+		ConnectPassword:   []byte(config.Password),
 		KeepAlive:         keepAlive,
 		ConnectRetryDelay: connectRetryDelay,
 		OnConnectionUp:    client.onConnectionUp,
@@ -99,7 +101,6 @@ func NewMQTTForwarder(config MQTTClientConfig) *MQTTForwarder {
 			OnServerDisconnect: client.onServerDisconnect,
 		},
 	}
-	client.config.SetUsernamePassword(config.Username, []byte(config.Password))
 	return &client
 }
 
