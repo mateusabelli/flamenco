@@ -3,6 +3,7 @@ package worker
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -224,36 +225,35 @@ func (fcw FileConfigWrangler) writeConfig(filename string, filetype configFileTy
 		return err
 	}
 
+	// Write to a buffer first, as that'll not return any errors.
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "# %s file for Flamenco Worker.\n", filetype)
+	fmt.Fprintln(&buf, "#")
+	switch filetype {
+	case configFileTypeConfiguration:
+		fmt.Fprintf(&buf, "# For an explanation of the fields, refer to %s\n", website.WorkerConfigURL)
+	case configFileTypeCredentials:
+		fmt.Fprintln(&buf, "# This file is not meant to be manually edited. Removing this file is fine, and")
+		fmt.Fprintln(&buf, "# will cause the Worker to re-register as a new Worker.")
+		fmt.Fprintln(&buf, "#")
+		fmt.Fprintf(&buf, "# For more information, refer to %s\n", website.WorkerConfigURL)
+	}
+	fmt.Fprintln(&buf, "#")
+	fmt.Fprintln(&buf, "# NOTE: this file may be overwritten by Flamenco Worker.")
+	fmt.Fprintln(&buf, "#")
+	now := time.Now()
+	fmt.Fprintf(&buf, "# This file was written on %s\n\n", now.Format("2006-01-02 15:04:05 -07:00"))
+
+	buf.Write(data)
+
+	// Write the buffer to a file on disk.
 	tempFilename := filename + "~"
 	f, err := os.OpenFile(tempFilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(f, "# %s file for Flamenco Worker.\n", filetype)
-	fmt.Fprintln(f, "#")
-	switch filetype {
-	case configFileTypeConfiguration:
-		fmt.Fprintf(f, "# For an explanation of the fields, refer to %s\n", website.WorkerConfigURL)
-	case configFileTypeCredentials:
-		fmt.Fprintln(f, "# This file is not meant to be manually edited. Removing this file is fine, and")
-		fmt.Fprintln(f, "# will cause the Worker to re-register as a new Worker.")
-		fmt.Fprintln(f, "#")
-		fmt.Fprintf(f, "# For more information, refer to %s\n", website.WorkerConfigURL)
-	}
-	fmt.Fprintln(f, "#")
-	fmt.Fprintln(f, "# NOTE: this file may be overwritten by Flamenco Worker.")
-	fmt.Fprintln(f, "#")
-	now := time.Now()
-	fmt.Fprintf(f, "# This file was written on %s\n\n", now.Format("2006-01-02 15:04:05 -07:00"))
-
-	n, err := f.Write(data)
-	if err != nil {
-		f.Close() // ignore errors here
-		return err
-	}
-	if n < len(data) {
-		f.Close() // ignore errors here
-		return io.ErrShortWrite
+	if _, werr := f.Write(buf.Bytes()); werr != nil {
+		return werr
 	}
 	if err = f.Close(); err != nil {
 		return err
@@ -273,7 +273,7 @@ func (fcw FileConfigWrangler) writeConfig(filename string, filetype configFileTy
 }
 
 // LoadConfig loads a YAML configuration file into 'config'
-func (fcw FileConfigWrangler) loadConfig(filename string, config interface{}) error {
+func (fcw FileConfigWrangler) loadConfig(filename string, config interface{}) (err error) {
 	// Log which directory the config is loaded from.
 	filepath, err := filepath.Abs(filename)
 	if err != nil {
@@ -288,14 +288,16 @@ func (fcw FileConfigWrangler) loadConfig(filename string, config interface{}) er
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		err = f.Close()
+	}()
 
 	dec := yaml.NewDecoder(f)
 	if err = dec.Decode(config); err != nil {
 		return err
 	}
 
-	return nil
+	return
 }
 
 // ParseURL allows URLs without scheme (assumes HTTP).
