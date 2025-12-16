@@ -27,7 +27,7 @@ type StateMachine struct {
 
 	// mutex protects all public functions, so that only one function can run at a time.
 	// This is to avoid race conditions on task/job status updates.
-	mutex *sync.Mutex
+	mutex sync.Mutex
 }
 
 func NewStateMachine(persist PersistenceService, broadcaster ChangeBroadcaster, logStorage LogStorage) *StateMachine {
@@ -35,7 +35,6 @@ func NewStateMachine(persist PersistenceService, broadcaster ChangeBroadcaster, 
 		persist:     persist,
 		broadcaster: broadcaster,
 		logStorage:  logStorage,
-		mutex:       new(sync.Mutex),
 	}
 }
 
@@ -63,14 +62,20 @@ func (sm *StateMachine) taskStatusChange(
 	task *persistence.Task,
 	newTaskStatus api.TaskStatus,
 ) error {
+	if task == nil {
+		return fmt.Errorf("nil task passed to taskStatusChange")
+	}
 	if task.JobID == 0 {
-		log.Panic().Str("task", task.UUID).Msg("task without job ID, cannot handle this")
-		return nil // Will not run because of the panic.
+		log.Error().Str("task", task.UUID).Msg("task without job ID, cannot handle this")
+		return fmt.Errorf("task %s missing job ID", task.UUID)
 	}
 
 	job, err := sm.persist.FetchJobByID(ctx, task.JobID)
 	if err != nil {
 		return fmt.Errorf("cannot fetch the job of task %s: %w", task.UUID, err)
+	}
+	if job == nil {
+		return fmt.Errorf("job %d not found for task %s", task.JobID, task.UUID)
 	}
 
 	oldTaskStatus := task.Status
@@ -93,6 +98,12 @@ func (sm *StateMachine) taskStatusChangeOnly(
 	job *persistence.Job,
 	newTaskStatus api.TaskStatus,
 ) error {
+	if task == nil {
+		return fmt.Errorf("nil task passed to taskStatusChangeOnly")
+	}
+	if job == nil {
+		return fmt.Errorf("nil job passed to taskStatusChangeOnly for task %s", task.UUID)
+	}
 
 	oldTaskStatus := task.Status
 	task.Status = newTaskStatus
@@ -162,8 +173,11 @@ func (sm *StateMachine) updateJobAfterTaskStatusChange(
 	oldTaskStatus api.TaskStatus,
 ) error {
 	if job == nil {
-		log.Panic().Str("task", task.UUID).Msg("task without job, cannot handle this")
-		return nil // Will not run because of the panic.
+		if task == nil {
+			return fmt.Errorf("nil task and nil job passed to updateJobAfterTaskStatusChange")
+		}
+		log.Error().Str("task", task.UUID).Msg("task without job, cannot handle this")
+		return fmt.Errorf("nil job for task %s", task.UUID)
 	}
 
 	logger := log.With().
@@ -284,6 +298,16 @@ func (sm *StateMachine) updateJobOnTaskStatusFailed(ctx context.Context, logger 
 	if err != nil {
 		return err
 	}
+
+	// Invariant: a task failure must imply the job has at least one task.
+	if numTotal == 0 {
+		logger.Error().
+			Str("job", job.UUID).
+			Int("numFailed", numFailed).
+			Msg("invariant violated: task failed but job has zero tasks")
+		return nil
+	}
+
 	failedPercentage := int(float64(numFailed) / float64(numTotal) * 100)
 	failLogger := logger.With().
 		Int("taskNumTotal", numTotal).
@@ -353,6 +377,9 @@ func (sm *StateMachine) JobStatusChange(
 	if err != nil {
 		return err
 	}
+	if job == nil {
+		return fmt.Errorf("job %s not found", jobUUID)
+	}
 	return sm.jobStatusChange(ctx, job, newJobStatus, reason)
 }
 
@@ -400,6 +427,9 @@ func (sm *StateMachine) jobStatusReenforce(
 	job *persistence.Job,
 	reason string,
 ) error {
+	if job == nil {
+		return fmt.Errorf("nil job passed to jobStatusReenforce")
+	}
 	// Job status changes can trigger task status changes, which can trigger the
 	// next job status change. Keep looping over these job status changes until
 	// there is no more change left to do.
@@ -451,18 +481,23 @@ func (sm *StateMachine) jobStatusSet(ctx context.Context,
 	reason string,
 	logger zerolog.Logger,
 ) (api.JobStatus, error) {
+	if job == nil {
+		return "", fmt.Errorf("nil job passed to jobStatusSet")
+	}
 	oldJobStatus := job.Status
 	job.Status = newJobStatus
 
 	// Persist the new job status.
 	err := sm.persist.SaveJobStatus(ctx, job)
 	if err != nil {
+		// Persisting the new status failed, so restore the old status on the job.
+		job.Status = oldJobStatus
 		return "", fmt.Errorf("saving job status change %q to %q to database: %w",
 			oldJobStatus, newJobStatus, err)
 	}
 
 	// Handle the status change.
-	result, err := sm.updateTasksAfterjobStatusChange(ctx, logger, job, oldJobStatus)
+	result, err := sm.updateTasksAfterJobStatusChange(ctx, logger, job, oldJobStatus)
 	if err != nil {
 		return "", fmt.Errorf("updating job's tasks after job status change: %w", err)
 	}
@@ -476,7 +511,7 @@ func (sm *StateMachine) jobStatusSet(ctx context.Context,
 	return result.followingJobStatus, nil
 }
 
-// tasksUpdateResult is returned by `updateTasksAfterjobStatusChange`.
+// tasksUpdateResult is returned by updateTasksAfterJobStatusChange.
 type tasksUpdateResult struct {
 	// FollowingJobStatus is set when the task updates should trigger another job status update.
 	followingJobStatus api.JobStatus
@@ -494,7 +529,7 @@ type tasksUpdateResult struct {
 //
 // Returns the new state the job should go into after this change, or an empty
 // string if there is no subsequent change necessary.
-func (sm *StateMachine) updateTasksAfterjobStatusChange(
+func (sm *StateMachine) updateTasksAfterJobStatusChange(
 	ctx context.Context,
 	logger zerolog.Logger,
 	job *persistence.Job,

@@ -589,7 +589,7 @@ func mayWorkerRun(worker *persistence.Worker, dbTask *persistence.Task) api.MayK
 	if !dbTask.WorkerID.Valid || dbTask.WorkerID.Int64 != worker.ID {
 		return api.MayKeepRunning{Reason: "task not assigned to this worker"}
 	}
-	if !task_state_machine.IsRunnableTaskStatus(dbTask.Status) {
+	if !task_state_machine.CanWorkerRun(dbTask.Status) {
 		return api.MayKeepRunning{Reason: fmt.Sprintf("task is in non-runnable status %q", dbTask.Status)}
 	}
 	return api.MayKeepRunning{MayKeepRunning: true}

@@ -51,7 +51,7 @@ type ChangeBroadcaster interface {
 	BroadcastJobUpdate(jobUpdate api.EventJobUpdate)
 
 	// BroadcastTaskUpdate sends the task update to SocketIO clients.
-	BroadcastTaskUpdate(jobUpdate api.EventTaskUpdate)
+	BroadcastTaskUpdate(taskUpdate api.EventTaskUpdate)
 }
 
 // ChangeBroadcaster should be a subset of eventbus.Broker

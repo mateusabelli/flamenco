@@ -13,8 +13,8 @@ var (
 	}
 )
 
-// IsRunnableTaskStatus returns whether the given status is considered "runnable".
+// CanWorkerRun returns whether the given status is considered "runnable".
 // In other words, workers are allowed to keep running such tasks.
-func IsRunnableTaskStatus(status api.TaskStatus) bool {
+func CanWorkerRun(status api.TaskStatus) bool {
 	return runnableStatuses[status]
 }
