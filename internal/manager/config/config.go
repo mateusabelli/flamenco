@@ -438,7 +438,7 @@ func (c *Conf) ExpandVariables(inputChannel <-chan string, outputChannel chan<- 
 		// Expand variables from {varname} to their value for the target platform.
 		for varname, varvalue := range varsForPlatform {
 			placeholder := fmt.Sprintf("{%s}", varname)
-			expanded = strings.Replace(expanded, placeholder, varvalue, -1)
+			expanded = strings.ReplaceAll(expanded, placeholder, varvalue)
 		}
 
 		// Go through the two-way variables, to make sure that the result of

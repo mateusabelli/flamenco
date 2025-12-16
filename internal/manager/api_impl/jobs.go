@@ -226,7 +226,7 @@ func (f *Flamenco) DeleteJobWhatWouldItDo(e echo.Context, jobID string) error {
 
 func timestampRoundUp(stamp time.Time) time.Time {
 	truncated := stamp.Truncate(time.Second)
-	if truncated == stamp {
+	if truncated.Equal(stamp) {
 		return stamp
 	}
 	return truncated.Add(time.Second)

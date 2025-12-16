@@ -63,7 +63,7 @@ func parseCliArgs() {
 	cliArgs.releaseCycle = flag.Arg(1)
 
 	if cliArgs.newVersion == "" || cliArgs.releaseCycle == "" {
-		os.Stderr.WriteString(fmt.Sprintf("Usage: %s [-quiet|-debug|-trace] {new Flamenco version number} {release cycle}\n", os.Args[0]))
+		fmt.Fprintf(os.Stderr, "Usage: %s [-quiet|-debug|-trace] {new Flamenco version number} {release cycle}\n", os.Args[0])
 		os.Stderr.WriteString("\n")
 		flag.PrintDefaults()
 		os.Stderr.WriteString("\n")

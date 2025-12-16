@@ -437,9 +437,9 @@ func TestUpdateConfigurationFile(t *testing.T) {
 		}
 
 		updatedConfig := doTest(form)
-		assert.Equal(t, form.Base.ManagerName, updatedConfig.Base.ManagerName)
+		assert.Equal(t, form.ManagerName, updatedConfig.ManagerName)
 		// Other settings should be set to their zero values.
-		assert.Equal(t, form.Base.Listen, updatedConfig.Listen)
+		assert.Equal(t, form.Listen, updatedConfig.Listen)
 		assert.Equal(t, form.Variables, updatedConfig.Variables)
 	}
 
@@ -452,10 +452,10 @@ func TestUpdateConfigurationFile(t *testing.T) {
 		}
 
 		updatedConfig := doTest(form)
-		assert.Equal(t, form.Base.Listen, updatedConfig.Base.Listen)
+		assert.Equal(t, form.Listen, updatedConfig.Listen)
 		// Other settings should be set to their zero values.
-		assert.Equal(t, form.Base.Shaman.Enabled, updatedConfig.Base.Shaman.Enabled)
-		assert.Equal(t, form.Base.ManagerName, updatedConfig.Base.ManagerName)
+		assert.Equal(t, form.Shaman.Enabled, updatedConfig.Shaman.Enabled)
+		assert.Equal(t, form.ManagerName, updatedConfig.ManagerName)
 		assert.Equal(t, form.Variables, updatedConfig.Variables)
 	}
 
@@ -470,10 +470,10 @@ func TestUpdateConfigurationFile(t *testing.T) {
 		}
 
 		updatedConfig := doTest(form)
-		assert.Equal(t, form.Base.Shaman.Enabled, updatedConfig.Base.Shaman.Enabled)
+		assert.Equal(t, form.Shaman.Enabled, updatedConfig.Shaman.Enabled)
 		// Other settings should be set to their zero values.
-		assert.Equal(t, form.Base.Listen, updatedConfig.Base.Listen)
-		assert.Equal(t, form.Base.ManagerName, updatedConfig.Base.ManagerName)
+		assert.Equal(t, form.Listen, updatedConfig.Listen)
+		assert.Equal(t, form.ManagerName, updatedConfig.ManagerName)
 		assert.Equal(t, form.Variables, updatedConfig.Variables)
 	}
 
@@ -486,7 +486,7 @@ func TestUpdateConfigurationFile(t *testing.T) {
 		}
 
 		updatedConfig := doTest(form)
-		assert.Equal(t, false, updatedConfig.Base.Shaman.Enabled)
-		assert.Equal(t, false, form.Base.Shaman.Enabled)
+		assert.Equal(t, false, updatedConfig.Shaman.Enabled)
+		assert.Equal(t, false, form.Shaman.Enabled)
 	}
 }

@@ -103,7 +103,7 @@ func (ve *VariableExpander) Expand(valueToExpand string) string {
 	// Expand variables from {varname} to their value for the target platform.
 	for varname, varvalue := range ve.oneWayVars {
 		placeholder := fmt.Sprintf("{%s}", varname)
-		expanded = strings.Replace(expanded, placeholder, varvalue, -1)
+		expanded = strings.ReplaceAll(expanded, placeholder, varvalue)
 	}
 
 	// Go through the two-way variables for the target platform.
@@ -114,7 +114,7 @@ func (ve *VariableExpander) Expand(valueToExpand string) string {
 			continue
 		}
 
-		expanded = strings.Replace(expanded, placeholder, varvalue, -1)
+		expanded = strings.ReplaceAll(expanded, placeholder, varvalue)
 
 		// Since two-way variables are meant for path replacement, we know this
 		// should be a path.

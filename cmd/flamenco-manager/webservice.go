@@ -255,7 +255,7 @@ func randomDelayMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		err := next(c)
 
 		// Delay the response a bit.
-		var duration int64 = int64(rand.NormFloat64()*250 + 125) // in msec
+		var duration = int64(rand.NormFloat64()*250 + 125) // in msec
 		if duration > 0 {
 			if duration > 1000 {
 				duration = 1000 // Cap at one second.

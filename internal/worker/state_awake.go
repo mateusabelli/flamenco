@@ -106,7 +106,7 @@ func (w *Worker) fetchTask(ctx context.Context) *api.AssignedTask {
 
 	// Start with a small wait time, just to stagger simultaneously-started
 	// Workers (in combination with the wait time randomization below).
-	var wait time.Duration = 3 * time.Second
+	var wait = 3 * time.Second
 
 	for {
 		// Randomize the wait time by ±10% so that Workers don't sync up too much.
