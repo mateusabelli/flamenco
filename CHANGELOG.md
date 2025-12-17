@@ -4,6 +4,10 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
+## 3.9 - in development
+
+- Upgrade the pure-Go SQLite database package to version 1.40.1. This should fix the issue of the infinitely-growing `flamenco-manager.sqlite-wal` file. See https://gitlab.com/cznic/sqlite/-/merge_requests/81 for more info.
+
 ## 3.8 - released 2025-12-05
 
 - Flamenco Manager's MQTT Client can now be enabled & disabled explicitly in the configuration. **This is a backward-incompatible change.** If you are using the MQTT client feature, a new setting needs to be added to `flamenco-manager.yaml` to re-enable the MQTT client; next to `mqtt.client.broker`, also add `mqtt.client.enabled: true`.
