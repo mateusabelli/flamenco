@@ -21,7 +21,9 @@ func setUpTest(t *testing.T) string {
 }
 
 func tearDownTest(temppath string) {
-	os.RemoveAll(temppath)
+	if err := os.RemoveAll(temppath); err != nil {
+		panic(err)
+	}
 }
 
 func TestCreateNumberedPath(t *testing.T) {
@@ -120,7 +122,10 @@ func fileExists(filename string) bool {
 func fileTouch(filename string) {
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_RDONLY, 0666)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
-	file.Close()
+	err = file.Close()
+	if err != nil {
+		panic(err)
+	}
 }

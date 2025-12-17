@@ -38,8 +38,8 @@ func TestDefaultPragmaValues(t *testing.T) {
 	db, err := openDB(ctx, "sqlite_test.sqlite")
 	require.NoError(t, err)
 	defer func() {
-		db.Close()
-		os.Remove("sqlite_test.sqlite")
+		require.NoError(t, db.Close())
+		require.NoError(t, os.Remove("sqlite_test.sqlite"))
 	}()
 
 	// Get low-level connections to test, instead of using the SQLC-generated
@@ -57,7 +57,7 @@ func TestDefaultPragmaValues(t *testing.T) {
 
 	defer func() {
 		for _, conn := range connections {
-			conn.Close()
+			require.NoError(t, conn.Close())
 		}
 	}()
 

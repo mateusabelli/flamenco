@@ -84,7 +84,7 @@ func (s *Storage) WriteTimestamped(logger zerolog.Logger, jobID, taskID string, 
 	return s.Write(logger, jobID, taskID, now+" "+logText)
 }
 
-func (s *Storage) writeToDisk(logger zerolog.Logger, jobID, taskID string, logText string) error {
+func (s *Storage) writeToDisk(logger zerolog.Logger, jobID, taskID string, logText string) (err error) {
 	// Shortcut to avoid creating an empty log file. It also solves an
 	// index out of bounds error further down when we check the last character.
 	if logText == "" {
@@ -108,27 +108,31 @@ func (s *Storage) writeToDisk(logger zerolog.Logger, jobID, taskID string, logTe
 		return fmt.Errorf("unable to open log file for append/create/write: %w", err)
 	}
 
+	defer func() {
+		closeErr := file.Close()
+		if closeErr == nil {
+			return
+		}
+		logger.Error().Err(closeErr).Msg("error closing log file")
+		if err != nil {
+			err = closeErr
+		}
+	}()
+
 	if n, err := file.WriteString(logText); n < len(logText) || err != nil {
 		logger.Error().
 			Int("written", n).
 			Int("totalLength", len(logText)).
 			Err(err).
 			Msg("could only write partial log file")
-		file.Close()
 		return fmt.Errorf("could only write partial log file: %w", err)
 	}
 
 	if logText[len(logText)-1] != '\n' {
 		if n, err := file.WriteString("\n"); n < 1 || err != nil {
 			logger.Error().Err(err).Msg("could not append line end")
-			file.Close()
 			return err
 		}
-	}
-
-	if err := file.Close(); err != nil {
-		logger.Error().Err(err).Msg("error closing log file")
-		return err
 	}
 	return nil
 }
