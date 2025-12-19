@@ -335,12 +335,17 @@ func (f *Flamenco) ScheduleTask(e echo.Context) error {
 	// Get a task to execute:
 	scheduledTask, err := f.persist.ScheduleTask(reqCtx, worker)
 	if err != nil {
-		if persistence.ErrIsDBBusy(err) {
+		switch {
+		case errors.Is(err, context.Canceled) && reqCtx.Err() != nil:
+			// Client disconnected, no need to send anything back.
+			return e.NoContent(http.StatusBadRequest)
+		case persistence.ErrIsDBBusy(err):
 			logger.Warn().Msg("database busy scheduling task for worker")
 			return sendAPIErrorDBBusy(e, "too busy to find a task for you, try again later")
+		default:
+			logger.Warn().Err(err).Msg("error scheduling task for worker")
+			return sendAPIError(e, http.StatusInternalServerError, "internal error finding a task for you: %v", err)
 		}
-		logger.Warn().Err(err).Msg("error scheduling task for worker")
-		return sendAPIError(e, http.StatusInternalServerError, "internal error finding a task for you: %v", err)
 	}
 	if scheduledTask == nil {
 		logger.Trace().Msg("task scheduler: no task for worker")
