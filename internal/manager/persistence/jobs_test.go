@@ -4,6 +4,7 @@ package persistence
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 
 	"projects.blender.org/studio/flamenco/internal/manager/job_compilers"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence/sqlc"
