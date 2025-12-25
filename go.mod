@@ -38,7 +38,7 @@ require (
 	golang.org/x/sys v0.39.0
 	golang.org/x/vuln v1.1.3
 	gopkg.in/yaml.v2 v2.4.0
-	honnef.co/go/tools v0.5.1
+	honnef.co/go/tools v0.6.1
 	modernc.org/sqlite v1.40.1
 )
 
@@ -154,10 +154,6 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
-
-// Replace staticcheck release with a specific revision of their `main` branch,
-// so that it includes my PR https://github.com/dominikh/go-tools/pull/1597
-replace honnef.co/go/tools v0.5.1 => honnef.co/go/tools v0.0.0-20240920144234-9f4b51e3ab5a
 
 tool (
 	github.com/magefile/mage/mage
