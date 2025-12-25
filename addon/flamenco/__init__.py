@@ -5,14 +5,14 @@
 bl_info = {
     "name": "Flamenco",
     "author": "Sybren A. Stüvel",
-    "version": (3, 8, 1),
+    "version": (3, 9),
     "blender": (3, 1, 0),
     "description": "Flamenco client for Blender.",
     "location": "Output Properties > Flamenco",
     "doc_url": "https://flamenco.blender.org/",
     "category": "System",
     "support": "COMMUNITY",
-    "warning": "",
+    "warning": "This is version 3.9-alpha2 of the add-on, which is not a stable release",
 }
 
 from pathlib import Path
