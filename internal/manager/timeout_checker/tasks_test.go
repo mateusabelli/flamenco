@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/pkg/api"

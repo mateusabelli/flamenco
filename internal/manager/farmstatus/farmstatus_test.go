@@ -5,9 +5,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"projects.blender.org/studio/flamenco/internal/manager/farmstatus/mocks"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/pkg/api"

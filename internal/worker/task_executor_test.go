@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"projects.blender.org/studio/flamenco/internal/worker/mocks"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )

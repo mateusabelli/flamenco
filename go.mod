@@ -13,7 +13,6 @@ require (
 	github.com/fromkeith/gossdp v0.0.0-20180102154144-1b2c43f6886e
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/getkin/kin-openapi v0.133.0
-	github.com/golang/mock v1.6.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.6.0
 	github.com/graarh/golang-socketio v0.0.0-20170510162725-2c44953b9b5f
@@ -31,6 +30,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/zcalusic/sysinfo v1.0.1
 	github.com/ziflex/lecho/v3 v3.1.0
+	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.46.0
 	golang.org/x/image v0.18.0
 	golang.org/x/net v0.48.0
@@ -160,9 +160,9 @@ require (
 replace honnef.co/go/tools v0.5.1 => honnef.co/go/tools v0.0.0-20240920144234-9f4b51e3ab5a
 
 tool (
-	github.com/golang/mock/mockgen
 	github.com/magefile/mage/mage
 	github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
 	github.com/pressly/goose/v3/cmd/goose
 	github.com/sqlc-dev/sqlc/cmd/sqlc
+	go.uber.org/mock/mockgen
 )

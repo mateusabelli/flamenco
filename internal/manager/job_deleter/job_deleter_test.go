@@ -7,9 +7,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"projects.blender.org/studio/flamenco/internal/manager/job_deleter/mocks"
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/pkg/shaman"

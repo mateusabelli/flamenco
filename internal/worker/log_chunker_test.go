@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 
 	"projects.blender.org/studio/flamenco/internal/worker/mocks"
 )

@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"
 	"projects.blender.org/studio/flamenco/internal/manager/sleep_scheduler/mocks"

@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 
 	"projects.blender.org/studio/flamenco/pkg/api"
 )

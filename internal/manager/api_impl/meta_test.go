@@ -11,10 +11,10 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"projects.blender.org/studio/flamenco/internal/manager/config"
 	"projects.blender.org/studio/flamenco/pkg/api"
 	shaman_config "projects.blender.org/studio/flamenco/pkg/shaman/config"
