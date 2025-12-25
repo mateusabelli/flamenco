@@ -230,35 +230,24 @@ func runFlamencoManager() bool {
 	wg := new(sync.WaitGroup)
 
 	// Run the "last rendered image" processor.
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		lastRender.Run(mainCtx)
-	}()
+	wg.Go(func() { lastRender.Run(mainCtx) })
 
 	// Run a periodic integrity check on the database.
 	// When that check fails, the entire application should shut down.
 	dbIntegrityCheckInterval := time.Duration(configService.Get().DBIntegrityCheck)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		persist.PeriodicIntegrityCheck(mainCtx,
 			dbIntegrityCheckInterval,
 			mainCtxCancel)
-	}()
+	})
 
 	// Run a periodic WAL checkpoint on the database.
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		persist.PeriodicWALCheckpoint(mainCtx)
-	}()
+	})
 
 	// Start the web server.
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
+	wg.Go(func() {
 		// No matter how this function ends, if the HTTP server goes down, so does
 		// the application.
 		defer mainCtxCancel()
@@ -267,50 +256,23 @@ func runFlamencoManager() bool {
 		if err != nil {
 			log.Error().Err(err).Msg("HTTP server error, shutting down the application")
 		}
-	}()
+	})
 
 	// Start the UPnP/SSDP server.
 	if ssdp != nil {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			ssdp.Run(mainCtx)
-		}()
+		wg.Go(func() { ssdp.Run(mainCtx) })
 	}
 
-	// Start the timeout checker.
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		timeoutChecker.Run(mainCtx)
-	}()
-
-	// Run the Worker sleep scheduler.
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		sleepScheduler.Run(mainCtx)
-	}()
-
-	// Run the Job Deleter.
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		jobDeleter.Run(mainCtx)
-	}()
-
-	// Run the Farm Status service.
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		farmStatus.Run(mainCtx)
-	}()
+	wg.Go(func() { timeoutChecker.Run(mainCtx) })
+	wg.Go(func() { sleepScheduler.Run(mainCtx) })
+	wg.Go(func() { jobDeleter.Run(mainCtx) })
+	wg.Go(func() { farmStatus.Run(mainCtx) })
 
 	// Log the URLs last, hopefully that makes them more visible / encouraging to go to for users.
-	go func() {
+	wg.Go(func() {
 		time.Sleep(100 * time.Millisecond)
 		logURLs(urls)
-	}()
+	})
 
 	// Open a webbrowser, but give the web service some time to start first.
 	if isFirstRun {

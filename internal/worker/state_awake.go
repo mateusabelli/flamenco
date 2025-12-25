@@ -175,12 +175,10 @@ func (w *Worker) runTask(ctx context.Context, task api.AssignedTask) error {
 
 	// Run the actual task in a separate goroutine.
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		defer taskCancel()
 		taskRunnerErr = w.taskRunner.Run(taskCtx, task)
-	}()
+	})
 
 	// Do a periodic check to see if we're actually allowed to run this task.
 checkloop:

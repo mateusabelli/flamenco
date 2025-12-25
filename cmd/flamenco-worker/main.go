@@ -179,11 +179,7 @@ func main() {
 	}()
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		listener.Run(workerCtx)
-	}()
+	wg.Go(func() { listener.Run(workerCtx) })
 
 	go w.Start(workerCtx, startupState)
 

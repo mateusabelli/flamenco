@@ -121,11 +121,9 @@ func TestExpandVariables(t *testing.T) {
 	receiver := make(chan string, 1)
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		c.ExpandVariables(feeder, receiver, VariableAudienceUsers, VariablePlatformWindows)
-	}()
+	})
 
 	feeder <- "unchanged value"
 	assert.Equal(t, "unchanged value", <-receiver)
@@ -168,12 +166,10 @@ func TestExpandVariablesWithTwoWay(t *testing.T) {
 	receiver := make(chan string, 1)
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		// Always target a different-than-current target platform.
 		c.ExpandVariables(feeder, receiver, VariableAudienceWorkers, VariablePlatformWindows)
-	}()
+	})
 
 	// Simple two-way variable replacement.
 	feeder <- "/path/on/linux/file.txt"

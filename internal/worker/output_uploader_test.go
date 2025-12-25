@@ -24,11 +24,9 @@ func TestQueueOutput(t *testing.T) {
 
 	// Run the queue process, otherwise the queued item cannot be received.
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		ou.Run(mocks.ctx)
-	}()
+	})
 
 	ou.OutputProduced(taskID, "filename.jpg")
 

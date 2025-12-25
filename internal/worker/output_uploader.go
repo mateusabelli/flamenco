@@ -56,11 +56,9 @@ func (ou *OutputUploader) Run(ctx context.Context) {
 	defer log.Debug().Msg("output uploader: shutting down")
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		ou.queue.Run(ctx)
-	}()
+	})
 
 runLoop:
 	for {

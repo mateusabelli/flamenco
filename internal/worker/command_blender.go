@@ -50,13 +50,11 @@ func (ce *CommandExecutor) cmdBlenderRender(ctx context.Context, logger zerolog.
 
 	// Process the output of Blender in its own goroutine.
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for line := range lineChannel {
 			ce.processLineBlender(ctx, logger, taskID, line)
 		}
-	}()
+	})
 
 	// Run the subprocess.
 	subprocessErr := ce.cli.RunWithTextOutput(ctx,

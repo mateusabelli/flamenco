@@ -24,12 +24,10 @@ func TestQueueAndGet(t *testing.T) {
 	q := New[string]()
 	wg := sync.WaitGroup{}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		time.Sleep(10 * time.Millisecond)
 		q.Enqueue("hey")
-	}()
+	})
 
 	select {
 	case item := <-q.Item():
@@ -53,11 +51,9 @@ func TestQueueMultiple(t *testing.T) {
 	defer cancel()
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		q.Run(ctx)
-	}()
+	})
 
 	select {
 	case item := <-q.Item():
