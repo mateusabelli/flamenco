@@ -25,7 +25,7 @@ func (f *Flamenco) ShamanCheckout(e echo.Context) error {
 		return sendAPIError(e, http.StatusServiceUnavailable, "shaman server not active")
 	}
 
-	var reqBody api.ShamanCheckoutJSONBody
+	var reqBody api.ShamanCheckoutJSONRequestBody
 	err := e.Bind(&reqBody)
 	if err != nil {
 		logger.Warn().Err(err).Msg("bad request received")
@@ -53,7 +53,7 @@ func (f *Flamenco) ShamanCheckoutRequirements(e echo.Context) error {
 		return sendAPIError(e, http.StatusServiceUnavailable, "shaman server not active")
 	}
 
-	var reqBody api.ShamanCheckoutRequirementsJSONBody
+	var reqBody api.ShamanCheckoutRequirementsJSONRequestBody
 	err := e.Bind(&reqBody)
 	if err != nil {
 		logger.Warn().Err(err).Msg("bad request received")

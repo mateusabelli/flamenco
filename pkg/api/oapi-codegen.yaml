@@ -1,0 +1,13 @@
+package: api
+compatibility:
+  always-prefix-enum-values: true
+
+  # We may want to set this to 'false' (or remove it), but for now, for
+  # compatibility with existing code, it's set to 'true'.
+  old-merge-schemas: true
+output-options:
+  skip-prune: true
+
+  # We may want to set this to 'true', as there is no difference between
+  # "contained has no items" and "was ommitted".
+  prefer-skip-optional-pointer-on-container-types: false

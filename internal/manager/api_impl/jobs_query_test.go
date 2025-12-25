@@ -57,12 +57,12 @@ func TestFetchJobs(t *testing.T) {
 					Name:     "работа",
 					Type:     "test",
 					Priority: 50,
-					Settings: &api.JobSettings{AdditionalProperties: map[string]interface{}{
+					Settings: &api.JobSettings{
 						"result": "/render/frames/exploding.kittens",
-					}},
-					Metadata: &api.JobMetadata{AdditionalProperties: map[string]string{
+					},
+					Metadata: &api.JobMetadata{
 						"project": "/projects/exploding-kittens",
-					}},
+					},
 				},
 				Id:     "afc47568-bd9d-4368-8016-e91d945db36d",
 				Status: api.JobStatusActive,
@@ -117,12 +117,12 @@ func TestFetchJob(t *testing.T) {
 			Name:     "работа",
 			Type:     "test",
 			Priority: 50,
-			Settings: &api.JobSettings{AdditionalProperties: map[string]interface{}{
+			Settings: &api.JobSettings{
 				"result": "/render/frames/exploding.kittens",
-			}},
-			Metadata: &api.JobMetadata{AdditionalProperties: map[string]string{
+			},
+			Metadata: &api.JobMetadata{
 				"project": "/projects/exploding-kittens",
-			}},
+			},
 			WorkerTag: ptr("d86e1b84-5ee2-4784-a178-65963eeb484b"),
 		},
 		Id:     "afc47568-bd9d-4368-8016-e91d945db36d",

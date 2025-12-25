@@ -102,12 +102,12 @@ func TestSubmitJobWithSettings(t *testing.T) {
 		Type:              "test",
 		Priority:          50,
 		SubmitterPlatform: worker.Platform,
-		Settings: &api.JobSettings{AdditionalProperties: map[string]interface{}{
+		Settings: &api.JobSettings{
 			"result": "/render/frames/exploding.kittens",
-		}},
-		Metadata: &api.JobMetadata{AdditionalProperties: map[string]string{
+		},
+		Metadata: &api.JobMetadata{
 			"project": "/projects/exploding-kittens",
-		}},
+		},
 	}
 
 	mf.expectConvertTwoWayVariables(t,
@@ -121,15 +121,13 @@ func TestSubmitJobWithSettings(t *testing.T) {
 	)
 
 	// Same job submittedJob, but then with two-way variables injected.
-	variableReplacedSettings := map[string]interface{}{
+	variableReplacedJob := submittedJob
+	variableReplacedJob.Settings = &api.JobSettings{
 		"result": "{frames}/exploding.kittens",
 	}
-	variableReplacedMetadata := map[string]string{
+	variableReplacedJob.Metadata = &api.JobMetadata{
 		"project": "{projects}/exploding-kittens",
 	}
-	variableReplacedJob := submittedJob
-	variableReplacedJob.Settings = &api.JobSettings{AdditionalProperties: variableReplacedSettings}
-	variableReplacedJob.Metadata = &api.JobMetadata{AdditionalProperties: variableReplacedMetadata}
 
 	// Expect the job compiler to be called.
 	authoredJob := job_compilers.AuthoredJob{
@@ -139,8 +137,8 @@ func TestSubmitJobWithSettings(t *testing.T) {
 		Priority: variableReplacedJob.Priority,
 		Status:   api.JobStatusUnderConstruction,
 		Created:  mf.clock.Now(),
-		Settings: variableReplacedJob.Settings.AdditionalProperties,
-		Metadata: variableReplacedJob.Metadata.AdditionalProperties,
+		Settings: job_compilers.JobSettings(*variableReplacedJob.Settings),
+		Metadata: job_compilers.JobMetadata(*variableReplacedJob.Metadata),
 	}
 	mf.jobCompiler.EXPECT().Compile(gomock.Any(), variableReplacedJob).Return(&authoredJob, nil)
 
@@ -1022,7 +1020,7 @@ func TestDeleteJobMass(t *testing.T) {
 	roundedUp, err := time.Parse(time.RFC3339Nano, "2023-12-01T09:17:35+02:00")
 	require.NoError(t, err)
 
-	body := api.DeleteJobMassJSONBody{
+	body := api.DeleteJobMassJSONRequestBody{
 		LastUpdatedMax: &withFracionalSecs,
 	}
 

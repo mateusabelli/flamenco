@@ -9,7 +9,7 @@ import (
 )
 
 // Generate mock implementations of these interfaces.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/interfaces_mock.gen.go -package mocks projects.blender.org/studio/flamenco/internal/manager/farmstatus PersistenceService,EventBus
+//go:generate go tool mockgen -destination mocks/interfaces_mock.gen.go -package mocks projects.blender.org/studio/flamenco/internal/manager/farmstatus PersistenceService,EventBus
 
 type PersistenceService interface {
 	SummarizeJobStatuses(ctx context.Context) (persistence.JobStatusCount, error)

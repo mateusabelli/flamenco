@@ -384,7 +384,7 @@ paths:
         - name: task_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         description: Task update information
         required: true
@@ -417,7 +417,7 @@ paths:
         - name: task_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "200":
           description: normal response
@@ -446,7 +446,7 @@ paths:
         - name: task_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         description: Contents of the file
         required: true
@@ -511,7 +511,7 @@ paths:
         - name: worker_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "200":
           description: Worker info
@@ -529,7 +529,7 @@ paths:
         - name: worker_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "204":
           description: Normal response, worker has been deleted
@@ -549,7 +549,7 @@ paths:
         - name: worker_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         description: The status change to request.
         required: true
@@ -576,7 +576,7 @@ paths:
         - name: worker_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         description: The list of worker tag IDs this worker should be a member of.
         required: true
@@ -603,7 +603,7 @@ paths:
         - name: worker_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "200":
           description: Normal response, the sleep schedule.
@@ -626,7 +626,7 @@ paths:
         - name: worker_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         description: The new sleep schedule.
         required: true
@@ -685,7 +685,7 @@ paths:
       - name: tag_id
         in: path
         required: true
-        schema: { type: string, format: uuid }
+        schema: { type: string }
     get:
       operationId: fetchWorkerTag
       summary: Get a single worker tag.
@@ -884,7 +884,7 @@ paths:
         - name: job_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "200":
           description: Job info
@@ -902,7 +902,7 @@ paths:
         - name: job_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "204":
           description: Default response, deletion has been triggered.
@@ -927,7 +927,7 @@ paths:
         - name: job_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "200":
           description: Job deletion info
@@ -945,7 +945,7 @@ paths:
         - name: job_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "200":
           description: Normal response.
@@ -979,7 +979,7 @@ paths:
         - name: job_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         description: The status change to request.
         required: true
@@ -1008,7 +1008,7 @@ paths:
         - name: job_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         description: The new priority.
         required: true
@@ -1037,7 +1037,7 @@ paths:
         - name: job_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         description: The name or the UUID of the new tag. It replaces the old tag.
         required: true
@@ -1067,7 +1067,7 @@ paths:
         - name: job_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "200":
           description: Get summaries of the tasks of this job.
@@ -1091,7 +1091,7 @@ paths:
         - name: job_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "200":
           description: Get tuples (worker, task type) that got blocked on this job.
@@ -1112,7 +1112,7 @@ paths:
         - name: job_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         description: Tuples (worker, task type) to be removed from the blocklist.
         content:
@@ -1138,7 +1138,7 @@ paths:
         - name: task_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "200":
           description: The task info.
@@ -1162,7 +1162,7 @@ paths:
         - name: task_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "200":
           description: The task log.
@@ -1189,7 +1189,7 @@ paths:
         - name: task_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       responses:
         "200":
           description: The task log info.
@@ -1218,7 +1218,7 @@ paths:
         - name: task_id
           in: path
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
       requestBody:
         description: The status change to request.
         required: true
@@ -1604,7 +1604,7 @@ components:
     RegisteredWorker:
       type: object
       properties:
-        uuid: { type: string, format: uuid }
+        uuid: { type: string }
         name: { type: string }
         address: { type: string }
         status: { $ref: "#/components/schemas/WorkerStatus" }
@@ -1662,7 +1662,7 @@ components:
       type: object
       description: AssignedTask is a task as it is received by the Worker.
       properties:
-        uuid: { type: string, format: uuid }
+        uuid: { type: string }
         job: { type: string }
         name: { type: string }
         status: { $ref: "#/components/schemas/TaskStatus" }
@@ -1925,7 +1925,6 @@ components:
         "storage": { $ref: "#/components/schemas/JobStorageInfo" }
         "worker_tag":
           type: string
-          format: uuid
           description: >
             Worker tag that should execute this job. When a tag ID is
             given, only Workers in that tag will be scheduled to work on it.
@@ -1958,7 +1957,6 @@ components:
         - properties:
             id:
               type: string
-              format: uuid
               description: UUID of the Job
             created:
               type: string
@@ -2072,7 +2070,7 @@ components:
       type: object
       description: The task as it exists in the Manager database, i.e. before variable replacement.
       properties:
-        "id": { type: string, format: uuid }
+        "id": { type: string }
         "created":
           type: string
           format: date-time
@@ -2081,7 +2079,7 @@ components:
           type: string
           format: date-time
           description: Timestamp of last update.
-        "job_id": { type: string, format: uuid }
+        "job_id": { type: string }
         "index_in_job": { type: integer }
         "name": { type: string }
         "status": { $ref: "#/components/schemas/TaskStatus" }
@@ -2120,7 +2118,7 @@ components:
       type: object
       description: Worker reference, as used in Task objects.
       properties:
-        "id": { type: string, format: uuid }
+        "id": { type: string }
         "name": { type: string }
         "address": { type: string }
       required: [id, name, address]
@@ -2138,7 +2136,7 @@ components:
       type: object
       description: Just enough information about the task to show in the job's task list.
       properties:
-        id: { type: string, format: uuid }
+        id: { type: string }
         name: { type: string }
         status: { $ref: "#/components/schemas/TaskStatus" }
         index_in_job: { type: integer }
@@ -2154,8 +2152,8 @@ components:
       type: object
       description: Info about the log of a single task.
       properties:
-        "task_id": { type: string, format: uuid }
-        "job_id": { type: string, format: uuid }
+        "task_id": { type: string }
+        "job_id": { type: string }
         "url":
           description: The URL at which the task log itself can be downloaded.
           type: string
@@ -2185,7 +2183,7 @@ components:
     JobBlocklistEntry:
       type: object
       properties:
-        worker_id: { type: string, format: uuid }
+        worker_id: { type: string }
         task_type: { type: string }
         worker_name: { type: string }
       required: [worker_id, task_type]
@@ -2214,7 +2212,6 @@ components:
       properties:
         id:
           type: string
-          format: uuid
           description: UUID of the tag. If this is given, 'name' should not be given.
         name:
           type: string
@@ -2386,7 +2383,6 @@ components:
       properties:
         "id":
           type: string
-          format: uuid
           description: UUID of the Job
         "name": { type: string, description: "Name of the job" }
         "updated":
@@ -2428,9 +2424,8 @@ components:
       properties:
         "id":
           type: string
-          format: uuid
           description: UUID of the Task
-        "job_id": { type: string, format: uuid }
+        "job_id": { type: string }
         "worker": { $ref: "#/components/schemas/AssignedWorker" }
         "name": { type: string, description: "Name of the task" }
         "updated":
@@ -2448,7 +2443,7 @@ components:
       type: object
       properties:
         "name": { type: string }
-        "uuid": { type: string, format: uuid }
+        "uuid": { type: string }
       required: [name, uuid]
 
     EventTaskLogUpdate:
@@ -2459,7 +2454,6 @@ components:
       properties:
         "task_id":
           type: string
-          format: uuid
           description: UUID of the Task
         "log":
           type: string
@@ -2470,7 +2464,7 @@ components:
       type: object
       description: Indicator that the last-rendered image of this job was updated.
       properties:
-        "job_id": { type: string, format: uuid }
+        "job_id": { type: string }
         "thumbnail": { $ref: "#/components/schemas/JobLastRenderedImageInfo" }
       required: [job_id, task_id, thumbnail]
 
@@ -2481,7 +2475,6 @@ components:
       properties:
         "id":
           type: string
-          format: uuid
           description: UUID of the Worker
         "name": { type: string, description: "Name of the worker" }
         "updated":
@@ -2548,7 +2541,6 @@ components:
         "type": { $ref: "#/components/schemas/SocketIOSubscriptionType" }
         "uuid":
           type: string
-          format: uuid
           description: UUID of the thing to subscribe to / unsubscribe from.
       required: [op, type]
 
@@ -2576,16 +2568,11 @@ components:
       type: object
       description: Basic information about a Worker.
       properties:
-        "id": { type: string, format: uuid }
+        "id": { type: string }
         "name": { type: string }
         "status": { $ref: "#/components/schemas/WorkerStatus" }
         "status_change":
           $ref: "#/components/schemas/WorkerStatusChangeRequest"
-        # These will be implemented soon:
-        # "task_id":
-        #   type: string
-        #   format: uuid
-        #   description: The worker's current/last-worked-on task.
         "last_seen":
           type: string
           format: date-time
@@ -2631,7 +2618,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/TaskSummary"
         - properties:
-            "job_id": { type: string, format: uuid }
+            "job_id": { type: string }
           required: [job_id]
 
     WorkerStatusChangeRequest:
@@ -2678,7 +2665,6 @@ components:
       properties:
         "id":
           type: string
-          format: uuid
           description: >
             UUID of the tag. Can be omitted when creating a new tag, in
             which case a random UUID will be assigned.
@@ -2704,9 +2690,7 @@ components:
       properties:
         "tag_ids":
           type: array
-          items:
-            type: string
-            format: uuid
+          items: { type: string }
       required: [tag_ids]
       example:
         "tag_ids": ["4312d68c-ea6d-4566-9bf6-e9f09be48ceb"]

@@ -82,11 +82,9 @@ func (f *Flamenco) GetVariables(e echo.Context, audience api.ManagerVariableAudi
 		config.VariablePlatform(platform),
 	)
 
-	apiVars := api.ManagerVariables{
-		AdditionalProperties: make(map[string]api.ManagerVariable),
-	}
+	apiVars := api.ManagerVariables{}
 	for name, variable := range variables {
-		apiVars.AdditionalProperties[name] = api.ManagerVariable{
+		apiVars[name] = api.ManagerVariable{
 			IsTwoway: variable.IsTwoWay,
 			Value:    variable.Value,
 		}
@@ -110,7 +108,7 @@ func (f *Flamenco) GetSharedStorage(e echo.Context, audience api.ManagerVariable
 func (f *Flamenco) CheckSharedStoragePath(e echo.Context) error {
 	logger := requestLogger(e)
 
-	var toCheck api.CheckSharedStoragePathJSONBody
+	var toCheck api.CheckSharedStoragePathJSONRequestBody
 	if err := e.Bind(&toCheck); err != nil {
 		logger.Warn().Err(err).Msg("bad request received")
 		return sendAPIError(e, http.StatusBadRequest, "invalid format")
@@ -242,7 +240,7 @@ func (f *Flamenco) FindBlenderExePath(e echo.Context) error {
 func (f *Flamenco) CheckBlenderExePath(e echo.Context) error {
 	logger := requestLogger(e)
 
-	var toCheck api.CheckBlenderExePathJSONBody
+	var toCheck api.CheckBlenderExePathJSONRequestBody
 	if err := e.Bind(&toCheck); err != nil {
 		logger.Warn().Err(err).Msg("bad request received")
 		return sendAPIError(e, http.StatusBadRequest, "invalid format")

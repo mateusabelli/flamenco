@@ -107,12 +107,12 @@ func (s *Service) Compile(ctx context.Context, sj api.SubmittedJob) (*AuthoredJo
 		Metadata: make(JobMetadata),
 	}
 	if sj.Settings != nil {
-		for key, value := range sj.Settings.AdditionalProperties {
+		for key, value := range *sj.Settings {
 			aj.Settings[key] = value
 		}
 	}
 	if sj.Metadata != nil {
-		for key, value := range sj.Metadata.AdditionalProperties {
+		for key, value := range *sj.Metadata {
 			aj.Metadata[key] = value
 		}
 	}

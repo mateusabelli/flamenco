@@ -8,9 +8,9 @@ import (
 	"crypto/subtle"
 	"errors"
 
-	oapi_middle "github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
+	oapi_middle "github.com/oapi-codegen/echo-middleware"
 	"golang.org/x/crypto/bcrypt"
 
 	"projects.blender.org/studio/flamenco/internal/manager/persistence"

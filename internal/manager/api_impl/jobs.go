@@ -235,7 +235,7 @@ func timestampRoundUp(stamp time.Time) time.Time {
 func (f *Flamenco) DeleteJobMass(e echo.Context) error {
 	logger := requestLogger(e)
 
-	var settings api.DeleteJobMassJSONBody
+	var settings api.DeleteJobMassJSONRequestBody
 	if err := e.Bind(&settings); err != nil {
 		logger.Warn().Err(err).Msg("bad request received")
 		return sendAPIError(e, http.StatusBadRequest, "invalid format")
@@ -773,7 +773,7 @@ func jobDBtoAPI(ctx context.Context, persist PersistenceService, dbJob *persiste
 
 	{ // Parse job settings JSON.
 		settings := api.JobSettings{}
-		if err := json.Unmarshal(dbJob.Settings, &settings.AdditionalProperties); err != nil {
+		if err := json.Unmarshal(dbJob.Settings, &settings); err != nil {
 			log.Error().Str("job", dbJob.UUID).AnErr("cause", err).Msg("could not parse job settings in database as JSON")
 		} else {
 			apiJob.Settings = &settings
@@ -782,7 +782,7 @@ func jobDBtoAPI(ctx context.Context, persist PersistenceService, dbJob *persiste
 
 	{ // Parse job metadata JSON.
 		metadata := api.JobMetadata{}
-		if err := json.Unmarshal(dbJob.Metadata, &metadata.AdditionalProperties); err != nil {
+		if err := json.Unmarshal(dbJob.Metadata, &metadata); err != nil {
 			log.Error().Str("job", dbJob.UUID).AnErr("cause", err).Msg("could not parse job metadata in database as JSON")
 		} else {
 			apiJob.Metadata = &metadata

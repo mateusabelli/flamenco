@@ -46,10 +46,8 @@ func TestGetVariables(t *testing.T) {
 		err := mf.flamenco.GetVariables(echoCtx, api.ManagerVariableAudienceWorkers, "linux")
 		require.NoError(t, err)
 		assertResponseJSON(t, echoCtx, http.StatusOK, api.ManagerVariables{
-			AdditionalProperties: map[string]api.ManagerVariable{
-				"blender": {Value: "/usr/local/blender", IsTwoway: false},
-				"jobs":    {Value: "Linux value", IsTwoway: true},
-			},
+			"blender": {Value: "/usr/local/blender", IsTwoway: false},
+			"jobs":    {Value: "Linux value", IsTwoway: true},
 		})
 	}
 

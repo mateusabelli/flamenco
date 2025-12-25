@@ -350,7 +350,7 @@ func (f *Flamenco) UpdateWorkerTag(e echo.Context, tagUUID string) error {
 	}
 
 	// Decode the request body.
-	var update api.UpdateWorkerTagJSONBody
+	var update api.UpdateWorkerTagJSONRequestBody
 	if err := e.Bind(&update); err != nil {
 		logger.Warn().Err(err).Msg("bad request received")
 		return sendAPIError(e, http.StatusBadRequest, "invalid format")
@@ -425,7 +425,7 @@ func (f *Flamenco) CreateWorkerTag(e echo.Context) error {
 	logger := requestLogger(e)
 
 	// Decode the request body.
-	var apiTag api.CreateWorkerTagJSONBody
+	var apiTag api.CreateWorkerTagJSONRequestBody
 	if err := e.Bind(&apiTag); err != nil {
 		logger.Warn().Err(err).Msg("bad request received")
 		return sendAPIError(e, http.StatusBadRequest, "invalid format")

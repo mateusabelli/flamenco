@@ -14,7 +14,7 @@ import (
 )
 
 // Generate mock implementations.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/task_exe_listener.gen.go -package mocks projects.blender.org/studio/flamenco/internal/worker CommandRunner,TaskExecutionListener
+//go:generate go tool mockgen -destination mocks/task_exe_listener.gen.go -package mocks projects.blender.org/studio/flamenco/internal/worker CommandRunner,TaskExecutionListener
 
 type CommandRunner interface {
 	Run(ctx context.Context, taskID string, cmd api.Command) error

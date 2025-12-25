@@ -213,7 +213,7 @@ func TestReplaceTwoWayVariables(t *testing.T) {
 		replaced := jsonWash(varReplSubmittedJob())
 		replaceTwoWayVariables(&c, &replaced)
 
-		expectSettings := map[string]interface{}{
+		expectSettings := api.JobSettings{
 			"blender_cmd":           "{blender}",
 			"filepath":              "{render}/jobs/sf/scene123.blend",
 			"render_output_root":    "{render}/frames/sf/scene123",
@@ -227,7 +227,7 @@ func TestReplaceTwoWayVariables(t *testing.T) {
 			"format":                "PNG",
 			"output_file_extension": ".png",
 		}
-		expectMetadata := map[string]string{
+		expectMetadata := api.JobMetadata{
 			"user.name": "Sybren Stüvel",
 			"project":   "Sprite Fright",
 			"root":      "{project}",
@@ -238,8 +238,8 @@ func TestReplaceTwoWayVariables(t *testing.T) {
 		assert.Equal(t, original.Name, replaced.Name, "two-way variable replacement shouldn't happen on the Name property")
 		assert.Equal(t, original.Priority, replaced.Priority, "two-way variable replacement shouldn't happen on the Priority property")
 		assert.Equal(t, original.SubmitterPlatform, replaced.SubmitterPlatform)
-		assert.Equal(t, expectSettings, replaced.Settings.AdditionalProperties)
-		assert.Equal(t, expectMetadata, replaced.Metadata.AdditionalProperties)
+		assert.Equal(t, expectSettings, *replaced.Settings)
+		assert.Equal(t, expectMetadata, *replaced.Metadata)
 	}
 }
 
@@ -328,7 +328,7 @@ func varReplSubmittedJob() api.SubmittedJob {
 		Name:              "Ignore it, it'll be faaaain!",
 		Priority:          50,
 		SubmitterPlatform: "linux",
-		Settings: &api.JobSettings{AdditionalProperties: map[string]interface{}{
+		Settings: &api.JobSettings{
 			"blender_cmd":           "{blender}",
 			"filepath":              "/render/jobs/sf/scene123.blend",
 			"render_output_root":    "/render/frames/sf/scene123",
@@ -341,13 +341,13 @@ func varReplSubmittedJob() api.SubmittedJob {
 			"images_or_video":       "images",
 			"format":                "PNG",
 			"output_file_extension": ".png",
-		}},
-		Metadata: &api.JobMetadata{AdditionalProperties: map[string]string{
+		},
+		Metadata: &api.JobMetadata{
 			"user.name": "Sybren Stüvel",
 			"project":   "Sprite Fright",
 			"root":      "/projects/sprite-fright",
 			"scene":     "/projects/sprite-fright/scenes/123",
-		}},
+		},
 	}
 }
 

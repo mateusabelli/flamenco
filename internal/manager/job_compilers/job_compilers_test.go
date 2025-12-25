@@ -23,27 +23,25 @@ var expectedFramesToVideoArgs = []interface{}{
 
 func exampleSubmittedJob() api.SubmittedJob {
 	settings := api.JobSettings{
-		AdditionalProperties: map[string]interface{}{
-			"blender_cmd":            "{blender}",
-			"blendfile":              "/render/sf/jobs/scene123.blend",
-			"chunk_size":             3,
-			"extract_audio":          true,
-			"format":                 "PNG",
-			"fps":                    24.0,
-			"frames":                 "1-10",
-			"images_or_video":        "images",
-			"image_file_extension":   ".png",
-			"video_container_format": "",
-			"render_output_root":     "/render/sprites/farm_output/promo/square_ellie",
-			"add_path_components":    1,
-			"render_output_path":     "/render/sprites/farm_output/promo/square_ellie/square_ellie.lighting_light_breakdown2/######",
-		}}
+		"blender_cmd":            "{blender}",
+		"blendfile":              "/render/sf/jobs/scene123.blend",
+		"chunk_size":             3,
+		"extract_audio":          true,
+		"format":                 "PNG",
+		"fps":                    24.0,
+		"frames":                 "1-10",
+		"images_or_video":        "images",
+		"image_file_extension":   ".png",
+		"video_container_format": "",
+		"render_output_root":     "/render/sprites/farm_output/promo/square_ellie",
+		"add_path_components":    1,
+		"render_output_path":     "/render/sprites/farm_output/promo/square_ellie/square_ellie.lighting_light_breakdown2/######",
+	}
 	metadata := api.JobMetadata{
-		AdditionalProperties: map[string]string{
-			"project":    "Sprite Fright",
-			"user.email": "sybren@blender.org",
-			"user.name":  "Sybren Stüvel",
-		}}
+		"project":    "Sprite Fright",
+		"user.email": "sybren@blender.org",
+		"user.name":  "Sybren Stüvel",
+	}
 	sj := api.SubmittedJob{
 		Name:      "3Д рендеринг",
 		Priority:  50,
@@ -83,10 +81,10 @@ func TestSimpleBlenderRenderHappy(t *testing.T) {
 	assert.Equal(t, *sj.WorkerTag, aj.WorkerTagUUID)
 	assert.Equal(t, sj.Type, aj.JobType)
 	assert.Equal(t, sj.Priority, aj.Priority)
-	assert.EqualValues(t, sj.Settings.AdditionalProperties, aj.Settings)
-	assert.EqualValues(t, sj.Metadata.AdditionalProperties, aj.Metadata)
+	assert.EqualValues(t, *sj.Settings, aj.Settings)
+	assert.EqualValues(t, *sj.Metadata, aj.Metadata)
 
-	settings := sj.Settings.AdditionalProperties
+	settings := *sj.Settings
 
 	// Tasks should have been created to render the frames: 1-3, 4-6, 7-9, 10, and video-encoding
 	assert.Len(t, aj.Tasks, 5)
@@ -152,7 +150,7 @@ func TestSimpleBlenderRenderWithScene(t *testing.T) {
 	defer cancel()
 
 	sj := exampleSubmittedJob()
-	sj.Settings.AdditionalProperties["scene"] = "Test Scene"
+	(*sj.Settings)["scene"] = "Test Scene"
 	aj, err := s.Compile(ctx, sj)
 	require.NoError(t, err)
 	require.NotNil(t, aj)
@@ -219,8 +217,9 @@ func TestSimpleBlenderRenderWindowsPaths(t *testing.T) {
 	sj := exampleSubmittedJob()
 
 	// Adjust the job to get paths in Windows notation.
-	sj.Settings.AdditionalProperties["blendfile"] = "R:\\sf\\jobs\\scene123.blend"
-	sj.Settings.AdditionalProperties["render_output_path"] = "R:\\sprites\\farm_output\\promo\\square_ellie\\square_ellie.lighting_light_breakdown2\\######"
+	settings := *sj.Settings
+	settings["blendfile"] = "R:\\sf\\jobs\\scene123.blend"
+	settings["render_output_path"] = "R:\\sprites\\farm_output\\promo\\square_ellie\\square_ellie.lighting_light_breakdown2\\######"
 
 	aj, err := s.Compile(ctx, sj)
 	require.NoError(t, err)
@@ -230,10 +229,8 @@ func TestSimpleBlenderRenderWindowsPaths(t *testing.T) {
 	assert.Equal(t, sj.Name, aj.Name)
 	assert.Equal(t, sj.Type, aj.JobType)
 	assert.Equal(t, sj.Priority, aj.Priority)
-	assert.EqualValues(t, sj.Settings.AdditionalProperties, aj.Settings)
-	assert.EqualValues(t, sj.Metadata.AdditionalProperties, aj.Metadata)
-
-	settings := sj.Settings.AdditionalProperties
+	assert.EqualValues(t, *sj.Settings, aj.Settings)
+	assert.EqualValues(t, *sj.Metadata, aj.Metadata)
 
 	// Tasks should have been created to render the frames: 1-3, 4-6, 7-9, 10, and video-encoding
 	assert.Len(t, aj.Tasks, 5)
@@ -281,7 +278,8 @@ func TestSimpleBlenderRenderOutputPathFieldReplacement(t *testing.T) {
 	defer cancel()
 
 	sj := exampleSubmittedJob()
-	sj.Settings.AdditionalProperties["render_output_path"] = "/root/{timestamp}/jobname/######"
+	settings := *sj.Settings
+	settings["render_output_path"] = "/root/{timestamp}/jobname/######"
 
 	aj, err := s.Compile(ctx, sj)
 	require.NoError(t, err)
@@ -295,13 +293,13 @@ func TestSimpleBlenderRenderOutputPathFieldReplacement(t *testing.T) {
 	t0 := aj.Tasks[0]
 	expectCliArgs := []interface{}{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
 		"--render-output", "/root/2006-01-02_150405/jobname/######",
-		"--render-format", sj.Settings.AdditionalProperties["format"].(string),
+		"--render-format", settings["format"].(string),
 		"--render-frame", "1..3",
 	}
 	assert.EqualValues(t, AuthoredCommandParameters{
 		"exe":        "{blender}",
 		"exeArgs":    "{blenderArgs}",
-		"blendfile":  sj.Settings.AdditionalProperties["blendfile"].(string),
+		"blendfile":  settings["blendfile"].(string),
 		"args":       expectCliArgs,
 		"argsBefore": make([]interface{}, 0),
 	}, t0.Commands[0].Parameters)
@@ -338,9 +336,9 @@ func TestEtag(t *testing.T) {
 		Type:              "echo-sleep-test",
 		Priority:          50,
 		SubmitterPlatform: "linux",
-		Settings: &api.JobSettings{AdditionalProperties: map[string]interface{}{
+		Settings: &api.JobSettings{
 			"message": "hey",
-		}},
+		},
 	}
 
 	{ // Test without etag.
@@ -374,8 +372,9 @@ func TestComplexFrameRange(t *testing.T) {
 	sj := exampleSubmittedJob()
 
 	// Use a series of ranges, where each range is smaller than the chunk size.
-	sj.Settings.AdditionalProperties["frames"] = "0-12,34-56,78-90"
-	sj.Settings.AdditionalProperties["chunk_size"] = 20
+	settings := *sj.Settings
+	settings["frames"] = "0-12,34-56,78-90"
+	settings["chunk_size"] = 20
 
 	aj, err := s.Compile(ctx, sj)
 	require.NoError(t, err)

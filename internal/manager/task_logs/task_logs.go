@@ -35,7 +35,7 @@ type Storage struct {
 }
 
 // Generate mock implementations of these interfaces.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/interfaces_mock.gen.go -package mocks projects.blender.org/studio/flamenco/internal/manager/task_logs LocalStorage,ChangeBroadcaster
+//go:generate go tool mockgen -destination mocks/interfaces_mock.gen.go -package mocks projects.blender.org/studio/flamenco/internal/manager/task_logs LocalStorage,ChangeBroadcaster
 
 type LocalStorage interface {
 	// ForJob returns the absolute directory path for storing job-related files.

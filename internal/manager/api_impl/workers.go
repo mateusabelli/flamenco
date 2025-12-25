@@ -43,7 +43,7 @@ var offlineWorkerStates = map[api.WorkerStatus]bool{
 func (f *Flamenco) RegisterWorker(e echo.Context) error {
 	logger := requestLogger(e)
 
-	var req api.RegisterWorkerJSONBody
+	var req api.RegisterWorkerJSONRequestBody
 	err := e.Bind(&req)
 	if err != nil {
 		logger.Warn().Err(err).Msg("bad request received")
@@ -94,7 +94,7 @@ func (f *Flamenco) RegisterWorker(e echo.Context) error {
 func (f *Flamenco) SignOn(e echo.Context) error {
 	logger := requestLogger(e)
 
-	var req api.SignOnJSONBody
+	var req api.SignOnJSONRequestBody
 	err := e.Bind(&req)
 	if err != nil {
 		logger.Warn().Err(err).Msg("bad request received")
@@ -135,7 +135,7 @@ func (f *Flamenco) workerInitialStatus(ctx context.Context, w *persistence.Worke
 	return f.sleepScheduler.WorkerStatus(ctx, w.UUID)
 }
 
-func (f *Flamenco) workerUpdateAfterSignOn(e echo.Context, update api.SignOnJSONBody) (*persistence.Worker, api.WorkerStatus, error) {
+func (f *Flamenco) workerUpdateAfterSignOn(e echo.Context, update api.SignOnJSONRequestBody) (*persistence.Worker, api.WorkerStatus, error) {
 	logger := requestLogger(e)
 	w := requestWorkerOrPanic(e)
 	ctx := e.Request().Context()

@@ -177,7 +177,7 @@ func getResponseJSON(t *testing.T, echoCtx echo.Context, expectStatusCode int, a
 	assert.Equal(t, expectStatusCode, resp.StatusCode)
 	contentType := resp.Header.Get(echo.HeaderContentType)
 
-	if !assert.Equal(t, "application/json; charset=UTF-8", contentType) {
+	if !assert.Equal(t, "application/json", contentType) {
 		t.Fatalf("response not JSON but %q, not going to compare body", contentType)
 		return
 	}
@@ -195,7 +195,7 @@ func assertResponseJSON(t *testing.T, echoCtx echo.Context, expectStatusCode int
 	assert.Equal(t, expectStatusCode, resp.StatusCode)
 	contentType := resp.Header.Get(echo.HeaderContentType)
 
-	if !assert.Equal(t, "application/json; charset=UTF-8", contentType) {
+	if !assert.Equal(t, "application/json", contentType) {
 		t.Fatalf("response not JSON but %q, not going to compare body", contentType)
 		return
 	}

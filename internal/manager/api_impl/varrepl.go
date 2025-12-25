@@ -8,7 +8,7 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/varrepl.gen.go -package mocks projects.blender.org/studio/flamenco/internal/manager/api_impl VariableReplacer
+//go:generate go tool mockgen -destination mocks/varrepl.gen.go -package mocks projects.blender.org/studio/flamenco/internal/manager/api_impl VariableReplacer
 type VariableReplacer interface {
 	NewVariableExpander(audience config.VariableAudience, platform config.VariablePlatform) *config.VariableExpander
 	ResolveVariables(audience config.VariableAudience, platform config.VariablePlatform) map[string]config.ResolvedVariable
@@ -70,19 +70,19 @@ func replaceTwoWayVariables(replacer VariableReplacer, job *api.SubmittedJob) {
 
 	// Only replace variables in settings and metadata, not in other job fields.
 	if job.Settings != nil {
-		for settingKey, settingValue := range job.Settings.AdditionalProperties {
+		for settingKey, settingValue := range *job.Settings {
 			stringValue, ok := settingValue.(string)
 			if !ok {
 				continue
 			}
 			newValue := valueToVariable.Replace(stringValue)
-			job.Settings.AdditionalProperties[settingKey] = newValue
+			(*job.Settings)[settingKey] = newValue
 		}
 	}
 	if job.Metadata != nil {
-		for metaKey, metaValue := range job.Metadata.AdditionalProperties {
+		for metaKey, metaValue := range *job.Metadata {
 			newValue := valueToVariable.Replace(metaValue)
-			job.Metadata.AdditionalProperties[metaKey] = newValue
+			(*job.Metadata)[metaKey] = newValue
 		}
 	}
 }
