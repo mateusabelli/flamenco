@@ -90,12 +90,12 @@ func (f *Flamenco) WaitForShutdown(ctx context.Context) bool {
 	}
 }
 
-// requestShutdown closes the 'done' channel, signalling to callers of
-// WaitForShutdown() that a shutdown is requested.
-func (f *Flamenco) requestShutdown() {
+// requestRestart closes the 'done' channel, signalling to callers of
+// WaitForShutdown() that a restart is requested.
+func (f *Flamenco) requestRestart() {
 	defer func() {
 		// Recover the panic that happens when the channel is closed multiple times.
-		// Requesting a shutdown should be possible multiple times without panicing.
+		// Requesting a restart should be possible multiple times without panicing.
 		_ = recover()
 	}()
 	close(f.done)

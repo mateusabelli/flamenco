@@ -338,7 +338,7 @@ func (f *Flamenco) SaveSetupAssistantConfig(e echo.Context) error {
 	logger.Info().Msg("setup assistant: updating configuration")
 
 	// Request the shutdown in a goroutine, so that this one can continue sending the response.
-	go f.requestShutdown()
+	go f.requestRestart()
 
 	return e.NoContent(http.StatusNoContent)
 }
