@@ -200,7 +200,7 @@ func (f *Flamenco) doTaskUpdateSteps(
 			dbTask.UUID, stepsCompleted, err)
 	}
 
-	logger.Info().Msg("task progress updated")
+	logger.Debug().Msg("task progress updated")
 
 	dbTask.StepsCompleted = stepsCompleted
 	return true, nil
