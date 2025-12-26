@@ -106,7 +106,7 @@ func buildWebService(
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to get swagger")
 	}
-	validator := api_impl.SwaggerValidator(swagger, persist)
+	validator := api_impl.SwaggerValidator(*swagger, persist)
 	e.Use(validator)
 	registerOAPIBodyDecoders()
 

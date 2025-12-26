@@ -19,7 +19,13 @@ import (
 var urlVariablesReplacer = regexp.MustCompile("/:([^/]+)(/?)")
 
 // SwaggerValidator constructs the OpenAPI validator, which also handles authentication.
-func SwaggerValidator(swagger *openapi3.T, persist PersistenceService) echo.MiddlewareFunc {
+func SwaggerValidator(swagger openapi3.T, persist PersistenceService) echo.MiddlewareFunc {
+	// Clear out the servers array in the swagger spec, that skips validating
+	// that server names match. We don't know how this thing will be run.
+	//
+	// See https://github.com/oapi-codegen/oapi-codegen/issues/882
+	swagger.Servers = nil
+
 	options := oapi_middle.Options{
 		Options: openapi3filter.Options{
 			AuthenticationFunc: func(ctx context.Context, authInfo *openapi3filter.AuthenticationInput) error {
@@ -29,7 +35,7 @@ func SwaggerValidator(swagger *openapi3.T, persist PersistenceService) echo.Midd
 
 		// Skip OAPI validation when the request is not for the OAPI interface.
 		Skipper: func(e echo.Context) bool {
-			isOapi := isOpenAPIPath(swagger, e.Path())
+			isOapi := isOpenAPIPath(&swagger, e.Path())
 			log.Trace().
 				Bool("isOpenAPI", isOapi).
 				Str("path", e.Path()).
@@ -38,7 +44,7 @@ func SwaggerValidator(swagger *openapi3.T, persist PersistenceService) echo.Midd
 		},
 	}
 
-	validator := oapi_middle.OapiRequestValidatorWithOptions(swagger, &options)
+	validator := oapi_middle.OapiRequestValidatorWithOptions(&swagger, &options)
 	return validator
 }
 
