@@ -4,6 +4,10 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
+## 3.9 - in development
+
+- Manager: speed up startup by being more selective about checks & maintenance operations on the database.
+
 ## 3.8.1 - released 2025-12-25
 
 - Upgrade the pure-Go SQLite database package to version 1.40.1. This should fix the issue of the infinitely-growing `flamenco-manager.sqlite-wal` file. See https://gitlab.com/cznic/sqlite/-/merge_requests/81 for more info.
