@@ -92,19 +92,21 @@ func OpenDB(ctx context.Context, sqliteFile string) (*DB, error) {
 
 	db.vacuum(ctx)
 
-	if err := db.migrate(ctx); err != nil {
+	migrationHappened, err := db.migrate(ctx)
+	if err != nil {
 		return nil, err
 	}
 	log.Debug().Msg("database automigration successful")
 
-	// Perform post-migration integrity check, just to be sure.
-	if !db.performIntegrityCheck(ctx) {
-		return nil, ErrIntegrity
+	// If any database migration happened, perform post-migration integrity check.
+	if migrationHappened {
+		if !db.performIntegrityCheck(ctx) {
+			return nil, ErrIntegrity
+		}
+		// Perform another vacuum after database migration, as that may have copied a
+		// lot of data and then dropped another lot of data.
+		db.vacuum(ctx)
 	}
-
-	// Perform another vacuum after database migration, as that may have copied a
-	// lot of data and then dropped another lot of data.
-	db.vacuum(ctx)
 
 	closeConnOnReturn = false
 	return db, nil
@@ -190,6 +192,7 @@ func openDB(ctx context.Context, sqliteFile string) (*DB, error) {
 
 // vacuum executes the SQL "VACUUM" command, and logs any errors.
 func (db *DB) vacuum(ctx context.Context) {
+	log.Debug().Msg("database: vacuum")
 	err := db.queriesWithoutTX().Vacuum(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("error vacuuming database")

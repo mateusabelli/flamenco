@@ -5,7 +5,9 @@ package persistence
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
+	"math"
 	"strings"
 
 	goose "github.com/pressly/goose/v3"
@@ -16,13 +18,32 @@ import (
 //go:embed migrations/*.sql
 var embedMigrations embed.FS
 
-func (db *DB) migrate(ctx context.Context) error {
+// Directory inside 'embedMigrations'.
+const migrationsDir = "migrations"
+
+// Migrate the database, returning true if anything happened, false otherwise.
+func (db *DB) migrate(ctx context.Context) (bool, error) {
 	// Set up Goose.
 	gooseLogger := GooseLogger{}
 	goose.SetLogger(&gooseLogger)
 	goose.SetBaseFS(embedMigrations)
 	if err := goose.SetDialect("sqlite3"); err != nil {
 		log.Fatal().AnErr("cause", err).Msg("could not tell Goose to use sqlite3")
+	}
+
+	// See if migration is necessary to begin with. If not, we can skip on the
+	// disabling & re-enabling of the foreign key constraints, keeping the DB safe.
+	currentVersion, err := goose.EnsureDBVersionContext(ctx, db.sqlDB)
+	if err != nil {
+		return false, fmt.Errorf("setting up database for migrations: %w", err)
+	}
+	_, err = goose.CollectMigrations(migrationsDir, currentVersion, math.MaxInt64)
+	switch {
+	case errors.Is(err, goose.ErrNoMigrationFiles):
+		log.Debug().Int64("version", currentVersion).Msg("database: at latest version, no migration necessary")
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("collecting database migrations: %w", err)
 	}
 
 	// Disable foreign key constraints during the migrations. This is necessary
@@ -41,7 +62,7 @@ func (db *DB) migrate(ctx context.Context) error {
 
 	// Run Goose.
 	log.Debug().Msg("migrating database with Goose")
-	if err := goose.UpContext(ctx, db.sqlDB, "migrations"); err != nil {
+	if err := goose.UpContext(ctx, db.sqlDB, migrationsDir); err != nil {
 		log.Fatal().AnErr("cause", err).Msg("could not migrate database to the latest version")
 	}
 
@@ -50,7 +71,7 @@ func (db *DB) migrate(ctx context.Context) error {
 		log.Fatal().AnErr("cause", err).Msgf("could not re-enable foreign key constraints after performing database migrations, please report a bug at %s", website.BugReportURL)
 	}
 
-	return nil
+	return true, nil
 }
 
 type GooseLogger struct{}

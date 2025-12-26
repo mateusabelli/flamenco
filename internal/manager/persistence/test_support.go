@@ -36,7 +36,7 @@ func CreateTestDB() (db *DB, closer func()) {
 		panic(fmt.Sprintf("opening DB: %v", err))
 	}
 
-	err = db.migrate(ctx)
+	_, err = db.migrate(ctx)
 	if err != nil {
 		panic(fmt.Sprintf("migrating DB: %v", err))
 	}
