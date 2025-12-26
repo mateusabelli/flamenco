@@ -189,6 +189,12 @@ func (s *Storage) Tail(jobID, taskID string) (string, error) {
 		return "", fmt.Errorf("unable to open log file for reading: %w", err)
 	}
 
+	defer func() {
+		// Ignore errors, as this is just in case some other error occurred.
+		// The normal, checked close is at the bottom of the function.
+		_ = file.Close()
+	}()
+
 	fileSize, err := file.Seek(0, io.SeekEnd)
 	if err != nil {
 		return "", fmt.Errorf("unable to seek to end of log file: %w", err)
@@ -221,12 +227,16 @@ func (s *Storage) Tail(jobID, taskID string) (string, error) {
 		if 0 <= firstNewline && firstNewline < numBytes-1 {
 			buffer = buffer[firstNewline+1:]
 		} else { //nolint:staticcheck
-			// nolint: because I (Sybren) want to keep the 'else' + the comment it contains
+			// The nolint is because I (Sybren) want to keep the 'else' + the comment it contains:
 			// The file consists of a single line of text; don't strip the first line.
 		}
 	}
 	if err != nil {
 		return "", fmt.Errorf("error reading log file: %w", err)
+	}
+
+	if err := file.Close(); err != nil {
+		return "", fmt.Errorf("closing log file: %w", err)
 	}
 
 	return string(buffer), nil
