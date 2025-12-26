@@ -16,8 +16,7 @@ type DummyShaman struct{}
 
 var _ api_impl.Shaman = (*DummyShaman)(nil)
 
-//lint:ignore ST1005 Shaman is a name that's always capitalised, so also in errors.
-var ErrDummyShaman = errors.New("Shaman storage component is inactive, configure Flamenco first")
+var ErrDummyShaman = errors.New("shaman storage component is inactive, configure Flamenco first")
 
 func (ds *DummyShaman) IsEnabled() bool {
 	return false
