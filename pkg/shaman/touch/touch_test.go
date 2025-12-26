@@ -36,7 +36,11 @@ func TestTouch(t *testing.T) {
 
 	// Create a file
 	assert.Nil(t, os.WriteFile(testPath, []byte("just a test"), 0644))
-	defer os.Remove(testPath)
+	defer func() {
+		if err := os.Remove(testPath); err != nil {
+			panic(err)
+		}
+	}()
 
 	// Make it old
 	past := time.Now().Add(-5 * time.Hour)

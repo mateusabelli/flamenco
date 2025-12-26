@@ -136,7 +136,11 @@ func loadAsJPEG(imagePath string) []byte {
 		logger.Error().Err(err).Msg("output uploader: error opening file")
 		return nil
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			logger.Error().Err(err).Msg("output uploader: error closing file")
+		}
+	}()
 
 	// Try to decode the file as image.
 	img, fileType, err := image.Decode(file)

@@ -193,7 +193,7 @@ func (m *Manager) EraseCheckout(checkoutID string) error {
 
 	// Try to remove the parent path as well, to not keep the dangling two-letter dirs.
 	// Failure is fine, though, because there is no guarantee it's empty anyway.
-	os.Remove(filepath.Dir(checkoutPaths.absolutePath))
+	_ = os.Remove(filepath.Dir(checkoutPaths.absolutePath))
 	logger.Info().Msg("shaman: removed checkout directory")
 	return nil
 }

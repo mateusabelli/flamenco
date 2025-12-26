@@ -60,7 +60,11 @@ func (s *Store) MustStoreFileForTest(checksum string, filesize int64, contents [
 	if err != nil {
 		panic(err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	written, err := file.Write(contents)
 	if err != nil {
@@ -109,20 +113,28 @@ func LinkTestFileStore(cloneTo string) {
 	}
 }
 
-func copyFile(sourcePath, destPath string) error {
+func copyFile(sourcePath, destPath string) (err error) {
 	// Open the source file.
 	srcFile, err := os.Open(sourcePath)
 	if err != nil {
 		return fmt.Errorf("could not open %q: %w", sourcePath, err)
 	}
-	defer srcFile.Close()
+	defer func() {
+		if closeErr := srcFile.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("closing source file: %w", closeErr)
+		}
+	}()
 
 	// Create the destination file.
 	destFile, err := os.Create(destPath)
 	if err != nil {
 		return fmt.Errorf("could not create %q: %w", destPath, err)
 	}
-	defer destFile.Close()
+	defer func() {
+		if closeErr := destFile.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("closing destination file: %w", closeErr)
+		}
+	}()
 
 	// Copy the contents from source to destination.
 	_, err = io.Copy(destFile, srcFile)

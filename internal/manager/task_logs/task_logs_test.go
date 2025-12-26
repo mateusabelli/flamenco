@@ -232,7 +232,9 @@ func taskLogsTestFixtures(t *testing.T) (*Storage, func(), *TaskLogsMocks) {
 
 	// This should be called at the end of each unit test.
 	finish := func() {
-		os.RemoveAll(temppath)
+		if err := os.RemoveAll(temppath); err != nil {
+			panic(err)
+		}
 		mockCtrl.Finish()
 	}
 

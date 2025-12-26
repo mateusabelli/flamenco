@@ -87,7 +87,9 @@ func TestProcessImage(t *testing.T) {
 		path := filepath.Join(jobdir, spec.Filename)
 		file, err := os.Open(path)
 		require.NoError(t, err, "thumbnail %s should be openable", spec.Filename)
-		defer file.Close()
+		defer func() {
+			require.NoError(t, file.Close())
+		}()
 
 		img, format, err := image.Decode(file)
 		require.NoErrorf(t, err, "thumbnail %s should be decodable", spec.Filename)

@@ -21,7 +21,6 @@ func (q *Queries) PragmaIntegrityCheck(ctx context.Context) ([]PragmaIntegrityCh
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	var items []PragmaIntegrityCheckResult
 	for rows.Next() {
 		var i PragmaIntegrityCheckResult
@@ -80,7 +79,6 @@ func (q *Queries) PragmaForeignKeyCheck(ctx context.Context) ([]PragmaForeignKey
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	var items []PragmaForeignKeyCheckResult
 	for rows.Next() {
 		var i PragmaForeignKeyCheckResult

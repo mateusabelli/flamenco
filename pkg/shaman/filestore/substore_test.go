@@ -63,7 +63,11 @@ func TestFilePermissions(t *testing.T) {
 	}
 	dirname, err := os.MkdirTemp("", "file-permission-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(dirname)
+	defer func() {
+		if err := os.RemoveAll(dirname); err != nil {
+			panic(err)
+		}
+	}()
 
 	bin := storageBin{
 		basePath:      dirname,
@@ -73,7 +77,11 @@ func TestFilePermissions(t *testing.T) {
 
 	file, err := bin.openForWriting("testfilename.blend")
 	require.NoError(t, err)
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	filestat, err := file.Stat()
 	require.NoError(t, err)

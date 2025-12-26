@@ -165,8 +165,13 @@ func (f *Flamenco) CheckSharedStoragePath(e echo.Context) error {
 
 	defer func() {
 		// Clean up after the test is done.
-		file.Close()
-		os.Remove(file.Name())
+		logger := logger.With().Str("file", file.Name()).Logger()
+		if err := file.Close(); err != nil {
+			logger.Error().Err(err).Msg("closing file after doing filesystem writability check")
+		}
+		if err := os.Remove(file.Name()); err != nil {
+			logger.Error().Err(err).Msg("deleting file after doing filesystem writability check")
+		}
 	}()
 
 	if _, err := file.Write([]byte("Ünicöde")); err != nil {

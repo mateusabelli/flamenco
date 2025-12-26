@@ -50,7 +50,7 @@ func windowsEditionID() (string, error) {
 	)
 }
 
-func registryReadString(keyPath, valueName string) (string, error) {
+func registryReadString(keyPath, valueName string) (value string, err error) {
 	regkey, err := registry.OpenKey(
 		registry.LOCAL_MACHINE,
 		keyPath,
@@ -58,9 +58,13 @@ func registryReadString(keyPath, valueName string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("opening registry key %q: %w", keyPath, err)
 	}
-	defer regkey.Close()
+	defer func() {
+		if closeErr := regkey.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("closing registry key %q: %w", keyPath, closeErr)
+		}
+	}()
 
-	value, _, err := regkey.GetStringValue(valueName)
+	value, _, err = regkey.GetStringValue(valueName)
 	if err != nil {
 		return "", fmt.Errorf("reading registry key %q: %w", valueName, err)
 	}

@@ -68,7 +68,11 @@ func (fs *FileServer) ReceiveFile(
 	canDefer bool, originalFilename string,
 ) error {
 	logger := *zerolog.Ctx(ctx)
-	defer bodyReader.Close()
+	defer func() {
+		// Ignore any errors here. The bodyReader should have been closed already,
+		// unless some other error occurred, and then that's more important.
+		_ = bodyReader.Close()
+	}()
 
 	storePath, status := fs.fileStore.ResolveFile(checksum, filesize, filestore.ResolveEverything)
 	logger = logger.With().
@@ -98,7 +102,10 @@ func (fs *FileServer) ReceiveFile(
 
 	// Clean up temporary file if it still exists at function exit.
 	defer func() {
-		streamTo.Close()
+		// During normal operation, streamTo is already closed when the function
+		// returns, so this call can return an "already closed" error. Better to
+		// just any errors here.
+		_ = streamTo.Close()
 		fs.fileStore.RemoveUploadedFile(streamTo.Name())
 	}()
 

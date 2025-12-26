@@ -7,7 +7,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -650,34 +649,25 @@ func (c *Conf) Overwrite(filename string) error {
 
 // Write saves the current in-memory configuration to a YAML file.
 func (c *Conf) Write(filename string) error {
-	data, err := yaml.Marshal(c)
+	yamlBytes, err := yaml.Marshal(c)
 	if err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(f, "# Configuration file for %s.\n", appinfo.ApplicationName)
-	fmt.Fprintln(f, "# For an explanation of the fields, refer to the Settings tab in the Manager web interface.")
-	fmt.Fprintln(f, "#")
-	fmt.Fprintln(f, "# NOTE: this file will be overwritten by Flamenco Manager's web-based configuration system.")
-	fmt.Fprintln(f, "#")
+	buffer := &strings.Builder{}
+	fmt.Fprintf(buffer, "# Configuration file for %s.\n", appinfo.ApplicationName)
+	fmt.Fprintln(buffer, "# For an explanation of the fields, refer to the Settings tab in the Manager web interface.")
+	fmt.Fprintln(buffer, "#")
+	fmt.Fprintln(buffer, "# NOTE: this file will be overwritten by Flamenco Manager's web-based configuration system.")
+	fmt.Fprintln(buffer, "#")
 	now := time.Now()
-	fmt.Fprintf(f, "# This file was written on %s by %s\n\n",
+	fmt.Fprintf(buffer, "# This file was written on %s by %s\n\n",
 		now.Format("2006-01-02 15:04:05 -07:00"),
 		appinfo.FormattedApplicationInfo(),
 	)
+	buffer.Write(yamlBytes)
 
-	n, err := f.Write(data)
-	if err != nil {
-		return err
-	}
-	if n < len(data) {
-		return io.ErrShortWrite
-	}
-	if err = f.Close(); err != nil {
+	if err := os.WriteFile(filename, []byte(buffer.String()), 0600); err != nil {
 		return err
 	}
 

@@ -250,8 +250,9 @@ func (f cmdMoveDirFixture) finish(t *testing.T) {
 	if err := os.Chdir(f.cwd); err != nil {
 		t.Fatalf("chdir(%s): %v", f.cwd, err)
 	}
-
-	os.RemoveAll(f.temppath)
+	if err := os.RemoveAll(f.temppath); err != nil {
+		t.Fatalf("rmall(%s): %v", f.temppath, err)
+	}
 	f.mockCtrl.Finish()
 }
 
@@ -403,8 +404,9 @@ func (f cmdCopyFileFixture) finish(t *testing.T) {
 	if err := os.Chdir(f.cwd); err != nil {
 		t.Fatalf("chdir(%s): %v", f.cwd, err)
 	}
-
-	os.RemoveAll(f.temppath)
+	if err := os.RemoveAll(f.temppath); err != nil {
+		t.Fatalf("rmall(%s): %v", f.temppath, err)
+	}
 	f.mockCtrl.Finish()
 }
 
@@ -433,7 +435,9 @@ func fileCreateEmpty(filename string) {
 	if err != nil {
 		panic(err.Error())
 	}
-	file.Close()
+	if err := file.Close(); err != nil {
+		panic(err)
+	}
 }
 
 func directoryEnsureExist(dirpath string) {

@@ -163,8 +163,8 @@ func (s *Store) removeFile(filePath string) error {
 
 	// Clean up directory structure, but ignore any errors (dirs may not be empty)
 	directory := filepath.Dir(filePath)
-	os.Remove(directory)
-	os.Remove(filepath.Dir(directory))
+	_ = os.Remove(directory)
+	_ = os.Remove(filepath.Dir(directory))
 
 	return err
 }

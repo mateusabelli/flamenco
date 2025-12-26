@@ -395,7 +395,9 @@ func metaTestFixtures(t *testing.T) (mockedFlamenco, func()) {
 
 	finish := func() {
 		mockCtrl.Finish()
-		os.RemoveAll(tempdir)
+		if err := os.RemoveAll(tempdir); err != nil {
+			panic(err)
+		}
 	}
 
 	return mf, finish

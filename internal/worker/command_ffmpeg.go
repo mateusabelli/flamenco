@@ -200,18 +200,19 @@ func createIndexFile(inputGlob string, frameRate float64) ([]string, func(), err
 		return nil, nil, fmt.Errorf("no files found at %s", inputGlob)
 	}
 
-	indexFilename := filepath.Join(globDir, "ffmpeg-file-index.txt")
-	indexFile, err := os.Create(indexFilename)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer indexFile.Close()
-
+	// Construct the file in memory first, so we don't have to check for IO errors
+	// on every write.
+	buffer := strings.Builder{}
 	frameDuration := 1.0 / frameRate
 	for _, fname := range files {
 		escaped := strings.ReplaceAll(fname, "'", "\\'")
-		fmt.Fprintf(indexFile, "file '%s'\n", escaped)
-		fmt.Fprintf(indexFile, "duration %f\n", frameDuration)
+		fmt.Fprintf(&buffer, "file '%s'\n", escaped)
+		fmt.Fprintf(&buffer, "duration %f\n", frameDuration)
+	}
+
+	indexFilename := filepath.Join(globDir, "ffmpeg-file-index.txt")
+	if err := os.WriteFile(indexFilename, []byte(buffer.String()), 0666); err != nil {
+		return nil, nil, err
 	}
 
 	cliArgs := []string{

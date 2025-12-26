@@ -43,7 +43,9 @@ func mustCreateFile(file_path string) {
 	if err != nil {
 		panic(err)
 	}
-	file.Close()
+	if err := file.Close(); err != nil {
+		panic(err)
+	}
 }
 
 func TestCreateDirectories(t *testing.T) {

@@ -166,47 +166,57 @@ func (ce *CommandExecutor) moveAndLog(ctx context.Context, taskID, cmdName, src,
 	return nil
 }
 
-func fileCopy(src, dest string) (string, error) {
+func fileCopy(src, dest string) (msg string, err error) {
 	src_file, err := os.Open(src)
 	if err != nil {
-		msg := fmt.Sprintf("failed to open source file %q: %v", src, err)
+		msg = fmt.Sprintf("failed to open source file %q: %v", src, err)
 		return msg, err
 	}
-	defer src_file.Close()
+	defer func() {
+		if closeErr := src_file.Close(); closeErr != nil && err == nil {
+			msg = fmt.Sprintf("failed to close source file %q: %v", src, err)
+			err = closeErr
+		}
+	}()
 
 	src_file_stat, err := src_file.Stat()
 	if err != nil {
-		msg := fmt.Sprintf("failed to stat source file %q: %v", src, err)
+		msg = fmt.Sprintf("failed to stat source file %q: %v", src, err)
 		return msg, err
 	}
 
 	if !src_file_stat.Mode().IsRegular() {
 		err := &os.PathError{Op: "stat", Path: src, Err: errors.New("not a regular file")}
-		msg := fmt.Sprintf("invalid source file %q: %v", src, err)
+		msg = fmt.Sprintf("invalid source file %q: %v", src, err)
 		return msg, err
 	}
 
 	dest_dirpath := filepath.Dir(dest)
 	if !fileExists(dest_dirpath) {
 		if err := os.MkdirAll(dest_dirpath, 0750); err != nil {
-			msg := fmt.Sprintf("failed to create directories %q: %v", dest_dirpath, err)
+			msg = fmt.Sprintf("failed to create directories %q: %v", dest_dirpath, err)
 			return msg, err
 		}
 	}
 
 	dest_file, err := os.Create(dest)
 	if err != nil {
-		msg := fmt.Sprintf("failed to create destination file %q: %v", dest, err)
+		msg = fmt.Sprintf("failed to create destination file %q: %v", dest, err)
 		return msg, err
 	}
-	defer dest_file.Close()
+	defer func() {
+		if closeErr := dest_file.Close(); closeErr != nil && err == nil {
+			msg = fmt.Sprintf("failed to close destination file %q: %v", dest, err)
+			err = closeErr
+		}
+	}()
 
 	if _, err := io.Copy(dest_file, src_file); err != nil {
-		msg := fmt.Sprintf("failed to copy %q to %q: %v", src, dest, err)
+		msg = fmt.Sprintf("failed to copy %q to %q: %v", src, dest, err)
 		return msg, err
 	}
 
-	msg := fmt.Sprintf("copied %q to %q", src, dest)
+	msg = fmt.Sprintf("copied %q to %q", src, dest)
 	return msg, nil
 }
 
