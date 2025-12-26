@@ -148,7 +148,11 @@ func main() {
 	} else if queueSize > 0 {
 		// Flush any updates before actually starting the Worker.
 		log.Info().Int("queueSize", queueSize).Msg("flushing upstream buffer")
-		buffer.Flush(workerCtx)
+		err := buffer.Flush(workerCtx)
+		if err != nil {
+			// Keep running, because the Manager may become available later.
+			log.Error().Err(err).Msg("flushing queued messages from previous run")
+		}
 	}
 
 	if cliArgs.flush {

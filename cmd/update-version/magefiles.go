@@ -67,7 +67,11 @@ func updateMagefiles() bool {
 	if err != nil {
 		log.Fatal().Err(err).Msgf("cannot create file in %s", mageDir)
 	}
-	defer writer.Close()
+	defer func() {
+		if err := writer.Close(); err != nil {
+			log.Fatal().Err(err).Str("file", writer.Name()).Msg("closing file")
+		}
+	}()
 
 	// Write the altered AST to the temp file.
 	if err := format.Node(writer, fset, astFile); err != nil {

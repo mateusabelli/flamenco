@@ -64,11 +64,11 @@ func parseCliArgs() {
 
 	if cliArgs.newVersion == "" || cliArgs.releaseCycle == "" {
 		fmt.Fprintf(os.Stderr, "Usage: %s [-quiet|-debug|-trace] {new Flamenco version number} {release cycle}\n", os.Args[0])
-		os.Stderr.WriteString("\n")
+		fmt.Fprint(os.Stderr, "\n")
 		flag.PrintDefaults()
-		os.Stderr.WriteString("\n")
-		os.Stderr.WriteString("This program updates Makefile and some other files to set the new Flamenco version.\n")
-		os.Stderr.WriteString("\n")
+		fmt.Fprint(os.Stderr, "\n")
+		fmt.Fprint(os.Stderr, "This program updates Makefile and some other files to set the new Flamenco version.\n")
+		fmt.Fprint(os.Stderr, "\n")
 		os.Exit(47)
 	}
 }

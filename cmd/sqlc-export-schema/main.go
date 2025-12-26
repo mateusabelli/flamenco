@@ -41,18 +41,28 @@ type SQLiteSchema struct {
 	SQL       sql.NullString
 }
 
-func saveSchema(ctx context.Context, sqlOutPath string) error {
+func saveSchema(ctx context.Context, sqlOutPath string) (err error) {
 	db, err := sql.Open("sqlite", "flamenco-manager.sqlite")
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() {
+		closeErr := db.Close()
+		if err != nil {
+			err = closeErr
+		}
+	}()
 
 	rows, err := db.QueryContext(ctx, "select * from sqlite_schema order by type desc, name asc")
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() {
+		closeErr := rows.Close()
+		if err != nil {
+			err = closeErr
+		}
+	}()
 
 	sqlBuilder := strings.Builder{}
 

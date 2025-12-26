@@ -54,6 +54,9 @@ func run_mqtt_server(ctx context.Context) {
 	<-ctx.Done()
 
 	log.Info().Msg("shutting down server")
-	server.Close()
+	if err := server.Close(); err != nil {
+		// This won't happen, because the Close() function actually always returns `nil`.
+		log.Error().Err(err).Msg("closing MQTT server")
+	}
 	log.Info().Msg("shutting down")
 }

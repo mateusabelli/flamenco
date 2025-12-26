@@ -143,7 +143,7 @@ func configLogLevel() {
 
 const workerInfoCSVPath = "stresser.csv"
 
-func getWorkerInfoes(numWorkers int) ([]WorkerInfo, error) {
+func getWorkerInfoes(numWorkers int) (info []WorkerInfo, err error) {
 	csvFile, err := os.Open(workerInfoCSVPath)
 	switch {
 	case os.IsNotExist(err):
@@ -151,14 +151,21 @@ func getWorkerInfoes(numWorkers int) ([]WorkerInfo, error) {
 	case err != nil:
 		return nil, err
 	}
-	defer csvFile.Close()
+	defer func() {
+		closeErr := csvFile.Close()
+		if err != nil {
+			err = closeErr
+		}
+	}()
 
 	reader := csv.NewReader(csvFile)
 	records, err := reader.ReadAll()
 	if err != nil {
 		return nil, err
 	}
-	csvFile.Close()
+	if err := csvFile.Close(); err != nil {
+		return nil, err
+	}
 
 	switch {
 	case len(records) < 2:

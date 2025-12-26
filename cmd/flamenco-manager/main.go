@@ -158,7 +158,12 @@ func runFlamencoManager() bool {
 
 	// Construct the services.
 	persist := openDB(*configService)
-	defer persist.Close()
+	defer func() {
+		err := persist.Close()
+		if err != nil {
+			log.Error().AnErr("cause", err).Msg("database: closing database connection")
+		}
+	}()
 
 	timeService := clock.New()
 	compiler, err := job_compilers.New(timeService)
