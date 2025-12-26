@@ -68,6 +68,7 @@ func Run(ctx context.Context, client worker.FlamencoClient) {
 	}
 }
 
+//lint:ignore U1000 stressByRequestingTask can be unused, but someone may find it useful for different kinds of stess testing and alter the Run() function to call this.
 func stressByRequestingTask(ctx context.Context, client worker.FlamencoClient) {
 	increaseNumRequests()
 	task := fetchTask(ctx, client)
@@ -77,7 +78,7 @@ func stressByRequestingTask(ctx context.Context, client worker.FlamencoClient) {
 	}
 }
 
-//lint:ignore U1000 stressBySendingTaskUpdate is currently unused, but someone may find it useful for different kinds of stess testing.
+//lint:ignore U1000 stressBySendingTaskUpdate can be unused, but someone may find it useful for different kinds of stess testing and alter the Run() function to call this.
 func stressBySendingTaskUpdate(
 	ctx context.Context,
 	client worker.FlamencoClient,
