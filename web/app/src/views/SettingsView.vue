@@ -190,16 +190,16 @@ const initialFormValues = {
 
   // MQTT
   mqtt: {
-    enabled: {
-      type: inputTypes.boolean,
-      label: 'Enable MQTT Client',
-      value: null,
-      description: `Flamenco Manager can send its internal events to an MQTT broker. Other MQTT clients can listen to those events, in order to respond to what happens on the render farm.\n\n`,
-      moreInfoText: 'For more information about the built-in MQTT client, see',
-      moreInfoLinkUrl: 'https://flamenco.blender.org/usage/manager-configuration/mqtt/',
-      moreInfoLinkLabel: `Manager Configuration: MQTT`,
-    },
     client: {
+      enabled: {
+        type: inputTypes.boolean,
+        label: 'Enable MQTT Client',
+        value: null,
+        description: `Flamenco Manager can send its internal events to an MQTT broker. Other MQTT clients can listen to those events, in order to respond to what happens on the render farm.\n\n`,
+        moreInfoText: 'For more information about the built-in MQTT client, see',
+        moreInfoLinkUrl: 'https://flamenco.blender.org/usage/manager-configuration/mqtt/',
+        moreInfoLinkLabel: `Manager Configuration: MQTT`,
+      },
       broker: {
         type: inputTypes.string,
         label: 'Broker',
@@ -412,6 +412,7 @@ export default {
       this.config.variables = {
         ...this.config.variables,
         [this.newVariableName.trim()]: {
+          is_twoway: false,
           values: [
             {
               platform: { type: inputTypes.platform, label: 'Platform', value: '' },
@@ -489,6 +490,7 @@ export default {
 
           configToSave.mqtt = {
             client: {
+              enabled: this.config.mqtt.client.enabled.value,
               broker: broker.value,
               clientID: clientID.value,
               topic_prefix: topic_prefix.value,
@@ -518,6 +520,7 @@ export default {
             configToSave.variables[variable] = { values: [] };
             this.config[key][variable].values.forEach((entry, index) => {
               // Initialize an empty object for each entry of a variable
+              configToSave.variables[variable].is_twoway = this.config.variables[variable].is_twoway.value;
               configToSave.variables[variable].values.push({});
               Object.keys(entry).forEach((entryKey) => {
                 // Grab the content from either platform, value, or audience
@@ -580,6 +583,7 @@ export default {
       const configKeys = Object.keys(existingConfig);
       configKeys.forEach((key) => {
         if (key === 'mqtt') {
+          this.config.mqtt.client.enabled.value = existingConfig.mqtt.client.enabled;
           Object.keys(this.config.mqtt.client).forEach(
             (nestedKey) =>
               (this.config.mqtt.client[nestedKey].value = existingConfig.mqtt.client[nestedKey])
@@ -593,30 +597,27 @@ export default {
                 existingConfig.shaman.garbageCollect[nestedKey])
           );
         } else if (key === 'variables') {
-          // This helps with importing the variables to the form
-          const blankVariableEntry = {
-            platform: { value: '', type: '', label: '' },
-            value: { value: '', type: '', label: '' },
-            audience: { value: '', type: '', label: '' },
-          };
-
           Object.keys(existingConfig.variables).forEach((variable) => {
-            // Initialize the values list for each variable
-            this.config.variables[variable] = { values: [] };
-            existingConfig.variables[variable].values.forEach((entry, index) => {
-              // Initialize an empty object for each entry of a variable
-              this.config.variables[variable].values.push({});
-              Object.keys(blankVariableEntry).forEach((entryKey) => {
-                // Set the content for platform, value, and audience
-                this.config.variables[variable].values[index][entryKey] = {
-                  value:
-                    existingConfig.variables[variable].values[index][entryKey] ??
-                    (entryKey === 'audience' ? 'all' : ''), // If the audience value is blank, set it to the default 'all'
-                  label: inputTypes[entryKey] ?? 'Value',
-                  type: inputTypes[entryKey] ?? inputTypes.string,
-                };
-              });
+            const loadedVar = existingConfig.variables[variable];
+
+            // Ensure the audience is explicitly set to 'all', even when empty/missing.
+            loadedVar.values.forEach((value) => {
+              value.audience ||= "all";
             });
+
+            // Expand values into a widget definition.
+            loadedVar.is_twoway = {
+              value: loadedVar.is_twoway,
+            };
+            loadedVar.values = loadedVar.values.map((varValue) => {
+              return {
+                platform: { value: varValue.platform, type: 'platform', label: 'Platform' },
+                value: { value: varValue.value, type: 'string', label: 'Value' },
+                audience: { value: varValue.audience, type: 'audience', label: 'Audience' },
+              };
+            });
+
+            this.config.variables[variable] = loadedVar;
           });
         } else if (key === '_meta') {
           // Copy the _meta exactly as is
@@ -834,6 +835,15 @@ export default {
                 </svg>
               </button>
             </div>
+            <div class="form-variable-row">
+              <FormInputSwitchCheckbox
+                label="Two-Way Variable"
+                v-model="variable.is_twoway.value"
+                description="Determines whether this is a regular variable (off) or a two-way variable for path replacement (on)."
+                moreInfoText=""
+                moreInfoLinkUrl="https://flamenco.blender.org/usage/variables/multi-platform/"
+                moreInfoLinkLabel="Documentation" />
+            </div>
             <div class="form-variable-row" v-for="(entry, index) in variable.values" :key="index">
               <FormInputText
                 :id="variableName + '[' + index + ']' + '.value'"
@@ -911,24 +921,24 @@ export default {
               <!-- MQTT -->
               <template v-else-if="key === 'mqtt'">
                 <template v-for="(mqttSetting, mqttKey) in config.mqtt" :key="mqttKey">
-                  <template v-if="mqttSetting.type === inputTypes.boolean">
-                    <FormInputSwitchCheckbox
-                      :label="mqttSetting.label"
-                      v-model="mqttSetting.value"
-                      :description="mqttSetting.description"
-                      :moreInfoText="mqttSetting.moreInfoText"
-                      :moreInfoLinkUrl="mqttSetting.moreInfoLinkUrl"
-                      :moreInfoLinkLabel="mqttSetting.moreInfoLinkLabel" />
-                  </template>
                   <!-- MQTT Client -->
                   <template
-                    v-else-if="mqttKey === 'client'"
+                    v-if="mqttKey === 'client'"
                     v-for="(clientSetting, clientKey) in config.mqtt.client"
                     :key="clientKey">
+                    <template v-if="clientSetting.type === inputTypes.boolean">
+                      <FormInputSwitchCheckbox
+                        :label="clientSetting.label"
+                        v-model="clientSetting.value"
+                        :description="clientSetting.description"
+                        :moreInfoText="clientSetting.moreInfoText"
+                        :moreInfoLinkUrl="clientSetting.moreInfoLinkUrl"
+                        :moreInfoLinkLabel="clientSetting.moreInfoLinkLabel" />
+                    </template>
                     <template v-if="clientSetting.type === inputTypes.string">
                       <FormInputText
                         :required="config.mqtt.client[clientKey].required"
-                        :disabled="!config.mqtt.enabled.value"
+                        :disabled="!config.mqtt.client.enabled.value"
                         :id="'mqtt.client.' + clientKey"
                         v-model:value="clientSetting.value"
                         :label="clientSetting.label"
