@@ -387,9 +387,7 @@ export default {
       // Set the error message, if any
       this.newVariableErrorMessage = errorMessage;
 
-      // Don't show an error message if the field is blank e.g. after a user adds a variable name
-      // but still prevent variable addition
-      return !errorMessage && this.newVariableName !== ''; // returns false if there is an errorMessage or if the variable name is empty
+      return errorMessage == null;
     },
     validateVariableName(variableName) {
       // Duplicate variable name
@@ -399,14 +397,14 @@ export default {
 
       // Whitespace only
       if (!variableName.trim()) {
-        return 'Must have at least one non-whitespace character.';
+        return '';
       }
 
       // Curly brace detection
       if (variableName.match(/[{}]/)) {
         return 'Variable name cannot contain any of the following characters: {}';
       }
-      return '';
+      return null;
     },
     handleAddVariable() {
       this.config.variables = {
