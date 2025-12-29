@@ -489,4 +489,43 @@ func TestUpdateConfigurationFile(t *testing.T) {
 		assert.Equal(t, false, updatedConfig.Shaman.Enabled)
 		assert.Equal(t, false, form.Shaman.Enabled)
 	}
+
+	// Test situation where one-way and two-way variables are set.
+	{
+		form := config.Conf{
+			Variables: map[string]config.Variable{
+				"blender": {
+					IsTwoWay: false,
+					Values: config.VariableValues{
+						{Platform: "linux", Value: "blender"},
+						{Platform: "windows", Value: "blender.exe"},
+					},
+				},
+				"my_storage": {
+					IsTwoWay: true,
+					Values: config.VariableValues{
+						{Platform: "linux", Value: "/mnt/flamenco/storage"},
+						{Platform: "windows", Value: `F:\storage`},
+					},
+				},
+			},
+		}
+
+		updatedConfig := doTest(form)
+		assert.False(t, updatedConfig.Variables["blender"].IsTwoWay)
+		assert.Equal(t,
+			config.VariablePlatformWindows,
+			updatedConfig.Variables["blender"].Values[1].Platform)
+		assert.Equal(t,
+			"blender.exe",
+			updatedConfig.Variables["blender"].Values[1].Value)
+
+		assert.True(t, updatedConfig.Variables["my_storage"].IsTwoWay)
+		assert.Equal(t,
+			config.VariablePlatformWindows,
+			updatedConfig.Variables["my_storage"].Values[1].Platform)
+		assert.Equal(t,
+			`F:\storage`,
+			updatedConfig.Variables["my_storage"].Values[1].Value)
+	}
 }
