@@ -4,6 +4,14 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
+## 3.8.2 - in development
+
+- Manager: Fix an issue where in some cases a task log file was not closed.
+- In the Settings view of the web interface:
+  - Add a missing "Two-way Variable" selector ([#104463](https://projects.blender.org/studio/flamenco/issues/104463)).
+  - Fix an issue saving the "MQTT Client Enabled" flag.
+  - Don't show an error message after adding variable in Settings view.
+
 ## 3.8.1 - released 2025-12-25
 
 - Upgrade the pure-Go SQLite database package to version 1.40.1. This should fix the issue of the infinitely-growing `flamenco-manager.sqlite-wal` file. See https://gitlab.com/cznic/sqlite/-/merge_requests/81 for more info.
