@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -68,7 +69,7 @@ func updateMagefiles() bool {
 		log.Fatal().Err(err).Msgf("cannot create file in %s", mageDir)
 	}
 	defer func() {
-		if err := writer.Close(); err != nil {
+		if err := writer.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
 			log.Fatal().Err(err).Str("file", writer.Name()).Msg("closing file")
 		}
 	}()
