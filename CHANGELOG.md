@@ -7,6 +7,7 @@ bugs in actually-released versions.
 ## 3.9 - in development
 
 - Manager: speed up startup by being more selective about checks & maintenance operations on the database.
+- Add-on: upgrade `python_dateutil` to 2.9.0.post0, to fix a deprecation warning on Python 3.13 (used in Blender 5.1+).
 
 ## 3.8.2 - released 2025-12-29
 
