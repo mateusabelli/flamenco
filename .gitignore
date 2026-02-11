@@ -6,6 +6,7 @@
 *.blend[0-9]
 *.flamenco.blend
 .env
+*.DS_Store
 
 /flamenco-manager
 /flamenco-worker
@@ -51,8 +52,3 @@ web/project-website/public/
 web/project-website/resources/_gen/
 /dist/
 /tools/
-
-# IDE related stuff
-*.DS_Store
-.vscode/settings.json
-.vscode/launch.json
