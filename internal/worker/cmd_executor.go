@@ -93,6 +93,7 @@ func NewCommandExecutor(cli CommandLineRunner, listener CommandListener, timeSer
 		"frames-to-video": ce.cmdFramesToVideo,
 
 		// file-management
+		"make-directory": ce.cmdMakeDirectory,
 		"move-directory": ce.cmdMoveDirectory,
 		"copy-file":      ce.cmdCopyFile,
 	}

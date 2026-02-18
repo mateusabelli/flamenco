@@ -21,6 +21,34 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
+// cmdMakeDirectory executes the "make-directory" command.
+// It creates the directory at 'path', including all necessary parent directories (like mkdir -p).
+func (ce *CommandExecutor) cmdMakeDirectory(ctx context.Context, logger zerolog.Logger, taskID string, cmd api.Command) error {
+	path, ok := cmdParameter[string](cmd, "path")
+	if !ok || path == "" {
+		logger.Warn().Interface("command", cmd).Msg("missing 'path' parameter")
+		return NewParameterMissingError("path", cmd)
+	}
+
+	logger = logger.With().Str("path", path).Logger()
+	logger.Info().Msg("creating directory")
+
+	msg := fmt.Sprintf("%s: creating directory %q", cmd.Name, path)
+	if err := ce.listener.LogProduced(ctx, taskID, msg); err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(path, 0775); err != nil {
+		msg := fmt.Sprintf("%s: could not create directory %q: %v", cmd.Name, path, err)
+		if logErr := ce.listener.LogProduced(ctx, taskID, msg); logErr != nil {
+			return logErr
+		}
+		return err
+	}
+
+	return nil
+}
+
 // cmdMoveDirectory executes the "move-directory" command.
 // It moves directory 'src' to 'dest'; if 'dest' already exists, it's moved to 'dest-{timestamp}'.
 func (ce *CommandExecutor) cmdMoveDirectory(ctx context.Context, logger zerolog.Logger, taskID string, cmd api.Command) error {

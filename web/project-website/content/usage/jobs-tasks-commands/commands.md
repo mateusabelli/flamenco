@@ -42,6 +42,14 @@ Uses FFmpeg to convert an image sequence to a video file.
 
 The constructed CLI invocation will be `{exe} {exeArgs} {argsBefore} {platform-dependent inputGlob} {args} -r {fps} {outputFile}`, where `{platform-dependent inputGlob}` is determined by the OS of the executing Flamenco Worker.
 
+## File Management: `make-directory`
+
+Creates a directory, including all necessary parent directories. Has no effect if the directory already exists.
+
+| Parameter | Type     | Description                      |
+|-----------|----------|----------------------------------|
+| `path`    | `string` | Path of the directory to create. |
+
 ## File Management: `move-directory`
 
 Moves a directory from one path to another.

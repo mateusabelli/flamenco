@@ -421,6 +421,62 @@ func (f cmdCopyFileFixture) run() error {
 	return f.ce.Run(f.ctx, taskID, cmd)
 }
 
+// `make-directory` tests.
+
+func TestCmdMakeDirectory(t *testing.T) {
+	f := newCmdMoveDirectoryFixture(t)
+	defer f.finish(t)
+
+	newDir := filepath.Join(f.temppath, "some/nested/directory")
+	assert.NoDirExists(t, newDir)
+
+	f.mocks.listener.EXPECT().LogProduced(gomock.Any(), taskID,
+		fmt.Sprintf("make-directory: creating directory %q", newDir))
+
+	cmd := api.Command{
+		Name:       "make-directory",
+		Parameters: map[string]interface{}{"path": newDir},
+	}
+	err := f.ce.Run(f.ctx, taskID, cmd)
+	assert.NoError(t, err)
+	assert.DirExists(t, newDir)
+}
+
+func TestCmdMakeDirectoryAlreadyExists(t *testing.T) {
+	f := newCmdMoveDirectoryFixture(t)
+	defer f.finish(t)
+
+	existingDir := filepath.Join(f.temppath, "already/exists")
+	ensureDirExists(existingDir)
+	assert.DirExists(t, existingDir)
+
+	f.mocks.listener.EXPECT().LogProduced(gomock.Any(), taskID,
+		fmt.Sprintf("make-directory: creating directory %q", existingDir))
+
+	cmd := api.Command{
+		Name:       "make-directory",
+		Parameters: map[string]interface{}{"path": existingDir},
+	}
+	err := f.ce.Run(f.ctx, taskID, cmd)
+	assert.NoError(t, err)
+	assert.DirExists(t, existingDir)
+}
+
+func TestCmdMakeDirectoryMissingPath(t *testing.T) {
+	f := newCmdMoveDirectoryFixture(t)
+	defer f.finish(t)
+
+	cmd := api.Command{
+		Name:       "make-directory",
+		Parameters: map[string]interface{}{},
+	}
+	err := f.ce.Run(f.ctx, taskID, cmd)
+	var paramErr ParameterMissingError
+	if assert.ErrorAs(t, err, &paramErr) {
+		assert.Equal(t, "path", paramErr.Parameter)
+	}
+}
+
 // Misc utils
 
 func ensureDirExists(dirpath string) {
