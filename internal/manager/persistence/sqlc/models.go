@@ -106,6 +106,7 @@ type Worker struct {
 	SupportedTaskTypes string
 	DeletedAt          sql.NullTime
 	CanRestart         bool
+	UncleanSignonCount int64
 }
 
 type WorkerTag struct {

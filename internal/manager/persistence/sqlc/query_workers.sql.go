@@ -41,7 +41,8 @@ INSERT INTO workers (
   lazy_status_request,
   supported_task_types,
   deleted_at,
-  can_restart
+  can_restart,
+  unclean_signon_count
 ) values (
   ?1,
   ?2,
@@ -56,7 +57,8 @@ INSERT INTO workers (
   ?11,
   ?12,
   ?13,
-  ?14
+  ?14,
+  ?15
 )
 RETURNING id
 `
@@ -76,6 +78,7 @@ type CreateWorkerParams struct {
 	SupportedTaskTypes string
 	DeletedAt          sql.NullTime
 	CanRestart         bool
+	UncleanSignonCount int64
 }
 
 func (q *Queries) CreateWorker(ctx context.Context, arg CreateWorkerParams) (int64, error) {
@@ -94,6 +97,7 @@ func (q *Queries) CreateWorker(ctx context.Context, arg CreateWorkerParams) (int
 		arg.SupportedTaskTypes,
 		arg.DeletedAt,
 		arg.CanRestart,
+		arg.UncleanSignonCount,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -235,7 +239,7 @@ func (q *Queries) FetchTagsOfWorker(ctx context.Context, uuid string) ([]WorkerT
 }
 
 const fetchTimedOutWorkers = `-- name: FetchTimedOutWorkers :many
-SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart
+SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart, unclean_signon_count
 FROM workers
 WHERE
     last_seen_at <= ?1
@@ -285,6 +289,7 @@ func (q *Queries) FetchTimedOutWorkers(ctx context.Context, arg FetchTimedOutWor
 			&i.SupportedTaskTypes,
 			&i.DeletedAt,
 			&i.CanRestart,
+			&i.UncleanSignonCount,
 		); err != nil {
 			return nil, err
 		}
@@ -300,7 +305,7 @@ func (q *Queries) FetchTimedOutWorkers(ctx context.Context, arg FetchTimedOutWor
 }
 
 const fetchWorker = `-- name: FetchWorker :one
-SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart FROM workers WHERE workers.uuid = ?1 and deleted_at is NULL
+SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart, unclean_signon_count FROM workers WHERE workers.uuid = ?1 and deleted_at is NULL
 `
 
 // FetchWorker only returns the worker if it wasn't soft-deleted.
@@ -324,12 +329,13 @@ func (q *Queries) FetchWorker(ctx context.Context, uuid string) (Worker, error) 
 		&i.SupportedTaskTypes,
 		&i.DeletedAt,
 		&i.CanRestart,
+		&i.UncleanSignonCount,
 	)
 	return i, err
 }
 
 const fetchWorkerByID = `-- name: FetchWorkerByID :one
-SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart FROM workers WHERE workers.id = ?1 and deleted_at is NULL
+SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart, unclean_signon_count FROM workers WHERE workers.id = ?1 and deleted_at is NULL
 `
 
 // FetchWorkerByID only returns the worker if it wasn't soft-deleted.
@@ -353,6 +359,7 @@ func (q *Queries) FetchWorkerByID(ctx context.Context, workerID int64) (Worker, 
 		&i.SupportedTaskTypes,
 		&i.DeletedAt,
 		&i.CanRestart,
+		&i.UncleanSignonCount,
 	)
 	return i, err
 }
@@ -523,7 +530,7 @@ func (q *Queries) FetchWorkerTagsByUUIDs(ctx context.Context, uuids []string) ([
 }
 
 const fetchWorkerUnconditional = `-- name: FetchWorkerUnconditional :one
-SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart FROM workers WHERE workers.uuid = ?1
+SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart, unclean_signon_count FROM workers WHERE workers.uuid = ?1
 `
 
 // FetchWorkerUnconditional ignores soft-deletion status and just returns the worker.
@@ -547,12 +554,13 @@ func (q *Queries) FetchWorkerUnconditional(ctx context.Context, uuid string) (Wo
 		&i.SupportedTaskTypes,
 		&i.DeletedAt,
 		&i.CanRestart,
+		&i.UncleanSignonCount,
 	)
 	return i, err
 }
 
 const fetchWorkerUnconditionalByID = `-- name: FetchWorkerUnconditionalByID :one
-SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart FROM workers WHERE workers.id = ?1
+SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart, unclean_signon_count FROM workers WHERE workers.id = ?1
 `
 
 // FetchWorkerUnconditional ignores soft-deletion status and just returns the worker.
@@ -576,12 +584,13 @@ func (q *Queries) FetchWorkerUnconditionalByID(ctx context.Context, workerID int
 		&i.SupportedTaskTypes,
 		&i.DeletedAt,
 		&i.CanRestart,
+		&i.UncleanSignonCount,
 	)
 	return i, err
 }
 
 const fetchWorkers = `-- name: FetchWorkers :many
-SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart FROM workers
+SELECT id, created_at, updated_at, uuid, secret, name, address, platform, software, status, last_seen_at, status_requested, lazy_status_request, supported_task_types, deleted_at, can_restart, unclean_signon_count FROM workers
 WHERE deleted_at IS NULL
 `
 
@@ -611,6 +620,7 @@ func (q *Queries) FetchWorkers(ctx context.Context) ([]Worker, error) {
 			&i.SupportedTaskTypes,
 			&i.DeletedAt,
 			&i.CanRestart,
+			&i.UncleanSignonCount,
 		); err != nil {
 			return nil, err
 		}
@@ -623,6 +633,28 @@ func (q *Queries) FetchWorkers(ctx context.Context) ([]Worker, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const incrementUncleanSignOnCount = `-- name: IncrementUncleanSignOnCount :exec
+UPDATE workers
+SET unclean_signon_count = unclean_signon_count + 1
+WHERE uuid = ?1
+`
+
+func (q *Queries) IncrementUncleanSignOnCount(ctx context.Context, uuid string) error {
+	_, err := q.db.ExecContext(ctx, incrementUncleanSignOnCount, uuid)
+	return err
+}
+
+const resetUncleanSignOnCount = `-- name: ResetUncleanSignOnCount :exec
+UPDATE workers
+SET unclean_signon_count = 0
+WHERE uuid = ?1
+`
+
+func (q *Queries) ResetUncleanSignOnCount(ctx context.Context, uuid string) error {
+	_, err := q.db.ExecContext(ctx, resetUncleanSignOnCount, uuid)
+	return err
 }
 
 const saveWorker = `-- name: SaveWorker :exec
