@@ -115,6 +115,7 @@ CREATE TABLE workers (
   supported_task_types varchar(255) DEFAULT '' NOT NULL,
   deleted_at datetime,
   can_restart boolean DEFAULT false NOT NULL,
+  unclean_signon_count integer DEFAULT 0 NOT NULL,
   PRIMARY KEY (id)
 );
 CREATE INDEX idx_jobs_uuid ON jobs(uuid);

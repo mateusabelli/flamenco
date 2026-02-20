@@ -587,7 +587,7 @@ func (q *Queries) FetchTask(ctx context.Context, uuid string) (FetchTaskRow, err
 }
 
 const fetchTaskFailureList = `-- name: FetchTaskFailureList :many
-SELECT workers.id, workers.created_at, workers.updated_at, workers.uuid, workers.secret, workers.name, workers.address, workers.platform, workers.software, workers.status, workers.last_seen_at, workers.status_requested, workers.lazy_status_request, workers.supported_task_types, workers.deleted_at, workers.can_restart FROM workers
+SELECT workers.id, workers.created_at, workers.updated_at, workers.uuid, workers.secret, workers.name, workers.address, workers.platform, workers.software, workers.status, workers.last_seen_at, workers.status_requested, workers.lazy_status_request, workers.supported_task_types, workers.deleted_at, workers.can_restart, workers.unclean_signon_count FROM workers
 INNER JOIN task_failures TF on TF.worker_id=workers.id
 WHERE TF.task_id=?1
 `
@@ -622,6 +622,7 @@ func (q *Queries) FetchTaskFailureList(ctx context.Context, taskID int64) ([]Fet
 			&i.Worker.SupportedTaskTypes,
 			&i.Worker.DeletedAt,
 			&i.Worker.CanRestart,
+			&i.Worker.UncleanSignonCount,
 		); err != nil {
 			return nil, err
 		}
