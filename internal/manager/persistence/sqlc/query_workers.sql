@@ -150,7 +150,8 @@ UPDATE workers SET
   status_requested=@status_requested,
   lazy_status_request=@lazy_status_request,
   supported_task_types=@supported_task_types,
-  can_restart=@can_restart
+  can_restart=@can_restart,
+  unclean_signon_count=@unclean_signon_count
 WHERE id=@id;
 
 -- name: WorkerSeen :exec

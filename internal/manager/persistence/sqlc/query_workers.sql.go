@@ -671,8 +671,9 @@ UPDATE workers SET
   status_requested=?10,
   lazy_status_request=?11,
   supported_task_types=?12,
-  can_restart=?13
-WHERE id=?14
+  can_restart=?13,
+  unclean_signon_count=?14
+WHERE id=?15
 `
 
 type SaveWorkerParams struct {
@@ -689,6 +690,7 @@ type SaveWorkerParams struct {
 	LazyStatusRequest  bool
 	SupportedTaskTypes string
 	CanRestart         bool
+	UncleanSignonCount int64
 	ID                 int64
 }
 
@@ -707,6 +709,7 @@ func (q *Queries) SaveWorker(ctx context.Context, arg SaveWorkerParams) error {
 		arg.LazyStatusRequest,
 		arg.SupportedTaskTypes,
 		arg.CanRestart,
+		arg.UncleanSignonCount,
 		arg.ID,
 	)
 	return err
