@@ -14,7 +14,8 @@ INSERT INTO workers (
   lazy_status_request,
   supported_task_types,
   deleted_at,
-  can_restart
+  can_restart,
+  unclean_signon_count
 ) values (
   @created_at,
   @uuid,
@@ -29,7 +30,8 @@ INSERT INTO workers (
   @lazy_status_request,
   @supported_task_types,
   @deleted_at,
-  @can_restart
+  @can_restart,
+  @unclean_signon_count
 )
 RETURNING id;
 
@@ -234,3 +236,13 @@ INSERT INTO sleep_schedules (
   @end_time,
   @next_check
 );
+
+-- name: IncrementUncleanSignOnCount :exec
+UPDATE workers
+SET unclean_signon_count = unclean_signon_count + 1
+WHERE uuid = @uuid;
+
+-- name: ResetUncleanSignOnCount :exec
+UPDATE workers
+SET unclean_signon_count = 0
+WHERE uuid = @uuid;
