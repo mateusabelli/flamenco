@@ -1,20 +1,23 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+import logging
+import platform
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Optional, Union
-import platform
-import logging
 
 import bpy
 
-from .job_types_propgroup import JobTypePropertyGroup
-from .bat.submodules import bpathlib
 from . import manager_info
+from .bat.submodules import bpathlib
 
 if TYPE_CHECKING:
     from .manager import ApiClient as _ApiClient
     from .manager.models import (
         AvailableJobType as _AvailableJobType,
+    )
+    from .manager.models import (
         Job as _Job,
+    )
+    from .manager.models import (
         SubmittedJob as _SubmittedJob,
     )
 else:
@@ -32,8 +35,11 @@ log = logging.getLogger(__name__)
 
 
 def job_for_scene(scene: bpy.types.Scene) -> Optional[_SubmittedJob]:
-    from flamenco.manager.models import SubmittedJob, JobMetadata
     from flamenco.manager.model.job_status import JobStatus
+    from flamenco.manager.models import JobMetadata, SubmittedJob
+
+    # Do a late import, to make the order in which this file is imported less sensitive.
+    from .job_types_propgroup import JobTypePropertyGroup
 
     propgroup = getattr(scene, "flamenco_job_settings", None)
     assert isinstance(propgroup, JobTypePropertyGroup), "did not expect %s" % (
@@ -106,7 +112,7 @@ def submit_job(job: _SubmittedJob, api_client: _ApiClient) -> _Job:
     """Send the given job to Flamenco Manager."""
     from flamenco.manager import ApiClient
     from flamenco.manager.api import jobs_api
-    from flamenco.manager.models import SubmittedJob, Job
+    from flamenco.manager.models import Job, SubmittedJob
 
     assert isinstance(job, SubmittedJob), "got %s" % type(job)
     assert isinstance(api_client, ApiClient), "got %s" % type(api_client)
@@ -122,7 +128,7 @@ def submit_job_check(job: _SubmittedJob, api_client: _ApiClient) -> None:
     """Check the given job at Flamenco Manager to see if it is acceptable."""
     from flamenco.manager import ApiClient
     from flamenco.manager.api import jobs_api
-    from flamenco.manager.models import SubmittedJob, Job
+    from flamenco.manager.models import Job, SubmittedJob
 
     assert isinstance(job, SubmittedJob), "got %s" % type(job)
     assert isinstance(api_client, ApiClient), "got %s" % type(api_client)

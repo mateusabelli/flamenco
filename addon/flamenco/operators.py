@@ -3,28 +3,34 @@
 
 import datetime
 import logging
+import shutil
 import time
-from pathlib import Path, PurePosixPath
-from typing import Optional, TYPE_CHECKING
-from urllib3.exceptions import HTTPError, MaxRetryError
+from pathlib import Path, PurePath, PurePosixPath
+from types import ModuleType
+from typing import TYPE_CHECKING, Optional
 
 import bpy
+from urllib3.exceptions import HTTPError, MaxRetryError
 
-from . import job_types, job_submission, preferences, manager_info
-from .job_types_propgroup import JobTypePropertyGroup
+from . import job_submission, job_types, manager_info, preferences
 from .bat.submodules import bpathlib
+from .job_types_propgroup import JobTypePropertyGroup
 
 if TYPE_CHECKING:
     from .bat.interface import (
-        PackThread as _PackThread,
         Message as _Message,
     )
-    from .manager.models import (
-        Error as _Error,
-        SubmittedJob as _SubmittedJob,
+    from .bat.interface import (
+        PackThread as _PackThread,
     )
     from .manager.api_client import ApiClient as _ApiClient
     from .manager.exceptions import ApiException as _ApiException
+    from .manager.models import (
+        Error as _Error,
+    )
+    from .manager.models import (
+        SubmittedJob as _SubmittedJob,
+    )
 else:
     _PackThread = object
     _Message = object
@@ -32,6 +38,17 @@ else:
     _ApiClient = object
     _ApiException = object
     _Error = object
+
+# Conditionally import BAT v2, as that version requires Blender 5.1+.
+bat_v2: ModuleType | None
+if bpy.app.version >= (5, 1, 0) or TYPE_CHECKING:
+    from . import bat_v2
+    from .bat_v2.pack_fs import BATPacker
+
+    _BATPacker = BATPacker
+else:
+    bat_v2 = None
+    _BATPacker = object
 
 _log = logging.getLogger(__name__)
 
@@ -117,8 +134,13 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
     )
 
     TIMER_PERIOD = 0.25  # seconds
+    TIMER_PERIOD_BAT_V2 = 0.01  # seconds
+
     timer: Optional[bpy.types.Timer] = None
+    # For BAT v1:
     packthread: Optional[_PackThread] = None
+    # For BAT v2:
+    bat_v2_packer: _BATPacker | None = None
 
     log = _log.getChild(bl_idname)
 
@@ -130,11 +152,23 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         return job_type is not None
 
     def execute(self, context: bpy.types.Context) -> set[str]:
+        """Submit the job files in a blocking way.
+
+        This allows scripted submission, which blocks the main thread until
+        the process is done.
+        """
+
         filepath, ok = self._presubmit_check(context)
         if not ok:
             return {"CANCELLED"}
 
-        is_running = self._submit_files(context, filepath)
+        # Use BAT v2 if available.
+        if bat_v2 is not None:
+            raise NotImplementedError(
+                "Blocking submission is not yet implemented for BATv2"
+            )
+
+        is_running = self._submit_files_bat_v1(context, filepath)
         if not is_running:
             return {"CANCELLED"}
 
@@ -158,13 +192,16 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         return {"FINISHED"}
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[str]:
-
         filepath, ok = self._presubmit_check(context)
         if not ok:
             return {"CANCELLED"}
 
-        is_running = self._submit_files(context, filepath)
+        if bat_v2 is None:
+            is_running = self._submit_files_bat_v1(context, filepath)
+        else:
+            is_running = self._submit_files_bat_v2(context, filepath)
         if not is_running:
+            print("CANCELLING at invoke")
             return {"CANCELLED"}
 
         context.window_manager.modal_handler_add(self)
@@ -174,6 +211,16 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         # This function is called for TIMER events to poll the BAT pack thread.
         if event.type != "TIMER":
             return {"PASS_THROUGH"}
+
+        if self.bat_v2_packer is not None:
+            # BAT v2 pack is underway.
+            keep_going = self.bat_v2_packer.update()
+            if keep_going:
+                return {"RUNNING_MODAL"}
+
+            # BAT v2 pack is done.
+            self._submit_job(context)
+            return self._quit(context)
 
         if self.packthread is None:
             # If there is no pack thread running, there isn't much we can do.
@@ -359,7 +406,96 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         return filepath
 
-    def _submit_files(self, context: bpy.types.Context, blendfile: Path) -> bool:
+    def _submit_files_bat_v2(self, context: bpy.types.Context, blendfile: Path) -> bool:
+        """Ensure that the files are somewhere in the shared storage.
+
+        Returns True if a packing thread has been started, and False otherwise.
+        """
+
+        from .bat_v2 import pack_fs
+
+        manager = self._manager_info(context)
+        if not manager:
+            return False
+
+        # Get the project root and double-check its existence.
+        prefs = preferences.get(context)
+        project_path: Path = prefs.project_root()
+        assert project_path.is_absolute(), (
+            "Expecting project path {!s} to be an absolute path".format(project_path)
+        )
+        if not project_path.exists():
+            self.report(
+                {"ERROR"}, "Project path {!s} does not exist".format(project_path)
+            )
+            raise FileNotFoundError()
+
+        # Determine the path to the BAT pack on the farm.
+        unique_dir = "%s-%s" % (
+            datetime.datetime.now().isoformat("-").replace(":", ""),
+            self.job_name,
+        )
+        pack_target_dir = Path(manager.shared_storage.location) / unique_dir
+        self.log.info("Job path on the farm: %s", pack_target_dir)
+
+        if manager.shared_storage.shaman_enabled:
+            raise NotImplementedError("BATv2 packing to Shaman is not yet implemented")
+
+        if job_submission.is_file_inside_job_storage(context, blendfile):
+            self.log.info(
+                "File is already in job storage location, submitting it as-is"
+            )
+            self._use_blendfile_directly(context, blendfile)
+            return True
+
+        # Pack to the filesystem.
+        self.log.info("Copying BAT pack to shared storage: %s", project_path)
+        batpacker = pack_fs.pack_start(
+            project_root=project_path,
+            reporter=self,
+            use_relative_only=True,  # TODO: get from GUI.
+            pack_target_dir=pack_target_dir,
+        )
+        batpacker.start()
+        self.bat_v2_packer = batpacker
+
+        source_file_info = batpacker.source_file_info()
+        abspath_on_farm = pack_target_dir / source_file_info.relpath_in_pack
+        self.blendfile_on_farm = PurePosixPath(abspath_on_farm.as_posix())
+        self.log.info("    %s", abspath_on_farm)
+
+        # Start the timer for periodic updates of the packing process. This
+        # needs a relatively fast update cycle, as each file to be copied needs
+        # its own update.
+        #
+        # TODO: if blocking the UI for each file copy gets too annoying, move
+        # the process to a separate thread.
+        wm = context.window_manager
+        self.timer = wm.event_timer_add(self.TIMER_PERIOD_BAT_V2, window=context.window)
+        return True
+
+    # Reporter Protocol for our BAT v2 interface:
+
+    def on_copy_start(self, src: Path, dest: PurePath) -> None:
+        self.report({"INFO"}, "Copying {!s}".format(dest))
+        self.log.info("Copying %s", dest)
+
+    def on_copy_done(self, src: Path, dest: PurePath) -> None:
+        pass
+
+    def on_rewrite_error(
+        self, blendfile: Path, path_in_pack: PurePath, errormsg: str
+    ) -> None:
+        self.report({"ERROR"}, "Rewriting {!s}: {!s}".format(blendfile, errormsg))
+
+    def on_rewrite_done(self, blendfile: Path, path_in_pack: PurePath) -> None:
+        pass
+
+    def on_missing_file(self, blendfile: Path, path_in_pack: PurePath) -> None:
+        # TODO: Keep track of missing files, and report at the end.
+        self.report({"WARNING"}, "Missing file: {!s}".format(blendfile))
+
+    def _submit_files_bat_v1(self, context: bpy.types.Context, blendfile: Path) -> bool:
         """Ensure that the files are somewhere in the shared storage.
 
         Returns True if a packing thread has been started, and False otherwise.
@@ -391,7 +527,9 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
                 "File is not already in job storage location, copying it there"
             )
             try:
-                self.blendfile_on_farm = self._bat_pack_filesystem(context, blendfile)
+                self.blendfile_on_farm = self._bat_v1_pack_filesystem(
+                    context, blendfile
+                )
             except FileNotFoundError:
                 self._quit(context)
                 return False
@@ -401,7 +539,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         return True
 
-    def _bat_pack_filesystem(
+    def _bat_v1_pack_filesystem(
         self, context: bpy.types.Context, blendfile: Path
     ) -> PurePosixPath:
         """Use BAT to store the pack on the filesystem.
@@ -463,6 +601,8 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         """
         from .bat import (
             interface as bat_interface,
+        )
+        from .bat import (
             shaman as bat_shaman,
         )
 
@@ -576,7 +716,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         api_client = self.get_api_client(context)
         try:
             submitted_job = job_submission.submit_job(self.job, api_client)
-        except MaxRetryError as ex:
+        except MaxRetryError:
             self.report({"ERROR"}, "Unable to reach Flamenco Manager")
             return
         except HTTPError as ex:
@@ -612,7 +752,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         api_client = self.get_api_client(context)
         try:
             job_submission.submit_job_check(self.job, api_client)
-        except MaxRetryError as ex:
+        except MaxRetryError:
             self.report({"ERROR"}, "Unable to reach Flamenco Manager")
             return False
         except HTTPError as ex:
@@ -664,8 +804,8 @@ class FLAMENCO3_OT_explore_file_path(bpy.types.Operator):
     )
 
     def execute(self, context):
-        import platform
         import pathlib
+        import platform
 
         # Possibly open a parent of the path
         to_open = pathlib.Path(self.path)

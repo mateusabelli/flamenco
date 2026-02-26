@@ -3,11 +3,12 @@ name = "flamenco"
 version = "3.0"
 description = "Flamenco client add-on for Blender"
 authors = [{ name = "Sybren A. Stüvel", email = "sybren@blender.org" }]
-requires-python = ">=3.10,<4"
+requires-python = ">=3.13,<4"
 license = "GPL-3.0-or-later"
 dependencies = [
     "urllib3>=2.4.0,<3",
     "python-dateutil>=2.9.0,<3",
+    "blender-asset-tracer>=2.0.0,<3",
 ]
 
 [dependency-groups]
@@ -16,8 +17,10 @@ dev = [
     "ruff>=0.15,<1",
 ]
 
+[tool.uv.sources]
+blender-asset-tracer = { path = "../../bat/blender-asset-tracer", editable = true }
+
 [tool.mypy]
-python_version = "3.10"
 # strict = true
 ignore_missing_imports = true
 strict_optional = true
@@ -37,3 +40,17 @@ files = ["flamenco"]
 [[tool.mypy.overrides]]
 module = "flamenco.manager.*"
 ignore_errors = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+lint.select = ["E4", "E7", "E9", "F", "W", "C901"]
+lint.ignore = ["I001"]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+lint.fixable = ["ALL"]
+lint.unfixable = []
