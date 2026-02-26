@@ -2,11 +2,10 @@
 
 ## Setting up development environment
 
-```
-~/workspace/blender-git/build_linux/bin/3.1/python/bin/python3.9 -m venv --upgrade-deps venv
-. ./venv/bin/activate
-pip install poetry
-poetry install
+First [install UV](https://docs.astral.sh/uv/#installation), then run:
+
+```sh
+$ uv run mypy
 ```
 
 ## Generating the OpenAPI client
