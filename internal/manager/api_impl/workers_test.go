@@ -240,6 +240,7 @@ func TestWorkerSignoffTaskRequeue(t *testing.T) {
 	// Expect worker's tasks to be re-queued.
 	mf.stateMachine.EXPECT().RequeueActiveTasksOfWorker(expectCtx, &worker, "worker signed off").Return(nil)
 	mf.persistence.EXPECT().WorkerSeen(expectCtx, &worker)
+	mf.persistence.EXPECT().ResetUncleanSignOnCount(gomock.Any(), worker.UUID).Return(nil)
 
 	// Expect worker to be saved as 'offline'.
 	mf.persistence.EXPECT().
@@ -299,6 +300,7 @@ func TestWorkerRememberPreviousStatus(t *testing.T) {
 	mf.persistence.EXPECT().SaveWorkerStatus(gomock.Any(), &savedWorker).Return(nil)
 	mf.stateMachine.EXPECT().RequeueActiveTasksOfWorker(gomock.Any(), &worker, "worker signed off").Return(nil)
 	mf.persistence.EXPECT().WorkerSeen(gomock.Any(), &worker)
+	mf.persistence.EXPECT().ResetUncleanSignOnCount(gomock.Any(), worker.UUID).Return(nil)
 
 	echo := mf.prepareMockedRequest(nil)
 	requestWorkerStore(echo, &worker)
@@ -336,6 +338,7 @@ func TestWorkerDontRememberPreviousStatus(t *testing.T) {
 	mf.persistence.EXPECT().SaveWorkerStatus(gomock.Any(), &savedWorker).Return(nil)
 	mf.stateMachine.EXPECT().RequeueActiveTasksOfWorker(gomock.Any(), &worker, "worker signed off").Return(nil)
 	mf.persistence.EXPECT().WorkerSeen(gomock.Any(), &worker)
+	mf.persistence.EXPECT().ResetUncleanSignOnCount(gomock.Any(), worker.UUID).Return(nil)
 
 	echo := mf.prepareMockedRequest(nil)
 	requestWorkerStore(echo, &worker)

@@ -430,6 +430,20 @@ func (mr *MockPersistenceServiceMockRecorder) GetLastRenderedJobUUID(ctx any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastRenderedJobUUID", reflect.TypeOf((*MockPersistenceService)(nil).GetLastRenderedJobUUID), ctx)
 }
 
+// IncrementUncleanSignOnCount mocks base method.
+func (m *MockPersistenceService) IncrementUncleanSignOnCount(ctx context.Context, uuid string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrementUncleanSignOnCount", ctx, uuid)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrementUncleanSignOnCount indicates an expected call of IncrementUncleanSignOnCount.
+func (mr *MockPersistenceServiceMockRecorder) IncrementUncleanSignOnCount(ctx, uuid any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementUncleanSignOnCount", reflect.TypeOf((*MockPersistenceService)(nil).IncrementUncleanSignOnCount), ctx, uuid)
+}
+
 // QueryJobTaskSummaries mocks base method.
 func (m *MockPersistenceService) QueryJobTaskSummaries(ctx context.Context, jobUUID string) ([]persistence.TaskSummary, error) {
 	m.ctrl.T.Helper()
@@ -457,6 +471,20 @@ func (m *MockPersistenceService) RemoveFromJobBlocklist(ctx context.Context, job
 func (mr *MockPersistenceServiceMockRecorder) RemoveFromJobBlocklist(ctx, jobUUID, workerUUID, taskType any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFromJobBlocklist", reflect.TypeOf((*MockPersistenceService)(nil).RemoveFromJobBlocklist), ctx, jobUUID, workerUUID, taskType)
+}
+
+// ResetUncleanSignOnCount mocks base method.
+func (m *MockPersistenceService) ResetUncleanSignOnCount(ctx context.Context, uuid string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResetUncleanSignOnCount", ctx, uuid)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ResetUncleanSignOnCount indicates an expected call of ResetUncleanSignOnCount.
+func (mr *MockPersistenceServiceMockRecorder) ResetUncleanSignOnCount(ctx, uuid any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetUncleanSignOnCount", reflect.TypeOf((*MockPersistenceService)(nil).ResetUncleanSignOnCount), ctx, uuid)
 }
 
 // SaveJobPriority mocks base method.
