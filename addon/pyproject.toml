@@ -6,13 +6,12 @@ authors = [{ name = "Sybren A. Stüvel", email = "sybren@blender.org" }]
 requires-python = ">=3.10,<4"
 license = "GPL-3.0-or-later"
 dependencies = [
-    "requests>=2.27.1,<3",
-    "openapi-core>=0.14.2,<0.15",
-    "python-dateutil>=2.8.2,<3",
+    "urllib3>=2.4.0,<3",
+    "python-dateutil>=2.9.0,<3",
 ]
 
 [dependency-groups]
 dev = [
-    "mypy>=0.941,<0.942",
-    "black>=22.1.0,<23",
+    "mypy>=1.19,<2",
+    "ruff>=0.15,<1",
 ]
