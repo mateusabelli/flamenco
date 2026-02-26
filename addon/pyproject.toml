@@ -1,20 +1,18 @@
-[tool.poetry]
+[project]
 name = "flamenco"
 version = "3.0"
 description = "Flamenco client add-on for Blender"
-authors = ["Sybren A. Stüvel <sybren@blender.org>"]
+authors = [{ name = "Sybren A. Stüvel", email = "sybren@blender.org" }]
+requires-python = ">=3.10,<4"
 license = "GPL-3.0-or-later"
+dependencies = [
+    "requests>=2.27.1,<3",
+    "openapi-core>=0.14.2,<0.15",
+    "python-dateutil>=2.8.2,<3",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-requests = "^2.27.1"
-openapi-core = "^0.14.2"
-python-dateutil = "^2.8.2"
-
-[tool.poetry.dev-dependencies]
-mypy = "^0.941"
-black = "^22.1.0"
-
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+[dependency-groups]
+dev = [
+    "mypy>=0.941,<0.942",
+    "black>=22.1.0,<23",
+]
