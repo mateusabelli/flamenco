@@ -442,54 +442,44 @@ func TestUncleanSignOnCount(t *testing.T) {
 	f := workerTestFixtures(t, 1*time.Second)
 	defer f.done()
 
-	// Worker statuses that are acknowledged on sign-off.
-	var isCleanOfflineState = map[api.WorkerStatus]bool{
-		api.WorkerStatusOffline: true,
-		api.WorkerStatusRestart: true,
+	// Create the workers.
+	w1 := Worker{
+		UUID:               "a4385770-3f37-4df0-8225-6db9a593f3d1",
+		Status:             api.WorkerStatusAwake,
+		UncleanSignonCount: 3,
+	}
+	w2 := Worker{
+		UUID:               "b1692102-6385-4a8e-980b-64d432e5e899",
+		Status:             api.WorkerStatusStarting,
+		UncleanSignonCount: 12,
+	}
+	w3 := Worker{
+		UUID:               "4f4c344c-5ddd-42bc-a21f-c44878bde6bd",
+		Status:             api.WorkerStatusOffline,
+		UncleanSignonCount: 7,
 	}
 
-	// Create the workers.
-	workers := []Worker{
-		{
-			UUID:               "a4385770-3f37-4df0-8225-6db9a593f3d1",
-			Status:             api.WorkerStatusAwake,
-			UncleanSignonCount: 0,
-		},
-		{
-			UUID:               "b1692102-6385-4a8e-980b-64d432e5e899",
-			Status:             api.WorkerStatusStarting,
-			UncleanSignonCount: 0,
-		},
-		{
-			UUID:               "4f4c344c-5ddd-42bc-a21f-c44878bde6bd",
-			Status:             api.WorkerStatusOffline,
-			UncleanSignonCount: 7,
-		},
-	}
+	require.NoError(t, f.db.CreateWorker(f.ctx, &w1))
+	require.NoError(t, f.db.CreateWorker(f.ctx, &w2))
+	require.NoError(t, f.db.CreateWorker(f.ctx, &w3))
 
 	// Run the simulation.
-	for _, w := range workers {
-		require.NoError(t, f.db.CreateWorker(f.ctx, &w))
-
-		if isCleanOfflineState[w.Status] {
-			require.NoError(t, f.db.WorkerUncleanSignOnCountReset(f.ctx, w.UUID))
-		} else {
-			require.NoError(t, f.db.WorkerUncleanSignOnCountIncrement(f.ctx, w.UUID))
-		}
-	}
+	require.NoError(t, f.db.WorkerUncleanSignOnCountIncrement(f.ctx, w1.UUID))
+	require.NoError(t, f.db.WorkerUncleanSignOnCountIncrement(f.ctx, w2.UUID))
+	require.NoError(t, f.db.WorkerUncleanSignOnCountReset(f.ctx, w3.UUID))
 
 	// Fetch updated workers.
-	w1, err := f.db.FetchWorker(f.ctx, workers[0].UUID)
+	updatedW1, err := f.db.FetchWorker(f.ctx, w1.UUID)
 	require.NoError(t, err)
 
-	w2, err := f.db.FetchWorker(f.ctx, workers[1].UUID)
+	updatedW2, err := f.db.FetchWorker(f.ctx, w2.UUID)
 	require.NoError(t, err)
 
-	w3, err := f.db.FetchWorker(f.ctx, workers[2].UUID)
+	updatedW3, err := f.db.FetchWorker(f.ctx, w3.UUID)
 	require.NoError(t, err)
 
 	// Test the counter values.
-	assert.Equal(t, int64(1), w1.UncleanSignonCount, "awake worker should have incremented the counter")
-	assert.Equal(t, int64(1), w2.UncleanSignonCount, "starting worker should have increment the counter")
-	assert.Equal(t, int64(0), w3.UncleanSignonCount, "offline worker should have reset the counter")
+	assert.Equal(t, int64(4), updatedW1.UncleanSignonCount, "awake worker should have incremented the counter")
+	assert.Equal(t, int64(13), updatedW2.UncleanSignonCount, "starting worker should have increment the counter")
+	assert.Equal(t, int64(0), updatedW3.UncleanSignonCount, "offline worker should have reset the counter")
 }
