@@ -166,10 +166,10 @@ func (f *Flamenco) workerUpdateAfterSignOn(e echo.Context, update api.SignOnJSON
 	// Increment the counter as this worker came online with a suspicious state.
 	if !offlineWorkerStates[prevStatus] {
 		if err := f.persist.WorkerUncleanSignOnCountIncrement(ctx, w.UUID); err != nil {
-			logger.Warn().
-				Err(err).
+			logger.Error().
+				AnErr("cause", err).
 				Int64("currentCount", w.UncleanSignonCount).
-				Msg("error incrementing the worker unclean sign-on count")
+				Msg("could not increment the worker 'unclean sign-on count'")
 			return nil, "", err
 		}
 	}
@@ -224,11 +224,11 @@ func (f *Flamenco) SignOff(e echo.Context) error {
 	// Reset the counter as this worker went through a proper sign-off process.
 	err = f.persist.WorkerUncleanSignOnCountReset(bgCtx, w.UUID)
 	if err != nil {
-		logger.Warn().
-			Err(err).
+		logger.Error().
+			AnErr("cause", err).
 			Int64("currentCount", w.UncleanSignonCount).
-			Msg("error resetting the worker unclean sign-on count")
-		return sendAPIError(e, http.StatusInternalServerError, "error resetting the worker unclean sign-on count")
+			Msg("could not reset the worker 'unclean sign-on count'")
+		return sendAPIError(e, http.StatusInternalServerError, "could not reset the worker 'unclean sign-on count'")
 	}
 
 	update := eventbus.NewWorkerUpdate(w)
