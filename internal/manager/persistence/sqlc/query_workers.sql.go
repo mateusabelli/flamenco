@@ -635,28 +635,6 @@ func (q *Queries) FetchWorkers(ctx context.Context) ([]Worker, error) {
 	return items, nil
 }
 
-const incrementUncleanSignOnCount = `-- name: IncrementUncleanSignOnCount :exec
-UPDATE workers
-SET unclean_signon_count = unclean_signon_count + 1
-WHERE uuid = ?1
-`
-
-func (q *Queries) IncrementUncleanSignOnCount(ctx context.Context, uuid string) error {
-	_, err := q.db.ExecContext(ctx, incrementUncleanSignOnCount, uuid)
-	return err
-}
-
-const resetUncleanSignOnCount = `-- name: ResetUncleanSignOnCount :exec
-UPDATE workers
-SET unclean_signon_count = 0
-WHERE uuid = ?1
-`
-
-func (q *Queries) ResetUncleanSignOnCount(ctx context.Context, uuid string) error {
-	_, err := q.db.ExecContext(ctx, resetUncleanSignOnCount, uuid)
-	return err
-}
-
 const saveWorker = `-- name: SaveWorker :exec
 UPDATE workers SET
   updated_at=?1,
@@ -986,5 +964,27 @@ type WorkerSeenParams struct {
 
 func (q *Queries) WorkerSeen(ctx context.Context, arg WorkerSeenParams) error {
 	_, err := q.db.ExecContext(ctx, workerSeen, arg.UpdatedAt, arg.LastSeenAt, arg.ID)
+	return err
+}
+
+const workerUncleanSignOnCountIncrement = `-- name: WorkerUncleanSignOnCountIncrement :exec
+UPDATE workers
+SET unclean_signon_count = unclean_signon_count + 1
+WHERE uuid = ?1
+`
+
+func (q *Queries) WorkerUncleanSignOnCountIncrement(ctx context.Context, uuid string) error {
+	_, err := q.db.ExecContext(ctx, workerUncleanSignOnCountIncrement, uuid)
+	return err
+}
+
+const workerUncleanSignOnCountReset = `-- name: WorkerUncleanSignOnCountReset :exec
+UPDATE workers
+SET unclean_signon_count = 0
+WHERE uuid = ?1
+`
+
+func (q *Queries) WorkerUncleanSignOnCountReset(ctx context.Context, uuid string) error {
+	_, err := q.db.ExecContext(ctx, workerUncleanSignOnCountReset, uuid)
 	return err
 }

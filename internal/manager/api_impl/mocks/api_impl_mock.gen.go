@@ -430,20 +430,6 @@ func (mr *MockPersistenceServiceMockRecorder) GetLastRenderedJobUUID(ctx any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastRenderedJobUUID", reflect.TypeOf((*MockPersistenceService)(nil).GetLastRenderedJobUUID), ctx)
 }
 
-// IncrementUncleanSignOnCount mocks base method.
-func (m *MockPersistenceService) IncrementUncleanSignOnCount(ctx context.Context, uuid string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IncrementUncleanSignOnCount", ctx, uuid)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// IncrementUncleanSignOnCount indicates an expected call of IncrementUncleanSignOnCount.
-func (mr *MockPersistenceServiceMockRecorder) IncrementUncleanSignOnCount(ctx, uuid any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementUncleanSignOnCount", reflect.TypeOf((*MockPersistenceService)(nil).IncrementUncleanSignOnCount), ctx, uuid)
-}
-
 // QueryJobTaskSummaries mocks base method.
 func (m *MockPersistenceService) QueryJobTaskSummaries(ctx context.Context, jobUUID string) ([]persistence.TaskSummary, error) {
 	m.ctrl.T.Helper()
@@ -471,20 +457,6 @@ func (m *MockPersistenceService) RemoveFromJobBlocklist(ctx context.Context, job
 func (mr *MockPersistenceServiceMockRecorder) RemoveFromJobBlocklist(ctx, jobUUID, workerUUID, taskType any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFromJobBlocklist", reflect.TypeOf((*MockPersistenceService)(nil).RemoveFromJobBlocklist), ctx, jobUUID, workerUUID, taskType)
-}
-
-// ResetUncleanSignOnCount mocks base method.
-func (m *MockPersistenceService) ResetUncleanSignOnCount(ctx context.Context, uuid string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResetUncleanSignOnCount", ctx, uuid)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ResetUncleanSignOnCount indicates an expected call of ResetUncleanSignOnCount.
-func (mr *MockPersistenceServiceMockRecorder) ResetUncleanSignOnCount(ctx, uuid any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetUncleanSignOnCount", reflect.TypeOf((*MockPersistenceService)(nil).ResetUncleanSignOnCount), ctx, uuid)
 }
 
 // SaveJobPriority mocks base method.
@@ -668,6 +640,34 @@ func (m *MockPersistenceService) WorkerSetTags(ctx context.Context, worker *pers
 func (mr *MockPersistenceServiceMockRecorder) WorkerSetTags(ctx, worker, tagUUIDs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkerSetTags", reflect.TypeOf((*MockPersistenceService)(nil).WorkerSetTags), ctx, worker, tagUUIDs)
+}
+
+// WorkerUncleanSignOnCountIncrement mocks base method.
+func (m *MockPersistenceService) WorkerUncleanSignOnCountIncrement(ctx context.Context, uuid string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkerUncleanSignOnCountIncrement", ctx, uuid)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WorkerUncleanSignOnCountIncrement indicates an expected call of WorkerUncleanSignOnCountIncrement.
+func (mr *MockPersistenceServiceMockRecorder) WorkerUncleanSignOnCountIncrement(ctx, uuid any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkerUncleanSignOnCountIncrement", reflect.TypeOf((*MockPersistenceService)(nil).WorkerUncleanSignOnCountIncrement), ctx, uuid)
+}
+
+// WorkerUncleanSignOnCountReset mocks base method.
+func (m *MockPersistenceService) WorkerUncleanSignOnCountReset(ctx context.Context, uuid string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkerUncleanSignOnCountReset", ctx, uuid)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WorkerUncleanSignOnCountReset indicates an expected call of WorkerUncleanSignOnCountReset.
+func (mr *MockPersistenceServiceMockRecorder) WorkerUncleanSignOnCountReset(ctx, uuid any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkerUncleanSignOnCountReset", reflect.TypeOf((*MockPersistenceService)(nil).WorkerUncleanSignOnCountReset), ctx, uuid)
 }
 
 // WorkersLeftToRun mocks base method.

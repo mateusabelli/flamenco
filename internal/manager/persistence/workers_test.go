@@ -472,9 +472,9 @@ func TestUncleanSignOnCount(t *testing.T) {
 		require.NoError(t, f.db.CreateWorker(f.ctx, &w))
 
 		if isCleanOfflineState[w.Status] {
-			require.NoError(t, f.db.ResetUncleanSignOnCount(f.ctx, w.UUID))
+			require.NoError(t, f.db.WorkerUncleanSignOnCountReset(f.ctx, w.UUID))
 		} else {
-			require.NoError(t, f.db.IncrementUncleanSignOnCount(f.ctx, w.UUID))
+			require.NoError(t, f.db.WorkerUncleanSignOnCountIncrement(f.ctx, w.UUID))
 		}
 	}
 

@@ -233,9 +233,9 @@ func (db *DB) SummarizeWorkerStatuses(ctx context.Context) (WorkerStatusCount, e
 	return statusCounts, nil
 }
 
-func (db *DB) IncrementUncleanSignOnCount(ctx context.Context, uuid string) error {
+func (db *DB) WorkerUncleanSignOnCountIncrement(ctx context.Context, uuid string) error {
 	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
-		err := q.IncrementUncleanSignOnCount(ctx, uuid)
+		err := q.WorkerUncleanSignOnCountIncrement(ctx, uuid)
 		if err != nil {
 			return err
 		}
@@ -244,9 +244,9 @@ func (db *DB) IncrementUncleanSignOnCount(ctx context.Context, uuid string) erro
 	})
 }
 
-func (db *DB) ResetUncleanSignOnCount(ctx context.Context, uuid string) error {
+func (db *DB) WorkerUncleanSignOnCountReset(ctx context.Context, uuid string) error {
 	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
-		err := q.ResetUncleanSignOnCount(ctx, uuid)
+		err := q.WorkerUncleanSignOnCountReset(ctx, uuid)
 		if err != nil {
 			return err
 		}

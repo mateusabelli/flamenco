@@ -238,12 +238,12 @@ INSERT INTO sleep_schedules (
   @next_check
 );
 
--- name: IncrementUncleanSignOnCount :exec
+-- name: WorkerUncleanSignOnCountIncrement :exec
 UPDATE workers
 SET unclean_signon_count = unclean_signon_count + 1
 WHERE uuid = @uuid;
 
--- name: ResetUncleanSignOnCount :exec
+-- name: WorkerUncleanSignOnCountReset :exec
 UPDATE workers
 SET unclean_signon_count = 0
 WHERE uuid = @uuid;
