@@ -48,9 +48,9 @@ export CGO_ENABLED=0
 
 all: application
 
-# Install generators and build the software.
+# Install dependencies and build the software.
 with-deps: buildtool
-	"${BUILDTOOL_PATH}" installGenerators
+	"${BUILDTOOL_PATH}" installDeps
 	$(MAKE) application
 
 vet: buildtool
@@ -89,9 +89,6 @@ db-migrate-down:
 
 webapp-static: buildtool
 	"${BUILDTOOL_PATH}" webappStatic
-
-install-generators: buildtool
-	"${BUILDTOOL_PATH}" installGenerators
 
 generate: buildtool
 	"${BUILDTOOL_PATH}" generate

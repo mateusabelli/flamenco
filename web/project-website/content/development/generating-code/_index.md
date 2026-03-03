@@ -15,21 +15,9 @@ There are three code generators used by Flamenco:
 - [`mockgen`][mockgen] for generating mocks for tests in Go.
 - [`openapi-codegen`][openapi-codegen] for the OpenAPI clients in Python and JavaScript.
 
-[oapi-codegen]: https://github.com/deepmap/oapi-codegen/cmd/oapi-codegen
-[mockgen]: https://github.com/golang/mock/mockgen
+[oapi-codegen]: https://github.com/oapi-codegen/oapi-codegen
+[mockgen]: https://github.com/uber-go/mock/
 [openapi-codegen]: https://openapi-generator.tech/
-
-### Go code generators
-
-The first two generators can be installed with either of these commands:
-
-```bash
-# Simplest way to install the Go generators:
-$ go run mage.go installGenerators
-
-# Faster to re-run than the above, but does require Make:
-$ make install-generators
-```
 
 ### Python and JavaScript code generators
 
@@ -75,6 +63,27 @@ Note that this requires XCode to be installed.
 {{< /tab >}}
 {{< /tabs >}}
 
+
+## Running the Code Generators
+
+All three generators can be run with the following command:
+
+```bash
+$ go run mage.go generate
+```
+
+Individual runs are also available:
+
+```bash
+# Generate Go code
+$ go run mage.go generateGo
+
+# Generate JavaScript code
+$ go run mage.go generateJs
+
+# Generate Python code
+$ go run mage.go generatePy
+```
 
 
 ## Committing Generated Code

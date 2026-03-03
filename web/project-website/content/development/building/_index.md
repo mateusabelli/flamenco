@@ -34,7 +34,7 @@ Will list these targets:
 | build                        | Flamenco Manager and Flamenco Worker, including the webapp and the add-on                            |
 | check                        | Run unit tests, check for vulnerabilities, and run the linter                                        |
 | clean                        | Remove executables and other build output                                                            |
-| devServerWebapp              |                                                                                                      |
+| devServerWebapp              | Run the Manager webapp locally in a development server.                                              |
 | flamencoManager              | Build Flamenco Manager with the webapp and add-on ZIP embedded                                       |
 | flamencoManagerRace          | Build the Flamenco Manager executable with race condition checker enabled, do not rebuild the webapp |
 | flamencoManagerWithoutWebapp | Only build the Flamenco Manager executable, do not rebuild the webapp                                |
@@ -46,9 +46,8 @@ Will list these targets:
 | generateJS                   | Generate JavaScript code for the webapp                                                              |
 | generatePy                   | Generate Python code for the add-on                                                                  |
 | govulncheck                  | Check for known vulnerabilities.                                                                     |
-| installDeps                  | Install build-time dependencies: code generators and NodeJS dependencies.                            |
+| installDeps                  | Install build-time dependencies: NodeJS dependencies.                                                |
 | installDepsWebapp            | Use Yarn to install the webapp's NodeJS dependencies                                                 |
-| installGenerators            | Install code generators.                                                                             |
 | staticcheck                  | Analyse the source code.                                                                             |
 | test                         | Run unit tests                                                                                       |
 | version                      | Show which version information would be embedded in executables                                      |
