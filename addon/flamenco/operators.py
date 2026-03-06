@@ -208,6 +208,11 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         return {"RUNNING_MODAL"}
 
     def modal(self, context: bpy.types.Context, event: bpy.types.Event) -> set[str]:
+        # Only BAT v2 has support for aborting the packing operation.
+        if event.type == "ESC" and self.bat_v2_packer is not None:
+            self.report({"WARNING"}, "Flamenco job submission aborted")
+            return self._quit(context)
+
         # This function is called for TIMER events to poll the BAT pack thread.
         if event.type != "TIMER":
             return {"PASS_THROUGH"}
@@ -778,6 +783,11 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         Does neither check nor abort the BAT pack thread.
         """
+
+        if self.bat_v2_packer is not None and not self.bat_v2_packer.is_done:
+            self.log.info("Aborting BAT packer")
+            self.bat_v2_packer.abort()
+            self.bat_v2_packer = None
 
         if self.temp_blendfile is not None:
             self.log.info("Removing temporary file %s", self.temp_blendfile)
