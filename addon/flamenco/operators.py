@@ -219,11 +219,12 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         if self.bat_v2_packer is not None:
             # BAT v2 pack is underway.
-            keep_going = self.bat_v2_packer.update()
+            keep_going = self.bat_v2_packer.step()
             if keep_going:
                 return {"RUNNING_MODAL"}
 
             # BAT v2 pack is done.
+            self.blendfile_on_farm = self.bat_v2_packer.blendfile_location_in_pack()
             self._submit_job(context)
             return self._quit(context)
 
@@ -417,7 +418,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         Returns True if a packing thread has been started, and False otherwise.
         """
 
-        from .bat_v2 import pack_fs
+        from .bat_v2 import pack_fs, pack_shaman
 
         manager = self._manager_info(context)
         if not manager:
@@ -435,17 +436,6 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             )
             raise FileNotFoundError()
 
-        # Determine the path to the BAT pack on the farm.
-        unique_dir = "%s-%s" % (
-            datetime.datetime.now().isoformat("-").replace(":", ""),
-            self.job_name,
-        )
-        pack_target_dir = Path(manager.shared_storage.location) / unique_dir
-        self.log.info("Job path on the farm: %s", pack_target_dir)
-
-        if manager.shared_storage.shaman_enabled:
-            raise NotImplementedError("BATv2 packing to Shaman is not yet implemented")
-
         if job_submission.is_file_inside_job_storage(context, blendfile):
             self.log.info(
                 "File is already in job storage location, submitting it as-is"
@@ -453,21 +443,45 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             self._use_blendfile_directly(context, blendfile)
             return True
 
-        # Pack to the filesystem.
-        self.log.info("Copying BAT pack to shared storage: %s", project_path)
-        batpacker = pack_fs.pack_start(
-            project_root=project_path,
-            reporter=self,
-            use_relative_only=True,  # TODO: get from GUI.
-            pack_target_dir=pack_target_dir,
-        )
-        batpacker.start()
-        self.bat_v2_packer = batpacker
+        if manager.shared_storage.shaman_enabled:
+            # Pack to the Shaman server.
+            self.log.info("Copying BAT pack to Shaman storage")
+            batpacker = pack_shaman.pack_start(
+                project_root=project_path,
+                reporter=self,
+                use_relative_only=True,  # TODO: get from GUI.
+                api_client=self.get_api_client(context),
+                checkout_path=PurePosixPath(self.job_name),
+            )
+            batpacker.start()
 
-        source_file_info = batpacker.source_file_info()
-        abspath_on_farm = pack_target_dir / source_file_info.relpath_in_pack
-        self.blendfile_on_farm = PurePosixPath(abspath_on_farm.as_posix())
-        self.log.info("    %s", abspath_on_farm)
+            # When packing via Shaman, the Shaman server determines the final
+            # location of the blend file, and so it's not known yet.
+            self.blendfile_on_farm = None
+        else:
+            # Pack to the filesystem.
+            unique_dir = "%s-%s" % (
+                datetime.datetime.now().isoformat("-").replace(":", ""),
+                self.job_name,
+            )
+            pack_target_dir = Path(manager.shared_storage.location) / unique_dir
+            self.log.info("Copying BAT pack to shared storage: %s", pack_target_dir)
+            batpacker = pack_fs.pack_start(
+                project_root=project_path,
+                reporter=self,
+                use_relative_only=True,  # TODO: get from GUI.
+                pack_target_dir=pack_target_dir,
+            )
+            batpacker.start()
+
+            # When packing to the filesystem, the final path of the file on the
+            # farm is known immediately.
+            source_file_info = batpacker.source_file_info()
+            abspath_on_farm = pack_target_dir / source_file_info.relpath_in_pack
+            self.blendfile_on_farm = PurePosixPath(abspath_on_farm.as_posix())
+            self.log.info("    %s", abspath_on_farm)
+
+        self.bat_v2_packer = batpacker
 
         # Start the timer for periodic updates of the packing process. This
         # needs a relatively fast update cycle, as each file to be copied needs
@@ -489,14 +503,14 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         pass
 
     def on_rewrite_error(
-        self, blendfile: Path, path_in_pack: PurePath, errormsg: str
+        self, blendfile: Path, relpath_in_pack: PurePath, errormsg: str
     ) -> None:
         self.report({"ERROR"}, "Rewriting {!s}: {!s}".format(blendfile, errormsg))
 
-    def on_rewrite_done(self, blendfile: Path, path_in_pack: PurePath) -> None:
+    def on_rewrite_done(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
         pass
 
-    def on_missing_file(self, blendfile: Path, path_in_pack: PurePath) -> None:
+    def on_missing_file(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
         # TODO: Keep track of missing files, and report at the end.
         self.report({"WARNING"}, "Missing file: {!s}".format(blendfile))
 
