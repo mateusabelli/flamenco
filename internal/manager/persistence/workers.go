@@ -31,6 +31,7 @@ func (db *DB) CreateWorker(ctx context.Context, w *Worker) error {
 		SupportedTaskTypes: w.SupportedTaskTypes,
 		DeletedAt:          w.DeletedAt,
 		CanRestart:         w.CanRestart,
+		UncleanSignonCount: w.UncleanSignonCount,
 	}
 
 	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
@@ -185,6 +186,7 @@ func (db *DB) SaveWorker(ctx context.Context, w *sqlc.Worker) error {
 			SupportedTaskTypes: w.SupportedTaskTypes,
 			CanRestart:         w.CanRestart,
 			ID:                 w.ID,
+			UncleanSignonCount: w.UncleanSignonCount,
 		})
 	})
 
@@ -229,4 +231,26 @@ func (db *DB) SummarizeWorkerStatuses(ctx context.Context) (WorkerStatusCount, e
 	}
 
 	return statusCounts, nil
+}
+
+func (db *DB) WorkerUncleanSignOnCountIncrement(ctx context.Context, uuid string) error {
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		err := q.WorkerUncleanSignOnCountIncrement(ctx, uuid)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (db *DB) WorkerUncleanSignOnCountReset(ctx context.Context, uuid string) error {
+	return db.queriesRW(ctx, func(q *sqlc.Queries) error {
+		err := q.WorkerUncleanSignOnCountReset(ctx, uuid)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
