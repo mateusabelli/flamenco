@@ -72,14 +72,9 @@ func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker
 		case err != nil:
 			return nil, err
 		case row.Task.ID > 0:
-			// Task was previously assigned, just go for it again.
-			scheduledTask := ScheduledTask{
-				Task:        row.Task,
-				JobUUID:     row.JobUUID,
-				JobPriority: row.JobPriority,
-				JobType:     row.JobType,
-			}
-			return &scheduledTask, nil
+			// Task was previously assigned, check if worker is faulty
+			// before allowing to go for it again.
+			return checkWorkerIntegrity(row, w)
 		}
 	}
 
@@ -126,6 +121,23 @@ func (db *DB) scheduleTask(ctx context.Context, queries *sqlc.Queries, w *Worker
 		Msg("assigned task to worker")
 
 	return scheduledTask, nil
+}
+
+func checkWorkerIntegrity(row sqlc.FetchAssignedAndRunnableTaskOfWorkerRow, w *Worker) (*ScheduledTask, error) {
+	var err error = nil
+
+	scheduledTask := ScheduledTask{
+		Task:        row.Task,
+		JobUUID:     row.JobUUID,
+		JobPriority: row.JobPriority,
+		JobType:     row.JobType,
+	}
+
+	if w.UncleanSignonCount > 3 {
+		err = ErrWorkerIntegrity
+	}
+
+	return &scheduledTask, err
 }
 
 func findTaskForWorker(

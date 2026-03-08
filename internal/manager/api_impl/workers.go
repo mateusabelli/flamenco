@@ -363,6 +363,9 @@ func (f *Flamenco) ScheduleTask(e echo.Context) error {
 		case persistence.ErrIsDBBusy(err):
 			logger.Warn().Msg("database busy scheduling task for worker")
 			return sendAPIErrorDBBusy(e, "too busy to find a task for you, try again later")
+		case errors.Is(err, persistence.ErrWorkerIntegrity):
+			f.softFailTask(reqCtx, logger, worker, scheduledTask.JobUUID, &scheduledTask.Task, 1)
+			return sendAPIError(e, http.StatusBadRequest, "too many unclean sign-on requests detected")
 		default:
 			logger.Warn().Err(err).Msg("error scheduling task for worker")
 			return sendAPIError(e, http.StatusInternalServerError, "internal error finding a task for you: %v", err)
