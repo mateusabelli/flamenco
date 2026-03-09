@@ -35,6 +35,9 @@ func (w *Worker) Identifier() string {
 
 // TaskTypes returns the worker's supported task types as list of strings.
 func (w *Worker) TaskTypes() []string {
+	if w.SupportedTaskTypes == "" {
+		return []string{}
+	}
 	return strings.Split(w.SupportedTaskTypes, ",")
 }
 
