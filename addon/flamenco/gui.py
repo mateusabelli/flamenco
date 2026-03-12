@@ -180,17 +180,17 @@ class FLAMENCO_PT_job_submission(bpy.types.Panel):
         elif flamenco_status == "INVESTIGATING":
             row = layout.row(align=True)
             row.label(text="Investigating your files")
-            # row.operator(FLAMENCO_OT_abort.bl_idname, text="", icon="CANCEL")
+            row.operator("flamenco.abort", text="", icon="CANCEL")
         elif flamenco_status == "REWRITING":
             row = layout.row(align=True)
             row.label(text="Rewriting files")
-            # row.operator(FLAMENCO_OT_abort.bl_idname, text="", icon="CANCEL")
+            row.operator("flamenco.abort", text="", icon="CANCEL")
         elif flamenco_status == "COMMUNICATING":
             layout.label(text="Communicating with Flamenco Server")
         elif flamenco_status == "ABORTING":
             row = layout.row(align=True)
             row.label(text="Aborting, please wait.")
-            # row.operator(FLAMENCO_OT_abort.bl_idname, text="", icon="CANCEL")
+            row.operator("flamenco.abort", text="", icon="CANCEL")
 
         if flamenco_status == "TRANSFERRING":
             row = layout.row(align=True)
@@ -199,7 +199,7 @@ class FLAMENCO_PT_job_submission(bpy.types.Panel):
                 "flamenco_bat_progress",
                 text=context.window_manager.flamenco_bat_status_txt,
             )
-            # row.operator(FLAMENCO_OT_abort.bl_idname, text="", icon="CANCEL")
+            row.operator("flamenco.abort", text="", icon="CANCEL")
         elif (
             flamenco_status != "IDLE" and context.window_manager.flamenco_bat_status_txt
         ):

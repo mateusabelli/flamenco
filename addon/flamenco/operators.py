@@ -216,9 +216,11 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         wm = bpy.context.window_manager
 
         # Only BAT v2 has support for aborting the packing operation.
-        if event.type == "ESC" and self.bat_v2_packer is not None:
+        should_abort = event.type == "ESC" or wm.flamenco_bat_status == "ABORTING"
+        if self.bat_v2_packer is not None and should_abort:
             self.report({"WARNING"}, "Flamenco job submission aborted")
             wm.flamenco_bat_status = "ABORTED"
+            wm.flamenco_bat_status_txt = ""
             return self._quit(context)
 
         # This function is called for TIMER events to poll the BAT pack thread.
@@ -509,6 +511,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         # the process to a separate thread.
         wm = context.window_manager
         wm.flamenco_bat_status = "INVESTIGATING"
+        wm.flamenco_can_abort = True  # Only BAT v2 can abort.
         self.timer = wm.event_timer_add(self.TIMER_PERIOD_BAT_V2, window=context.window)
         return True
 
@@ -616,6 +619,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
                 return False
 
         wm = context.window_manager
+        wm.flamenco_can_abort = False  # Only BAT v2 can abort.
         self.timer = wm.event_timer_add(self.TIMER_PERIOD, window=context.window)
 
         return True
@@ -894,6 +898,31 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         return {"FINISHED"}
 
 
+class FLAMENCO_OT_abort(bpy.types.Operator):
+    bl_idname = "flamenco.abort"
+    bl_label = "Abort"
+    bl_description = (
+        "Abort a running job submission.\nBlender make take a while to respond to this"
+    )
+
+    ABORTABLE_STATES = {
+        "INVESTIGATING",
+        "REWRITING",
+        "TRANSFERRING",
+        "COMMUNICATING",
+    }
+
+    @classmethod
+    def poll(cls, context: bpy.types.Context) -> bool:
+        wm = context.window_manager
+        return wm.flamenco_can_abort and wm.flamenco_bat_status in cls.ABORTABLE_STATES
+
+    def execute(self, context: bpy.types.Context) -> set[str]:
+        wm = context.window_manager
+        wm.flamenco_bat_status = "ABORTING"
+        return {"FINISHED"}
+
+
 class FLAMENCO3_OT_explore_file_path(bpy.types.Operator):
     """Opens the given path in a file explorer.
 
@@ -947,6 +976,7 @@ classes = (
     FLAMENCO_OT_ping_manager,
     FLAMENCO_OT_eval_setting,
     FLAMENCO_OT_submit_job,
+    FLAMENCO_OT_abort,
     FLAMENCO3_OT_explore_file_path,
 )
 register, unregister = bpy.utils.register_classes_factory(classes)

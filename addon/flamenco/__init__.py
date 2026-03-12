@@ -99,6 +99,12 @@ def register() -> None:
     bpy.app.handlers.save_pre.append(_unset_flamenco_job_name)
     bpy.app.handlers.save_post.append(_set_flamenco_job_name)
 
+    bpy.types.WindowManager.flamenco_can_abort = bpy.props.BoolProperty(
+        name="Flamenco Can Abort",
+        default=False,
+        description="Whether the Flamenco submission can be aborted",
+    )
+
     bpy.types.WindowManager.flamenco_bat_status = bpy.props.EnumProperty(
         items=[
             ("IDLE", "IDLE", "Not doing anything."),
