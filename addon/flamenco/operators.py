@@ -213,9 +213,12 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         return {"RUNNING_MODAL"}
 
     def modal(self, context: bpy.types.Context, event: bpy.types.Event) -> set[str]:
+        wm = bpy.context.window_manager
+
         # Only BAT v2 has support for aborting the packing operation.
         if event.type == "ESC" and self.bat_v2_packer is not None:
             self.report({"WARNING"}, "Flamenco job submission aborted")
+            wm.flamenco_bat_status = "ABORTED"
             return self._quit(context)
 
         # This function is called for TIMER events to poll the BAT pack thread.
@@ -230,6 +233,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
             if self.bat_v2_packer_reported_error:
                 # The errors themselves should have been reported already.
+                wm.flamenco_bat_status = "ABORTED"
                 return self._quit(context)
 
             # BAT v2 pack is done.
@@ -504,6 +508,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         # TODO: if blocking the UI for each file copy gets too annoying, move
         # the process to a separate thread.
         wm = context.window_manager
+        wm.flamenco_bat_status = "INVESTIGATING"
         self.timer = wm.event_timer_add(self.TIMER_PERIOD_BAT_V2, window=context.window)
         return True
 
@@ -530,11 +535,21 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         self.report({"ERROR"}, "Error sending files, check the terminal")
 
     def on_copy_start(self, src: Path, dest: PurePath) -> None:
-        self.report({"INFO"}, "Copying {!s}".format(dest))
-        self.log.info("Copying %s", dest)
+        bpy.context.window_manager.flamenco_bat_status = "TRANSFERRING"
+        self.log.info("Uploading %s", dest)
+        bpy.context.window_manager.flamenco_bat_status_txt = "Uploading {!s}".format(
+            dest.name
+        )
 
     def on_copy_done(self, src: Path, dest: PurePath) -> None:
-        pass
+        assert self.bat_v2_packer is not None
+        num_total, num_done = self.bat_v2_packer.num_files_to_transfer()
+        if num_total < 0:
+            progress = 0
+        else:
+            progress = int(100 * num_done / num_total)
+
+        bpy.context.window_manager.flamenco_bat_progress = progress
 
     def on_copy_error(self, src: Path, dest: PurePath, errormsg: str) -> None:
         self.bat_v2_packer_reported_error = True
@@ -548,6 +563,9 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
     def on_rewrite_start(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
         self.report({"INFO"}, "Rewriting {!s}".format(blendfile.name))
+        bpy.context.window_manager.flamenco_bat_status_txt = "Rewriting {!s}".format(
+            blendfile.name
+        )
 
     def on_rewrite_done(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
         pass
@@ -776,6 +794,9 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         if not self._prepare_job_for_submission(context):
             return
 
+        context.window_manager.flamenco_bat_status = "COMMUNICATING"
+        context.window_manager.flamenco_bat_status_txt = ""
+
         api_client = self.get_api_client(context)
         try:
             submitted_job = job_submission.submit_job(self.job, api_client)
@@ -799,6 +820,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             self.report({"ERROR"}, f"Could not submit job: {ex.reason}")
             return
 
+        # Show a final report.
         num_missing_files = len(self.bat_v2_packer_missing_files)
         if num_missing_files:
             self.report(
@@ -807,8 +829,14 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
                     submitted_job.name, num_missing_files
                 ),
             )
+            context.window_manager.flamenco_bat_status_txt = (
+                "Submitted with {:d} missing files".format(num_missing_files)
+            )
         else:
             self.report({"INFO"}, "Job {!s} submitted".format(submitted_job.name))
+            context.window_manager.flamenco_bat_status_txt = ""
+
+        context.window_manager.flamenco_bat_status = "DONE"
 
     def _check_job(self, context: bpy.types.Context) -> bool:
         """Use the Flamenco API to check the Job before submitting files.

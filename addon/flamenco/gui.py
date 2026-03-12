@@ -1,16 +1,18 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # <pep8 compliant>
 
-from typing import Optional, TYPE_CHECKING
-
-from . import preferences, job_types
-from .job_types_propgroup import JobTypePropertyGroup
+from typing import TYPE_CHECKING, Optional
 
 import bpy
+
+from . import job_types, preferences
+from .job_types_propgroup import JobTypePropertyGroup
 
 if TYPE_CHECKING:
     from flamenco.manager.models import (
         AvailableJobSetting as _AvailableJobSetting,
+    )
+    from flamenco.manager.models import (
         SubmittedJob as _SubmittedJob,
     )
 else:
@@ -185,6 +187,7 @@ class FLAMENCO_PT_job_submission(bpy.types.Panel):
             row = layout.row(align=True)
             row.label(text="Aborting, please wait.")
             # row.operator(FLAMENCO_OT_abort.bl_idname, text="", icon="CANCEL")
+
         if flamenco_status == "TRANSFERRING":
             row = layout.row(align=True)
             row.prop(

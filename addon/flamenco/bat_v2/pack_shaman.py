@@ -171,6 +171,9 @@ class ShamanPacker:
     # This will be set to the actually-used path.
     checkout_path_final: PurePosixPath | None = None
 
+    _num_files_to_transfer_total: int = -1
+    _num_files_to_transfer_done: int = 0
+
     @property
     def is_succes(self) -> bool:
         """Return whether the Shaman operation was completed succesfully."""
@@ -178,6 +181,12 @@ class ShamanPacker:
 
     def start(self, batpacker: _BATPacker) -> None:
         files_to_copy = batpacker.all_files_to_copy()
+
+        # Initial value is the total number of files to copy. Once the Shaman
+        # server has told us how many files to submit, this will be adjusted.
+        self._num_files_to_transfer_total = len(files_to_copy)
+        self._num_files_to_transfer_done = 0
+
         self.executor.queue(partial(self._step_queue_hashing, files_to_copy))
 
     def step(self) -> bool:
@@ -193,6 +202,18 @@ class ShamanPacker:
     def blendfile_location_in_pack(self) -> PurePosixPath:
         assert self.checkout_path_final is not None
         return self.checkout_path_final
+
+    def num_files_to_transfer(self) -> tuple[int, int]:
+        """Return the number of files that need to be transferred.
+
+        This is a tuple [total, done] with the total number of files to
+        transfer, and the number of transferred files so far.
+
+        The number may change during the packing process, as it takes time
+        for the Shaman protocol to get this information. Or some paths may
+        turn out to be multiple paths (UDIMs for example).
+        """
+        return self._num_files_to_transfer_total, self._num_files_to_transfer_done
 
     def _step_queue_hashing(self, files_to_copy: dict[Path, _FileInfo]) -> None:
         from ..manager.models import ShamanRequirementsRequest
@@ -287,6 +308,7 @@ class ShamanPacker:
         log.info(
             "Feeding %d/%d files to the Shaman", len(to_upload), len(shaman_spec.files)
         )
+        self._num_files_to_transfer_total = len(to_upload)
 
         # Create a mapping from the path in the pack (which is used in
         # `filespecs`) to the FileInfo.
@@ -379,6 +401,10 @@ class ShamanPacker:
 
             log.error(msg)
             upload_progress.failed(file_info, file_spec, msg)
+            return
+
+        self._num_files_to_transfer_done += 1
+        self.reporter.on_copy_done(file_info.source_path, file_info.relpath_in_pack)
 
     def _step_check_upload_success(
         self,
