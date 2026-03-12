@@ -3,7 +3,6 @@
 
 import datetime
 import logging
-import shutil
 import time
 from pathlib import Path, PurePath, PurePosixPath
 from types import ModuleType
@@ -134,13 +133,14 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
     )
 
     TIMER_PERIOD = 0.25  # seconds
-    TIMER_PERIOD_BAT_V2 = 0.01  # seconds
+    TIMER_PERIOD_BAT_V2 = 0.25  # seconds
 
     timer: Optional[bpy.types.Timer] = None
     # For BAT v1:
     packthread: Optional[_PackThread] = None
     # For BAT v2:
     bat_v2_packer: _BATPacker | None = None
+    bat_v2_packer_reported_error: bool = False
 
     log = _log.getChild(bl_idname)
 
@@ -204,6 +204,10 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             print("CANCELLING at invoke")
             return {"CANCELLED"}
 
+        if bat_v2:
+            # Only BATv2 supports aborting the packing.
+            self.report({"INFO"}, "Submitting files, press ESC to abort")
+
         context.window_manager.modal_handler_add(self)
         return {"RUNNING_MODAL"}
 
@@ -219,9 +223,13 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         if self.bat_v2_packer is not None:
             # BAT v2 pack is underway.
-            keep_going = self.bat_v2_packer.step()
+            keep_going = self.bat_v2_packer.run_for(0.8 * self.TIMER_PERIOD_BAT_V2)
             if keep_going:
                 return {"RUNNING_MODAL"}
+
+            if self.bat_v2_packer_reported_error:
+                # The errors themselves should have been reported already.
+                return self._quit(context)
 
             # BAT v2 pack is done.
             self.blendfile_on_farm = self.bat_v2_packer.blendfile_location_in_pack()
@@ -493,7 +501,27 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         self.timer = wm.event_timer_add(self.TIMER_PERIOD_BAT_V2, window=context.window)
         return True
 
-    # Reporter Protocol for our BAT v2 interface:
+    # Reporter Protocol for our BAT v2 interface.
+    # See `BATPackReporter` in BAT's `blender_asset_tracer/pack.py`.
+    def on_error_on_error(self, errormsg: str, ex: Exception) -> None:
+        import traceback
+
+        self.bat_v2_packer_reported_error = True
+
+        # This callback is only called on serious errors that likely indicate
+        # bugs, namely when either `on_copy_error()` or `on_rewrite_error()`
+        # caused an exception themselves.
+        print(60 * "-")
+        print("Flamenco ran into an error while sending files to the farm:")
+        print()
+        print(errormsg)
+        print()
+        traceback.print_exception(ex)
+        bug_report_url = "https://flamenco.blender.org/get-involved"
+        print("Please copy-paste the above into a bug report at", bug_report_url)
+        print()
+        print(60 * "-")
+        self.report({"ERROR"}, "Error sending files, check the terminal")
 
     def on_copy_start(self, src: Path, dest: PurePath) -> None:
         self.report({"INFO"}, "Copying {!s}".format(dest))
@@ -502,10 +530,18 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
     def on_copy_done(self, src: Path, dest: PurePath) -> None:
         pass
 
+    def on_copy_error(self, src: Path, dest: PurePath, errormsg: str) -> None:
+        self.bat_v2_packer_reported_error = True
+        self.report({"ERROR"}, "Copying {!s} to {!s}: {!s}".format(src, dest, errormsg))
+
     def on_rewrite_error(
         self, blendfile: Path, relpath_in_pack: PurePath, errormsg: str
     ) -> None:
+        self.bat_v2_packer_reported_error = True
         self.report({"ERROR"}, "Rewriting {!s}: {!s}".format(blendfile, errormsg))
+
+    def on_rewrite_start(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
+        self.report({"INFO"}, "Rewriting {!s}".format(blendfile.name))
 
     def on_rewrite_done(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
         pass
@@ -513,6 +549,8 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
     def on_missing_file(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
         # TODO: Keep track of missing files, and report at the end.
         self.report({"WARNING"}, "Missing file: {!s}".format(blendfile))
+
+    # End of Reporter Protocol.
 
     def _submit_files_bat_v1(self, context: bpy.types.Context, blendfile: Path) -> bool:
         """Ensure that the files are somewhere in the shared storage.
