@@ -141,6 +141,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
     # For BAT v2:
     bat_v2_packer: _BATPacker | None = None
     bat_v2_packer_reported_error: bool = False
+    bat_v2_packer_missing_files: list[Path]
 
     log = _log.getChild(bl_idname)
 
@@ -428,6 +429,11 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         from .bat_v2 import pack_fs, pack_shaman
 
+        # Reset state from any previous run.
+        self.bat_v2_packer = None
+        self.bat_v2_packer_reported_error = False
+        self.bat_v2_packer_missing_files = []
+
         manager = self._manager_info(context)
         if not manager:
             return False
@@ -547,7 +553,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         pass
 
     def on_missing_file(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
-        # TODO: Keep track of missing files, and report at the end.
+        self.bat_v2_packer_missing_files.append(blendfile)
         self.report({"WARNING"}, "Missing file: {!s}".format(blendfile))
 
     # End of Reporter Protocol.
@@ -793,7 +799,16 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             self.report({"ERROR"}, f"Could not submit job: {ex.reason}")
             return
 
-        self.report({"INFO"}, "Job %s submitted" % submitted_job.name)
+        num_missing_files = len(self.bat_v2_packer_missing_files)
+        if num_missing_files:
+            self.report(
+                {"WARNING"},
+                "Job {!s} submitted (with {:d} missing files)".format(
+                    submitted_job.name, num_missing_files
+                ),
+            )
+        else:
+            self.report({"INFO"}, "Job {!s} submitted".format(submitted_job.name))
 
     def _check_job(self, context: bpy.types.Context) -> bool:
         """Use the Flamenco API to check the Job before submitting files.

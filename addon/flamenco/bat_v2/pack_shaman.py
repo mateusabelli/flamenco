@@ -234,15 +234,32 @@ class ShamanPacker:
 
         from ..manager.models import ShamanFileSpec
 
+        path_to_pack = file_info.path_to_pack
+
+        if not path_to_pack.exists():
+            # If the file is missing, there's little else to do than reporting
+            # it as such and continue with the next file.
+            if path_to_pack == file_info.source_path:
+                log.info("File missing: %s", path_to_pack)
+            else:
+                log.info(
+                    "File missing after rewriting %s to %s",
+                    file_info.source_path,
+                    path_to_pack,
+                )
+            self.reporter.on_missing_file(
+                file_info.source_path, file_info.relpath_in_pack
+            )
+            return
+
         # It might be tempting to use the same Disk File Hash Service as BAT's
         # path rewriting system is using. However, that only hashes the files
         # that need rewriting, and the code below only deals with paths after
         # rewriting (or where rewriting was not necessary). That means that
         # there is no benefit in sharing the same database.
         dfhs = disk_file_hash_service.get_service(HASH_STORAGE_PATH)
-
-        path_to_pack = file_info.path_to_pack
         checksum = dfhs.get_hash(path_to_pack, HASH_METHOD)
+
         filesize = path_to_pack.stat().st_size
 
         filespec = ShamanFileSpec(
