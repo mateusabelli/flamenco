@@ -181,6 +181,10 @@ class FLAMENCO_PT_job_submission(bpy.types.Panel):
             row = layout.row(align=True)
             row.label(text="Investigating your files")
             # row.operator(FLAMENCO_OT_abort.bl_idname, text="", icon="CANCEL")
+        elif flamenco_status == "REWRITING":
+            row = layout.row(align=True)
+            row.label(text="Rewriting files")
+            # row.operator(FLAMENCO_OT_abort.bl_idname, text="", icon="CANCEL")
         elif flamenco_status == "COMMUNICATING":
             layout.label(text="Communicating with Flamenco Server")
         elif flamenco_status == "ABORTING":

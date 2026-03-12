@@ -563,9 +563,9 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
     def on_rewrite_start(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
         self.report({"INFO"}, "Rewriting {!s}".format(blendfile.name))
-        bpy.context.window_manager.flamenco_bat_status_txt = "Rewriting {!s}".format(
-            blendfile.name
-        )
+        wm = bpy.context.window_manager
+        wm.flamenco_bat_status = "REWRITING"
+        wm.flamenco_bat_status_txt = blendfile.name
 
     def on_rewrite_done(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
         pass

@@ -20,14 +20,14 @@ from pathlib import Path
 __is_first_load = "operators" not in locals()
 if __is_first_load:
     from . import (
-        operators,
+        comms,
         gui,
         job_types,
-        comms,
+        manager_info,
+        operators,
         preferences,
         projects,
         worker_tags,
-        manager_info,
     )
 else:
     import importlib
@@ -104,6 +104,7 @@ def register() -> None:
             ("IDLE", "IDLE", "Not doing anything."),
             ("SAVING", "SAVING", "Saving your file."),
             ("INVESTIGATING", "INVESTIGATING", "Finding all dependencies."),
+            ("REWRITING", "REWRITING", "Rewriting blend files."),
             ("TRANSFERRING", "TRANSFERRING", "Transferring all dependencies."),
             ("COMMUNICATING", "COMMUNICATING", "Communicating with Flamenco Server."),
             ("DONE", "DONE", "Not doing anything, but doing something earlier."),
