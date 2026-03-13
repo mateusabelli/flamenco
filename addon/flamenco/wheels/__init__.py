@@ -4,11 +4,11 @@
 
 import contextlib
 import importlib
-from pathlib import Path
-import sys
 import logging
+import sys
+from pathlib import Path
 from types import ModuleType
-from typing import Iterator, Iterable
+from typing import Iterable, Iterator
 
 _my_dir = Path(__file__).parent
 _log = logging.getLogger(__name__)
