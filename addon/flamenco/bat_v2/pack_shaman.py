@@ -10,21 +10,10 @@ __all__ = ("pack_start",)
 import dataclasses
 import email.header
 import logging
-import platform
 import random
-from collections import Counter, defaultdict, deque
 from functools import partial
-from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterable,
-    Iterator,
-    Optional,
-    TypeAlias,
-    cast,
-)
+from pathlib import Path, PurePosixPath
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import bpy
 
