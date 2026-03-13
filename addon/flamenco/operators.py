@@ -207,7 +207,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         if bat_v2:
             # Only BATv2 supports aborting the packing.
-            self.report({"INFO"}, "Submitting files, press ESC to abort")
+            self.report({"INFO"}, "Flamenco: Submitting files, press ESC to abort")
 
         context.window_manager.modal_handler_add(self)
         return {"RUNNING_MODAL"}
@@ -218,7 +218,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         # Only BAT v2 has support for aborting the packing operation.
         should_abort = event.type == "ESC" or wm.flamenco_bat_status == "ABORTING"
         if self.bat_v2_packer is not None and should_abort:
-            self.report({"WARNING"}, "Flamenco job submission aborted")
+            self.report({"WARNING"}, "Flamenco: Job submission aborted")
             wm.flamenco_bat_status = "ABORTED"
             wm.flamenco_bat_status_txt = ""
             return self._quit(context)
@@ -535,7 +535,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         print("Please copy-paste the above into a bug report at", bug_report_url)
         print()
         print(60 * "-")
-        self.report({"ERROR"}, "Error sending files, check the terminal")
+        self.report({"ERROR"}, "Flamenco: Error sending files, check the terminal")
 
     def on_copy_start(self, src: Path, dest: PurePath) -> None:
         bpy.context.window_manager.flamenco_bat_status = "TRANSFERRING"
