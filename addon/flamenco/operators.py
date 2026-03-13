@@ -133,7 +133,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
     )
 
     TIMER_PERIOD = 0.25  # seconds
-    TIMER_PERIOD_BAT_V2 = 0.25  # seconds
+    TIMER_PERIOD_BAT_V2 = 0.01  # seconds
 
     timer: Optional[bpy.types.Timer] = None
     # For BAT v1:
@@ -229,7 +229,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
         if self.bat_v2_packer is not None:
             # BAT v2 pack is underway.
-            keep_going = self.bat_v2_packer.run_for(0.8 * self.TIMER_PERIOD_BAT_V2)
+            keep_going = self.bat_v2_packer.step()
             if keep_going:
                 return {"RUNNING_MODAL"}
 

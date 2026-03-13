@@ -73,7 +73,7 @@ def pack_start(
 
     shaman_api = ShamanApi(api_client)
     executor = pack.QueueingExecutor()
-    shaman_transferer = ShamanPacker(shaman_api, checkout_path, executor)
+    shaman_transferer = ShamanPacker(shaman_api, checkout_path, executor, reporter)
 
     batpacker = pack.BATPacker(
         project_root,
@@ -154,13 +154,7 @@ class ShamanPacker:
     shaman_api: _ShamanApi
     checkout_path: PurePosixPath
     executor: _QueueingExecutor
-
-    # The reporter is not passed on construction, but rather it's taken from the
-    # batpacker passed to ShamanPacker.start(). That way, it uses the
-    # batpacker's reporter, which makes the batpacker know about its calls.
-    #
-    # See BATPackReporterWrapper and BATPacker.run_for() in BAT's blender_asset_tracer/pack.py.
-    reporter: BATPackReporter | None = None
+    reporter: BATPackReporter
 
     # Shaman may decide to create the checkout at another path than requested.
     # This will be set to the actually-used path.
@@ -175,7 +169,6 @@ class ShamanPacker:
         return bool(self.checkout_path_final)
 
     def start(self, batpacker: _BATPacker) -> None:
-        self.reporter = batpacker.reporter
         files_to_copy = batpacker.all_files_to_copy()
 
         # Initial value is the total number of files to copy. Once the Shaman
@@ -247,7 +240,6 @@ class ShamanPacker:
         file_info: _FileInfo,
         shaman_spec: _ShamanRequirementsRequest,
     ) -> None:
-        assert self.reporter is not None
         from _bpy_internal import disk_file_hash_service
 
         from ..manager.models import ShamanFileSpec
@@ -320,7 +312,7 @@ class ShamanPacker:
             is_last_file = index == len(to_upload)
             self.executor.queue(
                 partial(
-                    self._step_upload_file,
+                    self._step_queue_upload_file,
                     file_info,
                     file_spec,
                     is_last_file,
@@ -336,16 +328,13 @@ class ShamanPacker:
             )
         )
 
-    def _step_upload_file(
+    def _step_queue_upload_file(
         self,
         file_info: _FileInfo,
         file_spec: _ShamanFileSpec,
         is_last_file: bool,
         upload_progress: ShamanUploadProgress,
     ) -> None:
-        assert self.reporter is not None
-        from ..manager.exceptions import ApiException
-
         # Pre-flight check. The generated API code will load the entire file
         # into memory before sending it to the Shaman. It's faster to do a check
         # at Shaman first, to see if we need uploading at all.
@@ -357,6 +346,32 @@ class ShamanPacker:
             log.info("  %s: skipping, already on server", file_spec.path)
             return
 
+        # Do the 'start' reporting in a separate step, so that the Blender UI
+        # can be updated for it. The 'done'/'error' reports are done at the end
+        # of the file upload step, and so these don't need a separate step.
+        self.executor.queue(partial(self._step_report_upload_file_start, file_info))
+        self.executor.queue(
+            partial(
+                self._step_upload_file,
+                file_info,
+                file_spec,
+                is_last_file,
+                upload_progress,
+            )
+        )
+
+    def _step_report_upload_file_start(self, file_info: _FileInfo) -> None:
+        self.reporter.on_copy_start(file_info.source_path, file_info.relpath_in_pack)
+
+    def _step_upload_file(
+        self,
+        file_info: _FileInfo,
+        file_spec: _ShamanFileSpec,
+        is_last_file: bool,
+        upload_progress: ShamanUploadProgress,
+    ) -> None:
+        from ..manager.exceptions import ApiException
+
         # See whether we may be able to defer uploading this file or not.
         can_defer = bool(
             not is_last_file
@@ -365,7 +380,6 @@ class ShamanPacker:
         )
 
         filename_header = _encode_original_filename_header(file_spec.path)
-        self.reporter.on_copy_start(file_info.source_path, file_info.relpath_in_pack)
         try:
             with file_info.path_to_pack.open("rb") as file_reader:
                 self.shaman_api.shaman_file_store(
@@ -416,7 +430,6 @@ class ShamanPacker:
         Unless the number of retries has been exceeded, in which case the
         failures are final.
         """
-        assert self.reporter is not None
 
         if upload_progress.num_deferred == 0 and upload_progress.num_failed == 0:
             # Nothing left to do, so move on to the next stage.
@@ -449,7 +462,6 @@ class ShamanPacker:
     def _step_request_checkout(self, shaman_spec: _ShamanRequirementsRequest) -> None:
         """Ask the Shaman to create a checkout of this BAT pack."""
         assert self.checkout_path
-        assert self.reporter is not None
 
         from ..manager.exceptions import ApiException
         from ..manager.models import ShamanCheckout, ShamanCheckoutResult
@@ -493,7 +505,6 @@ class ShamanPacker:
         :return: A list of file specs that still need to be uploaded, or
             None if there was an error.
         """
-        assert self.reporter is not None
         from ..manager.exceptions import ApiException
         from ..manager.models import ShamanRequirementsResponse
 
