@@ -825,7 +825,11 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             return
 
         # Show a final report.
-        num_missing_files = len(self.bat_v2_packer_missing_files)
+        if self.bat_v2_packer:
+            num_missing_files = len(self.bat_v2_packer_missing_files)
+        else:
+            # Only BATv2 tracks missing files like this.
+            num_missing_files = 0
         if num_missing_files:
             self.report(
                 {"WARNING"},
