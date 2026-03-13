@@ -51,6 +51,7 @@ else:
         _bat_modules = wheels.load_wheel(
             "blender_asset_tracer",
             ("file_usage", "pack", "path_rewriting", "path_rewriting_process"),
+            filename_prefix="blender_asset_tracer-2.",
         )
         bat_toplevel, file_usage, pack, path_rewriting, path_rewriting_process = (
             _bat_modules

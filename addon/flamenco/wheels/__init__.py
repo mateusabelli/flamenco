@@ -14,7 +14,12 @@ _my_dir = Path(__file__).parent
 _log = logging.getLogger(__name__)
 
 
-def load_wheel(module_name: str, submodules: Iterable[str]) -> list[ModuleType]:
+def load_wheel(
+    module_name: str,
+    submodules: Iterable[str],
+    *,
+    filename_prefix: str = "",
+) -> list[ModuleType]:
     """Loads modules from a wheel file 'module_name*.whl'.
 
     Loads `module_name`, and if submodules are given, loads
@@ -25,8 +30,9 @@ def load_wheel(module_name: str, submodules: Iterable[str]) -> list[ModuleType]:
     Returns the loaded modules, so [module, submodule, submodule, ...].
     """
 
-    fname_prefix = _fname_prefix_from_module_name(module_name)
-    wheel = _wheel_filename(fname_prefix)
+    if not filename_prefix:
+        filename_prefix = _fname_prefix_from_module_name(module_name)
+    wheel = _wheel_filename(filename_prefix)
 
     loaded_modules: list[ModuleType] = []
     to_load = [module_name] + [f"{module_name}.{submodule}" for submodule in submodules]
