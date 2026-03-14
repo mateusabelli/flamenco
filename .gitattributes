@@ -4,7 +4,7 @@
 /web/app/src/manager-api/** linguist-generated=true
 **/*.gen.go linguist-generated=true
 **/*.sql.go linguist-generated=true
-**/sqlc/db.go
+**/sqlc/db.go linguist-generated=true
 /go.sum linguist-generated=true
 
 # In your Git config, set:
