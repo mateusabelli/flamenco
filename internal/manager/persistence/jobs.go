@@ -36,7 +36,7 @@ type TaskJob struct {
 	IsActive bool // Whether the worker assigned to this task is actually working on it.
 }
 
-type StringInterfaceMap map[string]interface{}
+type StringInterfaceMap map[string]any
 type StringStringMap map[string]string
 
 // Commands is the schema used for (un)marshalling sqlc.Task.Commands.
@@ -51,7 +51,7 @@ type Command struct {
 func (c Commands) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }
-func (c *Commands) Scan(value interface{}) error {
+func (c *Commands) Scan(value any) error {
 	b, ok := value.([]byte)
 	if !ok {
 		return errors.New("type assertion to []byte failed")
@@ -65,7 +65,7 @@ func (c *Commands) Scan(value interface{}) error {
 func (js StringInterfaceMap) Value() (driver.Value, error) {
 	return json.Marshal(js)
 }
-func (js *StringInterfaceMap) Scan(value interface{}) error {
+func (js *StringInterfaceMap) Scan(value any) error {
 	b, ok := value.([]byte)
 	if !ok {
 		return errors.New("type assertion to []byte failed")
@@ -76,7 +76,7 @@ func (js *StringInterfaceMap) Scan(value interface{}) error {
 func (js StringStringMap) Value() (driver.Value, error) {
 	return json.Marshal(js)
 }
-func (js *StringStringMap) Scan(value interface{}) error {
+func (js *StringStringMap) Scan(value any) error {
 	b, ok := value.([]byte)
 	if !ok {
 		return errors.New("type assertion to []byte failed")

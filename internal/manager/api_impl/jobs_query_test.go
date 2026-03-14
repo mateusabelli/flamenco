@@ -123,7 +123,7 @@ func TestFetchJob(t *testing.T) {
 			Metadata: &api.JobMetadata{
 				"project": "/projects/exploding-kittens",
 			},
-			WorkerTag: ptr("d86e1b84-5ee2-4784-a178-65963eeb484b"),
+			WorkerTag: new("d86e1b84-5ee2-4784-a178-65963eeb484b"),
 		},
 		Id:     "afc47568-bd9d-4368-8016-e91d945db36d",
 		Status: api.JobStatusActive,
@@ -182,13 +182,13 @@ func TestFetchTask(t *testing.T) {
 
 		Commands: []api.Command{
 			{Name: "move-directory",
-				Parameters: map[string]interface{}{
+				Parameters: map[string]any{
 					"dest": "/render/_flamenco/tests/renders/2022-04-29 Weekly/2022-04-29_140531",
 					"src":  "/render/_flamenco/tests/renders/2022-04-29 Weekly/2022-04-29_140531__intermediate-2022-04-29_140531",
 				}},
 		},
 
-		FailedByWorkers: ptr([]api.TaskWorker{
+		FailedByWorkers: new([]api.TaskWorker{
 			{Id: workerUUID, Name: "Radnik", Address: "Slapić"},
 		}),
 	}

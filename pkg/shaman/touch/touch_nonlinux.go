@@ -1,5 +1,4 @@
 //go:build !linux
-// +build !linux
 
 /* (c) 2019, Blender Foundation
  *

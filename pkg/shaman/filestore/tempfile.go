@@ -61,7 +61,7 @@ func TempFile(dir, pattern string) (f *os.File, err error) {
 	prefix, suffix := prefixAndSuffix(pattern)
 
 	nconflict := 0
-	for i := 0; i < 10000; i++ {
+	for range 10000 {
 		name := filepath.Join(dir, prefix+nextRandom()+suffix)
 		f, err = os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666) // Changed from 0600 in the standard Go code.
 		if os.IsExist(err) {

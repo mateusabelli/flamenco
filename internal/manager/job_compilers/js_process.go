@@ -27,7 +27,7 @@ func ProcessModule(r *goja.Runtime, module *goja.Object) {
 	}
 	obj := module.Get("exports").(*goja.Object)
 
-	mustExport := func(name string, value interface{}) {
+	mustExport := func(name string, value any) {
 		err := obj.Set(name, value)
 		if err != nil {
 			log.Panic().Err(err).Msgf("unable to register '%s' in Goja 'process' module", name)

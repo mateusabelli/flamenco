@@ -71,8 +71,8 @@ func TestUpstreamBufferManagerUnavailable(t *testing.T) {
 	// Send a task update without Manager available.
 	taskID := "3960dec4-978e-40ab-bede-bfa6428c6ebc"
 	update := api.TaskUpdateJSONRequestBody{
-		Activity:   ptr("Testing da ünits"),
-		Log:        ptr("¿Unicode logging should work?"),
+		Activity:   new("Testing da ünits"),
+		Log:        new("¿Unicode logging should work?"),
 		TaskStatus: ptr(api.TaskStatusActive),
 	}
 
@@ -125,8 +125,8 @@ func TestStressingBuffer(t *testing.T) {
 	// Queue task updates much faster than the Manager can handle.
 	taskID := "3960dec4-978e-40ab-bede-bfa6428c6ebc"
 	update := api.TaskUpdateJSONRequestBody{
-		Activity:   ptr("Testing da ünits"),
-		Log:        ptr("¿Unicode logging should work?"),
+		Activity:   new("Testing da ünits"),
+		Log:        new("¿Unicode logging should work?"),
 		TaskStatus: ptr(api.TaskStatusActive),
 	}
 
@@ -144,7 +144,7 @@ func TestStressingBuffer(t *testing.T) {
 
 	// Send updates MUCH faster than the slowed-down Manager can handle.
 	wg := sync.WaitGroup{}
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		wg.Add(2)
 		go func() {
 			defer wg.Done()

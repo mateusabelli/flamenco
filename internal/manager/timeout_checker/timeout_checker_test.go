@@ -30,11 +30,9 @@ type TimeoutCheckerMocks struct {
 
 // run starts a goroutine to call ttc.Run(mocks.ctx).
 func (mocks *TimeoutCheckerMocks) run(ttc *TimeoutChecker) {
-	mocks.wg.Add(1)
-	go func() {
-		defer mocks.wg.Done()
+	mocks.wg.Go(func() {
 		ttc.Run(mocks.ctx)
-	}()
+	})
 }
 
 func timeoutCheckerTestFixtures(t *testing.T) (*TimeoutChecker, func(), *TimeoutCheckerMocks) {

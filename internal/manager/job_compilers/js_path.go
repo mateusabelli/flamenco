@@ -12,7 +12,7 @@ import (
 func PathModule(r *goja.Runtime, module *goja.Object) {
 	obj := module.Get("exports").(*goja.Object)
 
-	mustExport := func(name string, value interface{}) {
+	mustExport := func(name string, value any) {
 		err := obj.Set(name, value)
 		if err != nil {
 			log.Panic().Err(err).Msgf("unable to register '%s' in Goja 'path' module", name)

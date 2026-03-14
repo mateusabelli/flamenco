@@ -159,7 +159,7 @@ func (m *MQTTForwarder) queueRunner(queueRunnerCtx context.Context) {
 	}
 }
 
-func (m *MQTTForwarder) Broadcast(topic EventTopic, payload interface{}) {
+func (m *MQTTForwarder) Broadcast(topic EventTopic, payload any) {
 	if _, ok := payload.(api.EventTaskLogUpdate); ok {
 		// Task log updates aren't sent through MQTT, as that can generate a lot of traffic.
 		return

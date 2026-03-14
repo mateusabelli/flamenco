@@ -23,7 +23,7 @@ func TestCmdBlenderSimpleCliArgs(t *testing.T) {
 	taskID := "1d54c6fe-1242-4c8f-bd63-5a09e358d7b6"
 	cmd := api.Command{
 		Name: "blender",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"exe":        "/path/to/blender",
 			"argsBefore": []string{"--background"},
 			"blendfile":  "file.blend",
@@ -54,7 +54,7 @@ func TestCmdBlenderCliArgsInExeParameter(t *testing.T) {
 	taskID := "1d54c6fe-1242-4c8f-bd63-5a09e358d7b6"
 	cmd := api.Command{
 		Name: "blender",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"exe": exe,
 			// This intentionally starts with a space (should be ignored) and has
 			// quoted text within quoted text:
@@ -88,7 +88,7 @@ func TestCmdBlenderNoBlendfile(t *testing.T) {
 	taskID := "1d54c6fe-1242-4c8f-bd63-5a09e358d7b6"
 	cmd := api.Command{
 		Name: "blender",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"exe":        "/path/to/blender",
 			"argsBefore": []string{"--background"},
 			"blendfile":  "", // Empty blendfile should be skipped.

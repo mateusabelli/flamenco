@@ -25,6 +25,7 @@ package shaman
 import (
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"testing"
@@ -132,9 +133,7 @@ func TestGCComponents(t *testing.T) {
 
 	copymap := func(somemap mtimeMap) mtimeMap {
 		theCopy := mtimeMap{}
-		for key, value := range somemap {
-			theCopy[key] = value
-		}
+		maps.Copy(theCopy, somemap)
 		return theCopy
 	}
 

@@ -42,7 +42,7 @@ func TestUpstreamBufferQueue(t *testing.T) {
 	// Queue an update.
 	taskUUID := "3d1e2419-ca9d-4500-bd4f-1e14b5e82947"
 	update1 := api.TaskUpdateJSONRequestBody{
-		Activity:   ptr("Tešt active"),
+		Activity:   new("Tešt active"),
 		TaskStatus: ptr(api.TaskStatusActive),
 	}
 	require.NoError(t, db.UpstreamBufferQueue(ctx, taskUUID, update1))
@@ -99,6 +99,7 @@ func TestUpstreamBufferQueue(t *testing.T) {
 	}
 }
 
+//go:fix inline
 func ptr[T any](value T) *T {
-	return &value
+	return new(value)
 }

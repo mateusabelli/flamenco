@@ -37,7 +37,7 @@ type AuthoredJob struct {
 	Tasks []AuthoredTask
 }
 
-type JobSettings map[string]interface{}
+type JobSettings map[string]any
 type JobMetadata map[string]string
 
 type JobStorageInfo struct {
@@ -64,7 +64,7 @@ type AuthoredCommand struct {
 	Parameters     AuthoredCommandParameters
 	TotalStepCount int
 }
-type AuthoredCommandParameters map[string]interface{}
+type AuthoredCommandParameters map[string]any
 
 func (a *Author) Task(name string, taskType string) (*AuthoredTask, error) {
 	name = strings.TrimSpace(name)
@@ -105,7 +105,7 @@ func AuthorModule(r *goja.Runtime, module *goja.Object) {
 		runtime: r,
 	}
 	obj := module.Get("exports").(*goja.Object)
-	mustExport := func(name string, value interface{}) {
+	mustExport := func(name string, value any) {
 		err := obj.Set(name, value)
 		if err != nil {
 			log.Panic().Err(err).Msgf("unable to register '%s' in Goja 'author' module", name)

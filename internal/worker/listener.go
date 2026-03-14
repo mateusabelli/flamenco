@@ -50,8 +50,9 @@ func (l *Listener) Run(ctx context.Context) {
 	l.outputUploader.Run(ctx)
 }
 
+//go:fix inline
 func ptr[T any](value T) *T {
-	return &value
+	return new(value)
 }
 
 // TaskStarted tells the Manager that task execution has started.
@@ -59,7 +60,7 @@ func (l *Listener) TaskStarted(ctx context.Context, taskID string) error {
 	l.taskStepsCompleted = 0
 
 	return l.sendTaskUpdate(ctx, taskID, api.TaskUpdateJSONRequestBody{
-		Activity:   ptr("Started"),
+		Activity:   new("Started"),
 		TaskStatus: ptr(api.TaskStatusActive),
 	})
 }
@@ -69,7 +70,7 @@ func (l *Listener) TaskStep(ctx context.Context, taskID string) error {
 	l.taskStepsCompleted += 1
 
 	return l.sendTaskUpdate(ctx, taskID, api.TaskUpdateJSONRequestBody{
-		Activity:       ptr("Progress"),
+		Activity:       new("Progress"),
 		StepsCompleted: &l.taskStepsCompleted,
 	})
 }
@@ -87,7 +88,7 @@ func (l *Listener) TaskFailed(ctx context.Context, taskID string, reason string)
 // TaskCompleted tells the Manager the task has been completed.
 func (l *Listener) TaskCompleted(ctx context.Context, taskID string) error {
 	return l.sendTaskUpdate(ctx, taskID, api.TaskUpdateJSONRequestBody{
-		Activity:   ptr("Completed"),
+		Activity:   new("Completed"),
 		TaskStatus: ptr(api.TaskStatusCompleted),
 	})
 }
@@ -95,7 +96,7 @@ func (l *Listener) TaskCompleted(ctx context.Context, taskID string) error {
 // LogProduced sends any logging to whatever service for storing logging.
 func (l *Listener) LogProduced(ctx context.Context, taskID string, logLines ...string) error {
 	return l.sendTaskUpdate(ctx, taskID, api.TaskUpdateJSONRequestBody{
-		Log: ptr(strings.Join(logLines, "\n")),
+		Log: new(strings.Join(logLines, "\n")),
 	})
 }
 

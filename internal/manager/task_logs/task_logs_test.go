@@ -109,17 +109,17 @@ func TestLogTailAndSize(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Just a single line\nAnd another line!\n", string(contents))
 
-	bigString := ""
+	var bigString strings.Builder
 	for lineNum := 1; lineNum < 1000; lineNum++ {
-		bigString += fmt.Sprintf("This is line #%d\n", lineNum)
+		bigString.WriteString(fmt.Sprintf("This is line #%d\n", lineNum))
 	}
-	err = s.Write(zerolog.Nop(), jobID, taskID, bigString)
+	err = s.Write(zerolog.Nop(), jobID, taskID, bigString.String())
 	require.NoError(t, err)
 
 	// Check the log size, it should be the entire bigString plus what was written before that.
 	size, err = s.TaskLogSize(jobID, taskID)
 	require.NoError(t, err)
-	expect := int64(len("Just a single line\nAnd another line!\n" + bigString))
+	expect := int64(len("Just a single line\nAnd another line!\n" + bigString.String()))
 	assert.Equal(t, expect, size)
 
 	// Check the tail, it should only be the few last lines of bigString.
@@ -169,7 +169,7 @@ func TestLogWritingParallel(t *testing.T) {
 	mocks.broadcaster.EXPECT().BroadcastTaskLogUpdate(gomock.Any()).Times(numGoroutines)
 	mocks.localStorage.EXPECT().ForJob(jobID).Return(jobDir).AnyTimes()
 
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		// Write lines of 100 characters to the task log. Each goroutine writes a
 		// different character, starting at 'A'.
 		go func(i int32) {

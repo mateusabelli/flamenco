@@ -18,13 +18,13 @@ import (
 func varreplTestTask() api.AssignedTask {
 	return api.AssignedTask{
 		Commands: []api.Command{
-			{Name: "echo", Parameters: map[string]interface{}{
+			{Name: "echo", Parameters: map[string]any{
 				"message": "Running Blender from {blender} {blender}"}},
-			{Name: "sleep", Parameters: map[string]interface{}{
+			{Name: "sleep", Parameters: map[string]any{
 				"{blender}": 3}},
 			{
 				Name: "blender_render",
-				Parameters: map[string]interface{}{
+				Parameters: map[string]any{
 					"filepath":     "{job_storage}/sybren/2017-06-08-181223.625800-sybren-flamenco-test.flamenco/flamenco-test.flamenco.blend",
 					"exe":          "{blender}",
 					"otherpath":    "{hey}/haha",
@@ -75,7 +75,7 @@ func TestReplaceVariablesInterfaceArrays(t *testing.T) {
 	// Due to the conversion via JSON, arrays of strings are now arrays of
 	// interface{} and still need to be handled properly.
 	assert.Equal(t,
-		[]interface{}{"--render-out", "/shared/flamenco/render/long/sybren/blender-cloud-addon/flamenco-test__intermediate/render-smpl-0001-0084-frm-######"},
+		[]any{"--render-out", "/shared/flamenco/render/long/sybren/blender-cloud-addon/flamenco-test__intermediate/render-smpl-0001-0084-frm-######"},
 		replacedTask.Commands[2].Parameters["args"],
 	)
 }
@@ -273,7 +273,7 @@ func TestReplaceTwoWayVariablesFFmpegExpression(t *testing.T) {
 		Commands: []api.Command{
 			{
 				Name: "frames-to-video",
-				Parameters: map[string]interface{}{
+				Parameters: map[string]any{
 					"exe":        "ffmpeg",                             // Should not change.
 					"fps":        24,                                   // Should not change type.
 					"inputGlob":  "/projects/charge/renders/*.webp",    // Path, should change.
@@ -302,7 +302,7 @@ func TestReplaceTwoWayVariablesFFmpegExpression(t *testing.T) {
 		Commands: []api.Command{
 			{
 				Name: "frames-to-video",
-				Parameters: map[string]interface{}{
+				Parameters: map[string]any{
 					"exe": "ffmpeg",
 					"fps": 24,
 					// These two parameters matched a two-way variable:

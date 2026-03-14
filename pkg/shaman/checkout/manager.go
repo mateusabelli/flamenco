@@ -119,7 +119,7 @@ func (m *Manager) PrepareCheckout(requestedCheckoutPath string) (ResolvedCheckou
 	attemptCheckoutPath := requestedCheckoutPath
 
 	// Just try 10 different random suffixes. If that still doesn't work, fail.
-	for try := 0; try < 10; try++ {
+	for range 10 {
 		checkoutPaths, err := m.pathForCheckout(attemptCheckoutPath)
 		if err != nil {
 			return ResolvedCheckoutInfo{}, err
@@ -285,13 +285,11 @@ func (m *Manager) SymlinkToCheckout(blobPath, checkoutPath, symlinkRelativePath 
 	}
 
 	// Change the modification time of the blob to mark it as 'referenced' just now.
-	m.wg.Add(1)
-	go func() {
+	m.wg.Go(func() {
 		if err := touchFile(blobAbsolute); err != nil {
 			logger.Warn().Err(err).Msg("shaman: unable to touch blob path")
 		}
-		m.wg.Done()
-	}()
+	})
 
 	return nil
 }

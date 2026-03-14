@@ -23,7 +23,7 @@ func TestCommandEcho(t *testing.T) {
 	taskID := "90e9d656-e201-4ef0-b6b0-c80684fafa27"
 	cmd := api.Command{
 		Name:       "echo",
-		Parameters: map[string]interface{}{"message": message},
+		Parameters: map[string]any{"message": message},
 	}
 
 	mocks.listener.EXPECT().LogProduced(gomock.Any(), taskID, "echo: \"понављај за мном\"")
@@ -41,7 +41,7 @@ func TestCommandSleep(t *testing.T) {
 	taskID := "90e9d656-e201-4ef0-b6b0-c80684fafa27"
 	cmd := api.Command{
 		Name:       "sleep",
-		Parameters: map[string]interface{}{"duration_in_seconds": 47},
+		Parameters: map[string]any{"duration_in_seconds": 47},
 	}
 
 	mocks.listener.EXPECT().LogProduced(gomock.Any(), taskID, "slept 47s")
@@ -84,7 +84,7 @@ func TestCommandSleepNegative(t *testing.T) {
 	taskID := "90e9d656-e201-4ef0-b6b0-c80684fafa27"
 	cmd := api.Command{
 		Name:       "sleep",
-		Parameters: map[string]interface{}{"duration_in_seconds": -47},
+		Parameters: map[string]any{"duration_in_seconds": -47},
 	}
 
 	err := ce.Run(ctx, taskID, cmd)

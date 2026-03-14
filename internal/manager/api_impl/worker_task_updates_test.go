@@ -25,8 +25,8 @@ func TestTaskUpdate(t *testing.T) {
 
 	// Construct the JSON request object.
 	taskUpdate := api.TaskUpdateJSONRequestBody{
-		Activity:   ptr("testing"),
-		Log:        ptr("line1\nline2\n"),
+		Activity:   new("testing"),
+		Log:        new("line1\nline2\n"),
 		TaskStatus: ptr(api.TaskStatusCompleted),
 	}
 
@@ -105,9 +105,9 @@ func TestTaskUpdateStepsCompleted(t *testing.T) {
 
 	// Construct the JSON request object.
 	taskUpdate := api.TaskUpdateJSONRequestBody{
-		Activity:       ptr("testing"),
-		Log:            ptr("line1\nline2\n"),
-		StepsCompleted: ptr(2),
+		Activity:       new("testing"),
+		Log:            new("line1\nline2\n"),
+		StepsCompleted: new(2),
 	}
 
 	// Construct the task that's supposed to be updated.
@@ -191,7 +191,7 @@ func TestTaskUpdateStepsCompleted(t *testing.T) {
 	assert.Equal(t, "testing", actUpdatedTask.Activity)
 
 	// Do another update, the step count should be clamped to the task's total step count.
-	taskUpdate.StepsCompleted = ptr(47)
+	taskUpdate.StepsCompleted = new(47)
 	mf.persistence.EXPECT().SaveTaskStepsCompleted(gomock.Any(), mockJob.ID, mockTask.ID, int64(3))
 	mf.broadcaster.EXPECT().BroadcastTaskUpdate(api.EventTaskUpdate{
 		Activity:       "testing",

@@ -259,7 +259,7 @@ func (f cmdMoveDirFixture) finish(t *testing.T) {
 func (f cmdMoveDirFixture) run() error {
 	cmd := api.Command{
 		Name: "move-directory",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"src":  sourcePath,
 			"dest": destPath,
 		},
@@ -413,7 +413,7 @@ func (f cmdCopyFileFixture) finish(t *testing.T) {
 func (f cmdCopyFileFixture) run() error {
 	cmd := api.Command{
 		Name: "copy-file",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"src":  f.absolute_src_path,
 			"dest": f.absolute_dest_path,
 		},
@@ -435,7 +435,7 @@ func TestCmdMakeDirectory(t *testing.T) {
 
 	cmd := api.Command{
 		Name:       "make-directory",
-		Parameters: map[string]interface{}{"path": newDir},
+		Parameters: map[string]any{"path": newDir},
 	}
 	err := f.ce.Run(f.ctx, taskID, cmd)
 	assert.NoError(t, err)
@@ -455,7 +455,7 @@ func TestCmdMakeDirectoryAlreadyExists(t *testing.T) {
 
 	cmd := api.Command{
 		Name:       "make-directory",
-		Parameters: map[string]interface{}{"path": existingDir},
+		Parameters: map[string]any{"path": existingDir},
 	}
 	err := f.ce.Run(f.ctx, taskID, cmd)
 	assert.NoError(t, err)
@@ -468,7 +468,7 @@ func TestCmdMakeDirectoryMissingPath(t *testing.T) {
 
 	cmd := api.Command{
 		Name:       "make-directory",
-		Parameters: map[string]interface{}{},
+		Parameters: map[string]any{},
 	}
 	err := f.ce.Run(f.ctx, taskID, cmd)
 	var paramErr ParameterMissingError

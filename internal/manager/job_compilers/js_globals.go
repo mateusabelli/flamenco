@@ -145,7 +145,7 @@ func frameRangeExplode(frameRange string) ([]int, error) {
 	}
 
 	// Explode each comma-separated frame range.
-	for _, part := range strings.Split(frameRange, ",") {
+	for part := range strings.SplitSeq(frameRange, ",") {
 		startEnd := strings.Split(part, chunkRegular)
 		switch len(startEnd) {
 		case 1: // Single frame

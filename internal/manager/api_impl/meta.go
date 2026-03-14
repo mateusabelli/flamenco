@@ -118,7 +118,7 @@ func (f *Flamenco) CheckSharedStoragePath(e echo.Context) error {
 	logger = logger.With().Str("path", path).Logger()
 	logger.Info().Msg("checking whether this path is suitable as shared storage")
 
-	mkError := func(cause string, args ...interface{}) error {
+	mkError := func(cause string, args ...any) error {
 		if len(args) > 0 {
 			cause = fmt.Sprintf(cause, args...)
 		}

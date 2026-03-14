@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"sort"
 	"sync"
@@ -107,14 +108,10 @@ func (s *Service) Compile(ctx context.Context, sj api.SubmittedJob) (*AuthoredJo
 		Metadata: make(JobMetadata),
 	}
 	if sj.Settings != nil {
-		for key, value := range *sj.Settings {
-			aj.Settings[key] = value
-		}
+		maps.Copy(aj.Settings, *sj.Settings)
 	}
 	if sj.Metadata != nil {
-		for key, value := range *sj.Metadata {
-			aj.Metadata[key] = value
-		}
+		maps.Copy(aj.Metadata, *sj.Metadata)
 	}
 
 	if sj.Storage != nil && sj.Storage.ShamanCheckoutId != nil {

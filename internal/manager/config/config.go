@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -404,9 +405,7 @@ func (c *Conf) constructVariableLookupTableForVars(vars map[string]Variable) {
 }
 
 func updateMap[K comparable, V any](target map[K]V, updateWith map[K]V) {
-	for key, value := range updateWith {
-		target[key] = value
-	}
+	maps.Copy(target, updateWith)
 }
 
 // ExpandVariables converts "{variable name}" to the value that belongs to the

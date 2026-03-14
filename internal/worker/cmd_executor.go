@@ -125,7 +125,7 @@ func cmdParameterAsStrings(cmd api.Command, key string) ([]string, bool) {
 		return asStrSlice, true
 	}
 
-	interfSlice, ok := parameter.([]interface{})
+	interfSlice, ok := parameter.([]any)
 	if !ok {
 		return []string{}, false
 	}

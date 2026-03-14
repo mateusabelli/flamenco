@@ -12,12 +12,12 @@ type (
 
 // Listener is the interface for internal components that want to respond to events.
 type Listener interface {
-	OnEvent(topic EventTopic, payload interface{})
+	OnEvent(topic EventTopic, payload any)
 }
 
 // Forwarder is the interface for components that forward events to external systems.
 type Forwarder interface {
-	Broadcast(topic EventTopic, payload interface{})
+	Broadcast(topic EventTopic, payload any)
 }
 
 type Broker struct {
@@ -46,7 +46,7 @@ func (b *Broker) AddListener(listener Listener) {
 	b.listeners = append(b.listeners, listener)
 }
 
-func (b *Broker) broadcast(topic EventTopic, payload interface{}) {
+func (b *Broker) broadcast(topic EventTopic, payload any) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 

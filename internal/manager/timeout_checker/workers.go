@@ -63,13 +63,14 @@ func (ttc *TimeoutChecker) timeoutWorker(ctx context.Context, worker *sqlc.Worke
 	ttc.broadcaster.BroadcastWorkerUpdate(api.EventWorkerUpdate{
 		Id:             worker.UUID,
 		Name:           worker.Name,
-		PreviousStatus: ptr(api.WorkerStatus(prevStatus)),
+		PreviousStatus: new(api.WorkerStatus(prevStatus)),
 		Status:         api.WorkerStatusError,
 		Updated:        worker.UpdatedAt.Time,
 		Version:        worker.Software,
 	})
 }
 
+//go:fix inline
 func ptr[T any](value T) *T {
-	return &value
+	return new(value)
 }

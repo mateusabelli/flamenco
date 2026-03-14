@@ -22,8 +22,9 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/moremock"
 )
 
+//go:fix inline
 func ptr[T any](value T) *T {
-	return &value
+	return new(value)
 }
 
 func TestSubmitJobWithoutSettings(t *testing.T) {
@@ -188,7 +189,7 @@ func TestSubmitJobWithEtag(t *testing.T) {
 		Type:              "test",
 		Priority:          50,
 		SubmitterPlatform: "linux",
-		TypeEtag:          ptr("bad etag"),
+		TypeEtag:          new("bad etag"),
 	}
 
 	mf.jobCompiler.EXPECT().Compile(gomock.Any(), submittedJob).
@@ -232,7 +233,7 @@ func TestSubmitJobWithEtag(t *testing.T) {
 	mf.broadcaster.EXPECT().BroadcastNewJob(gomock.Any())
 
 	{ // Expect the job with the right etag to be accepted.
-		submittedJob.TypeEtag = ptr("correct etag")
+		submittedJob.TypeEtag = new("correct etag")
 		echoCtx := mf.prepareMockedJSONRequest(submittedJob)
 		err := mf.flamenco.SubmitJob(echoCtx)
 		require.NoError(t, err)
@@ -252,7 +253,7 @@ func TestSubmitJobWithShamanCheckoutID(t *testing.T) {
 		Priority:          50,
 		SubmitterPlatform: worker.Platform,
 		Storage: &api.JobStorageInfo{
-			ShamanCheckoutId: ptr("Весы/Синтел"),
+			ShamanCheckoutId: new("Весы/Синтел"),
 		},
 	}
 
@@ -482,7 +483,7 @@ func TestSubmitJobCheckWithEtag(t *testing.T) {
 		Type:              "test",
 		Priority:          50,
 		SubmitterPlatform: "linux",
-		TypeEtag:          ptr("bad etag"),
+		TypeEtag:          new("bad etag"),
 	}
 
 	mf.jobCompiler.EXPECT().Compile(gomock.Any(), submittedJob).
@@ -510,7 +511,7 @@ func TestSubmitJobCheckWithEtag(t *testing.T) {
 	mf.jobCompiler.EXPECT().Compile(gomock.Any(), gomock.Any()).Return(&authoredJob, nil)
 
 	{ // Expect the job with the right etag to be accepted.
-		submittedJob.TypeEtag = ptr("correct etag")
+		submittedJob.TypeEtag = new("correct etag")
 		echoCtx := mf.prepareMockedJSONRequest(submittedJob)
 		err := mf.flamenco.SubmitJobCheck(echoCtx)
 		require.NoError(t, err)
@@ -664,7 +665,7 @@ func TestSetJobWorkerTagSet(t *testing.T) {
 		Name: "tikkie",
 	}
 
-	tagUpdateByName := api.JobTagChange{Name: ptr("tikkie")}
+	tagUpdateByName := api.JobTagChange{Name: new("tikkie")}
 	echoCtx := mf.prepareMockedJSONRequest(tagUpdateByName)
 
 	// Set up expectations.

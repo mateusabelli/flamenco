@@ -142,7 +142,7 @@ func hasSystemPrivilege(privilegeName string) (bool, error) {
 	offset := int(unsafe.Sizeof(uint32(0)))
 	structSize := int(unsafe.Sizeof(windows.LUIDAndAttributes{}))
 
-	for i := 0; i < privCount; i++ {
+	for i := range privCount {
 		structPtr := &buffer[offset+structSize*i]
 		luidAndAttr := *(*windows.LUIDAndAttributes)(unsafe.Pointer(structPtr))
 		if luidAndAttr.Luid != privilegeLUID {

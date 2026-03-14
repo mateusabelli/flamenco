@@ -37,11 +37,11 @@ func testCommandExecutor(t *testing.T, mockCtrl *gomock.Controller) (*CommandExe
 func TestCmdSettingAsStrings(t *testing.T) {
 	cmd := api.Command{
 		Name: "test",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"strings": []string{"a", "b"},
 			"ints":    []int{3, 4},
 			"floats":  []float64{0.47, 0.327},
-			"mixed":   []interface{}{"a", 47, 0.327},
+			"mixed":   []any{"a", 47, 0.327},
 		},
 	}
 

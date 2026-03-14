@@ -7,8 +7,7 @@ package jwtauth
  * uses JWT Authentication.
  */
 
-type Authenticator interface {
-}
+type Authenticator any
 
 type AlwaysDeny struct{}
 

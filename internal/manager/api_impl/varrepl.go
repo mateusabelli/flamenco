@@ -35,8 +35,8 @@ func replaceTaskVariables(replacer VariableReplacer, task api.AssignedTask, work
 				}
 				task.Commands[cmdIndex].Parameters[key] = replaced
 
-			case []interface{}:
-				replaced := make([]interface{}, len(v))
+			case []any:
+				replaced := make([]any, len(v))
 				for idx := range v {
 					switch itemValue := v[idx].(type) {
 					case string:

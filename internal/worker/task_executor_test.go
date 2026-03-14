@@ -40,11 +40,11 @@ func TestTaskExecutor_Run(t *testing.T) {
 
 	cmd1 := api.Command{
 		Name:       "cmd-without-steps",
-		Parameters: map[string]interface{}{"message": "this is a test"},
+		Parameters: map[string]any{"message": "this is a test"},
 	}
 	cmd2 := api.Command{
 		Name:           "cmd-with-steps",
-		Parameters:     map[string]interface{}{"message": "this is a test"},
+		Parameters:     map[string]any{"message": "this is a test"},
 		TotalStepCount: 3,
 	}
 

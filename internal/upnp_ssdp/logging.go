@@ -39,19 +39,19 @@ func wrappedLogger(logger *zerolog.Logger) *ssdpLogger {
 	}
 }
 
-func (sl *ssdpLogger) Tracef(fmt string, args ...interface{}) {
+func (sl *ssdpLogger) Tracef(fmt string, args ...any) {
 	sl.zlog.Debug().Msgf("SSDP: "+fmt, args...)
 }
 
-func (sl *ssdpLogger) Infof(fmt string, args ...interface{}) {
+func (sl *ssdpLogger) Infof(fmt string, args ...any) {
 	sl.zlog.Info().Msgf("SSDP: "+fmt, args...)
 }
 
-func (sl *ssdpLogger) Warnf(fmt string, args ...interface{}) {
+func (sl *ssdpLogger) Warnf(fmt string, args ...any) {
 	sl.zlog.Warn().Msgf("SSDP: "+fmt, args...)
 }
 
-func (sl *ssdpLogger) Errorf(fmt string, args ...interface{}) {
+func (sl *ssdpLogger) Errorf(fmt string, args ...any) {
 	// Errors from the SSDP library are logged by that library AND returned as
 	// error, which then triggers our own code to log the error as well. Since our
 	// code can provide more context about what it's doing, demote SSDP errors to

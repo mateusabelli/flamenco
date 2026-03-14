@@ -135,7 +135,7 @@ func (mf *mockedFlamenco) expectConvertTwoWayVariables(
 }
 
 // prepareMockedJSONRequest returns an `echo.Context` that has a JSON request body attached to it.
-func (mf *mockedFlamenco) prepareMockedJSONRequest(requestBody interface{}) echo.Context {
+func (mf *mockedFlamenco) prepareMockedJSONRequest(requestBody any) echo.Context {
 	bodyBytes, err := json.MarshalIndent(requestBody, "", "    ")
 	if err != nil {
 		panic(err)
@@ -172,7 +172,7 @@ func getRecordedResponse(echoCtx echo.Context) *http.Response {
 	return getRecordedResponseRecorder(echoCtx).Result()
 }
 
-func getResponseJSON(t *testing.T, echoCtx echo.Context, expectStatusCode int, actualPayloadPtr interface{}) {
+func getResponseJSON(t *testing.T, echoCtx echo.Context, expectStatusCode int, actualPayloadPtr any) {
 	resp := getRecordedResponse(echoCtx)
 	assert.Equal(t, expectStatusCode, resp.StatusCode)
 	contentType := resp.Header.Get(echo.HeaderContentType)
@@ -190,7 +190,7 @@ func getResponseJSON(t *testing.T, echoCtx echo.Context, expectStatusCode int, a
 }
 
 // assertResponseJSON asserts that a recorded response is JSON with the given HTTP status code.
-func assertResponseJSON(t *testing.T, echoCtx echo.Context, expectStatusCode int, expectBody interface{}) {
+func assertResponseJSON(t *testing.T, echoCtx echo.Context, expectStatusCode int, expectBody any) {
 	resp := getRecordedResponse(echoCtx)
 	assert.Equal(t, expectStatusCode, resp.StatusCode)
 	contentType := resp.Header.Get(echo.HeaderContentType)
@@ -209,7 +209,7 @@ func assertResponseJSON(t *testing.T, echoCtx echo.Context, expectStatusCode int
 	assert.JSONEq(t, string(expectJSON), string(actualJSON))
 }
 
-func assertResponseAPIError(t *testing.T, echoCtx echo.Context, expectStatusCode int, expectMessage string, fmtArgs ...interface{}) {
+func assertResponseAPIError(t *testing.T, echoCtx echo.Context, expectStatusCode int, expectMessage string, fmtArgs ...any) {
 	if len(fmtArgs) > 0 {
 		expectMessage = fmt.Sprintf(expectMessage, fmtArgs...)
 	}

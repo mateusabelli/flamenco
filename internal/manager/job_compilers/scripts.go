@@ -122,7 +122,7 @@ func newGojaVM(registry *require.Registry) *goja.Runtime {
 	vm := goja.New()
 	vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
 
-	mustSet := func(name string, value interface{}) {
+	mustSet := func(name string, value any) {
 		err := vm.Set(name, value)
 		if err != nil {
 			log.Panic().Err(err).Msgf("unable to register '%s' in Goja VM", name)

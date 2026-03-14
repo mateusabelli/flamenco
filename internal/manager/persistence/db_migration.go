@@ -76,12 +76,12 @@ func (db *DB) migrate(ctx context.Context) (bool, error) {
 
 type GooseLogger struct{}
 
-func (gl *GooseLogger) Fatalf(format string, v ...interface{}) {
+func (gl *GooseLogger) Fatalf(format string, v ...any) {
 	msg := fmt.Sprintf(format, v...)
 	log.Fatal().Msg(strings.TrimSpace(msg))
 }
 
-func (gl *GooseLogger) Printf(format string, v ...interface{}) {
+func (gl *GooseLogger) Printf(format string, v ...any) {
 	msg := fmt.Sprintf(format, v...)
 	log.Debug().Msg(strings.TrimSpace(msg))
 }

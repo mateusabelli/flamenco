@@ -74,7 +74,7 @@ func (s *Service) Run(ctx context.Context) {
 	}
 }
 
-func (s *Service) OnEvent(topic eventbus.EventTopic, payload interface{}) {
+func (s *Service) OnEvent(topic eventbus.EventTopic, payload any) {
 	forcePoll := false
 	eventSubject := ""
 

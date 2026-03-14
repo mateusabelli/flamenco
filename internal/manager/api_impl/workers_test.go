@@ -79,7 +79,7 @@ func TestTaskScheduleHappy(t *testing.T) {
 		JobPriority: 47,
 		Priority:    327,
 		Commands: []api.Command{
-			{Name: "test", Parameters: map[string]interface{}{
+			{Name: "test", Parameters: map[string]any{
 				"param": "prefix-value-suffix",
 			}},
 		},

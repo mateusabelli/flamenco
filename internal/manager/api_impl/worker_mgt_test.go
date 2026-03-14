@@ -141,8 +141,8 @@ func TestFetchWorker(t *testing.T) {
 			JobId: assignedJob.UUID,
 		},
 		Tags: &[]api.WorkerTag{
-			{Id: ptr("0e701402-c4cc-49b0-8b8c-3eb8718d463a"), Name: "EEVEE"},
-			{Id: ptr("59211f0a-81cc-4148-b0b7-32b3e2dcdb8f"), Name: "Cycles"},
+			{Id: new("0e701402-c4cc-49b0-8b8c-3eb8718d463a"), Name: "EEVEE"},
+			{Id: new("59211f0a-81cc-4148-b0b7-32b3e2dcdb8f"), Name: "Cycles"},
 		},
 	})
 
@@ -302,7 +302,7 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 	apiTag := api.WorkerTag{
 		Id:          &UUID,
 		Name:        "ʻO nā manu ʻino",
-		Description: ptr("Ke aloha"),
+		Description: new("Ke aloha"),
 	}
 	expectDBTag := persistence.WorkerTag{
 		UUID:        UUID,
@@ -350,7 +350,7 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 	// Update both description + name & save.
 	newAPITag = api.WorkerTag{
 		Name:        "updated name",
-		Description: ptr(""),
+		Description: new(""),
 	}
 	expectNewDBTag = persistence.WorkerTag{
 		UUID:        UUID,
@@ -373,7 +373,7 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 	// Update both description + name & save.
 	newAPITag = api.WorkerTag{
 		Name:        "updated name",
-		Description: ptr("New Description"),
+		Description: new("New Description"),
 	}
 	expectNewDBTag = persistence.WorkerTag{
 		UUID:        UUID,
@@ -398,7 +398,7 @@ func TestWorkerTagCRUDHappyFlow(t *testing.T) {
 	mf.persistence.EXPECT().DeleteWorkerTag(gomock.Any(), UUID)
 	mf.broadcaster.EXPECT().BroadcastWorkerTagUpdate(api.EventWorkerTagUpdate{
 		Tag:        api.WorkerTag{Id: &UUID},
-		WasDeleted: ptr(true),
+		WasDeleted: new(true),
 	})
 	echo = mf.prepareMockedJSONRequest(newAPITag)
 	require.NoError(t, mf.flamenco.DeleteWorkerTag(echo, UUID))

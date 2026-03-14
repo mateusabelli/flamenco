@@ -219,7 +219,7 @@ func (fcw FileConfigWrangler) DefaultConfig() WorkerConfig {
 }
 
 // WriteConfig stores a struct as YAML file.
-func (fcw FileConfigWrangler) writeConfig(filename string, filetype configFileType, config interface{}) error {
+func (fcw FileConfigWrangler) writeConfig(filename string, filetype configFileType, config any) error {
 	data, err := yaml.Marshal(config)
 	if err != nil {
 		return err
@@ -273,7 +273,7 @@ func (fcw FileConfigWrangler) writeConfig(filename string, filetype configFileTy
 }
 
 // LoadConfig loads a YAML configuration file into 'config'
-func (fcw FileConfigWrangler) loadConfig(filename string, config interface{}) (err error) {
+func (fcw FileConfigWrangler) loadConfig(filename string, config any) (err error) {
 	// Log which directory the config is loaded from.
 	filepath, err := filepath.Abs(filename)
 	if err != nil {

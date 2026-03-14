@@ -103,7 +103,7 @@ func (f *Flamenco) requestRestart() {
 
 // sendAPIError wraps sending of an error in the Error format, and
 // handling the failure to marshal that.
-func sendAPIError(e echo.Context, code int, message string, args ...interface{}) error {
+func sendAPIError(e echo.Context, code int, message string, args ...any) error {
 	if len(args) > 0 {
 		// Only interpret 'message' as format string if there are actually format parameters.
 		message = fmt.Sprintf(message, args...)
@@ -118,7 +118,7 @@ func sendAPIError(e echo.Context, code int, message string, args ...interface{})
 
 // sendAPIErrorDBBusy sends a HTTP 503 Service Unavailable, with a hopefully
 // reasonable "retry after" header.
-func sendAPIErrorDBBusy(e echo.Context, message string, args ...interface{}) error {
+func sendAPIErrorDBBusy(e echo.Context, message string, args ...any) error {
 	if len(args) > 0 {
 		// Only interpret 'message' as format string if there are actually format parameters.
 		message = fmt.Sprintf(message, args)

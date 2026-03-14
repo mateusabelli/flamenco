@@ -42,9 +42,9 @@ func TestStoreAuthoredJob(t *testing.T) {
 	assert.Equal(t, api.JobStatusUnderConstruction, fetchedJob.Status)
 	assert.Equal(t, "", fetchedJob.StorageShamanCheckoutID)
 
-	var parsedSettings map[string]interface{}
+	var parsedSettings map[string]any
 	assert.NoError(t, json.Unmarshal(fetchedJob.Settings, &parsedSettings))
-	assert.EqualValues(t, map[string]interface{}(job.Settings), parsedSettings)
+	assert.EqualValues(t, map[string]any(job.Settings), parsedSettings)
 
 	var parsedMetadata map[string]string
 	assert.NoError(t, json.Unmarshal(fetchedJob.Metadata, &parsedMetadata))
@@ -912,7 +912,7 @@ func createTestAuthoredJobWithTasks() job_compilers.AuthoredJob {
 				Parameters: job_compilers.AuthoredCommandParameters{
 					"exe":       "{blender}",
 					"blendfile": "/path/to/file.blend",
-					"args": []interface{}{
+					"args": []any{
 						"--render-output", "/path/to/output/######.png",
 						"--render-format", "PNG",
 						"--render-frame", "1-3",

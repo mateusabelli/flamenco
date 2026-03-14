@@ -24,14 +24,14 @@ const (
 )
 
 var socketIOEventTypes = map[string]string{
-	reflect.TypeOf(api.EventLifeCycle{}).Name():          "/lifecycle",
-	reflect.TypeOf(api.EventFarmStatus{}).Name():         "/status",
-	reflect.TypeOf(api.EventJobUpdate{}).Name():          "/jobs",
-	reflect.TypeOf(api.EventTaskUpdate{}).Name():         "/task",
-	reflect.TypeOf(api.EventLastRenderedUpdate{}).Name(): "/last-rendered",
-	reflect.TypeOf(api.EventTaskLogUpdate{}).Name():      "/tasklog",
-	reflect.TypeOf(api.EventWorkerTagUpdate{}).Name():    "/workertags",
-	reflect.TypeOf(api.EventWorkerUpdate{}).Name():       "/workers",
+	reflect.TypeFor[api.EventLifeCycle]().Name():          "/lifecycle",
+	reflect.TypeFor[api.EventFarmStatus]().Name():         "/status",
+	reflect.TypeFor[api.EventJobUpdate]().Name():          "/jobs",
+	reflect.TypeFor[api.EventTaskUpdate]().Name():         "/task",
+	reflect.TypeFor[api.EventLastRenderedUpdate]().Name(): "/last-rendered",
+	reflect.TypeFor[api.EventTaskLogUpdate]().Name():      "/tasklog",
+	reflect.TypeFor[api.EventWorkerTagUpdate]().Name():    "/workertags",
+	reflect.TypeFor[api.EventWorkerUpdate]().Name():       "/workers",
 }
 
 // SocketIOForwarder is an event forwarder via SocketIO.
@@ -58,7 +58,7 @@ func (s *SocketIOForwarder) RegisterHandlers(router *echo.Echo) {
 	router.Any("/socket.io/", echo.WrapHandler(s.sockserv))
 }
 
-func (s *SocketIOForwarder) Broadcast(topic EventTopic, payload interface{}) {
+func (s *SocketIOForwarder) Broadcast(topic EventTopic, payload any) {
 	// SocketIO has a concept of 'event types'. MQTT doesn't have this, and thus the Flamenco event
 	// system doesn't rely on it. We use the payload type name as event type.
 	payloadType := reflect.TypeOf(payload).Name()

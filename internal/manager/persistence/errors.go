@@ -36,23 +36,23 @@ func (e PersistenceError) Unwrap() error {
 	return e.Err
 }
 
-func jobError(errorToWrap error, message string, msgArgs ...interface{}) error {
+func jobError(errorToWrap error, message string, msgArgs ...any) error {
 	return wrapError(translateJobError(errorToWrap), message, msgArgs...)
 }
 
-func taskError(errorToWrap error, message string, msgArgs ...interface{}) error {
+func taskError(errorToWrap error, message string, msgArgs ...any) error {
 	return wrapError(translateTaskError(errorToWrap), message, msgArgs...)
 }
 
-func workerError(errorToWrap error, message string, msgArgs ...interface{}) error {
+func workerError(errorToWrap error, message string, msgArgs ...any) error {
 	return wrapError(translateWorkerError(errorToWrap), message, msgArgs...)
 }
 
-func workerTagError(errorToWrap error, message string, msgArgs ...interface{}) error {
+func workerTagError(errorToWrap error, message string, msgArgs ...any) error {
 	return wrapError(translateWorkerTagError(errorToWrap), message, msgArgs...)
 }
 
-func wrapError(errorToWrap error, message string, format ...interface{}) error {
+func wrapError(errorToWrap error, message string, format ...any) error {
 	if errorToWrap == nil {
 		return nil
 	}

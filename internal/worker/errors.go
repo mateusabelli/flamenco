@@ -37,7 +37,7 @@ type ParameterInvalidError struct {
 	Message   string
 }
 
-func NewParameterInvalidError(parameter string, cmd api.Command, message string, fmtArgs ...interface{}) ParameterInvalidError {
+func NewParameterInvalidError(parameter string, cmd api.Command, message string, fmtArgs ...any) ParameterInvalidError {
 	if len(fmtArgs) > 0 {
 		message = fmt.Sprintf(message, fmtArgs...)
 	}
@@ -54,7 +54,7 @@ func (err ParameterInvalidError) Error() string {
 }
 
 // ParamValue returns the value of the invalid parameter.
-func (err ParameterInvalidError) ParamValue() interface{} {
+func (err ParameterInvalidError) ParamValue() any {
 	return err.Cmd.Parameters[err.Parameter]
 }
 

@@ -53,7 +53,7 @@ func (ot TimeOfDay) Value() (driver.Value, error) {
 }
 
 // Scan updates this TimeOfDay from the value stored in a database.
-func (ot *TimeOfDay) Scan(value interface{}) error {
+func (ot *TimeOfDay) Scan(value any) error {
 	b, ok := value.(string)
 	if !ok {
 		return fmt.Errorf("expected string, received %T", value)

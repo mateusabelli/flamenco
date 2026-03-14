@@ -19,7 +19,7 @@ type LoggingDBConn struct {
 
 var _ sqlc.DBTX = (*LoggingDBConn)(nil)
 
-func (ldbc *LoggingDBConn) ExecContext(ctx context.Context, sql string, args ...interface{}) (sql.Result, error) {
+func (ldbc *LoggingDBConn) ExecContext(ctx context.Context, sql string, args ...any) (sql.Result, error) {
 	log.Trace().Str("sql", sql).Interface("args", args).Msg("database: query Exec")
 	return ldbc.wrappedConn.ExecContext(ctx, sql, args...)
 }
@@ -27,11 +27,11 @@ func (ldbc *LoggingDBConn) PrepareContext(ctx context.Context, sql string) (*sql
 	log.Trace().Str("sql", sql).Msg("database: query Prepare")
 	return ldbc.wrappedConn.PrepareContext(ctx, sql)
 }
-func (ldbc *LoggingDBConn) QueryContext(ctx context.Context, sql string, args ...interface{}) (*sql.Rows, error) {
+func (ldbc *LoggingDBConn) QueryContext(ctx context.Context, sql string, args ...any) (*sql.Rows, error) {
 	log.Trace().Str("sql", sql).Interface("args", args).Msg("database: query Query")
 	return ldbc.wrappedConn.QueryContext(ctx, sql, args...)
 }
-func (ldbc *LoggingDBConn) QueryRowContext(ctx context.Context, sql string, args ...interface{}) *sql.Row {
+func (ldbc *LoggingDBConn) QueryRowContext(ctx context.Context, sql string, args ...any) *sql.Row {
 	log.Trace().Str("sql", sql).Interface("args", args).Msg("database: query QueryRow")
 	return ldbc.wrappedConn.QueryRowContext(ctx, sql, args...)
 }

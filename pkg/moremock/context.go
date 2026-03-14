@@ -16,7 +16,7 @@ func ContextWithDeadline() gomock.Matcher { return ctxWithDeadlineMatcher{} }
 type ctxWithDeadlineMatcher struct{}
 
 // Matches returns whether x is a match.
-func (m ctxWithDeadlineMatcher) Matches(x interface{}) bool {
+func (m ctxWithDeadlineMatcher) Matches(x any) bool {
 	ctx, ok := x.(context.Context)
 	if !ok {
 		return false

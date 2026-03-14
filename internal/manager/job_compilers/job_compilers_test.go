@@ -17,7 +17,7 @@ import (
 )
 
 // The example job is expected to result in these arguments for FFmpeg.
-var expectedFramesToVideoArgs = []interface{}{
+var expectedFramesToVideoArgs = []any{
 	"-c:v", "h264", "-crf", "20", "-g", "18", "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2", "-pix_fmt", "yuv420p", "-r", int64(24), "-y",
 }
 
@@ -48,7 +48,7 @@ func exampleSubmittedJob() api.SubmittedJob {
 		Type:      "simple-blender-render",
 		Settings:  &settings,
 		Metadata:  &metadata,
-		WorkerTag: ptr("acce9983-e663-4210-b3cc-f7bfa629cb21"),
+		WorkerTag: new("acce9983-e663-4210-b3cc-f7bfa629cb21"),
 	}
 	return sj
 }
@@ -89,7 +89,7 @@ func TestSimpleBlenderRenderHappy(t *testing.T) {
 	// Tasks should have been created to render the frames: 1-3, 4-6, 7-9, 10, and video-encoding
 	assert.Len(t, aj.Tasks, 5)
 	t0 := aj.Tasks[0]
-	expectCliArgs := []interface{}{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
+	expectCliArgs := []any{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
 		"--render-output", "/render/sprites/farm_output/promo/square_ellie/square_ellie.lighting_light_breakdown2/######",
 		"--render-format", settings["format"].(string),
 		"--render-frame", "1..3",
@@ -103,7 +103,7 @@ func TestSimpleBlenderRenderHappy(t *testing.T) {
 		"exeArgs":    "{blenderArgs}",
 		"blendfile":  settings["blendfile"].(string),
 		"args":       expectCliArgs,
-		"argsBefore": make([]interface{}, 0),
+		"argsBefore": make([]any, 0),
 	}, t0.Commands[0].Parameters)
 	assert.Equal(t, 3, t0.Commands[0].TotalStepCount)
 
@@ -156,7 +156,7 @@ func TestSimpleBlenderRenderWithScene(t *testing.T) {
 	require.NotNil(t, aj)
 
 	t0 := aj.Tasks[0]
-	expectCliArgs := []interface{}{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
+	expectCliArgs := []any{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
 		"--scene", "Test Scene",
 		"--render-output", "/render/sprites/farm_output/promo/square_ellie/square_ellie.lighting_light_breakdown2/######",
 		"--render-format", "PNG",
@@ -170,7 +170,7 @@ func TestSimpleBlenderRenderWithScene(t *testing.T) {
 		"exeArgs":    "{blenderArgs}",
 		"blendfile":  "/render/sf/jobs/scene123.blend",
 		"args":       expectCliArgs,
-		"argsBefore": make([]interface{}, 0),
+		"argsBefore": make([]any, 0),
 	}, t0.Commands[0].Parameters)
 	assert.Equal(t, 3, t0.Commands[0].TotalStepCount)
 }
@@ -197,7 +197,7 @@ func TestJobWithoutTag(t *testing.T) {
 
 	// Try with empty WorkerTag.
 	{
-		sj.WorkerTag = ptr("")
+		sj.WorkerTag = new("")
 		aj, err := s.Compile(ctx, sj)
 		require.NoError(t, err)
 		assert.Zero(t, aj.WorkerTagUUID)
@@ -235,7 +235,7 @@ func TestSimpleBlenderRenderWindowsPaths(t *testing.T) {
 	// Tasks should have been created to render the frames: 1-3, 4-6, 7-9, 10, and video-encoding
 	assert.Len(t, aj.Tasks, 5)
 	t0 := aj.Tasks[0]
-	expectCliArgs := []interface{}{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
+	expectCliArgs := []any{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
 		// The render output is constructed by the job compiler, and thus transforms to forward slashes.
 		"--render-output", "R:/sprites/farm_output/promo/square_ellie/square_ellie.lighting_light_breakdown2/######",
 		"--render-format", settings["format"].(string),
@@ -250,7 +250,7 @@ func TestSimpleBlenderRenderWindowsPaths(t *testing.T) {
 		"exeArgs":    "{blenderArgs}",
 		"blendfile":  "R:\\sf\\jobs\\scene123.blend", // The blendfile parameter is just copied as-is, so keeps using backslash notation.
 		"args":       expectCliArgs,
-		"argsBefore": make([]interface{}, 0),
+		"argsBefore": make([]any, 0),
 	}, t0.Commands[0].Parameters)
 
 	tVideo := aj.Tasks[4] // This should be a video encoding task
@@ -291,7 +291,7 @@ func TestSimpleBlenderRenderOutputPathFieldReplacement(t *testing.T) {
 	// Tasks should have been created to render the frames: 1-3, 4-6, 7-9, 10, and video-encoding
 	require.Len(t, aj.Tasks, 5)
 	t0 := aj.Tasks[0]
-	expectCliArgs := []interface{}{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
+	expectCliArgs := []any{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
 		"--render-output", "/root/2006-01-02_150405/jobname/######",
 		"--render-format", settings["format"].(string),
 		"--render-frame", "1..3",
@@ -301,7 +301,7 @@ func TestSimpleBlenderRenderOutputPathFieldReplacement(t *testing.T) {
 		"exeArgs":    "{blenderArgs}",
 		"blendfile":  settings["blendfile"].(string),
 		"args":       expectCliArgs,
-		"argsBefore": make([]interface{}, 0),
+		"argsBefore": make([]any, 0),
 	}, t0.Commands[0].Parameters)
 
 	tVideo := aj.Tasks[4] // This should be a video encoding task
@@ -348,7 +348,7 @@ func TestEtag(t *testing.T) {
 	}
 
 	{ // Test with bad etag.
-		sj.TypeEtag = ptr("this is not the right etag")
+		sj.TypeEtag = new("this is not the right etag")
 		_, err := s.Compile(ctx, sj)
 		assert.ErrorIs(t, err, ErrJobTypeBadEtag)
 	}
@@ -399,7 +399,7 @@ func TestComplexFrameRange(t *testing.T) {
 	frameRangesFromCLI := []string{}
 	totalStepCounts := []int{}
 	for _, task := range aj.Tasks[0:3] {
-		args := task.Commands[0].Parameters["args"].([]interface{})
+		args := task.Commands[0].Parameters["args"].([]any)
 		require.Equal(t, "--render-frame", args[4])
 		frameRangesFromCLI = append(frameRangesFromCLI, args[5].(string))
 		totalStepCounts = append(totalStepCounts, task.Commands[0].TotalStepCount)
@@ -428,6 +428,7 @@ func TestComplexFrameRange(t *testing.T) {
 		videoTask.Commands[0].Parameters["outputFile"])
 }
 
+//go:fix inline
 func ptr[T any](value T) *T {
-	return &value
+	return new(value)
 }

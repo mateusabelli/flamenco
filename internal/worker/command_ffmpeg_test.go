@@ -27,7 +27,7 @@ func TestCmdFramesToVideoSimplePosix(t *testing.T) {
 	exe := `F:\software\tools\ffmpeg.exe` // Backslashes are tricksy, test with them on all platforms.
 	cmd := api.Command{
 		Name: "blender",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"exe":        exe,
 			"exeArgs":    "-v quiet",
 			"argsBefore": []string{"-report"},
@@ -71,7 +71,7 @@ func TestCmdFramesToVideoSimpleWindows(t *testing.T) {
 	exe := `F:\software\tools\ffmpeg.exe`
 	cmd := api.Command{
 		Name: "blender",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"exe":        exe,
 			"exeArgs":    "-v quiet",
 			"argsBefore": []string{"-report"},
