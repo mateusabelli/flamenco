@@ -853,7 +853,7 @@ func (db *DB) UpdateJobsTaskStepCounts(ctx context.Context, jobID int64) error {
 			StatusesToUpdate: []api.TaskStatus{api.TaskStatusCompleted},
 		})
 		if err != nil {
-			return taskError(err, "updating completed step count on job %q", jobID)
+			return taskError(err, "updating completed step count on job %d", jobID)
 		}
 
 		err = q.UpdateJobsTaskStepCountsZero(ctx, sqlc.UpdateJobsTaskStepCountsZeroParams{
@@ -862,7 +862,7 @@ func (db *DB) UpdateJobsTaskStepCounts(ctx context.Context, jobID int64) error {
 			StatusesToUpdate: []api.TaskStatus{api.TaskStatusQueued},
 		})
 		if err != nil {
-			return taskError(err, "updating completed step count on job %q", jobID)
+			return taskError(err, "updating completed step count on job %d", jobID)
 		}
 
 		err = q.UpdateJobStepsCompleted(ctx, sqlc.UpdateJobStepsCompletedParams{
