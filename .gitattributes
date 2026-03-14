@@ -8,35 +8,39 @@
 /go.sum linguist-generated=true
 
 # In your Git config, set:
-# git config core.eol native
-# git config core.autocrlf true
+# git config --local core.eol lf
+# git config --local core.autocrlf input
 
-# Set the default newline behavior, in case people don't have core.autocrlf set.
-* text=auto
-
-*.cjs text
-*.css text
-*.csv text
-*.go text
-*.html text
-*.ini text
-*.js text
-*.json text
-*.map text
-*.md text
-*.py text
-*.sh text
-*.sql text
-*.svg text
-*.toml text
-*.txt text
-*.vue text
-*.webapp text
-*.webmanifest text
-*.xml text
-*.yaml text
-/go.mod text
-/go.sum text
-/LICENSE text
-/Makefile text
-/VERSION text
+*.cjs text eol=lf
+*.css text eol=lf
+*.csv text eol=lf
+*.go text eol=lf
+*.html text eol=lf
+*.ini text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.map text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+*.sql text eol=lf
+*.svg text eol=lf
+*.toml text eol=lf
+*.txt text eol=lf
+*.vue text eol=lf
+*.webapp text eol=lf
+*.webmanifest text eol=lf
+*.xml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+/.editorconfig text eol=lf
+/.env text eol=lf
+/.env.example text eol=lf
+/.gitattributes text eol=lf
+/.gitignore text eol=lf
+/.prettierrc text eol=lf
+/go.mod text eol=lf
+/go.sum text eol=lf
+/LICENSE text eol=lf
+/Makefile text eol=lf
+/VERSION text eol=lf
