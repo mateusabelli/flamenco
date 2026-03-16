@@ -9,6 +9,7 @@ bugs in actually-released versions.
 - Manager: speed up startup by being more selective about checks & maintenance operations on the database.
 - Add-on: upgrade `python_dateutil` to 2.9.0.post0, to fix a deprecation warning on Python 3.13 (used in Blender 5.1+).
 - New command: `make-directory`. See https://flamenco.blender.org/usage/jobs-tasks-commands/commands/#file-management-make-directory
+- Upgrade the SQLite implementation (` modernc.org/sqlite`) to v1.46.2, to fix the [WAL-Reset bug](https://sqlite.org/wal.html#walresetbug).
 
 ## 3.8.2 - released 2025-12-29
 
