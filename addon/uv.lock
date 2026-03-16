@@ -5,7 +5,7 @@ requires-python = ">=3.13, <4"
 [[package]]
 name = "blender-asset-tracer"
 version = "2.0a0"
-source = { editable = "../../bat/blender-asset-tracer" }
+source = { editable = "../../blender-asset-tracer" }
 
 [package.metadata]
 
@@ -33,7 +33,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "blender-asset-tracer", editable = "../../bat/blender-asset-tracer" },
+    { name = "blender-asset-tracer", editable = "../../blender-asset-tracer" },
     { name = "python-dateutil", specifier = ">=2.9.0,<3" },
     { name = "urllib3", specifier = ">=2.4.0,<3" },
 ]

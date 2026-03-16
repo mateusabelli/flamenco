@@ -18,7 +18,7 @@ dev = [
 ]
 
 [tool.uv.sources]
-blender-asset-tracer = { path = "../../bat/blender-asset-tracer", editable = true }
+blender-asset-tracer = { path = "../../blender-asset-tracer", editable = true }
 
 [tool.mypy]
 # strict = true
