@@ -14,6 +14,18 @@ _my_dir = Path(__file__).parent
 _log = logging.getLogger(__name__)
 
 
+def filename(
+    module_name: str,
+    *,
+    filename_prefix: str = "",
+) -> Path:
+    """Returns the filename of the wheel file for this module."""
+
+    if not filename_prefix:
+        filename_prefix = _fname_prefix_from_module_name(module_name)
+    return _wheel_filename(filename_prefix)
+
+
 def load_wheel(
     module_name: str,
     submodules: Iterable[str],
@@ -30,9 +42,7 @@ def load_wheel(
     Returns the loaded modules, so [module, submodule, submodule, ...].
     """
 
-    if not filename_prefix:
-        filename_prefix = _fname_prefix_from_module_name(module_name)
-    wheel = _wheel_filename(filename_prefix)
+    wheel = filename(module_name, filename_prefix=filename_prefix)
 
     loaded_modules: list[ModuleType] = []
     to_load = [module_name] + [f"{module_name}.{submodule}" for submodule in submodules]
@@ -53,9 +63,9 @@ def load_wheel(
             loaded_modules.append(module)
             _log.info("Loaded %s from %s", modname, module.__file__)
 
-    assert len(loaded_modules) == len(
-        to_load
-    ), f"expecting to load {len(to_load)} modules, but only have {len(loaded_modules)}: {loaded_modules}"
+    assert len(loaded_modules) == len(to_load), (
+        f"expecting to load {len(to_load)} modules, but only have {len(loaded_modules)}: {loaded_modules}"
+    )
     return loaded_modules
 
 

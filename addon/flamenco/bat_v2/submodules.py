@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 # SORRY FOR THE COMPLEXITY!
@@ -8,6 +10,9 @@ from typing import TYPE_CHECKING
 #
 # At the same time, there's developers who will be really happy when mypy can do
 # its thing, and when Blender can load mypy and BAT from virtual environments.
+
+WHEEL_MODULE = "blender_asset_tracer"
+WHEEL_FILENAME_PREFIX = "blender_asset_tracer-2."
 
 if TYPE_CHECKING:
     # When type-checking, BAT should be importable.
@@ -20,8 +25,6 @@ if TYPE_CHECKING:
 else:
     # For development only: if we can import BAT directly, just assume it's the
     # right version and go with it.
-    import os
-
     if "VIRTUAL_ENV" in os.environ:
         import site
         from pathlib import Path
@@ -49,10 +52,19 @@ else:
 
         # Load all the submodules we need from BAT in one go.
         _bat_modules = wheels.load_wheel(
-            "blender_asset_tracer",
+            WHEEL_MODULE,
             ("file_usage", "pack", "path_rewriting", "path_rewriting_process"),
-            filename_prefix="blender_asset_tracer-2.",
+            filename_prefix=WHEEL_FILENAME_PREFIX,
         )
         bat_toplevel, file_usage, pack, path_rewriting, path_rewriting_process = (
             _bat_modules
         )
+
+        # Expose the location of the wheel file to BAT by setting an environment
+        # variable. This is necessary for BAT's path rewriting sub-process, in
+        # order to know where to load its own sources from.
+        wheel_filename: Path = wheels.filename(
+            WHEEL_MODULE,
+            filename_prefix=WHEEL_FILENAME_PREFIX,
+        )
+        os.environ["BAT_WHEEL"] = str(wheel_filename)
