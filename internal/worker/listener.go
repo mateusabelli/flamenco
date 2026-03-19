@@ -50,7 +50,6 @@ func (l *Listener) Run(ctx context.Context) {
 	l.outputUploader.Run(ctx)
 }
 
-//go:fix inline
 func ptr[T any](value T) *T {
 	return new(value)
 }
@@ -61,7 +60,7 @@ func (l *Listener) TaskStarted(ctx context.Context, taskID string) error {
 
 	return l.sendTaskUpdate(ctx, taskID, api.TaskUpdateJSONRequestBody{
 		Activity:   new("Started"),
-		TaskStatus: ptr(api.TaskStatusActive),
+		TaskStatus: new(api.TaskStatusActive),
 	})
 }
 
@@ -81,7 +80,7 @@ func (l *Listener) TaskFailed(ctx context.Context, taskID string, reason string)
 	return l.sendTaskUpdate(ctx, taskID, api.TaskUpdateJSONRequestBody{
 		Activity:   &msg,
 		Log:        &msg, // Make sure that this failure also ends up in the task log.
-		TaskStatus: ptr(api.TaskStatusFailed),
+		TaskStatus: new(api.TaskStatusFailed),
 	})
 }
 
@@ -89,7 +88,7 @@ func (l *Listener) TaskFailed(ctx context.Context, taskID string, reason string)
 func (l *Listener) TaskCompleted(ctx context.Context, taskID string) error {
 	return l.sendTaskUpdate(ctx, taskID, api.TaskUpdateJSONRequestBody{
 		Activity:   new("Completed"),
-		TaskStatus: ptr(api.TaskStatusCompleted),
+		TaskStatus: new(api.TaskStatusCompleted),
 	})
 }
 

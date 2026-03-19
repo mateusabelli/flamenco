@@ -27,7 +27,7 @@ func TestTaskUpdate(t *testing.T) {
 	taskUpdate := api.TaskUpdateJSONRequestBody{
 		Activity:   new("testing"),
 		Log:        new("line1\nline2\n"),
-		TaskStatus: ptr(api.TaskStatusCompleted),
+		TaskStatus: new(api.TaskStatusCompleted),
 	}
 
 	// Construct the task that's supposed to be updated.
@@ -232,7 +232,7 @@ func TestTaskUpdateFailed(t *testing.T) {
 
 	// Construct the JSON request object.
 	taskUpdate := api.TaskUpdateJSONRequestBody{
-		TaskStatus: ptr(api.TaskStatusFailed),
+		TaskStatus: new(api.TaskStatusFailed),
 	}
 
 	// Construct the task that's supposed to be updated.
@@ -321,7 +321,7 @@ func TestBlockingAfterFailure(t *testing.T) {
 
 	// Construct the JSON request object.
 	taskUpdate := api.TaskUpdateJSONRequestBody{
-		TaskStatus: ptr(api.TaskStatusFailed),
+		TaskStatus: new(api.TaskStatusFailed),
 	}
 
 	// Construct the task that's supposed to be updated.
@@ -478,7 +478,7 @@ func TestJobFailureAfterWorkerTaskFailure(t *testing.T) {
 
 	// Contruct the JSON request object
 	taskUpdate := api.TaskUpdateJSONRequestBody{
-		TaskStatus: ptr(api.TaskStatusFailed),
+		TaskStatus: new(api.TaskStatusFailed),
 	}
 
 	// Construct the task that's supposed to be updated.

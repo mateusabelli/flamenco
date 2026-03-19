@@ -45,7 +45,7 @@ func Run(ctx context.Context, client worker.FlamencoClient) {
 	// Mark the task as active.
 	err := sendTaskUpdate(ctx, client, task.Uuid, api.TaskUpdate{
 		Activity:       new("Stress testing"),
-		TaskStatus:     ptr(api.TaskStatusActive),
+		TaskStatus:     new(api.TaskStatusActive),
 		StepsCompleted: new(0),
 	})
 	if err != nil {
@@ -111,11 +111,6 @@ func stressBySendingTaskUpdate(
 		log.Warn().Err(err).Str("task", task.Uuid).Msg("Manager rejected task update")
 		increaseNumFailed()
 	}
-}
-
-//go:fix inline
-func ptr[T any](value T) *T {
-	return new(value)
 }
 
 func increaseNumRequests() {

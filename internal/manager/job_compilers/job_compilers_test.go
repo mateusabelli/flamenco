@@ -354,7 +354,7 @@ func TestEtag(t *testing.T) {
 	}
 
 	{ // Test with correct etag.
-		sj.TypeEtag = ptr(expectEtag)
+		sj.TypeEtag = new(expectEtag)
 		aj, err := s.Compile(ctx, sj)
 		require.NoError(t, err, "job with correct etag should be accepted")
 		assert.NotNil(t, aj)
@@ -426,9 +426,4 @@ func TestComplexFrameRange(t *testing.T) {
 	assert.Equal(t,
 		"/render/sprites/farm_output/promo/square_ellie/square_ellie.lighting_light_breakdown2/scene123-0-90.mp4",
 		videoTask.Commands[0].Parameters["outputFile"])
-}
-
-//go:fix inline
-func ptr[T any](value T) *T {
-	return new(value)
 }

@@ -69,8 +69,3 @@ func (ttc *TimeoutChecker) timeoutWorker(ctx context.Context, worker *sqlc.Worke
 		Version:        worker.Software,
 	})
 }
-
-//go:fix inline
-func ptr[T any](value T) *T {
-	return new(value)
-}

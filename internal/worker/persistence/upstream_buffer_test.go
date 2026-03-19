@@ -43,7 +43,7 @@ func TestUpstreamBufferQueue(t *testing.T) {
 	taskUUID := "3d1e2419-ca9d-4500-bd4f-1e14b5e82947"
 	update1 := api.TaskUpdateJSONRequestBody{
 		Activity:   new("Tešt active"),
-		TaskStatus: ptr(api.TaskStatusActive),
+		TaskStatus: new(api.TaskStatusActive),
 	}
 	require.NoError(t, db.UpstreamBufferQueue(ctx, taskUUID, update1))
 
@@ -54,7 +54,7 @@ func TestUpstreamBufferQueue(t *testing.T) {
 
 	// Queue another update.
 	update2 := api.TaskUpdateJSONRequestBody{
-		TaskStatus: ptr(api.TaskStatusCompleted),
+		TaskStatus: new(api.TaskStatusCompleted),
 	}
 	require.NoError(t, db.UpstreamBufferQueue(ctx, taskUUID, update2))
 

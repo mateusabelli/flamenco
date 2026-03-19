@@ -22,11 +22,6 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/moremock"
 )
 
-//go:fix inline
-func ptr[T any](value T) *T {
-	return new(value)
-}
-
 func TestSubmitJobWithoutSettings(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()

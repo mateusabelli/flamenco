@@ -73,7 +73,7 @@ func TestUpstreamBufferManagerUnavailable(t *testing.T) {
 	update := api.TaskUpdateJSONRequestBody{
 		Activity:   new("Testing da ünits"),
 		Log:        new("¿Unicode logging should work?"),
-		TaskStatus: ptr(api.TaskStatusActive),
+		TaskStatus: new(api.TaskStatusActive),
 	}
 
 	updateError := errors.New("mock manager unavailable")
@@ -127,7 +127,7 @@ func TestStressingBuffer(t *testing.T) {
 	update := api.TaskUpdateJSONRequestBody{
 		Activity:   new("Testing da ünits"),
 		Log:        new("¿Unicode logging should work?"),
-		TaskStatus: ptr(api.TaskStatusActive),
+		TaskStatus: new(api.TaskStatusActive),
 	}
 
 	// Make the Manager slow to respond.

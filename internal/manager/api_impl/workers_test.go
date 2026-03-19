@@ -282,7 +282,7 @@ func TestWorkerRememberPreviousStatus(t *testing.T) {
 	mf.broadcaster.EXPECT().BroadcastWorkerUpdate(api.EventWorkerUpdate{
 		Id:             worker.UUID,
 		Name:           worker.Name,
-		PreviousStatus: ptr(api.WorkerStatusAwake),
+		PreviousStatus: new(api.WorkerStatusAwake),
 		Status:         api.WorkerStatusOffline,
 		StatusChange: &api.WorkerStatusChangeRequest{
 			IsLazy: false,
@@ -323,7 +323,7 @@ func TestWorkerDontRememberPreviousStatus(t *testing.T) {
 	mf.broadcaster.EXPECT().BroadcastWorkerUpdate(api.EventWorkerUpdate{
 		Id:             worker.UUID,
 		Name:           worker.Name,
-		PreviousStatus: ptr(api.WorkerStatusError),
+		PreviousStatus: new(api.WorkerStatusError),
 		Status:         api.WorkerStatusOffline,
 		StatusChange:   nil,
 		Updated:        worker.UpdatedAt.Time,
@@ -431,7 +431,7 @@ func TestWorkerStateChangedAfterChangeRequest(t *testing.T) {
 		mf.broadcaster.EXPECT().BroadcastWorkerUpdate(api.EventWorkerUpdate{
 			Id:             worker.UUID,
 			Name:           worker.Name,
-			PreviousStatus: ptr(api.WorkerStatusOffline),
+			PreviousStatus: new(api.WorkerStatusOffline),
 			Status:         api.WorkerStatusStarting,
 			Updated:        worker.UpdatedAt.Time,
 			Version:        worker.Software,
@@ -464,7 +464,7 @@ func TestWorkerStateChangedAfterChangeRequest(t *testing.T) {
 		mf.broadcaster.EXPECT().BroadcastWorkerUpdate(api.EventWorkerUpdate{
 			Id:             worker.UUID,
 			Name:           worker.Name,
-			PreviousStatus: ptr(api.WorkerStatusStarting),
+			PreviousStatus: new(api.WorkerStatusStarting),
 			Status:         api.WorkerStatusAsleep,
 			Updated:        worker.UpdatedAt.Time,
 			Version:        worker.Software,
