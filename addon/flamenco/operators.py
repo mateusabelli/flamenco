@@ -169,8 +169,9 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             if not is_running:
                 return {"CANCELLED"}
 
-            assert self.bat_v2_packer is not None
-            while self.bat_v2_packer.step():
+            # self.bat_v2_packer is None when no packing is necessary, that is, when the file is
+            # already on the shared storage.
+            while self.bat_v2_packer and self.bat_v2_packer.step():
                 pass
 
             return self.bat_v2_packer_finalize_and_quit(context)
@@ -516,15 +517,15 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         return True
 
     def bat_v2_packer_finalize_and_quit(self, context: bpy.types.Context) -> set[str]:
-        assert self.bat_v2_packer is not None
-
         if self.bat_v2_packer_reported_error:
             # The errors themselves should have been reported already.
             context.window_manager.flamenco_bat_status = "ABORTED"
             return self._quit(context)
 
-        # BAT v2 pack is done.
-        self.blendfile_on_farm = self.bat_v2_packer.blendfile_location_in_pack()
+        if self.bat_v2_packer is not None:
+            # BAT v2 pack is done.
+            self.blendfile_on_farm = self.bat_v2_packer.blendfile_location_in_pack()
+
         self._submit_job(context)
         return self._quit(context)
 
