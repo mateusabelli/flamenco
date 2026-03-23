@@ -120,3 +120,4 @@ CREATE TABLE workers (
 CREATE INDEX idx_jobs_uuid ON jobs(uuid);
 CREATE INDEX idx_worker_tags_uuid ON worker_tags(uuid);
 CREATE UNIQUE INDEX job_worker_tasktype ON job_blocks(job_id, worker_id, task_type);
+CREATE UNIQUE INDEX last_rendereds_job_id ON last_rendereds(job_id);
