@@ -16,6 +16,7 @@ WHEEL_FILENAME_PREFIX = "blender_asset_tracer-2."
 
 if TYPE_CHECKING:
     # When type-checking, BAT should be importable.
+    import blender_asset_tracer as bat_toplevel
     from blender_asset_tracer import (
         file_usage,
         pack,
@@ -39,6 +40,7 @@ else:
             site.addsitedir(str(lib_dir))
 
     try:
+        import blender_asset_tracer as bat_toplevel
         from blender_asset_tracer import (
             file_usage,
             pack,

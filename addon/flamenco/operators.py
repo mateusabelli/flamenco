@@ -202,7 +202,6 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         else:
             is_running = self._submit_files_bat_v2(context, filepath)
         if not is_running:
-            print("CANCELLING at invoke")
             return {"CANCELLED"}
 
         if bat_v2:
@@ -433,7 +432,9 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         Returns True if a packing thread has been started, and False otherwise.
         """
 
-        from .bat_v2 import pack_fs, pack_shaman
+        from .bat_v2 import bat_version, pack_fs, pack_shaman
+
+        self.log.info("Submitting files via BAT %s", bat_version())
 
         # Reset state from any previous run.
         self.bat_v2_packer = None
@@ -585,7 +586,10 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         Returns True if a packing thread has been started, and False otherwise.
         """
 
+        from .bat import bat_version
         from .bat import interface as bat_interface
+
+        self.log.info("Submitting files via BAT %s", bat_version())
 
         if bat_interface.is_packing():
             self.report({"ERROR"}, "Another packing operation is running")
