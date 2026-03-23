@@ -152,13 +152,20 @@ func (s *Service) Run(ctx context.Context) {
 
 	waitTime := jobDeletionCheckInterval
 
+deleteLoop:
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			break deleteLoop
 		case jobUUID := <-s.queue:
 			err := s.deleteJob(ctx, jobUUID)
-			if err != nil {
+			switch {
+			case errors.Is(err, context.Canceled):
+				// This is fine, the application is shutting down. Stop processing the rest of the deletion
+				// queue. This is done as a break, instead of the `case` above, because when both cases can
+				// be handled (i.e. jobs queued and context closed) it's random which one runs.
+				break deleteLoop
+			case err != nil:
 				log.Error().
 					AnErr("cause", err).
 					Str("job", jobUUID).
