@@ -17,6 +17,7 @@ bugs in actually-released versions.
   ([#104501](https://projects.blender.org/studio/flamenco/issues/104501)); deleting the job from
   Flamenco would not delete the job files themselves. This is now fixed for new jobs, and
   already-existing jobs will be updated so that they are fixed too.
+- When Flamenco Manager starts up, any pending job deletions are delayed by 30 seconds, prioritizing start-up performance.
 
 ## 3.9.2 - released 2026-06-05
 

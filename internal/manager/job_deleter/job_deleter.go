@@ -34,6 +34,11 @@ const (
 	// jobDeletionCheckInterval determines how often the database is checked for
 	// jobs that have been requested to be deleted.
 	jobDeletionCheckInterval = 1 * time.Minute
+
+	// jobDeletionStartupDelay determines how long after startup of Flamenco Manager the job deletion
+	// queue actually starts deleting. This prioritizes startup performance of the farm (giving
+	// workers their tasks, updating the web interface, etc.) over deleting old data.
+	jobDeletionStartupDelay = 30 * time.Second
 )
 
 // Service can mark jobs as "deletion requested", as well as delete those jobs
@@ -145,10 +150,17 @@ func (s *Service) WhatWouldBeDeleted(job *persistence.Job) api.JobDeletionInfo {
 // Run processes the queue of deletion requests. It starts by building up a
 // queue of still-pending job deletions.
 func (s *Service) Run(ctx context.Context) {
+	log.Debug().Stringer("delay", jobDeletionStartupDelay).Msg("job deleter: delaying job deletion at startup")
+	defer log.Debug().Msg("job deleter: shutting down")
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(jobDeletionStartupDelay):
+	}
+
 	s.queuePendingDeletions(ctx)
 
 	log.Debug().Msg("job deleter: running")
-	defer log.Debug().Msg("job deleter: shutting down")
 
 	waitTime := jobDeletionCheckInterval
 
