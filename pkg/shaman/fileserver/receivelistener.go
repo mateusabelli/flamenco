@@ -58,7 +58,6 @@ func (fs *FileServer) receiveListenerFor(checksum string, filesize int64) chan s
 }
 
 func (fs *FileServer) receiveListenerPeriodicCheck() {
-	defer fs.wg.Done()
 	lastReportedChans := -1
 
 	doCheck := func() {

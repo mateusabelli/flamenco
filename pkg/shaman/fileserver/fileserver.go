@@ -62,8 +62,7 @@ func New(fileStore *filestore.Store) *FileServer {
 // Go starts goroutines for background operations.
 // After Go() has been called, use Close() to stop those goroutines.
 func (fs *FileServer) Go() {
-	fs.wg.Add(1)
-	go fs.receiveListenerPeriodicCheck()
+	fs.wg.Go(fs.receiveListenerPeriodicCheck)
 }
 
 // Close stops any goroutines started by this server, and waits for them to close.

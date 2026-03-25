@@ -142,8 +142,7 @@ func (s *Server) Go() {
 	} else if s.config.GarbageCollect.SilentlyDisable {
 		log.Debug().Msg("not starting garbage collection")
 	} else {
-		s.wg.Add(1)
-		go s.periodicCleanup()
+		s.wg.Go(s.periodicCleanup)
 	}
 }
 
