@@ -67,10 +67,10 @@ func (fs *FileServer) receiveListenerPeriodicCheck() {
 		numChans := len(fs.receiverChannels)
 		if numChans == 0 {
 			if lastReportedChans != 0 {
-				log.Debug().Msg("no receive listener channels")
+				log.Debug().Msg("shaman: no receive listener channels")
 			}
 		} else {
-			log.Debug().Int("num_receiver_channels", numChans).Msg("receiving files")
+			log.Debug().Int("num_receiver_channels", numChans).Msg("shaman: receiving files")
 		}
 		lastReportedChans = numChans
 	}
@@ -78,7 +78,7 @@ func (fs *FileServer) receiveListenerPeriodicCheck() {
 	for {
 		select {
 		case <-fs.ctx.Done():
-			log.Debug().Msg("stopping receive listener periodic check")
+			log.Debug().Msg("shaman: stopping receive listener periodic check")
 			return
 		case <-time.After(1 * time.Minute):
 			doCheck()

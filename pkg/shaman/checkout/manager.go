@@ -80,11 +80,11 @@ var (
 func NewManager(conf config.Config, fileStore *filestore.Store) *Manager {
 	checkoutDir := conf.CheckoutPath()
 	logger := log.With().Str("checkoutDir", checkoutDir).Logger()
-	logger.Info().Msg("opening checkout directory")
+	logger.Info().Msg("shaman: opening checkout directory")
 
 	err := os.MkdirAll(checkoutDir, 0777)
 	if err != nil {
-		logger.Error().Err(err).Msg("unable to create checkout directory")
+		logger.Error().Err(err).Msg("shaman: unable to create checkout directory")
 	}
 
 	return &Manager{checkoutDir, fileStore, new(sync.WaitGroup), new(sync.Mutex)}
@@ -92,7 +92,7 @@ func NewManager(conf config.Config, fileStore *filestore.Store) *Manager {
 
 // Close waits for still-running touch() calls to finish, then returns.
 func (m *Manager) Close() {
-	log.Info().Msg("shutting down Checkout manager")
+	log.Info().Msg("shaman: shutting down Checkout manager")
 	m.wg.Wait()
 }
 
@@ -310,10 +310,10 @@ func touchFile(blobPath string) error {
 
 	duration := time.Since(now)
 	if duration > 1*time.Second {
-		logger.Warn().Str("duration", duration.String()).Msg("done touching but took a long time")
+		logger.Warn().Str("duration", duration.String()).Msg("shaman: done touching but took a long time")
 	}
 
-	logger.Debug().Msg("done touching")
+	logger.Debug().Msg("shaman: done touching")
 	return nil
 }
 
