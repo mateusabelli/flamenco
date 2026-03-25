@@ -13,6 +13,7 @@ bugs in actually-released versions.
 - Manager: ensure the Shaman garbage collection of unused files actually runs.
 - Manager: improve logging from the Shaman system, by prefixing all logged messages with 'shaman:'.
 - Upgrade the SQLite implementation (` modernc.org/sqlite`) to v1.46.2, to fix the [WAL-Reset bug](https://sqlite.org/wal.html#walresetbug).
+- Upgrade Blender Asset Tracer (BAT) to 1.23 to fix some issues on Windows and certain Geometry Nodes setups.
 - Upgrade Go to 1.26.1 and fix these vulnerabilities:
   - https://pkg.go.dev/vuln/GO-2026-4602
   - https://pkg.go.dev/vuln/GO-2026-4601
