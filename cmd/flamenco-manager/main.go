@@ -272,6 +272,7 @@ func runFlamencoManager() bool {
 	wg.Go(func() { sleepScheduler.Run(mainCtx) })
 	wg.Go(func() { jobDeleter.Run(mainCtx) })
 	wg.Go(func() { farmStatus.Run(mainCtx) })
+	wg.Go(func() { shamanServer.Run(mainCtx) })
 
 	// Log the URLs last, hopefully that makes them more visible / encouraging to go to for users.
 	wg.Go(func() {

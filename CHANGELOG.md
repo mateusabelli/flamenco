@@ -10,6 +10,7 @@ bugs in actually-released versions.
 - Add-on: upgrade `python_dateutil` to 2.9.0.post0, to fix a deprecation warning on Python 3.13 (used in Blender 5.1+).
 - Add-on: fix issue when submitting a job in a blocking way (calling the operator from Python instead of clicking the button) when the file is already located in the shared storage.
 - New command: `make-directory`. See https://flamenco.blender.org/usage/jobs-tasks-commands/commands/#file-management-make-directory
+- Manager: ensure the Shaman garbage collection of unused files actually runs.
 - Upgrade the SQLite implementation (` modernc.org/sqlite`) to v1.46.2, to fix the [WAL-Reset bug](https://sqlite.org/wal.html#walresetbug).
 - Upgrade Go to 1.26.1 and fix these vulnerabilities:
   - https://pkg.go.dev/vuln/GO-2026-4602

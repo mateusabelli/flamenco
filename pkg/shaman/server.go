@@ -114,6 +114,23 @@ func checkPlatformSymlinkSupport() {
 			"see %s", website.ShamanRequirementsURL)
 }
 
+// Run the server until the context closes.
+func (s *Server) Run(ctx context.Context) {
+	s.Go()
+
+	select {
+	case <-ctx.Done():
+		s.Close()
+	case <-s.shutdownChan:
+		// If this case hits, the channel is already closed by other code calling
+		// the s.Close() function.
+	}
+
+	// This is not necessary when the s.Close() function was called, but doesn't
+	// hurt either.
+	s.wg.Wait()
+}
+
 // Go starts goroutines for background operations.
 // After Go() has been called, use Close() to stop those goroutines.
 func (s *Server) Go() {

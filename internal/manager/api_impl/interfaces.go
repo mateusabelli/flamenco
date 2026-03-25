@@ -207,6 +207,9 @@ type Shaman interface {
 	// IsEnabled returns whether this Shaman service is enabled or not.
 	IsEnabled() bool
 
+	// Run the server until the context closes.
+	Run(context.Context)
+
 	// Checkout creates a directory, and symlinks the required files into it. The
 	// files must all have been uploaded to Shaman before calling this.
 	// Returns the final checkout directory, as it may be modified to ensure uniqueness.

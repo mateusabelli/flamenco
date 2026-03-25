@@ -1292,6 +1292,18 @@ func (mr *MockShamanMockRecorder) Requirements(ctx, requirements any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Requirements", reflect.TypeOf((*MockShaman)(nil).Requirements), ctx, requirements)
 }
 
+// Run mocks base method.
+func (m *MockShaman) Run(arg0 context.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Run", arg0)
+}
+
+// Run indicates an expected call of Run.
+func (mr *MockShamanMockRecorder) Run(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockShaman)(nil).Run), arg0)
+}
+
 // MockLastRendered is a mock of LastRendered interface.
 type MockLastRendered struct {
 	ctrl     *gomock.Controller
