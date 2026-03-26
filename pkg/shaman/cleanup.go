@@ -33,6 +33,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const (
+	gcInitialDelay = 30 * time.Second
+)
+
 // Mapping from absolute path to the file's mtime.
 type mtimeMap map[string]time.Time
 
@@ -49,9 +53,19 @@ type GCStats struct {
 
 func (s *Server) periodicCleanup() {
 	period := time.Duration(s.config.GarbageCollect.Period)
-	log.Info().Stringer("period", period).Msg("shaman: starting garbage collector")
 
-	defer log.Debug().Msg("shaman: shutting down garbage collector")
+	log.Info().
+		Stringer("initialDelay", gcInitialDelay).
+		Stringer("period", period).
+		Msg("shaman: running periodic cleanup")
+
+	defer log.Debug().Msg("shaman: shutting down periodic cleanup")
+
+	select {
+	case <-s.shutdownChan:
+		return
+	case <-time.After(gcInitialDelay):
+	}
 
 	for {
 		s.GCStorage(false)

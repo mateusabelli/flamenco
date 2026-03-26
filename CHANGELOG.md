@@ -10,8 +10,6 @@ bugs in actually-released versions.
 - Add-on: upgrade `python_dateutil` to 2.9.0.post0, to fix a deprecation warning on Python 3.13 (used in Blender 5.1+).
 - Add-on: fix issue when submitting a job in a blocking way (calling the operator from Python instead of clicking the button) when the file is already located in the shared storage.
 - New command: `make-directory`. See https://flamenco.blender.org/usage/jobs-tasks-commands/commands/#file-management-make-directory
-- Manager: ensure the Shaman garbage collection of unused files actually runs.
-- Manager: improve logging from the Shaman system, by prefixing all logged messages with 'shaman:'.
 - Manager: add CLI arguments to perform a single (dry) run of Shaman GC: `-shaman-gc-show` (dry-run) and `-shaman-gc-delete` (actually deletes).
 - Upgrade the SQLite implementation (` modernc.org/sqlite`) to v1.46.2, to fix the [WAL-Reset bug](https://sqlite.org/wal.html#walresetbug).
 - Upgrade Blender Asset Tracer (BAT) to 1.23 to fix some issues on Windows and certain Geometry Nodes setups.
@@ -21,6 +19,11 @@ bugs in actually-released versions.
   - https://pkg.go.dev/vuln/GO-2026-4341
   - https://pkg.go.dev/vuln/GO-2026-4340
   - https://pkg.go.dev/vuln/GO-2026-4337
+
+## 3.8.3 - released 2026-03-26
+
+- Manager: ensure the Shaman garbage collection of unused files actually runs.
+- Manager: improve logging from the Shaman system, by prefixing all logged messages with 'shaman:'.
 
 ## 3.8.2 - released 2025-12-29
 
