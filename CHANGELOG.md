@@ -4,7 +4,7 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
-## 3.8.3 - in development
+## 3.8.3 - released 2026-03-26
 
 - Manager: ensure the Shaman garbage collection of unused files actually runs.
 - Manager: improve logging from the Shaman system, by prefixing all logged messages with 'shaman:'.
