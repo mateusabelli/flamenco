@@ -57,9 +57,9 @@ func (s *Server) periodicCleanup() {
 	log.Info().
 		Stringer("initialDelay", gcInitialDelay).
 		Stringer("period", period).
-		Msg("shaman: running period cleanup")
+		Msg("shaman: running periodic cleanup")
 
-	defer log.Debug().Msg("shaman: shutting down period cleanup")
+	defer log.Debug().Msg("shaman: shutting down periodic cleanup")
 	defer s.wg.Done()
 
 	select {
