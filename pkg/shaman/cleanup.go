@@ -52,8 +52,11 @@ type GCStats struct {
 }
 
 func (s *Server) periodicCleanup() {
+	period := time.Duration(s.config.GarbageCollect.Period)
+
 	log.Info().
 		Stringer("initialDelay", gcInitialDelay).
+		Stringer("period", period).
 		Msg("shaman: running period cleanup")
 
 	defer log.Debug().Msg("shaman: shutting down period cleanup")
@@ -71,7 +74,7 @@ func (s *Server) periodicCleanup() {
 		select {
 		case <-s.shutdownChan:
 			return
-		case <-time.After(time.Duration(s.config.GarbageCollect.Period)):
+		case <-time.After(period):
 		}
 	}
 }
@@ -96,23 +99,23 @@ func (s *Server) GCStorage(doDryRun bool) (stats GCStats) {
 		logger = logger.With().Bool("dryRun", doDryRun).Logger()
 	}
 
-	logger.Info().Msg("performing garbage collection on storage")
+	logger.Info().Msg("shaman: performing garbage collection on storage")
 
 	// Scan the storage for all the paths that are older than the threshold.
 	oldFiles, err := s.gcFindOldFiles(ageThreshold, logger)
 	if err != nil {
-		logger.Error().Err(err).Msg("unable to walk file store path to find old files")
+		logger.Error().Err(err).Msg("shaman: unable to walk file store path to find old files")
 		return
 	}
 	if len(oldFiles) == 0 {
-		logger.Debug().Msg("found no old files during garbage collection scan")
+		logger.Debug().Msg("shaman: found no old files during garbage collection scan")
 		return
 	}
 
 	stats.numOldFiles = len(oldFiles)
 	stats.numFilesNotDeleted = stats.numOldFiles
 	logger.Info().Int("numOldFiles", stats.numOldFiles).
-		Msg("found old files, going to check for links")
+		Msg("shaman: found old files, going to check for links")
 
 	// Scan the checkout area and discard any old file that is linked.
 	dirsToCheck := []string{s.config.CheckoutPath()}
@@ -121,7 +124,7 @@ func (s *Server) GCStorage(doDryRun bool) (stats GCStats) {
 			logger.Error().
 				Str("checkoutPath", checkDir).
 				Err(err).
-				Msg("unable to walk checkout path to find symlinks")
+				Msg("shaman: unable to walk checkout path to find symlinks")
 			return
 		}
 	}
@@ -134,11 +137,11 @@ func (s *Server) GCStorage(doDryRun bool) (stats GCStats) {
 		Logger()
 
 	if len(oldFiles) == 0 {
-		infoLogger.Info().Msg("all old files are in use")
+		infoLogger.Info().Msg("shaman: all old files are in use")
 		return
 	}
 
-	infoLogger.Info().Msg("found unused old files, going to delete")
+	infoLogger.Info().Msg("shaman: found unused old files, going to delete")
 
 	stats.numFilesDeleted, stats.bytesDeleted = s.gcDeleteOldFiles(doDryRun, oldFiles, logger)
 	stats.numFilesNotDeleted = stats.numOldFiles - stats.numFilesDeleted
@@ -148,7 +151,7 @@ func (s *Server) GCStorage(doDryRun bool) (stats GCStats) {
 		Int("numFilesNotDeleted", stats.numFilesNotDeleted).
 		Int64("freedBytes", stats.bytesDeleted).
 		Str("freedSize", humanizeByteSize(stats.bytesDeleted)).
-		Msg("removed unused old files")
+		Msg("shaman: removed unused old files")
 
 	return
 }
@@ -163,7 +166,7 @@ func (s *Server) gcFindOldFiles(ageThreshold time.Time, logger zerolog.Logger) (
 		}
 
 		if err != nil {
-			logger.Debug().Err(err).Msg("error while walking file store path to find old files")
+			logger.Debug().Err(err).Msg("shaman: error while walking file store path to find old files")
 			return err
 		}
 		if info.IsDir() {
@@ -183,7 +186,7 @@ func (s *Server) gcFindOldFiles(ageThreshold time.Time, logger zerolog.Logger) (
 		return nil
 	}
 	if err := filepath.Walk(s.fileStore.StoragePath(), visit); err != nil {
-		logger.Error().Err(err).Msg("unable to walk file store path to find old files")
+		logger.Error().Err(err).Msg("shaman: unable to walk file store path to find old files")
 		return nil, err
 	}
 
@@ -202,7 +205,7 @@ func (s *Server) gcFilterLinkedFiles(checkoutPath string, oldFiles mtimeMap, log
 		}
 
 		if err != nil {
-			logger.Info().Err(err).Msg("error while walking checkout path while searching for symlinks")
+			logger.Info().Err(err).Msg("shaman: error while walking checkout path while searching for symlinks")
 			return err
 		}
 		if info.IsDir() || info.Mode()&os.ModeSymlink == 0 {
@@ -221,7 +224,7 @@ func (s *Server) gcFilterLinkedFiles(checkoutPath string, oldFiles mtimeMap, log
 			logger.Warn().
 				Str("linkPath", path).
 				Err(err).
-				Msg("unable to determine target of symlink; ignoring")
+				Msg("shaman: unable to determine target of symlink; ignoring")
 			return nil
 		}
 
@@ -231,7 +234,7 @@ func (s *Server) gcFilterLinkedFiles(checkoutPath string, oldFiles mtimeMap, log
 		return nil
 	}
 	if err := filepath.Walk(checkoutPath, visit); err != nil {
-		logger.Error().Err(err).Msg("unable to walk checkout path while searching for symlinks")
+		logger.Error().Err(err).Msg("shaman: unable to walk checkout path while searching for symlinks")
 		return err
 	}
 
@@ -246,21 +249,21 @@ func (s *Server) gcDeleteOldFiles(doDryRun bool, oldFiles mtimeMap, logger zerol
 
 		if stat, err := os.Stat(path); err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
-				pathLogger.Warn().Err(err).Msg("unable to stat to-be-deleted file")
+				pathLogger.Warn().Err(err).Msg("shaman: unable to stat to-be-deleted file")
 			}
 		} else if stat.ModTime().After(lastSeenModTime) {
 			pathLogger.Info().
 				Stringer("modTime", stat.ModTime()).
-				Msg("not deleting recently-touched file")
+				Msg("shaman: not deleting recently-touched file")
 			continue
 		} else {
 			deletedBytes += stat.Size()
 		}
 
 		if doDryRun {
-			pathLogger.Info().Msg("would delete unused file")
+			pathLogger.Info().Msg("shaman: would delete unused file")
 		} else {
-			pathLogger.Info().Msg("deleting unused file")
+			pathLogger.Info().Msg("shaman: deleting unused file")
 			err := s.fileStore.RemoveStoredFile(path)
 			switch {
 			case errors.Is(err, fs.ErrNotExist):

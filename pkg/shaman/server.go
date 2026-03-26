@@ -57,7 +57,7 @@ type Server struct {
 // NewServer creates a new Shaman server.
 func NewServer(conf config.Config, auther jwtauth.Authenticator) *Server {
 	if !conf.Enabled {
-		log.Info().Msg("shaman server is disabled")
+		log.Info().Msg("shaman: shaman server is disabled")
 		return nil
 	}
 
@@ -117,13 +117,13 @@ func checkPlatformSymlinkSupport() {
 // Go starts goroutines for background operations.
 // After Go() has been called, use Close() to stop those goroutines.
 func (s *Server) Go() {
-	log.Info().Msg("Shaman server starting")
+	log.Info().Msg("shaman: Shaman server starting")
 	s.fileServer.Go()
 
 	if s.config.GarbageCollect.Period == 0 {
-		log.Warn().Msg("garbage collection disabled, set garbageCollect.period > 0 in configuration")
+		log.Warn().Msg("shaman: garbage collection disabled, set garbageCollect.period > 0 in configuration")
 	} else if s.config.GarbageCollect.SilentlyDisable {
-		log.Debug().Msg("not starting garbage collection")
+		log.Debug().Msg("shaman: not starting garbage collection")
 	} else {
 		s.wg.Add(1)
 		go s.periodicCleanup()
@@ -132,7 +132,7 @@ func (s *Server) Go() {
 
 // Close shuts down the Shaman server.
 func (s *Server) Close() {
-	log.Info().Msg("shutting down Shaman server")
+	log.Info().Msg("shaman: shutting down Shaman server")
 
 	close(s.shutdownChan)
 

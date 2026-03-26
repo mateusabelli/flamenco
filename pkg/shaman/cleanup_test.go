@@ -79,7 +79,7 @@ func makeOld(shaman *Server, expectOld mtimeMap, relPath string) {
 		Stringer("age", time.Duration(age)).
 		Stringer("stamp", oldTime).
 		Stringer("actual", osModTime).
-		Msg("makeOld")
+		Msg("shaman: makeOld")
 
 	// Sanity check that the timestamp on disk is somewhat similar to what we expected.
 	timediff := osModTime.Sub(oldTime).Abs()

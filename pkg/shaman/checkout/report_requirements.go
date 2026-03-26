@@ -14,7 +14,7 @@ import (
 
 func (m *Manager) ReportRequirements(ctx context.Context, requirements api.ShamanRequirementsRequest) (api.ShamanRequirementsResponse, error) {
 	logger := zerolog.Ctx(ctx)
-	logger.Debug().Msg("user requested checkout requirements")
+	logger.Debug().Msg("shaman: user requested checkout requirements")
 
 	missing := api.ShamanRequirementsResponse{
 		Files: []api.ShamanFileSpecWithStatus{},

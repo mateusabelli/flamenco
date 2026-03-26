@@ -114,12 +114,12 @@ func (fs *FileServer) ReceiveFile(
 			return
 		case <-receiverChannel:
 		}
-		logger.Info().Msg("file was completed during someone else's upload")
+		logger.Info().Msg("shaman: file was completed during someone else's upload")
 
 		uploadAlreadyCompleted = true
 		err := bodyReader.Close()
 		if err != nil {
-			logger.Warn().Err(err).Msg("error closing connection")
+			logger.Warn().Err(err).Msg("shaman: error closing connection")
 		}
 	}()
 
@@ -130,16 +130,16 @@ func (fs *FileServer) ReceiveFile(
 			logger.Error().
 				AnErr("copyError", err).
 				AnErr("closeError", closeErr).
-				Msg("error closing local file after other I/O error occurred")
+				Msg("shaman: error closing local file after other I/O error occurred")
 		}
 
 		logger = logger.With().Err(err).Logger()
 		switch {
 		case uploadAlreadyCompleted:
-			logger.Debug().Msg("aborted upload")
+			logger.Debug().Msg("shaman: aborted upload")
 			return ErrFileAlreadyExists
 		case err == io.ErrUnexpectedEOF:
-			logger.Debug().Msg("unexpected EOF, client probably just disconnected")
+			logger.Debug().Msg("shaman: unexpected EOF, client probably just disconnected")
 			return err
 		default:
 			return fmt.Errorf("unable to copy request body to file: %w", err)
@@ -154,7 +154,7 @@ func (fs *FileServer) ReceiveFile(
 		logger.Warn().
 			Int64("declaredSize", filesize).
 			Int64("actualSize", written).
-			Msg("mismatch between expected and actual size")
+			Msg("shaman: mismatch between expected and actual size")
 		return ErrFileSizeMismatch{
 			DeclaredSize: filesize,
 			ActualSize:   written,
@@ -165,7 +165,7 @@ func (fs *FileServer) ReceiveFile(
 		logger.Warn().
 			Str("declaredChecksum", checksum).
 			Str("actualChecksum", actualChecksum).
-			Msg("mismatch between expected and actual checksum")
+			Msg("shaman: mismatch between expected and actual checksum")
 		return ErrFileChecksumMismatch{
 			DeclaredChecksum: checksum,
 			ActualChecksum:   actualChecksum,
@@ -176,13 +176,13 @@ func (fs *FileServer) ReceiveFile(
 		Int64("receivedBytes", written).
 		Str("checksum", actualChecksum).
 		Str("tempFile", streamTo.Name()).
-		Msg("File received")
+		Msg("shaman: File received")
 
 	if err := fs.fileStore.MoveToStored(checksum, filesize, streamTo.Name()); err != nil {
 		logger.Error().
 			Err(err).
 			Str("tempFile", streamTo.Name()).
-			Msg("unable to move file from 'upload' to 'stored' storage")
+			Msg("shaman: unable to move file from 'upload' to 'stored' storage")
 		return err
 	}
 

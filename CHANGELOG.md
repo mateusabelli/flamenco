@@ -7,6 +7,7 @@ bugs in actually-released versions.
 ## 3.8.3 - in development
 
 - Manager: ensure the Shaman garbage collection of unused files actually runs.
+- Manager: improve logging from the Shaman system, by prefixing all logged messages with 'shaman:'.
 
 ## 3.8.2 - released 2025-12-29
 
