@@ -1210,6 +1210,18 @@ func (mr *MockShamanMockRecorder) Checkout(arg0, arg1 interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkout", reflect.TypeOf((*MockShaman)(nil).Checkout), arg0, arg1)
 }
 
+// Close mocks base method.
+func (m *MockShaman) Close() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Close")
+}
+
+// Close indicates an expected call of Close.
+func (mr *MockShamanMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockShaman)(nil).Close))
+}
+
 // EraseCheckout mocks base method.
 func (m *MockShaman) EraseCheckout(arg0 string) error {
 	m.ctrl.T.Helper()
@@ -1250,6 +1262,18 @@ func (m *MockShaman) FileStoreCheck(arg0 context.Context, arg1 string, arg2 int6
 func (mr *MockShamanMockRecorder) FileStoreCheck(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FileStoreCheck", reflect.TypeOf((*MockShaman)(nil).FileStoreCheck), arg0, arg1, arg2)
+}
+
+// Go mocks base method.
+func (m *MockShaman) Go() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Go")
+}
+
+// Go indicates an expected call of Go.
+func (mr *MockShamanMockRecorder) Go() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Go", reflect.TypeOf((*MockShaman)(nil).Go))
 }
 
 // IsEnabled mocks base method.

@@ -254,6 +254,13 @@ func runFlamencoManager() bool {
 		persist.PeriodicWALCheckpoint(mainCtx)
 	}()
 
+	// Run the Shaman periodic garbage collection.
+	wg.Go(func() {
+		shamanServer.Go()
+		<-mainCtx.Done()
+		shamanServer.Close()
+	})
+
 	// Start the web server.
 	wg.Add(1)
 	go func() {

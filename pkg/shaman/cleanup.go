@@ -48,8 +48,19 @@ type GCStats struct {
 }
 
 func (s *Server) periodicCleanup() {
+	initialDelay := 30 * time.Second
+	log.Info().
+		Stringer("initialDelay", initialDelay).
+		Msg("shaman: running period cleanup")
+
 	defer log.Debug().Msg("shaman: shutting down period cleanup")
 	defer s.wg.Done()
+
+	select {
+	case <-s.shutdownChan:
+		return
+	case <-time.After(initialDelay):
+	}
 
 	for {
 		s.GCStorage(false)

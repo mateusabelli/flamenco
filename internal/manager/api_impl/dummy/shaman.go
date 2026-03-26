@@ -22,6 +22,8 @@ var ErrDummyShaman = errors.New("Shaman storage component is inactive, configure
 func (ds *DummyShaman) IsEnabled() bool {
 	return false
 }
+func (ds *DummyShaman) Close() {}
+func (ds *DummyShaman) Go()    {}
 func (ds *DummyShaman) Checkout(ctx context.Context, checkout api.ShamanCheckout) (string, error) {
 	return "", ErrDummyShaman
 }
