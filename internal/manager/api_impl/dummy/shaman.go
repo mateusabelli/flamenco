@@ -9,6 +9,7 @@ import (
 
 	"projects.blender.org/studio/flamenco/internal/manager/api_impl"
 	"projects.blender.org/studio/flamenco/pkg/api"
+	"projects.blender.org/studio/flamenco/pkg/shaman"
 )
 
 // DummyShaman implements the Shaman interface from `internal/manager/api_impl/interfaces.go`
@@ -36,4 +37,7 @@ func (ds *DummyShaman) FileStore(ctx context.Context, file io.ReadCloser, checks
 }
 func (ds *DummyShaman) EraseCheckout(checkoutID string) error {
 	return ErrDummyShaman
+}
+func (ds *DummyShaman) GCStorage(doDryRun bool) shaman.GCStats {
+	return shaman.GCStats{}
 }

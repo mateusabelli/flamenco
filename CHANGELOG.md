@@ -12,6 +12,7 @@ bugs in actually-released versions.
 - New command: `make-directory`. See https://flamenco.blender.org/usage/jobs-tasks-commands/commands/#file-management-make-directory
 - Manager: ensure the Shaman garbage collection of unused files actually runs.
 - Manager: improve logging from the Shaman system, by prefixing all logged messages with 'shaman:'.
+- Manager: add CLI arguments to perform a single (dry) run of Shaman GC: `-shaman-gc-show` (dry-run) and `-shaman-gc-delete` (actually deletes).
 - Upgrade the SQLite implementation (` modernc.org/sqlite`) to v1.46.2, to fix the [WAL-Reset bug](https://sqlite.org/wal.html#walresetbug).
 - Upgrade Blender Asset Tracer (BAT) to 1.23 to fix some issues on Windows and certain Geometry Nodes setups.
 - Upgrade Go to 1.26.1 and fix these vulnerabilities:

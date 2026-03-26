@@ -170,7 +170,7 @@ func TestGCComponents(t *testing.T) {
 	oldFiles = copymap(expectOld)
 	stats := GCStats{}
 	err = server.gcFilterLinkedFiles(server.config.CheckoutPath(), oldFiles, log.With().Str("package", "shaman/test").Logger(), &stats)
-	assert.Equal(t, 1, stats.numSymlinksChecked)
+	assert.Equal(t, 1, stats.NumSymlinksChecked)
 	require.NoError(t, err)
 	assert.Equal(t, len(expectRemovable), len(oldFiles))
 

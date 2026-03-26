@@ -49,6 +49,8 @@ var cliArgs struct {
 	delayResponses bool
 	setupAssistant bool
 	pprof          bool
+	shamanGCShow   bool
+	shamanGCDelete bool
 }
 
 const (
@@ -137,6 +139,24 @@ func runFlamencoManager() bool {
 		return false
 	}
 
+	// Construct the Shaman server.
+	shamanServer := buildShamanServer(configService, isFirstRun)
+	if cliArgs.shamanGCShow {
+		log.Info().Msg("Performing dry run of the Shaman garbage collector")
+		stats := shamanServer.GCStorage(true)
+		if stats.NumFilesDeleted > 0 {
+			log.Info().Msg("The above statistics show what the garbage collector would do. No files have been deleted.")
+		} else {
+			log.Info().Msg("Shaman garbage collector would delete no files.")
+		}
+		return false
+	}
+	if cliArgs.shamanGCDelete {
+		log.Info().Msg("Performing Shaman garbage collection")
+		shamanServer.GCStorage(false)
+		return false
+	}
+
 	// TODO: enable TLS via Let's Encrypt.
 	listen := configService.Get().Listen
 	_, port, _ := net.SplitHostPort(listen)
@@ -187,7 +207,6 @@ func runFlamencoManager() bool {
 	sleepScheduler := sleep_scheduler.New(timeService, persist, eventBroker)
 	lastRender := last_rendered.New(localStorage)
 
-	shamanServer := buildShamanServer(configService, isFirstRun)
 	jobDeleter := job_deleter.NewService(persist, localStorage, eventBroker, shamanServer)
 
 	farmStatus := farmstatus.NewService(persist, eventBroker)
@@ -341,6 +360,8 @@ func parseCliArgs() {
 		"Add a random delay to any HTTP responses. This aids in development of Flamenco Manager's web frontend.")
 	flag.BoolVar(&cliArgs.setupAssistant, "setup-assistant", false, "Open a webbrowser with the setup assistant.")
 	flag.BoolVar(&cliArgs.pprof, "pprof", false, "Expose profiler endpoints on /debug/pprof/.")
+	flag.BoolVar(&cliArgs.shamanGCShow, "shaman-gc-show", false, "Show what the garbage collection of the Shaman storage would do, then exit.")
+	flag.BoolVar(&cliArgs.shamanGCDelete, "shaman-gc-delete", false, "Perform garbage collection on the Shaman storage, then exit.")
 
 	flag.Parse()
 

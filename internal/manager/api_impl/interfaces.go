@@ -229,6 +229,8 @@ type Shaman interface {
 
 	// EraseCheckout deletes the symlinks and the directory structure that makes up the checkout.
 	EraseCheckout(checkoutID string) error
+
+	GCStorage(doDryRun bool) shaman.GCStats
 }
 
 var _ Shaman = (*shaman.Server)(nil)

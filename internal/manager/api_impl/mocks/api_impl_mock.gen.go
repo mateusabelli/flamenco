@@ -22,6 +22,7 @@ import (
 	last_rendered "projects.blender.org/studio/flamenco/internal/manager/last_rendered"
 	persistence "projects.blender.org/studio/flamenco/internal/manager/persistence"
 	api "projects.blender.org/studio/flamenco/pkg/api"
+	shaman "projects.blender.org/studio/flamenco/pkg/shaman"
 )
 
 // MockPersistenceService is a mock of PersistenceService interface.
@@ -1261,6 +1262,20 @@ func (m *MockShaman) FileStoreCheck(ctx context.Context, checksum string, filesi
 func (mr *MockShamanMockRecorder) FileStoreCheck(ctx, checksum, filesize any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FileStoreCheck", reflect.TypeOf((*MockShaman)(nil).FileStoreCheck), ctx, checksum, filesize)
+}
+
+// GCStorage mocks base method.
+func (m *MockShaman) GCStorage(doDryRun bool) shaman.GCStats {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GCStorage", doDryRun)
+	ret0, _ := ret[0].(shaman.GCStats)
+	return ret0
+}
+
+// GCStorage indicates an expected call of GCStorage.
+func (mr *MockShamanMockRecorder) GCStorage(doDryRun any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GCStorage", reflect.TypeOf((*MockShaman)(nil).GCStorage), doDryRun)
 }
 
 // IsEnabled mocks base method.

@@ -38,13 +38,13 @@ type mtimeMap map[string]time.Time
 
 // GCStats contains statistics of a garbage collection run.
 type GCStats struct {
-	numSymlinksChecked   int
-	numOldFiles          int
-	numUnusedOldFiles    int
-	numStillUsedOldFiles int
-	numFilesDeleted      int
-	numFilesNotDeleted   int
-	bytesDeleted         int64
+	NumSymlinksChecked   int
+	NumOldFiles          int
+	NumUnusedOldFiles    int
+	NumStillUsedOldFiles int
+	NumFilesDeleted      int
+	NumFilesNotDeleted   int
+	BytesDeleted         int64
 }
 
 func (s *Server) periodicCleanup() {
@@ -97,9 +97,9 @@ func (s *Server) GCStorage(doDryRun bool) (stats GCStats) {
 		return
 	}
 
-	stats.numOldFiles = len(oldFiles)
-	stats.numFilesNotDeleted = stats.numOldFiles
-	logger.Info().Int("numOldFiles", stats.numOldFiles).
+	stats.NumOldFiles = len(oldFiles)
+	stats.NumFilesNotDeleted = stats.NumOldFiles
+	logger.Info().Int("numOldFiles", stats.NumOldFiles).
 		Msg("shaman: found old files, going to check for links")
 
 	// Scan the checkout area and discard any old file that is linked.
@@ -113,12 +113,12 @@ func (s *Server) GCStorage(doDryRun bool) (stats GCStats) {
 			return
 		}
 	}
-	stats.numStillUsedOldFiles = stats.numOldFiles - len(oldFiles)
-	stats.numUnusedOldFiles = len(oldFiles)
+	stats.NumStillUsedOldFiles = stats.NumOldFiles - len(oldFiles)
+	stats.NumUnusedOldFiles = len(oldFiles)
 	infoLogger := logger.With().
-		Int("numUnusedOldFiles", stats.numUnusedOldFiles).
-		Int("numStillUsedOldFiles", stats.numStillUsedOldFiles).
-		Int("numSymlinksChecked", stats.numSymlinksChecked).
+		Int("numUnusedOldFiles", stats.NumUnusedOldFiles).
+		Int("numStillUsedOldFiles", stats.NumStillUsedOldFiles).
+		Int("numSymlinksChecked", stats.NumSymlinksChecked).
 		Logger()
 
 	if len(oldFiles) == 0 {
@@ -128,14 +128,14 @@ func (s *Server) GCStorage(doDryRun bool) (stats GCStats) {
 
 	infoLogger.Info().Msg("shaman: found unused old files, going to delete")
 
-	stats.numFilesDeleted, stats.bytesDeleted = s.gcDeleteOldFiles(doDryRun, oldFiles, logger)
-	stats.numFilesNotDeleted = stats.numOldFiles - stats.numFilesDeleted
+	stats.NumFilesDeleted, stats.BytesDeleted = s.gcDeleteOldFiles(doDryRun, oldFiles, logger)
+	stats.NumFilesNotDeleted = stats.NumOldFiles - stats.NumFilesDeleted
 
 	infoLogger.Info().
-		Int("numFilesDeleted", stats.numFilesDeleted).
-		Int("numFilesNotDeleted", stats.numFilesNotDeleted).
-		Int64("freedBytes", stats.bytesDeleted).
-		Str("freedSize", humanizeByteSize(stats.bytesDeleted)).
+		Int("numFilesDeleted", stats.NumFilesDeleted).
+		Int("numFilesNotDeleted", stats.NumFilesNotDeleted).
+		Int64("freedBytes", stats.BytesDeleted).
+		Str("freedSize", humanizeByteSize(stats.BytesDeleted)).
 		Msg("shaman: removed unused old files")
 
 	return
@@ -198,7 +198,7 @@ func (s *Server) gcFilterLinkedFiles(checkoutPath string, oldFiles mtimeMap, log
 		}
 
 		if stats != nil {
-			stats.numSymlinksChecked++
+			stats.NumSymlinksChecked++
 		}
 		linkTarget, err := filepath.EvalSymlinks(path)
 		if err != nil {
