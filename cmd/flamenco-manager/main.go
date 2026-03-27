@@ -286,7 +286,7 @@ func runFlamencoManager() bool {
 	if ssdp != nil {
 		wg.Go(func() { ssdp.Run(mainCtx) })
 	}
-	if shamanServer != nil {
+	if shamanServer.IsEnabled() {
 		wg.Go(func() { shamanServer.Run(mainCtx) })
 	}
 
@@ -332,8 +332,7 @@ func buildShamanServer(configService *config.Service, isFirstRun bool) api_impl.
 
 	shamanServer := shaman.NewServer(configService.Get().Shaman, nil)
 	if shamanServer == nil {
-		// Return untyped nil, instead of a typed interface with a nil value.
-		return nil
+		return &dummy.DummyShaman{}
 	}
 	return shamanServer
 }
