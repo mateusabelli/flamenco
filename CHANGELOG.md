@@ -20,6 +20,11 @@ bugs in actually-released versions.
   - https://pkg.go.dev/vuln/GO-2026-4340
   - https://pkg.go.dev/vuln/GO-2026-4337
 
+
+## 3.8.4 - released 2026-03-27
+
+- Fix [#104480: Can't start Flamenco Manager without Shaman](https://projects.blender.org/studio/flamenco/issues/104480)
+
 ## 3.8.3 - released 2026-03-26
 
 - Manager: ensure the Shaman garbage collection of unused files actually runs.

@@ -286,12 +286,14 @@ func runFlamencoManager() bool {
 	if ssdp != nil {
 		wg.Go(func() { ssdp.Run(mainCtx) })
 	}
+	if shamanServer != nil {
+		wg.Go(func() { shamanServer.Run(mainCtx) })
+	}
 
 	wg.Go(func() { timeoutChecker.Run(mainCtx) })
 	wg.Go(func() { sleepScheduler.Run(mainCtx) })
 	wg.Go(func() { jobDeleter.Run(mainCtx) })
 	wg.Go(func() { farmStatus.Run(mainCtx) })
-	wg.Go(func() { shamanServer.Run(mainCtx) })
 
 	// Log the URLs last, hopefully that makes them more visible / encouraging to go to for users.
 	wg.Go(func() {
@@ -327,7 +329,13 @@ func buildShamanServer(configService *config.Service, isFirstRun bool) api_impl.
 		log.Info().Msg("Not starting Shaman storage service, as this is the first run of Flamenco. Configure the shared storage location first.")
 		return &dummy.DummyShaman{}
 	}
-	return shaman.NewServer(configService.Get().Shaman, nil)
+
+	shamanServer := shaman.NewServer(configService.Get().Shaman, nil)
+	if shamanServer == nil {
+		// Return untyped nil, instead of a typed interface with a nil value.
+		return nil
+	}
+	return shamanServer
 }
 
 // openWebbrowser starts a web browser after waiting for 1 second.
