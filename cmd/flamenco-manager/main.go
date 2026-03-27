@@ -255,7 +255,7 @@ func runFlamencoManager() bool {
 	}()
 
 	// Run the Shaman periodic garbage collection.
-	if shamanServer != nil {
+	if shamanServer.IsEnabled() {
 		wg.Go(func() {
 			shamanServer.Go()
 			<-mainCtx.Done()
@@ -351,8 +351,7 @@ func buildShamanServer(configService *config.Service, isFirstRun bool) api_impl.
 	}
 	shamanServer := shaman.NewServer(configService.Get().Shaman, nil)
 	if shamanServer == nil {
-		// Return untyped nil, instead of a typed interface with a nil value.
-		return nil
+		return &dummy.DummyShaman{}
 	}
 	return shamanServer
 }
