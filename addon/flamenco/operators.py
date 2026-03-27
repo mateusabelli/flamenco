@@ -39,8 +39,12 @@ else:
     _Error = object
 
 # Conditionally import BAT v2, as that version requires Blender 5.1+.
+#
+# Blender 5.1.0 still had some limitations, most importantly missing support for geometry nodes
+# simulation caches (https://projects.blender.org/blender/blender/issues/155953). That should be
+# fixed in 5.1.1 though.
 bat_v2: ModuleType | None
-if bpy.app.version >= (5, 1, 0) or TYPE_CHECKING:
+if bpy.app.version >= (5, 1, 1) or TYPE_CHECKING:
     from . import bat_v2
     from .bat_v2.pack_fs import BATPacker
 
