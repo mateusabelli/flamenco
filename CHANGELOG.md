@@ -4,7 +4,7 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
-## 3.8.4 - released 2026-03-27
+## 3.8.5 - released 2026-03-27
 
 - Fix [#104480: Can't start Flamenco Manager without Shaman](https://projects.blender.org/studio/flamenco/issues/104480)
 
