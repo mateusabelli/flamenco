@@ -5,7 +5,7 @@
 bl_info = {
     "name": "Flamenco",
     "author": "Sybren A. Stüvel",
-    "version": (3, 8, 3),
+    "version": (3, 8, 4),
     "blender": (3, 1, 0),
     "description": "Flamenco client for Blender.",
     "location": "Output Properties > Flamenco",
