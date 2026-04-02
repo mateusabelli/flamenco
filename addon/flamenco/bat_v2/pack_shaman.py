@@ -562,6 +562,13 @@ def _encode_original_filename_header(filename: str) -> str:
     """
 
     # This is a no-op when the filename is already in ASCII.
-    fake_header = email.header.Header()
+    fake_header = email.header.Header(maxlinelen=0)
     fake_header.append(filename, charset="utf-8")
-    return fake_header.encode()
+    encoded_header = fake_header.encode()
+
+    # Make sure that there are no newlines in the returned value.
+    # HTTP Header line folding is obsolete, see RFC9112 section 5.2 in
+    # https://www.rfc-editor.org/rfc/rfc9112#name-obsolete-line-folding
+    assert "\n" not in encoded_header
+
+    return encoded_header
