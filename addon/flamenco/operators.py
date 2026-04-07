@@ -576,19 +576,17 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         self.bat_v2_packer_reported_error = True
         self.report({"ERROR"}, "Copying {!s} to {!s}: {!s}".format(src, dest, errormsg))
 
-    def on_rewrite_error(
-        self, blendfile: Path, relpath_in_pack: PurePath, errormsg: str
-    ) -> None:
+    def on_rewrite_error(self, blendfile: Path, save_as: Path, errormsg: str) -> None:
         self.bat_v2_packer_reported_error = True
         self.report({"ERROR"}, "Rewriting {!s}: {!s}".format(blendfile, errormsg))
 
-    def on_rewrite_start(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
+    def on_rewrite_start(self, blendfile: Path, save_as: Path) -> None:
         self.report({"INFO"}, "Rewriting {!s}".format(blendfile.name))
         wm = bpy.context.window_manager
         wm.flamenco_bat_status = "REWRITING"
         wm.flamenco_bat_status_txt = blendfile.name
 
-    def on_rewrite_done(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
+    def on_rewrite_done(self, blendfile: Path, save_as: Path) -> None:
         pass
 
     def on_missing_file(self, blendfile: Path, relpath_in_pack: PurePath) -> None:
