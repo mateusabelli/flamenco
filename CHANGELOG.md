@@ -6,6 +6,7 @@ bugs in actually-released versions.
 
 ## 3.9 - in development
 
+- Add-on: upgrade BAT to v2.0 for file submission. See https://projects.blender.org/blender/blender-asset-tracer/#differences-between-bat-v1-and-v2
 - Manager: speed up startup by being more selective about checks & maintenance operations on the database.
 - Add-on: upgrade `python_dateutil` to 2.9.0.post0, to fix a deprecation warning on Python 3.13 (used in Blender 5.1+).
 - Add-on: fix issue when submitting a job in a blocking way (calling the operator from Python instead of clicking the button) when the file is already located in the shared storage.
