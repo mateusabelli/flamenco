@@ -49,6 +49,7 @@ MAX_DEFERRED_PATHS = 8
 MAX_FAILED_PATHS = 8
 HASH_STORAGE_PATH = Path(bpy.app.cachedir) / "flamenco/shaman"
 HASH_METHOD = "sha256"
+SHAMAN_JOBS_VARIABLE = "{jobs}"
 
 HashableShamanFileSpec = tuple[str, int, str]
 """Tuple of the 'sha', 'size', and 'path' fields of a ShamanFileSpec."""
@@ -157,8 +158,13 @@ class ShamanPacker:
     reporter: BATPackReporter
 
     # Shaman may decide to create the checkout at another path than requested.
-    # This will be set to the actually-used path.
-    checkout_path_final: PurePosixPath | None = None
+    # This will be set to the actually-used path on the farm, relative to the
+    # Shaman's "jobs" directory.
+    #
+    # NOTE: It is the checkout path of the job, NOT the path to the blend file.
+    _checkout_path_final: PurePosixPath | None = None
+
+    _source_file_relpath_in_pack: PurePosixPath | None = None
 
     _num_files_to_transfer_total: int = -1
     _num_files_to_transfer_done: int = 0
@@ -166,7 +172,7 @@ class ShamanPacker:
     @property
     def is_succes(self) -> bool:
         """Return whether the Shaman operation was completed succesfully."""
-        return bool(self.checkout_path_final)
+        return bool(self._checkout_path_final)
 
     def start(self, batpacker: _BATPacker) -> None:
         files_to_copy = batpacker.all_files_to_copy()
@@ -175,6 +181,13 @@ class ShamanPacker:
         # server has told us how many files to submit, this will be adjusted.
         self._num_files_to_transfer_total = len(files_to_copy)
         self._num_files_to_transfer_done = 0
+
+        # Remember where the main blend file sits in the BAT pack.
+        source_file_info = batpacker.deps_repo.source_file_info()
+        assert source_file_info.relpath_in_pack is not None
+        self._source_file_relpath_in_pack = PurePosixPath(
+            source_file_info.relpath_in_pack.as_posix()
+        )
 
         self.executor.queue(partial(self._step_queue_hashing, files_to_copy))
 
@@ -189,8 +202,13 @@ class ShamanPacker:
         return not self.executor.is_done
 
     def blendfile_location_in_pack(self) -> PurePosixPath:
-        assert self.checkout_path_final is not None
-        return self.checkout_path_final
+        assert self._checkout_path_final is not None
+        assert self._source_file_relpath_in_pack is not None
+        return (
+            PurePosixPath(SHAMAN_JOBS_VARIABLE)
+            / self._checkout_path_final
+            / self._source_file_relpath_in_pack
+        )
 
     def num_files_to_transfer(self) -> tuple[int, int]:
         """Return the number of files that need to be transferred.
@@ -494,7 +512,7 @@ class ShamanPacker:
             return
 
         log.info("Shaman created checkout at %s", result.checkout_path)
-        self.checkout_path_final = result.checkout_path
+        self._checkout_path_final = result.checkout_path
 
     def _send_spec_to_shaman(
         self,
