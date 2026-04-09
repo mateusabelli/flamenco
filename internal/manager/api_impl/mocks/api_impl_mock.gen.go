@@ -643,6 +643,34 @@ func (mr *MockPersistenceServiceMockRecorder) WorkerSetTags(ctx, worker, tagUUID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkerSetTags", reflect.TypeOf((*MockPersistenceService)(nil).WorkerSetTags), ctx, worker, tagUUIDs)
 }
 
+// WorkerUncleanSignOnCountIncrement mocks base method.
+func (m *MockPersistenceService) WorkerUncleanSignOnCountIncrement(ctx context.Context, uuid string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkerUncleanSignOnCountIncrement", ctx, uuid)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WorkerUncleanSignOnCountIncrement indicates an expected call of WorkerUncleanSignOnCountIncrement.
+func (mr *MockPersistenceServiceMockRecorder) WorkerUncleanSignOnCountIncrement(ctx, uuid any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkerUncleanSignOnCountIncrement", reflect.TypeOf((*MockPersistenceService)(nil).WorkerUncleanSignOnCountIncrement), ctx, uuid)
+}
+
+// WorkerUncleanSignOnCountReset mocks base method.
+func (m *MockPersistenceService) WorkerUncleanSignOnCountReset(ctx context.Context, uuid string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkerUncleanSignOnCountReset", ctx, uuid)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WorkerUncleanSignOnCountReset indicates an expected call of WorkerUncleanSignOnCountReset.
+func (mr *MockPersistenceServiceMockRecorder) WorkerUncleanSignOnCountReset(ctx, uuid any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkerUncleanSignOnCountReset", reflect.TypeOf((*MockPersistenceService)(nil).WorkerUncleanSignOnCountReset), ctx, uuid)
+}
+
 // WorkersLeftToRun mocks base method.
 func (m *MockPersistenceService) WorkersLeftToRun(ctx context.Context, job *persistence.Job, taskType string) (map[string]bool, error) {
 	m.ctrl.T.Helper()

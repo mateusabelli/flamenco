@@ -437,3 +437,49 @@ func TestSummarizeWorkerStatusesTimeout(t *testing.T) {
 	}
 	assert.Nil(t, summary)
 }
+
+func TestUncleanSignOnCount(t *testing.T) {
+	f := workerTestFixtures(t, 1*time.Second)
+	defer f.done()
+
+	// Create the workers.
+	w1 := Worker{
+		UUID:               "a4385770-3f37-4df0-8225-6db9a593f3d1",
+		Status:             api.WorkerStatusAwake,
+		UncleanSignonCount: 3,
+	}
+	w2 := Worker{
+		UUID:               "b1692102-6385-4a8e-980b-64d432e5e899",
+		Status:             api.WorkerStatusStarting,
+		UncleanSignonCount: 12,
+	}
+	w3 := Worker{
+		UUID:               "4f4c344c-5ddd-42bc-a21f-c44878bde6bd",
+		Status:             api.WorkerStatusOffline,
+		UncleanSignonCount: 7,
+	}
+
+	require.NoError(t, f.db.CreateWorker(f.ctx, &w1))
+	require.NoError(t, f.db.CreateWorker(f.ctx, &w2))
+	require.NoError(t, f.db.CreateWorker(f.ctx, &w3))
+
+	// Run the simulation.
+	require.NoError(t, f.db.WorkerUncleanSignOnCountIncrement(f.ctx, w1.UUID))
+	require.NoError(t, f.db.WorkerUncleanSignOnCountIncrement(f.ctx, w2.UUID))
+	require.NoError(t, f.db.WorkerUncleanSignOnCountReset(f.ctx, w3.UUID))
+
+	// Fetch updated workers.
+	updatedW1, err := f.db.FetchWorker(f.ctx, w1.UUID)
+	require.NoError(t, err)
+
+	updatedW2, err := f.db.FetchWorker(f.ctx, w2.UUID)
+	require.NoError(t, err)
+
+	updatedW3, err := f.db.FetchWorker(f.ctx, w3.UUID)
+	require.NoError(t, err)
+
+	// Test the counter values.
+	assert.Equal(t, int64(4), updatedW1.UncleanSignonCount, "awake worker should have incremented the counter")
+	assert.Equal(t, int64(13), updatedW2.UncleanSignonCount, "starting worker should have increment the counter")
+	assert.Equal(t, int64(0), updatedW3.UncleanSignonCount, "offline worker should have reset the counter")
+}

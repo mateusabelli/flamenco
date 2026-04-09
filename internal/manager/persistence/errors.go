@@ -14,6 +14,7 @@ var (
 	ErrWorkerTagNotFound = PersistenceError{Message: "worker tag not found", Err: sql.ErrNoRows}
 
 	ErrDeletingWithoutFK = errors.New("refusing to delete a job when foreign keys are not enabled on the database")
+	ErrWorkerIntegrity   = errors.New("worker integrity check failed")
 
 	// ErrContextCancelled wraps the SQLite error "interrupted (9)". That error is
 	// (as far as Sybren could figure out) caused by the context being closed.

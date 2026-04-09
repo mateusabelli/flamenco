@@ -163,6 +163,17 @@ func (f *Flamenco) workerUpdateAfterSignOn(e echo.Context, update api.SignOnJSON
 		return nil, "", err
 	}
 
+	// Increment the counter as this worker came online with a suspicious state.
+	if !offlineWorkerStates[prevStatus] {
+		if err := f.persist.WorkerUncleanSignOnCountIncrement(ctx, w.UUID); err != nil {
+			logger.Error().
+				AnErr("cause", err).
+				Int64("currentCount", w.UncleanSignonCount).
+				Msg("could not increment the worker 'unclean sign-on count'")
+			return nil, "", err
+		}
+	}
+
 	err = f.workerSeen(logger, w)
 	if err != nil {
 		return nil, "", err
@@ -208,6 +219,16 @@ func (f *Flamenco) SignOff(e echo.Context) error {
 	err = f.stateMachine.RequeueActiveTasksOfWorker(bgCtx, w, "worker signed off")
 	if err != nil {
 		return sendAPIError(e, http.StatusInternalServerError, "error re-queueing your tasks")
+	}
+
+	// Reset the counter as this worker went through a proper sign-off process.
+	err = f.persist.WorkerUncleanSignOnCountReset(bgCtx, w.UUID)
+	if err != nil {
+		logger.Error().
+			AnErr("cause", err).
+			Int64("currentCount", w.UncleanSignonCount).
+			Msg("could not reset the worker 'unclean sign-on count'")
+		return sendAPIError(e, http.StatusInternalServerError, "could not reset the worker 'unclean sign-on count'")
 	}
 
 	update := eventbus.NewWorkerUpdate(w)
@@ -342,6 +363,9 @@ func (f *Flamenco) ScheduleTask(e echo.Context) error {
 		case persistence.ErrIsDBBusy(err):
 			logger.Warn().Msg("database busy scheduling task for worker")
 			return sendAPIErrorDBBusy(e, "too busy to find a task for you, try again later")
+		case errors.Is(err, persistence.ErrWorkerIntegrity):
+			f.softFailTask(reqCtx, logger, worker, scheduledTask.JobUUID, &scheduledTask.Task, 1)
+			return sendAPIError(e, http.StatusBadRequest, "too many unclean sign-on requests detected")
 		default:
 			logger.Warn().Err(err).Msg("error scheduling task for worker")
 			return sendAPIError(e, http.StatusInternalServerError, "internal error finding a task for you: %v", err)
