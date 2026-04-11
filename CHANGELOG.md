@@ -8,7 +8,7 @@ bugs in actually-released versions.
 
 - Add-on: upgrade BAT to v2.0 for file submission. See https://projects.blender.org/blender/blender-asset-tracer/#differences-between-bat-v1-and-v2
 - Move render output setting overrides from hard-coded in the add-on to controlled by the job type.
-  COMPATIBILITY NOTICE: custom job types should be updated for this. See `py_render_settings` and its usage in `authorRenderTasks()`: [simple_blender_render.js](https://projects.blender.org/studio/flamenco/src/commit/e18527714bf517b4c1b6f7809368d4f8fe83a7f4/internal/manager/job_compilers/scripts/simple_blender_render.js).
+  **COMPATIBILITY NOTICE:** custom job types should be updated for this. See `py_render_settings` and its usage in `authorRenderTasks()`: [simple_blender_render.js](https://projects.blender.org/studio/flamenco/src/commit/e18527714bf517b4c1b6f7809368d4f8fe83a7f4/internal/manager/job_compilers/scripts/simple_blender_render.js).
 - Manager: speed up startup by being more selective about checks & maintenance operations on the database.
 - Add-on: upgrade `python_dateutil` to 2.9.0.post0, to fix a deprecation warning on Python 3.13 (used in Blender 5.1+).
 - Add-on: fix issue when submitting a job in a blocking way (calling the operator from Python instead of clicking the button) when the file is already located in the shared storage.
