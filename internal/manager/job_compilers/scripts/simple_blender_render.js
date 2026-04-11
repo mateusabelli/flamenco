@@ -51,6 +51,16 @@ const ffmpegIncompatibleImageFormats = new Set([
 // This is not supported by this job type.
 const videoFormats = ['FFMPEG', 'AVI_RAW', 'AVI_JPEG'];
 
+// The file extension should be determined by the render settings, not necessarily by the settings
+// in the output panel. Rescheduling should not overwrite existing frames.
+const py_render_settings = `
+import bpy
+r = bpy.context.scene.render
+r.use_file_extension = True
+r.use_overwrite = False
+r.use_placeholder = False
+`;
+
 function compileJob(job) {
     print("Blender Render job submitted");
     print("job: ", job);
@@ -116,6 +126,7 @@ function authorRenderTasks(settings, renderDir, renderOutput) {
             argsBefore: [],
             blendfile: settings.blendfile,
             args: baseArgs.concat([
+                "--python-expr", py_render_settings.trim().split("\n").join("; "),
                 "--render-output", path.join(renderDir, path.basename(renderOutput)),
                 "--render-format", settings.format,
                 "--render-frame", chunk.replaceAll("-", ".."), // Convert to Blender frame range notation.

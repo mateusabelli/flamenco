@@ -130,7 +130,6 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
 
     job_name: bpy.props.StringProperty(name="Job Name")  # type: ignore
     job: Optional[_SubmittedJob] = None
-    temp_blendfile: Optional[Path] = None
     ignore_version_mismatch: bpy.props.BoolProperty(  # type: ignore
         name="Ignore Version Mismatch",
         default=False,
@@ -371,13 +370,7 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         We shouldn't overwrite the artist's file.
         We can compress, since this file won't be managed by SVN and doesn't need diffability.
         """
-        render = context.scene.render
         prefs = context.preferences
-
-        # Remember settings we need to restore after saving.
-        old_use_file_extension = render.use_file_extension
-        old_use_overwrite = render.use_overwrite
-        old_use_placeholder = render.use_placeholder
         old_use_all_linked_data_direct = getattr(
             prefs.experimental, "use_all_linked_data_direct", None
         )
@@ -385,14 +378,6 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
         # TODO: see about disabling the denoiser (like the old Blender Cloud addon did).
 
         try:
-            # The file extension should be determined by the render settings, not necessarily
-            # by the settings in the output panel.
-            render.use_file_extension = True
-
-            # Rescheduling should not overwrite existing frames.
-            render.use_overwrite = False
-            render.use_placeholder = False
-
             # To work around a shortcoming of BAT v1, ensure that all
             # indirectly-linked data is still saved as directly-linked.
             #
@@ -405,24 +390,11 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
                 prefs.experimental.use_all_linked_data_direct = True
 
             filepath = Path(context.blend_data.filepath)
-            if job_submission.is_file_inside_job_storage(context, filepath):
-                self.log.info(
-                    "Saving blendfile, already in shared storage: %s", filepath
-                )
+            if bpy.data.is_dirty:
+                self.log.info("Saving blendfile: %s", filepath)
                 bpy.ops.wm.save_as_mainfile()
-            else:
-                filepath = filepath.with_suffix(".flamenco.blend")
-                self.log.info("Saving copy to temporary file %s", filepath)
-                bpy.ops.wm.save_as_mainfile(
-                    filepath=str(filepath), compress=True, copy=True
-                )
-            self.temp_blendfile = filepath
         finally:
             # Restore the settings we changed, even after an exception.
-            render.use_file_extension = old_use_file_extension
-            render.use_overwrite = old_use_overwrite
-            render.use_placeholder = old_use_placeholder
-
             # Only restore if the property exists to begin with:
             if old_use_all_linked_data_direct is not None:
                 prefs.experimental.use_all_linked_data_direct = (
@@ -765,10 +737,6 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
     def _use_blendfile_directly(
         self, context: bpy.types.Context, blendfile: Path
     ) -> None:
-        # The temporary '.flamenco.blend' file should not be deleted, as it
-        # will be used directly by the render job.
-        self.temp_blendfile = None
-
         # The blend file is contained in the job storage path, no need to
         # copy anything.
         self.blendfile_on_farm = bpathlib.make_absolute(blendfile)
@@ -909,10 +877,6 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             self.log.info("Aborting BAT packer")
             self.bat_v2_packer.abort()
             self.bat_v2_packer = None
-
-        if self.temp_blendfile is not None:
-            self.log.info("Removing temporary file %s", self.temp_blendfile)
-            self.temp_blendfile.unlink(missing_ok=True)
 
         if self.timer is not None:
             context.window_manager.event_timer_remove(self.timer)

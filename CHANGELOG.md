@@ -7,6 +7,8 @@ bugs in actually-released versions.
 ## 3.9 - in development
 
 - Add-on: upgrade BAT to v2.0 for file submission. See https://projects.blender.org/blender/blender-asset-tracer/#differences-between-bat-v1-and-v2
+- Move render output setting overrides from hard-coded in the add-on to controlled by the job type.
+  COMPATIBILITY NOTICE: custom job types should be updated for this.
 - Manager: speed up startup by being more selective about checks & maintenance operations on the database.
 - Add-on: upgrade `python_dateutil` to 2.9.0.post0, to fix a deprecation warning on Python 3.13 (used in Blender 5.1+).
 - Add-on: fix issue when submitting a job in a blocking way (calling the operator from Python instead of clicking the button) when the file is already located in the shared storage.
@@ -14,7 +16,7 @@ bugs in actually-released versions.
 - New command: `make-directory`. See https://flamenco.blender.org/usage/jobs-tasks-commands/commands/#file-management-make-directory
 - Manager: add CLI arguments to perform a single (dry) run of Shaman GC: `-shaman-gc-show` (dry-run) and `-shaman-gc-delete` (actually deletes).
 - Upgrade the SQLite implementation (` modernc.org/sqlite`) to v1.46.2, to fix the [WAL-Reset bug](https://sqlite.org/wal.html#walresetbug).
-- Upgrade Blender Asset Tracer (BAT) to 1.23 to fix some issues on Windows and certain Geometry Nodes setups.
+- Upgrade Blender Asset Tracer (BAT v1) to 1.23 to fix some issues on Windows and certain Geometry Nodes setups.
 - Upgrade Go to 1.26.1 and fix these vulnerabilities:
   - https://pkg.go.dev/vuln/GO-2026-4602
   - https://pkg.go.dev/vuln/GO-2026-4601
