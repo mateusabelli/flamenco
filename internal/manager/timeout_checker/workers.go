@@ -63,7 +63,7 @@ func (ttc *TimeoutChecker) timeoutWorker(ctx context.Context, worker *sqlc.Worke
 	ttc.broadcaster.BroadcastWorkerUpdate(api.EventWorkerUpdate{
 		Id:             worker.UUID,
 		Name:           worker.Name,
-		PreviousStatus: new(api.WorkerStatus(prevStatus)),
+		PreviousStatus: new(prevStatus),
 		Status:         api.WorkerStatusError,
 		Updated:        worker.UpdatedAt.Time,
 		Version:        worker.Software,
