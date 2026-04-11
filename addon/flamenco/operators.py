@@ -393,12 +393,12 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             render.use_overwrite = False
             render.use_placeholder = False
 
-            # To work around a shortcoming of BAT, ensure that all
+            # To work around a shortcoming of BAT v1, ensure that all
             # indirectly-linked data is still saved as directly-linked.
             #
             # See `133dde41bb5b: Improve handling of (in)directly linked status
             # for linked IDs` in Blender's Git repository.
-            if old_use_all_linked_data_direct is not None:
+            if bat_v2 is None and old_use_all_linked_data_direct is not None:
                 self.log.info(
                     "Overriding prefs.experimental.use_all_linked_data_direct = True"
                 )
