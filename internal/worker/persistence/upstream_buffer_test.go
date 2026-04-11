@@ -98,8 +98,3 @@ func TestUpstreamBufferQueue(t *testing.T) {
 		assert.Equal(t, &expect, second)
 	}
 }
-
-//go:fix inline
-func ptr[T any](value T) *T {
-	return new(value)
-}

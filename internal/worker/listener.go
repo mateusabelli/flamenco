@@ -50,10 +50,6 @@ func (l *Listener) Run(ctx context.Context) {
 	l.outputUploader.Run(ctx)
 }
 
-func ptr[T any](value T) *T {
-	return new(value)
-}
-
 // TaskStarted tells the Manager that task execution has started.
 func (l *Listener) TaskStarted(ctx context.Context, taskID string) error {
 	l.taskStepsCompleted = 0
