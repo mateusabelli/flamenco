@@ -16,9 +16,9 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.6.0
 	github.com/graarh/golang-socketio v0.0.0-20170510162725-2c44953b9b5f
-	github.com/labstack/echo/v4 v4.12.0
+	github.com/labstack/echo/v4 v4.15.1
 	github.com/magefile/mage v1.15.0
-	github.com/mattn/go-colorable v0.1.13
+	github.com/mattn/go-colorable v0.1.14
 	github.com/mochi-mqtt/server/v2 v2.7.9
 	github.com/oapi-codegen/echo-middleware v1.0.2
 	github.com/oapi-codegen/runtime v1.1.2
@@ -65,7 +65,6 @@ require (
 	github.com/go-openapi/swag/jsonname v0.25.4 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/go-sql-driver/mysql v1.9.3 // indirect
-	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
@@ -141,7 +140,7 @@ require (
 	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/telemetry v0.0.0-20260209163413-e7419c687ee4 // indirect
 	golang.org/x/text v0.35.0 // indirect
-	golang.org/x/time v0.5.0 // indirect
+	golang.org/x/time v0.14.0 // indirect
 	golang.org/x/tools v0.42.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250811230008-5f3141c8851a // indirect

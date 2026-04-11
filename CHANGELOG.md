@@ -28,6 +28,7 @@ bugs in actually-released versions.
   - https://pkg.go.dev/vuln/GO-2026-4341
   - https://pkg.go.dev/vuln/GO-2026-4340
   - https://pkg.go.dev/vuln/GO-2026-4337
+  - https://pkg.go.dev/vuln/GO-2025-3553
 
 
 ## 3.8.5 - released 2026-03-27
