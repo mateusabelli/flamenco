@@ -37,7 +37,7 @@ require (
 	golang.org/x/sys v0.42.0
 	golang.org/x/vuln v1.1.3
 	gopkg.in/yaml.v2 v2.4.0
-	honnef.co/go/tools v0.6.1
+	honnef.co/go/tools v0.7.0
 	modernc.org/sqlite v1.46.2
 )
 
