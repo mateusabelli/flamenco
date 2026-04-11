@@ -21,6 +21,8 @@ var expectedFramesToVideoArgs = []any{
 	"-c:v", "h264", "-crf", "20", "-g", "18", "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2", "-pix_fmt", "yuv420p", "-r", int64(24), "-y",
 }
 
+const pyRenderSettings = "import bpy; r = bpy.context.scene.render; r.use_file_extension = True; r.use_overwrite = False; r.use_placeholder = False"
+
 func exampleSubmittedJob() api.SubmittedJob {
 	settings := api.JobSettings{
 		"blender_cmd":            "{blender}",
@@ -89,7 +91,8 @@ func TestSimpleBlenderRenderHappy(t *testing.T) {
 	// Tasks should have been created to render the frames: 1-3, 4-6, 7-9, 10, and video-encoding
 	assert.Len(t, aj.Tasks, 5)
 	t0 := aj.Tasks[0]
-	expectCliArgs := []any{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
+	expectCliArgs := []any{ // They are strings, but Goja doesn't know that and will produce an []any{}.
+		"--python-expr", pyRenderSettings,
 		"--render-output", "/render/sprites/farm_output/promo/square_ellie/square_ellie.lighting_light_breakdown2/######",
 		"--render-format", settings["format"].(string),
 		"--render-frame", "1..3",
@@ -156,8 +159,9 @@ func TestSimpleBlenderRenderWithScene(t *testing.T) {
 	require.NotNil(t, aj)
 
 	t0 := aj.Tasks[0]
-	expectCliArgs := []any{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
+	expectCliArgs := []any{ // They are strings, but Goja doesn't know that and will produce an []any{}.
 		"--scene", "Test Scene",
+		"--python-expr", pyRenderSettings,
 		"--render-output", "/render/sprites/farm_output/promo/square_ellie/square_ellie.lighting_light_breakdown2/######",
 		"--render-format", "PNG",
 		"--render-frame", "1..3",
@@ -235,8 +239,9 @@ func TestSimpleBlenderRenderWindowsPaths(t *testing.T) {
 	// Tasks should have been created to render the frames: 1-3, 4-6, 7-9, 10, and video-encoding
 	assert.Len(t, aj.Tasks, 5)
 	t0 := aj.Tasks[0]
-	expectCliArgs := []any{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
+	expectCliArgs := []any{ // They are strings, but Goja doesn't know that and will produce an []any{}.
 		// The render output is constructed by the job compiler, and thus transforms to forward slashes.
+		"--python-expr", pyRenderSettings,
 		"--render-output", "R:/sprites/farm_output/promo/square_ellie/square_ellie.lighting_light_breakdown2/######",
 		"--render-format", settings["format"].(string),
 		"--render-frame", "1..3",
@@ -291,7 +296,8 @@ func TestSimpleBlenderRenderOutputPathFieldReplacement(t *testing.T) {
 	// Tasks should have been created to render the frames: 1-3, 4-6, 7-9, 10, and video-encoding
 	require.Len(t, aj.Tasks, 5)
 	t0 := aj.Tasks[0]
-	expectCliArgs := []any{ // They are strings, but Goja doesn't know that and will produce an []interface{}.
+	expectCliArgs := []any{ // They are strings, but Goja doesn't know that and will produce an []any{}.
+		"--python-expr", pyRenderSettings,
 		"--render-output", "/root/2006-01-02_150405/jobname/######",
 		"--render-format", settings["format"].(string),
 		"--render-frame", "1..3",
@@ -400,8 +406,8 @@ func TestComplexFrameRange(t *testing.T) {
 	totalStepCounts := []int{}
 	for _, task := range aj.Tasks[0:3] {
 		args := task.Commands[0].Parameters["args"].([]any)
-		require.Equal(t, "--render-frame", args[4])
-		frameRangesFromCLI = append(frameRangesFromCLI, args[5].(string))
+		require.Equal(t, "--render-frame", args[6])
+		frameRangesFromCLI = append(frameRangesFromCLI, args[7].(string))
 		totalStepCounts = append(totalStepCounts, task.Commands[0].TotalStepCount)
 	}
 
