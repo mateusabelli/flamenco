@@ -15,6 +15,7 @@ bugs in actually-released versions.
 - Add-on: fix issue uploading files to Shaman via nginx proxy ([#104481](https://projects.blender.org/studio/flamenco/issues/104481)).
 - New command: `make-directory`. See https://flamenco.blender.org/usage/jobs-tasks-commands/commands/#file-management-make-directory
 - Manager: add CLI arguments to perform a single (dry) run of Shaman GC: `-shaman-gc-show` (dry-run) and `-shaman-gc-delete` (actually deletes).
+- Manager: log an error when UNC notation is used for the shared storage path ([#104448](https://projects.blender.org/studio/flamenco/issues/104448)).
 - Upgrade the SQLite implementation (`modernc.org/sqlite`) to v1.46.2, to fix the [WAL-Reset bug](https://sqlite.org/wal.html#walresetbug).
 - Upgrade Blender Asset Tracer (BAT v1) to 1.23 to fix some issues on Windows and certain Geometry Nodes setups.
 - Upgrade Go to 1.26.2 and fix these vulnerabilities:
