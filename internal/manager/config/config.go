@@ -25,6 +25,7 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/crosspath"
 	"projects.blender.org/studio/flamenco/pkg/duration"
 	shaman_config "projects.blender.org/studio/flamenco/pkg/shaman/config"
+	"projects.blender.org/studio/flamenco/pkg/website"
 )
 
 // configFilename is used to specify where flamenco will write its config file.
@@ -253,6 +254,17 @@ func (c *Conf) MockCurrentGOOSForTests(mockedGOOS string) {
 }
 
 func (c *Conf) processStorage() {
+	// Check the shared storage path for UNC notation. This is a common tripping point for Windows
+	// users, so it deserves a bit of extra checking.
+	if crosspath.IsUNCNotation(c.SharedStoragePath) {
+		log.Error().
+			Str("sharedStorage", c.SharedStoragePath).
+			Msgf("UNC notation for shared storage path is not supported, Flamenco will not run correctly. See %s for more info.",
+				website.SharedStorageURL)
+		// Log an error, but do continue loading Flamenco Manager, as that'll make it possible to edit
+		// the settings via the web interface.
+	}
+
 	// The shared storage path should be absolute, but only if it's actually configured.
 	if c.SharedStoragePath != "" {
 		storagePath, err := filepath.Abs(c.SharedStoragePath)

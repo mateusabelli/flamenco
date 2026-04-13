@@ -259,6 +259,17 @@ func TestCheckSharedStoragePath(t *testing.T) {
 		assert.False(t, result.IsUsable)
 		assert.Contains(t, result.Cause, "Unable to create a file")
 	}
+
+	// Test UNC path. This should be rejected, as Flamenco (currently) doesn't support UNC notation.
+	{
+		uncPath := `\\SERVER\Share\Flamenco`
+		echoCtx := doTest(uncPath)
+		assertResponseJSON(t, echoCtx, http.StatusOK, api.PathCheckResult{
+			Path:     uncPath,
+			IsUsable: false,
+			Cause:    "UNC notation is not supported. Mount as a drive letter instead.",
+		})
+	}
 }
 
 func TestSaveSetupAssistantConfig(t *testing.T) {

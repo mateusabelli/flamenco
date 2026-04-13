@@ -19,6 +19,7 @@ import (
 	"projects.blender.org/studio/flamenco/internal/find_blender"
 	"projects.blender.org/studio/flamenco/internal/manager/config"
 	"projects.blender.org/studio/flamenco/pkg/api"
+	"projects.blender.org/studio/flamenco/pkg/crosspath"
 )
 
 var (
@@ -134,6 +135,12 @@ func (f *Flamenco) CheckSharedStoragePath(e echo.Context) error {
 	// Check for emptyness.
 	if path == "" {
 		return mkError("An empty path is not suitable as shared storage")
+	}
+
+	// Check whether it's using UNC notation. Support for this would be nice,
+	// but it's not there right now, so better to reject.
+	if crosspath.IsUNCNotation(path) {
+		return mkError("UNC notation is not supported. Mount as a drive letter instead.")
 	}
 
 	// Check whether it is actually a directory.

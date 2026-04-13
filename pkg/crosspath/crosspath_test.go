@@ -306,3 +306,15 @@ func TestEnsureDriveAbsolute(t *testing.T) {
 		})
 	}
 }
+
+func TestIsUNCNotation(t *testing.T) {
+	assert.True(t, IsUNCNotation(`\\SERVER\Share\path\file.txt`))
+	assert.True(t, IsUNCNotation(`\\.\NUL`))
+	assert.True(t, IsUNCNotation(`\\?\UNC\localhost\c$\temp\foo.txt`))
+	assert.True(t, IsUNCNotation(`\\`)) // Dubious, not sure this is a valid path.
+	assert.False(t, IsUNCNotation(`//blendfile/relative.path`))
+	assert.False(t, IsUNCNotation(`C:\normal\drive\path`))
+	assert.False(t, IsUNCNotation(`/posix/path.txt`))
+	assert.False(t, IsUNCNotation(``))
+	assert.False(t, IsUNCNotation(`\`))
+}

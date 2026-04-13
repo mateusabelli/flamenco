@@ -191,3 +191,8 @@ func EnsureDriveAbsolute(windowsPath string) string {
 
 	return string(runes[:2]) + pathSep + string(runes[2:])
 }
+
+// IsUNCNotation returns whether the path is in Windows UNC notation or not.
+func IsUNCNotation(windowsPath string) bool {
+	return strings.HasPrefix(windowsPath, `\\`)
+}

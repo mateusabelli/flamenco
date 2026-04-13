@@ -8,6 +8,7 @@ const (
 	CannotFindManagerHelpURL  = "https://flamenco.blender.org/faq/#my-worker-cannot-find-my-manager-what-do-i-do"
 	BugReportURL              = "https://flamenco.blender.org/get-involved"
 	ShamanRequirementsURL     = "https://flamenco.blender.org/usage/shared-storage/shaman/#requirements"
+	SharedStorageURL          = "https://flamenco.blender.org/usage/shared-storage/"
 	WorkerConfigURL           = "https://flamenco.blender.org/usage/worker-configuration/"
 	OOMScoreAdjURL            = WorkerConfigURL
 )
