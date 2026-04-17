@@ -11,8 +11,8 @@ import (
 // To update the version number in all the relevant places, update the VERSION
 // variable below and run `make update-version`.
 const (
-	version      = "3.9-beta1"
-	releaseCycle = "beta"
+	version      = "3.9"
+	releaseCycle = "release"
 )
 
 func gitHash() (string, error) {
