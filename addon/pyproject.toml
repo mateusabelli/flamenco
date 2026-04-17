@@ -54,3 +54,7 @@ lint.ignore = ["I001"]
 # Allow fix for all enabled rules (when `--fix`) is provided.
 lint.fixable = ["ALL"]
 lint.unfixable = []
+
+[tool.ruff.format]
+# Ignore the OpenAPI-generated code.
+exclude = ["flamenco/manager/*"]
