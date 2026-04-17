@@ -7,4 +7,5 @@
 def bat_version() -> str:
     from .submodules import bat_toplevel
 
-    return bat_toplevel.__version__
+    bat_version: str = bat_toplevel.__version__
+    return bat_version
