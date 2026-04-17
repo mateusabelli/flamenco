@@ -140,9 +140,9 @@ class FlamencoPreferences(bpy.types.AddonPreferences):
 def get(context: bpy.types.Context) -> FlamencoPreferences:
     """Return the add-on preferences."""
     prefs = context.preferences.addons["flamenco"].preferences
-    assert isinstance(
-        prefs, FlamencoPreferences
-    ), "Expected FlamencoPreferences, got %s instead" % (type(prefs))
+    assert isinstance(prefs, FlamencoPreferences), (
+        "Expected FlamencoPreferences, got %s instead" % (type(prefs))
+    )
     return prefs
 
 
