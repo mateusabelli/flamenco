@@ -45,16 +45,20 @@ ignore_errors = true
 line-length = 88
 target-version = "py313"
 
-# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
-# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
-# McCabe complexity (`C901`) by default.
-lint.select = ["E4", "E7", "E9", "F", "W", "C901"]
-lint.ignore = ["I001"]
-
-# Allow fix for all enabled rules (when `--fix`) is provided.
-lint.fixable = ["ALL"]
-lint.unfixable = []
-
 [tool.ruff.format]
 # Ignore the OpenAPI-generated code.
 exclude = ["flamenco/manager/*"]
+
+[tool.ruff.lint]
+# Ignore the OpenAPI-generated code.
+exclude = ["flamenco/manager/*"]
+
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = ["E4", "E7", "E9", "F", "W", "C901"]
+ignore = ["I001"]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
