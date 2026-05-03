@@ -4,6 +4,9 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
+## 3.10 - in development
+
+
 ## 3.9.1 - in development
 
 - Add-on: Upgrade BAT to v2.0.4 to fix an issue where it didn't pack certain `.blend` files.
