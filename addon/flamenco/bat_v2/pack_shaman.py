@@ -67,6 +67,7 @@ def pack_start(
     use_relative_only: bool,
     api_client: _ApiClient,
     checkout_path: PurePosixPath,
+    ignore_globs: set[str] = set(),
 ) -> BATPacker:
     """Investigate what's needed to create a BAT pack."""
     from ..manager.apis import ShamanApi
@@ -80,6 +81,7 @@ def pack_start(
         project_root,
         file_usage.Options(
             use_relative_only=use_relative_only,
+            ignore_globs=ignore_globs,
         ),
         reporter,
         file_transfer=shaman_transferer,

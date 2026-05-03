@@ -447,9 +447,10 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             batpacker = pack_shaman.pack_start(
                 project_root=project_path,
                 reporter=self,
-                use_relative_only=True,  # TODO: get from GUI.
+                use_relative_only=prefs.use_relative_only,
                 api_client=self.get_api_client(context),
                 checkout_path=PurePosixPath(self.job_name),
+                ignore_globs=prefs.ignore_globs(),
             )
             batpacker.start()
 
@@ -467,8 +468,9 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             batpacker = pack_fs.pack_start(
                 project_root=project_path,
                 reporter=self,
-                use_relative_only=True,  # TODO: get from GUI.
+                use_relative_only=prefs.use_relative_only,
                 pack_target_dir=pack_target_dir,
+                ignore_globs=prefs.ignore_globs(),
             )
             batpacker.start()
 
@@ -650,8 +652,8 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             base_blendfile=blendfile,
             project=project_path,
             target=str(pack_target_dir),
-            exclusion_filter="",  # TODO: get from GUI.
-            relative_only=True,  # TODO: get from GUI.
+            exclusion_filter=prefs.exclusion_filter,
+            relative_only=prefs.use_relative_only,
         )
 
         return PurePosixPath(pack_target_file.as_posix())
@@ -691,8 +693,8 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             base_blendfile=blendfile,
             project=project_path,
             target="/",  # Target directory irrelevant for Shaman transfers.
-            exclusion_filter="",  # TODO: get from GUI.
-            relative_only=True,  # TODO: get from GUI.
+            exclusion_filter=prefs.exclusion_filter,
+            relative_only=prefs.use_relative_only,
             packer_class=bat_shaman.Packer,
             packer_kwargs=dict(
                 api_client=self.get_api_client(context),

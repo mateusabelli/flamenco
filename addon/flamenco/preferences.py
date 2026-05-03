@@ -5,7 +5,7 @@ from pathlib import Path
 
 import bpy
 
-from . import projects, manager_info
+from . import manager_info, projects
 
 
 def discard_flamenco_client(context):
@@ -76,6 +76,21 @@ class FlamencoPreferences(bpy.types.AddonPreferences):
         get=lambda prefs: prefs._job_storage(),
     )
 
+    use_relative_only: bpy.props.BoolProperty(  # type: ignore
+        name="Relative Paths Only",
+        default=True,
+        description="When sending files to Flamenco, only include assets that are referenced by "
+        "relative path. Absolute paths are then assumed to be valid on all Workers. When turned "
+        "off, all files are sent, regardless of how they are referenced",
+    )
+    exclusion_filter: bpy.props.StringProperty(  # type: ignore
+        name="Exclusion Filter",
+        default="",
+        description="Space-separated list of file glob patterns. When sending files to Flamenco, "
+        "exclude any file that matches a pattern in this list. For example: '*.abc *.vdb' to skip "
+        "copying all Alembic and OpenVDB files",
+    )
+
     def draw(self, context: bpy.types.Context) -> None:
         layout = self.layout
         layout.use_property_decorate = False
@@ -118,6 +133,10 @@ class FlamencoPreferences(bpy.types.AddonPreferences):
         else:
             text_row(col, str(project_root))
 
+        col = layout.column(heading="File Submission")
+        col.prop(self, "use_relative_only")
+        col.prop(self, "exclusion_filter")
+
     def project_root(self) -> Path:
         """Use the configured project finder to find the project root directory."""
 
@@ -135,6 +154,10 @@ class FlamencoPreferences(bpy.types.AddonPreferences):
         if not info:
             return "Unknown, refresh first."
         return str(info.shared_storage.location)
+
+    def ignore_globs(self) -> set[str]:
+        """Return exclusion filter as set of strings."""
+        return set(self.exclusion_filter.strip().split())
 
 
 def get(context: bpy.types.Context) -> FlamencoPreferences:

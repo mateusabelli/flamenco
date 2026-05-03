@@ -22,6 +22,7 @@ def pack_start(
     *,
     use_relative_only: bool,
     pack_target_dir: Path,
+    ignore_globs: set[str] = set(),
 ) -> BATPacker:
     """Investigate what's needed to create a BAT pack."""
     from .submodules import file_usage, pack
@@ -30,6 +31,7 @@ def pack_start(
         project_root,
         file_usage.Options(
             use_relative_only=use_relative_only,
+            ignore_globs=ignore_globs,
         ),
         reporter,
         pack_target_dir=pack_target_dir,
