@@ -9,8 +9,9 @@ bugs in actually-released versions.
 
 ## 3.9.1 - in development
 
-- Add-on: Upgrade BAT to v2.0.4 to fix an issue where it didn't pack certain `.blend` files.
-
+- Add-on: Upgrade BAT to v2.0.5 to fix two issues:
+  - It didn't pack certain `.blend` files when mixing regular and packed linking from the same file.
+  - It crashed when a linked datablock would reference a local datablock.
 
 ## 3.9 - released 2026-04-17
 
