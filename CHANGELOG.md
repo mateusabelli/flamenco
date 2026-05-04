@@ -6,6 +6,14 @@ bugs in actually-released versions.
 
 ## 3.10 - in development
 
+- Add-on: add options for more control over which files are submitted. See the add-on preferences window in Blender.
+  - Relative Paths Only: hen sending files to Flamenco, only include assets that are referenced by
+    relative path. Absolute paths are then assumed to be valid on all Workers. When turned off, all
+    files are sent, regardless of how they are referenced.
+  - Exclusion Filter: Space-separated list of file glob patterns. When sending files to Flamenco,
+    exclude any file that matches a pattern in this list. For example: '*.abc *.vdb' to skip copying
+    all Alembic and OpenVDB files.
+
 
 ## 3.9.1 - in development
 
