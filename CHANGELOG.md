@@ -15,7 +15,7 @@ bugs in actually-released versions.
     all Alembic and OpenVDB files.
 
 
-## 3.9.1 - in development
+## 3.9.1 - released 2026-05-08
 
 - Add-on: Upgrade BAT to v2.0.5 to fix two issues:
   - It didn't pack certain `.blend` files when mixing regular and packed linking from the same file.
