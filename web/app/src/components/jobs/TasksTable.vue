@@ -43,7 +43,7 @@ export default {
       availableStatuses: [], // Will be filled after data is loaded from the backend.
       lastSelectedTaskPosition: null,
       sortable: true,
-      _interval_id: 0,
+      relativeTimeIntervalId: 0,
     };
   },
   mounted() {
@@ -72,8 +72,10 @@ export default {
 
             const progress = data.steps_completed / data.steps_total;
             const width = Math.round(progress * 100);
-            const doneClass = (data.steps_completed >= data.steps_total) ? 'done' : '';
-            return `<div class='progress ${doneClass}' style='width: ${width}%'></div><div class='progress-remainder ${doneClass}' style='width: ${100-width}%'></div> ${dot} ${status}`;
+            const doneClass = data.steps_completed >= data.steps_total ? 'done' : '';
+            return `<div class='progress ${doneClass}' style='width: ${width}%'></div><div class='progress-remainder ${doneClass}' style='width: ${
+              100 - width
+            }%'></div> ${dot} ${status}`;
           },
         },
         { title: 'Name', field: 'name', sorter: 'string', minWidth: 104 },
@@ -127,7 +129,7 @@ export default {
 
     // Redraw visible rows periodically, to ensure relative 'updated' timestamps
     // are updated.
-    this._interval_id = window.setInterval(() => {
+    this.relativeTimeIntervalId = window.setInterval(() => {
       if (!this.tabulator.initialized) return;
       for (let what_is_this of this.tabulator.rowManager.displayRows) {
         for (let row_ish_object of what_is_this) {
@@ -138,7 +140,7 @@ export default {
   },
   unmounted() {
     window.removeEventListener('resize', this.recalcTableHeight);
-    if (this._interval_id) window.clearInterval(this._interval_id);
+    if (this.relativeTimeIntervalId) window.clearInterval(this.relativeTimeIntervalId);
   },
   watch: {
     jobID() {
