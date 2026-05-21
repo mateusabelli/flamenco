@@ -68,6 +68,43 @@ func TestCheckout(t *testing.T) {
 	)
 }
 
+func TestCheckoutWithBackslashes(t *testing.T) {
+	testsupport.SkipTestIfUnableToSymlink(t)
+
+	manager, cleanup := createTestManager()
+	defer cleanup()
+	ctx := context.Background()
+
+	filestore.LinkTestFileStore(manager.fileStore.BasePath())
+
+	checkout := api.ShamanCheckout{
+		CheckoutPath: "With\\Backslashes",
+		Files: []api.ShamanFileSpec{
+			{Sha: "590c148428d5c35fab3ebad2f3365bb469ab9c531b60831f3e826c472027a0b9", Size: 3367, Path: "subdir\\somefile.py"},
+		},
+	}
+
+	actualCheckoutPath, err := manager.Checkout(ctx, checkout)
+	if err != nil {
+		t.Fatalf("fatal error: %v", err)
+	}
+
+	// Check the symlinks of the checkout
+	coPath := filepath.Join(manager.checkoutBasePath, actualCheckoutPath)
+	assert.FileExists(t, filepath.Join(coPath, "subdir", "somefile.py"))
+
+	storePath, err := filepath.Rel(
+		manager.checkoutBasePath,
+		manager.fileStore.StoragePath(),
+	)
+	require.NoError(t, err)
+	assertLinksTo(t,
+		// Three '..' for 'With/Backslashes/subdir'.
+		filepath.Join("..", "..", "..", storePath, "59", "0c148428d5c35fab3ebad2f3365bb469ab9c531b60831f3e826c472027a0b9", "3367.blob"),
+		filepath.Join(coPath, "subdir", "somefile.py"),
+	)
+}
+
 func assertLinksTo(t *testing.T, expectedTarget, linkPath string) {
 	actualTarget, err := os.Readlink(linkPath)
 	require.NoError(t, err)
