@@ -293,7 +293,7 @@ class ShamanPacker:
         filespec = ShamanFileSpec(
             sha=checksum,
             size=filesize,
-            path=str(file_info.relpath_in_pack),
+            path=file_info.relpath_in_pack.as_posix(),
         )
         assert isinstance(filespec, ShamanFileSpec)
         shaman_spec.files.append(filespec)
@@ -320,7 +320,7 @@ class ShamanPacker:
         # Create a mapping from the path in the pack (which is used in
         # `filespecs`) to the FileInfo.
         path_in_pack_to_abs: dict[str, _FileInfo] = {
-            str(file_info.relpath_in_pack): file_info
+            file_info.relpath_in_pack.as_posix(): file_info
             for file_info in files_to_copy.values()
         }
 
