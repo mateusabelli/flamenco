@@ -74,7 +74,9 @@ def pack_start(
 
     shaman_api = ShamanApi(api_client)
     executor = pack.QueueingExecutor()
-    shaman_transferer = ShamanPacker(shaman_api, checkout_path, executor, reporter)
+    shaman_transferer = ShamanFileTransfer(
+        shaman_api, checkout_path, executor, reporter
+    )
 
     batpacker = pack.BATPacker(
         project_root,
@@ -151,7 +153,7 @@ class ShamanUploadProgress:
 
 
 @dataclasses.dataclass
-class ShamanPacker:
+class ShamanFileTransfer:
     shaman_api: _ShamanApi
     checkout_path: PurePosixPath
     executor: _QueueingExecutor
@@ -204,11 +206,10 @@ class ShamanPacker:
     def blendfile_location_in_pack(self) -> PurePosixPath:
         assert self._checkout_path_final is not None
         assert self._source_file_relpath_in_pack is not None
-        return (
-            PurePosixPath(SHAMAN_JOBS_VARIABLE)
-            / self._checkout_path_final
-            / self._source_file_relpath_in_pack
-        )
+        return self._checkout_path_final / self._source_file_relpath_in_pack
+
+    def blendfile_location_abspath(self) -> Path:
+        return Path(SHAMAN_JOBS_VARIABLE) / self.blendfile_location_in_pack()
 
     def num_files_to_transfer(self) -> tuple[int, int]:
         """Return the number of files that need to be transferred.
