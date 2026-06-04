@@ -4,6 +4,15 @@ This file contains the history of changes to Flamenco. Only changes that might
 be interesting for users are listed here, such as new features and fixes for
 bugs in actually-released versions.
 
+## 3.9.2 - in development
+
+- Fix issue submitting files via Shaman when running on Windows.
+- Fix issue submitting files without Shaman ([#104493](https://projects.blender.org/studio/flamenco/issues/104493)).
+- Upgrade Go to 1.26.3 and fix these vulnerabilities:
+  - https://pkg.go.dev/vuln/GO-2026-4971
+  - https://pkg.go.dev/vuln/GO-2026-5031
+  - https://pkg.go.dev/vuln/GO-2026-5032
+
 ## 3.9.1 - released 2026-05-08
 
 - Add-on: Upgrade BAT to v2.0.5 to fix two issues:
