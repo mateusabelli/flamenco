@@ -12,8 +12,8 @@
  */
 
 import ApiClient from '../ApiClient';
-import AssignedWorker from './AssignedWorker';
 import TaskStatus from './TaskStatus';
+import TaskWorker from './TaskWorker';
 
 /**
  * The EventTaskUpdate model module.
@@ -73,7 +73,7 @@ class EventTaskUpdate {
                 obj['job_id'] = ApiClient.convertToType(data['job_id'], 'String');
             }
             if (data.hasOwnProperty('worker')) {
-                obj['worker'] = AssignedWorker.constructFromObject(data['worker']);
+                obj['worker'] = TaskWorker.constructFromObject(data['worker']);
             }
             if (data.hasOwnProperty('name')) {
                 obj['name'] = ApiClient.convertToType(data['name'], 'String');
@@ -115,7 +115,7 @@ EventTaskUpdate.prototype['id'] = undefined;
 EventTaskUpdate.prototype['job_id'] = undefined;
 
 /**
- * @member {module:model/AssignedWorker} worker
+ * @member {module:model/TaskWorker} worker
  */
 EventTaskUpdate.prototype['worker'] = undefined;
 

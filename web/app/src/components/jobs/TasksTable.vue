@@ -26,6 +26,7 @@ import { useTasks } from '@/stores/tasks';
 
 import TaskActionsBar from '@/components/jobs/TaskActionsBar.vue';
 import StatusFilterBar from '@/components/StatusFilterBar.vue';
+import { mergeTaskRow } from '@/utils/socketUpdateMerge';
 
 export default {
   props: [
@@ -94,8 +95,12 @@ export default {
         },
         {
           title: 'Worker',
-          field: 'worker.name',
-          sorter: 'string',
+          field: 'worker',
+          sorter: (a, b) => {
+            const nameA = (a && a.name) || '';
+            const nameB = (b && b.name) || '';
+            return String(nameA).localeCompare(String(nameB));
+          },
           sorterParams: { alignEmptyValues: 'bottom' },
           formatter: (cell) => {
             const worker = cell.getData().worker;
@@ -245,14 +250,17 @@ export default {
       }
     },
     processTaskUpdate(taskUpdate) {
-      // console.log("taskUpdate:", taskUpdate);
-
-      // Any updates to tasks i.e. status changes will need to reflect its changes to the rows on Tabulator here.
-      // updateData() will only overwrite properties that are actually set on
-      // taskUpdate, and leave the rest as-is.
+      // Apply task Socket.IO updates to the Tabulator row. We merge by hand
+      // (rather than passing the raw payload to `updateData()`) because
+      // EventTaskUpdate omits unchanged JSON keys, and Tabulator's shallow
+      // merge would replace nested fields like `worker` wholesale with an
+      // object missing keys, clobbering the cell.
       if (this.tabulator.initialized) {
+        const row = this.tabulator.rowManager.findRow(taskUpdate.id);
+        const merged = mergeTaskRow(row ? row.getData() : null, taskUpdate);
+
         this.tabulator
-          .updateData([taskUpdate])
+          .updateData([merged])
           .then(this.sortData)
           .then(() => {
             // Reformat the row, to ensure the progress bar is updated.

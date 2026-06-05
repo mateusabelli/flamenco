@@ -22,6 +22,7 @@ import { useJobs } from '@/stores/jobs';
 
 import JobActionsBar from '@/components/jobs/JobActionsBar.vue';
 import StatusFilterBar from '@/components/StatusFilterBar.vue';
+import { mergeJobRow } from '@/utils/socketUpdateMerge';
 
 export default {
   name: 'JobsTable',
@@ -268,7 +269,8 @@ export default {
         }
 
         if (row) {
-          await this.tabulator.updateData([jobUpdate]); // Update existing row
+          const merged = mergeJobRow(row.getData(), jobUpdate);
+          await this.tabulator.updateData([merged]); // Update existing row
         } else {
           await this.tabulator.addData([jobUpdate]); // Add new row
         }

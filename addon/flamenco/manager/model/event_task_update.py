@@ -30,10 +30,10 @@ from flamenco.manager.exceptions import ApiAttributeError
 
 
 def lazy_import():
-    from flamenco.manager.model.assigned_worker import AssignedWorker
     from flamenco.manager.model.task_status import TaskStatus
-    globals()['AssignedWorker'] = AssignedWorker
+    from flamenco.manager.model.task_worker import TaskWorker
     globals()['TaskStatus'] = TaskStatus
+    globals()['TaskWorker'] = TaskWorker
 
 
 class EventTaskUpdate(ModelNormal):
@@ -97,7 +97,7 @@ class EventTaskUpdate(ModelNormal):
             'activity': (str,),  # noqa: E501
             'steps_completed': (int,),  # noqa: E501
             'steps_total': (int,),  # noqa: E501
-            'worker': (AssignedWorker,),  # noqa: E501
+            'worker': (TaskWorker,),  # noqa: E501
             'previous_status': (TaskStatus,),  # noqa: E501
         }
 
@@ -170,7 +170,7 @@ class EventTaskUpdate(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            worker (AssignedWorker): [optional]  # noqa: E501
+            worker (TaskWorker): [optional]  # noqa: E501
             previous_status (TaskStatus): [optional]  # noqa: E501
         """
 
@@ -271,7 +271,7 @@ class EventTaskUpdate(ModelNormal):
                                 Animal class but this time we won't travel
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
-            worker (AssignedWorker): [optional]  # noqa: E501
+            worker (TaskWorker): [optional]  # noqa: E501
             previous_status (TaskStatus): [optional]  # noqa: E501
         """
 

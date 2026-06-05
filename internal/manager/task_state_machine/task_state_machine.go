@@ -152,9 +152,10 @@ func (sm *StateMachine) taskStatusChangeOnly(
 				AnErr("cause", err).
 				Msg("task state machine: could not fetch worker assigned to task")
 		} else if worker != nil {
-			taskUpdate.Worker = &api.AssignedWorker{
-				Name: worker.Name,
-				Uuid: worker.UUID,
+			taskUpdate.Worker = &api.TaskWorker{
+				Id:      worker.UUID,
+				Name:    worker.Name,
+				Address: worker.Address,
 			}
 		}
 	}
