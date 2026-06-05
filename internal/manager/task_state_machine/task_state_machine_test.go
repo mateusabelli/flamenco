@@ -484,9 +484,10 @@ func TestTaskAssignedToWorker(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	worker := persistence.Worker{
-		ID:   47,
-		UUID: "cec0ecb2-5d22-4afe-b836-b20092c5909d",
-		Name: "werkertje",
+		ID:      47,
+		UUID:    "cec0ecb2-5d22-4afe-b836-b20092c5909d",
+		Name:    "werkertje",
+		Address: "fe80::5054:ff:fede:1234",
 	}
 
 	// T: queued > active  --> J: queued > active
@@ -509,9 +510,10 @@ func TestTaskAssignedToWorker(t *testing.T) {
 		Status:         api.TaskStatusActive,
 		StepsCompleted: int(task.StepsCompleted),
 		StepsTotal:     int(task.StepsTotal),
-		Worker: &api.AssignedWorker{
-			Name: worker.Name,
-			Uuid: worker.UUID,
+		Worker: &api.TaskWorker{
+			Id:      worker.UUID,
+			Name:    worker.Name,
+			Address: worker.Address,
 		},
 	}
 	mocks.broadcaster.EXPECT().BroadcastTaskUpdate(expectUpdate)

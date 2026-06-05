@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import * as API from '@/manager-api';
 import { getAPIClient } from '@/api-client';
 import { useJobs } from '@/stores/jobs';
+import { mergeWorkerField } from '@/utils/socketUpdateMerge';
 
 const jobsAPI = new API.JobsApi(getAPIClient());
 
@@ -50,8 +51,14 @@ export const useTasks = defineStore('tasks', {
       // Refuse to handle task update of another task.
       if (this.activeTask.id != taskUpdate.id) return;
 
-      for (let field in taskUpdate) {
-        this.activeTask[field] = taskUpdate[field];
+      for (const field of Object.keys(taskUpdate)) {
+        const value = taskUpdate[field];
+        if (value === undefined) continue;
+        if (field === 'worker') {
+          this.activeTask.worker = mergeWorkerField(this.activeTask.worker, value);
+        } else {
+          this.activeTask[field] = value;
+        }
       }
     },
     setSelectedTasks(tasks) {

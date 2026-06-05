@@ -141,12 +141,6 @@ type AssignedTask struct {
 	Uuid           string     `json:"uuid"`
 }
 
-// AssignedWorker defines model for AssignedWorker.
-type AssignedWorker struct {
-	Name string `json:"name"`
-	Uuid string `json:"uuid"`
-}
-
 // AvailableJobSetting Single setting of a Job types.
 type AvailableJobSetting struct {
 	// Choices When given, limit the valid values to these choices. Only usable with string type.
@@ -330,8 +324,10 @@ type EventTaskUpdate struct {
 	StepsTotal     int         `json:"steps_total"`
 
 	// Updated Timestamp of last update
-	Updated time.Time       `json:"updated"`
-	Worker  *AssignedWorker `json:"worker,omitempty"`
+	Updated time.Time `json:"updated"`
+
+	// Worker Worker reference, as used in Task objects.
+	Worker *TaskWorker `json:"worker,omitempty"`
 }
 
 // EventWorkerTagUpdate Worker Tag, sent over SocketIO/MQTT when it changes.
