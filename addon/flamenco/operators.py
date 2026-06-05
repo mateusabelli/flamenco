@@ -441,6 +441,9 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             self._use_blendfile_directly(context, blendfile)
             return True
 
+        # Assume that the blendfile location on the farm is unknown.
+        self.blendfile_on_farm = None
+
         if manager.shared_storage.shaman_enabled:
             # Pack to the Shaman server.
             self.log.info("Copying BAT pack to Shaman storage")
@@ -453,10 +456,6 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
                 ignore_globs=prefs.ignore_globs(),
             )
             batpacker.start()
-
-            # When packing via Shaman, the Shaman server determines the final
-            # location of the blend file, and so it's not known yet.
-            self.blendfile_on_farm = None
         else:
             # Pack to the filesystem.
             unique_dir = "%s-%s" % (
@@ -473,13 +472,6 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
                 ignore_globs=prefs.ignore_globs(),
             )
             batpacker.start()
-
-            # When packing to the filesystem, the final path of the file on the
-            # farm is known immediately.
-            source_file_info = batpacker.source_file_info()
-            abspath_on_farm = pack_target_dir / source_file_info.relpath_in_pack
-            self.blendfile_on_farm = PurePosixPath(abspath_on_farm.as_posix())
-            self.log.info("    %s", abspath_on_farm)
 
         self.bat_v2_packer = batpacker
 
@@ -501,8 +493,9 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             return self._quit(context)
 
         if self.bat_v2_packer is not None:
-            # BAT v2 pack is done.
-            self.blendfile_on_farm = self.bat_v2_packer.blendfile_location_in_pack()
+            # BAT v2 pack is done, so now the location on the farm should be known.
+            abspath_on_farm = self.bat_v2_packer.blendfile_location_abspath()
+            self.blendfile_on_farm = PurePosixPath(abspath_on_farm.as_posix())
 
         self._submit_job(context)
         return self._quit(context)

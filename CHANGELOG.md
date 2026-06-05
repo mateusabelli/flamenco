@@ -14,6 +14,16 @@ bugs in actually-released versions.
     exclude any file that matches a pattern in this list. For example: '*.abc *.vdb' to skip copying
     all Alembic and OpenVDB files.
 
+## 3.9.2 - released 2026-06-05
+
+- Fix issue submitting files via Shaman when running on Windows.
+- Fix issue submitting files without Shaman ([#104493](https://projects.blender.org/studio/flamenco/issues/104493)).
+- Fix issue in the web frontend where the worker assigned to a task was not shown correctly ([#104477](https://projects.blender.org/studio/flamenco/issues/104477)).
+- Add-on: upgrade BAT to 2.1.0.
+- Upgrade Go to 1.26.3 and fix these vulnerabilities:
+  - https://pkg.go.dev/vuln/GO-2026-4971
+  - https://pkg.go.dev/vuln/GO-2026-5031
+  - https://pkg.go.dev/vuln/GO-2026-5032
 
 ## 3.9.1 - released 2026-05-08
 
