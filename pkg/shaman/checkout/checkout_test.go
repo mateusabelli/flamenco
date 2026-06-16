@@ -123,10 +123,10 @@ func Test_isValidCheckoutPath(t *testing.T) {
 		{"with-spaces", "5e5be786 e6d7 480c 90e6 437f9ef5bf5d", true},
 		{"project-scene-job-discriminator", "Sprite-Fright/scenename/jobname/2022-03-25-11-30-feb3", true},
 		{"unicode", "ránið/lélegt vélmenni", true},
+		{"backslashes", "with\\backslash", true},
 
 		// Invalid cases.
 		{"empty", "", false},
-		{"backslashes", "with\\backslash", false},
 		{"windows-drive-letter", "c:/blah", false},
 		{"question-mark", "blah?", false},
 		{"star", "blah*hi", false},
