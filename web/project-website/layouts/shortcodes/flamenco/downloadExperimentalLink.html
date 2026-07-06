@@ -1,6 +1,6 @@
 {{- $os := .Get "os" | default "linux" -}}
 {{- $arch := .Get "arch" | default "amd64" -}}
 {{- $extension := .Get "ext" | default "tar.gz" -}}
-{{- $filename := printf "flamenco-%s-%s-%s.%s" $.Site.Data.flamenco.latestExperimentalVersion $os $arch $extension -}}
+{{- $filename := printf "flamenco-%s-%s-%s.%s" hugo.Data.flamenco.latestExperimentalVersion $os $arch $extension -}}
 <a class="flamenco-download-link" href="/downloads/{{ $filename }}">{{ $filename }}</a>
 {{- "" -}}
