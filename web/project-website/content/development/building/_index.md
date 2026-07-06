@@ -5,7 +5,7 @@ weight: 10
 
 For the steps towards your first build, see [Getting Started][start].
 
-[start]: {{< relref "../getting-started ">}}
+[start]: {{< relref "../getting-started" >}}
 
 ## Building with Magefile
 
