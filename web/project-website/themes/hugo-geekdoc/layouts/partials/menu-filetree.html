@@ -71,11 +71,11 @@
                       {{- printf " is-active" }}
                     {{- end }}"
                   >
-                    {{ partial "utils/title-toc" . }}
+                    {{ partial "utils/title" . }}
                   </a>
                 </span>
               {{ else }}
-                <span class="flex">{{ partial "utils/title-toc" . }}</span>
+                <span class="flex">{{ partial "utils/title" . }}</span>
               {{ end }}
               {{ if $doCollapse }}
                 <svg class="gdoc-icon toggle gdoc_keyboard_arrow_left">
