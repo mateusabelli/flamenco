@@ -12,6 +12,8 @@ import (
 
 	goose "github.com/pressly/goose/v3"
 	"github.com/rs/zerolog/log"
+
+	_ "projects.blender.org/studio/flamenco/internal/manager/persistence/migrations"
 	"projects.blender.org/studio/flamenco/pkg/website"
 )
 

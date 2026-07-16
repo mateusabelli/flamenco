@@ -210,6 +210,13 @@ class ShamanFileTransfer:
         assert self._source_file_relpath_in_pack is not None
         return self._checkout_path_final / self._source_file_relpath_in_pack
 
+    @property
+    def shaman_checkout_path(self) -> PurePosixPath | None:
+        """The path used by Shaman for the checkout.
+
+        This is None until the checkout has actually been performed."""
+        return self._checkout_path_final
+
     def blendfile_location_abspath(self) -> Path:
         return Path(SHAMAN_JOBS_VARIABLE) / self.blendfile_location_in_pack()
 
@@ -515,7 +522,7 @@ class ShamanFileTransfer:
             return
 
         log.info("Shaman created checkout at %s", result.checkout_path)
-        self._checkout_path_final = result.checkout_path
+        self._checkout_path_final = PurePosixPath(result.checkout_path)
 
     def _send_spec_to_shaman(
         self,

@@ -13,6 +13,10 @@ bugs in actually-released versions.
   - Exclusion Filter: Space-separated list of file glob patterns. When sending files to Flamenco,
     exclude any file that matches a pattern in this list. For example: '*.abc *.vdb' to skip copying
     all Alembic and OpenVDB files.
+- Fix issue where Shaman-submitted jobs did not properly record all necessary info
+  ([#104501](https://projects.blender.org/studio/flamenco/issues/104501)); deleting the job from
+  Flamenco would not delete the job files themselves. This is now fixed for new jobs, and
+  already-existing jobs will be updated so that they are fixed too.
 
 ## 3.9.2 - released 2026-06-05
 

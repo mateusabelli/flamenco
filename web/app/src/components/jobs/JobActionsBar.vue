@@ -133,8 +133,8 @@ export default {
       ]).then((results) => {
         const [jobDeletionInfo, managerConfig] = results.map((result) => result.value);
 
-        // If either have Shaman, render the message relevant to an enabled Shaman environment
-        this.shamanEnv = jobDeletionInfo.shaman_checkout || managerConfig.shamanEnabled;
+        // If both have Shaman, render the message relevant to an enabled Shaman environment
+        this.shamanEnv = jobDeletionInfo.shaman_checkout && managerConfig.shamanEnabled;
       });
 
       this.showDeleteJobPopup = true;

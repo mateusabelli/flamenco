@@ -493,9 +493,22 @@ class FLAMENCO_OT_submit_job(FlamencoOpMixin, bpy.types.Operator):
             return self._quit(context)
 
         if self.bat_v2_packer is not None:
+            from flamenco.bat_v2.pack_shaman import ShamanFileTransfer
+
             # BAT v2 pack is done, so now the location on the farm should be known.
             abspath_on_farm = self.bat_v2_packer.blendfile_location_abspath()
             self.blendfile_on_farm = PurePosixPath(abspath_on_farm.as_posix())
+
+            if isinstance(self.bat_v2_packer.file_transfer, ShamanFileTransfer):
+                # Since Shaman was used for the transfer, Flamenco needs to know the path that the
+                # Shaman server chose for the check-out.
+                shaman_transfer = self.bat_v2_packer.file_transfer
+                checkout_path = shaman_transfer.shaman_checkout_path
+                assert checkout_path is not None, (
+                    "succesful checkout should have a checkout path"
+                )
+                assert isinstance(checkout_path, PurePath)
+                self.actual_shaman_checkout_path = checkout_path
 
         self._submit_job(context)
         return self._quit(context)
