@@ -2,7 +2,7 @@ module projects.blender.org/studio/flamenco
 
 go 1.26
 
-toolchain go1.26.3
+toolchain go1.26.4
 
 require (
 	github.com/adrg/xdg v0.4.0

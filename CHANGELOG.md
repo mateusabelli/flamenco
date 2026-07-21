@@ -18,9 +18,12 @@ bugs in actually-released versions.
   Flamenco would not delete the job files themselves. This is now fixed for new jobs, and
   already-existing jobs will be updated so that they are fixed too.
 - When Flamenco Manager starts up, any pending job deletions are delayed by 30 seconds, prioritizing start-up performance.
-- Upgrade dependencies to fix these vulnerabilities:
-    - https://pkg.go.dev/vuln/GO-2026-5066
+- Upgrade Go & some dependencies to fix these vulnerabilities:
+    - https://pkg.go.dev/vuln/GO-2026-5037
+    - https://pkg.go.dev/vuln/GO-2026-5038
+    - https://pkg.go.dev/vuln/GO-2026-5039
     - https://pkg.go.dev/vuln/GO-2026-5062
+    - https://pkg.go.dev/vuln/GO-2026-5066
 
 ## 3.9.2 - released 2026-06-05
 
