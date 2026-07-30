@@ -14,6 +14,7 @@ bugs in actually-released versions.
     exclude any file that matches a pattern in this list. For example: '*.abc *.vdb' to skip copying
     all Alembic and OpenVDB files.
 - When Flamenco Manager starts up, any pending job deletions are delayed by 30 seconds, prioritizing start-up performance.
+- Add-on: fixed issue where the post-load-file and post-load-factory-file handlers were still registered even after disabling the Flamenco add-on.
 
 
 ## 3.9.3 - released 2026-07-23

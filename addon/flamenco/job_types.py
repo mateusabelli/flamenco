@@ -242,6 +242,17 @@ def register() -> None:
 
 
 def unregister() -> None:
+    # Remove handlers.
+    app_h = bpy.app.handlers
+    handlers_to_remove = (
+        (app_h.load_factory_startup_post, restore_available_job_types),
+        (app_h.load_post, restore_available_job_types),
+    )
+    for handlers, function in handlers_to_remove:
+        if function in handlers:
+            handlers.remove(function)
+
+    # Remove properties.
     to_del = (
         (bpy.types.Scene, "flamenco_job_type"),
         (bpy.types.Scene, "flamenco_job_settings"),
