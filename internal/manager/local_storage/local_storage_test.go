@@ -43,8 +43,16 @@ func TestForJob(t *testing.T) {
 	assert.Truef(t, hasSuffix, "expected %s to have suffix %s", jobPath, expectedSuffix)
 }
 
+// testStorage returns a StorageInfo rooted in a directory that is unique to
+// this test, so that tests that touch the filesystem cannot influence each
+// other. The root directory itself is not created, which allows tests to assert
+// on its (non-)existence. Its parent is cleaned up by the testing framework.
+func testStorage(t *testing.T) StorageInfo {
+	return NewNextToExe(filepath.Join(t.TempDir(), "task-logs"))
+}
+
 func TestErase(t *testing.T) {
-	si := NewNextToExe("task-logs")
+	si := testStorage(t)
 	assert.NoDirExists(t, si.rootPath, "creating a StorageInfo should not create the directory")
 
 	jobPath := si.ForJob("08e126ef-d773-468b-8bab-19a8213cf2ff")
@@ -58,7 +66,7 @@ func TestErase(t *testing.T) {
 }
 
 func TestRemoveJobStorage(t *testing.T) {
-	si := NewNextToExe("task-logs")
+	si := testStorage(t)
 
 	jobUUID := "08e126ef-d773-468b-8bab-19a8213cf2ff"
 	jobPath := si.ForJob(jobUUID)
@@ -84,7 +92,7 @@ func TestRemoveJobStorage(t *testing.T) {
 }
 
 func TestRemoveJobStorageWithoutJobUUID(t *testing.T) {
-	si := NewNextToExe("task-logs")
+	si := testStorage(t)
 
 	jobPath := si.ForJob("")
 	assert.NoDirExists(t, jobPath, "getting a path should not create it")
