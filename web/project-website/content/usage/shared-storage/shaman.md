@@ -137,7 +137,7 @@ unix extensions = no
 allow insecure wide links = no
 ```
 
-You may try adding these parameters to your share sub-section only insteadm,
+You may try adding these parameters to your share sub-section only instead,
 if you need a more restricted configuration.
 
 ```
