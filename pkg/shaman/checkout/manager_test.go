@@ -42,14 +42,28 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/shaman/testsupport"
 )
 
-func createTestManager() (*Manager, func()) {
+// TestMain configures the global logger. This is done here, and not in
+// createTestManager(), because writing to the global logger while another test
+// still has background goroutines logging is a data race.
+func TestMain(m *testing.M) {
 	output := zerolog.ConsoleWriter{Out: colorable.NewColorableStdout(), TimeFormat: time.RFC3339}
 	log.Logger = log.Output(output)
 
+	os.Exit(m.Run())
+}
+
+func createTestManager() (*Manager, func()) {
 	conf, confCleanup := config.CreateTestConfig()
 	fileStore := filestore.New(conf)
 	manager := NewManager(conf, fileStore)
-	return manager, confCleanup
+
+	cleanup := func() {
+		// Wait for the background touch() calls to finish before removing the
+		// files they are touching.
+		manager.Close()
+		confCleanup()
+	}
+	return manager, cleanup
 }
 
 func TestSymlinkToCheckout(t *testing.T) {

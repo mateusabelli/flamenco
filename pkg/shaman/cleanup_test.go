@@ -43,10 +43,17 @@ import (
 	"projects.blender.org/studio/flamenco/pkg/shaman/testsupport"
 )
 
-func createTestShaman() (*Server, func()) {
+// TestMain configures the global logger. This is done here, and not in
+// createTestShaman(), because writing to the global logger while another test
+// still has background goroutines logging is a data race.
+func TestMain(m *testing.M) {
 	output := zerolog.ConsoleWriter{Out: colorable.NewColorableStdout(), TimeFormat: time.RFC3339}
 	log.Logger = log.Output(output)
 
+	os.Exit(m.Run())
+}
+
+func createTestShaman() (*Server, func()) {
 	conf, confCleanup := config.CreateTestConfig()
 	shaman := NewServer(conf, jwtauth.AlwaysDeny{})
 	return shaman, confCleanup
