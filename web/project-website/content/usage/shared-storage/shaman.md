@@ -58,6 +58,9 @@ computers running Flamenco Manager and Workers.
 
 ### Windows
 
+Shaman is not universally supported on Windows, as symlink behaviour on shared
+network drives is complex.
+
 The Shaman storage system uses _symbolic links_. On Windows the creation of
 symbolic links requires a change in security policy. This can be done as
 follows:
@@ -96,6 +99,56 @@ For more info see [the Microsoft documentation][secpol].
 
 {{< /tab >}}
 {{< /tabs >}}
+
+#### Following Shaman symlinks over a shared network drive
+
+By default, Windows **does not evaluate remote-to-remote (R2R) symbolic
+links** (i.e. reparse points read over a shared network drive, also known as
+SMB). Without that evaluation, Workers can see paths under `jobs/` that look
+like files but fail to open; Blender will report
+`ERROR File format is not supported`.
+
+If Flamenco Manager runs on Windows and has the shared storage on a network
+share, run this command in a Command Prompt (run as Administrator) on every
+Windows worker:
+
+```
+fsutil behavior set SymlinkEvaluation R2R:1
+```
+
+A Worker that also hosts the share locally may not need this for its own
+local access, but enabling R2R on all Windows Workers is the safer default.
+Behaviour can differ by Windows edition; this has only been verified on
+Windows 11 Pro.
+
+This is a machine-wide Windows setting and a security trade-off: it relaxes a
+symlink-attack mitigation. See the
+[Create Symbolic Links][symlink-policy] policy documentation for background,
+[symbolic link evaluation][symlink-eval] for the `fsutil` controls, and the
+discussion in [studio/flamenco#104466][issue-104466].
+
+[symlink-eval]: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-behavior
+[symlink-policy]: https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/create-symbolic-links
+[issue-104466]: https://projects.blender.org/studio/flamenco/issues/104466
+
+#### Recommended setups with Windows Workers
+
+| Manager + shared storage | Windows Workers? | What to configure |
+| --- | --- | --- |
+| Windows Manager, shared storage on a Windows network share | Yes, but not universally guaranteed | Create Symbolic Links permission on the Manager host, plus `R2R:1` on each Windows Worker |
+| Linux Manager, shared storage on Linux/Samba | Yes | Two-way [storage variables]({{< ref "/usage/variables/multi-platform" >}}). Samba follows symlinks on the server, so Workers usually see normal files and do not need `R2R` |
+| Mixed Windows and Linux Workers | Use Linux Manager with shared storage on Linux/Samba | A Windows Manager creates Windows reparse points, which Linux Workers cannot follow. A Linux Manager creates Unix symlinks; with Samba following them on the server, both Windows and Linux Workers typically see ordinary files |
+
+Blender Studio does not run Flamenco on Windows day-to-day, so community
+setups are how support improves. If something fails, please
+[file a report][new-issue] or ask in
+[the Flamenco channel on Blender Chat][flamenco-chat].
+Other known configurations include putting `shared_storage_path` on
+local NTFS for a single-machine test, or running the Manager on Linux. Shaman
+remains disabled by default on Windows.
+
+[flamenco-chat]: https://chat.blender.org/#/room/#flamenco:blender.org
+[new-issue]: https://projects.blender.org/studio/flamenco/issues/new/choose
 
 ### Linux
 
@@ -157,9 +210,11 @@ The above information was obtained from [UNIX Stack Exchange](https://unix.stack
 
 ## Enabling or Disabling Shaman
 
-Shaman is enabled by default on Linux and macOS. Since on Windows symbolic links
-are not that commonly used, and require some additional system permission (see
-[Windows](#windows)), Shaman is disabled by default there.
+Shaman is enabled by default on Linux and macOS. Since on Windows symbolic
+links are not that commonly used, require extra system permissions (see
+[Windows](#windows)), and clients on a shared network drive often need
+[additional settings](#following-shaman-symlinks-over-a-shared-network-drive),
+Shaman is disabled by default there.
 
 To enable Shaman, edit `flamenco-manager.yaml` and set `shaman.enabled: true`
 like this:
@@ -170,6 +225,9 @@ shaman:
 ```
 
 Similarly, it can be disabled by setting it to `false`.
+
+This is also accessible in the web interface. Click the settings cog in the
+top right, toggle `Enable Shaman Storage`, and click Save.
 
 {{< hint type=warning >}}
 
