@@ -4,6 +4,8 @@ package job_compilers
 
 import (
 	"errors"
+	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -141,8 +143,43 @@ func (at *AuthoredTask) AddCommand(ac *AuthoredCommand) {
 	at.Commands = append(at.Commands, *ac)
 }
 
+type CircularTaskDependencyError struct {
+	taskName          string
+	newDependencyName string
+}
+
+func (e CircularTaskDependencyError) Error() string {
+	return fmt.Sprintf("cannot make task %q depend on %q, as %q already depends on %q",
+		e.taskName, e.newDependencyName,
+		e.newDependencyName, e.taskName,
+	)
+}
+
 func (at *AuthoredTask) AddDependency(dep *AuthoredTask) error {
-	// TODO: check for dependency cycles, return error if there.
+	// Ignore if the task already has that dependency.
+	if slices.Contains(at.Dependencies, dep) {
+		return nil
+	}
+
+	// Breadth first search circular dependency check.
+	nodes := []*AuthoredTask{dep}
+
+	for len(nodes) > 0 {
+		next := []*AuthoredTask{}
+
+		for _, node := range nodes {
+			if node == at {
+				return CircularTaskDependencyError{at.Name, dep.Name}
+			}
+
+			// Add the dependencies as next nodes to check.
+			next = append(next, node.Dependencies...)
+		}
+
+		// The next nodes to check.
+		nodes = next
+	}
+
 	at.Dependencies = append(at.Dependencies, dep)
 	return nil
 }
