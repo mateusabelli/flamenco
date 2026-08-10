@@ -36,7 +36,7 @@ Both the 'Shut Down' and 'Restart' actions stop the Worker process.
 Shutting down the worker will make it exit successfully, with status code `0`.
 
 Restarting the worker is only possible if it was started or configured with a
-'restart exit code'. This can be done by using the `-restart-exit-status 47`
+'restart exit code'. This can be done by using the `-restart-exit-code 47`
 commandline option, or by settings this code in the [worker config file][wconfig].
 Requesting a worker restart will make it exit with the configured status code.
 
