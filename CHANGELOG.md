@@ -15,7 +15,9 @@ bugs in actually-released versions.
     all Alembic and OpenVDB files.
 - When Flamenco Manager starts up, any pending job deletions are delayed by 30 seconds, prioritizing start-up performance.
 - Add-on: fixed issue where the post-load-file and post-load-factory-file handlers were still registered even after disabling the Flamenco add-on.
-
+- Upgrade Go to 1.26.5 and upgrade some dependencies to fix these vulnerabilities:
+  - https://pkg.go.dev/vuln/GO-2026-5856
+  - https://pkg.go.dev/vuln/GO-2026-5970
 
 ## 3.9.3 - released 2026-07-23
 
