@@ -15,6 +15,13 @@ body:
         * Include your system information below.
         * If there are multiple bugs, make multiple bug reports.
 
+        ### AI Policy
+
+        Blender's [AI Contributions Policy](https://developer.blender.org/docs/handbook/contributing/ai_contributions/)
+        also applies to this project.
+
+        > [!IMPORTANT]
+        > Bug reports should always be **written by a human**. Never use AI to generate these.
   - type: textarea
     id: body
     attributes:

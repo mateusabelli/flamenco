@@ -1,0 +1,24 @@
+name: Pull Request
+about: Contribute code to Blender Asset Tracer
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Instructions
+
+        Blender's guides & policies also apply to this project:
+
+        - [Contributing code](https://developer.blender.org/docs/handbook/contributing/),
+        - Effective [code review](https://developer.blender.org/docs/handbook/contributing/pull_requests/), and
+        - [AI assisted contributions](https://developer.blender.org/docs/handbook/contributing/ai_contributions/).
+
+        By submitting code here, you agree that the code is (compatible with) GNU GPL v2 or later.
+
+        > [!IMPORTANT]
+        > Pull Request descriptions should always be **written by a human**. Never use AI to generate these.
+
+  - type: textarea
+    id: body
+    attributes:
+      label: "Description"
+      hide_label: true
