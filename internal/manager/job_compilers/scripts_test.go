@@ -31,6 +31,27 @@ func TestLoadScriptsFrom_on_disk_js(t *testing.T) {
 	assert.Equal(t, expectKeys, keys(compilers))
 }
 
+func TestLoadScriptsFrom_on_disk_symlink(t *testing.T) {
+	// Symlink a script file to a supported filename.
+	targetName := "scripts-for-unittest/symlink_me.js"
+	_ = os.Remove(targetName) // Remove in case a previous run didn't clean up.
+	require.NoError(t, os.Symlink("symlink_me.js.txt", targetName))
+	t.Cleanup(func() {
+		require.NoError(t, os.Remove(targetName))
+	})
+
+	scriptsFS := os.DirFS("scripts-for-unittest")
+	compilers, err := loadScriptsFrom(scriptsFS)
+
+	require.NoError(t, err)
+	expectKeys := map[string]bool{
+		"echo-and-sleep":        true,
+		"simple-blender-render": true,
+		"symlink-me":            true,
+	}
+	assert.Equal(t, expectKeys, keys(compilers))
+}
+
 func TestLoadScriptsFrom_embedded(t *testing.T) {
 	initEmbeddedFS()
 	compilers, err := loadScriptsFrom(embeddedScriptsFS)

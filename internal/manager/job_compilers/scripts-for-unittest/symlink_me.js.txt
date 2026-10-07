@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// This file is stored as symlink_me.js.txt so that it's skipped by default.
+// Unit tests can symlink this to symlink_me.js to make it visible to the job compiler.
+
+const JOB_TYPE = {
+    label: "Symlink Me",
+    settings: []
+};
+
+
+function compileJob(job) {
+    const echoTask = author.Task("echo", "misc");
+    echoTask.addCommand(author.Command("echo", {message: "ok"}));
+    job.addTask(echoTask);
+}

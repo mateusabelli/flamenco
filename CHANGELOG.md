@@ -18,6 +18,7 @@ bugs in actually-released versions.
 - Add-on: fixed issue where the post-load-file and post-load-factory-file handlers were still registered even after disabling the Flamenco add-on.
 - Web interface: add a 'Wake Lock' slider, which prevents the screensaver from enabling ([#104497](https://projects.blender.org/studio/flamenco/pulls/104497)).
 - Circular dependencies between tasks are now detected and rejected ([#104499](https://projects.blender.org/studio/flamenco/pulls/104499)). Previously these would be silently accepted, making the job impossible to complete.
+- Manager: support symlinking job script files ([#104506](https://projects.blender.org/studio/flamenco/issues/104506)).
 - Upgrade Go to 1.26.5 and upgrade some dependencies to fix these vulnerabilities:
   - https://pkg.go.dev/vuln/GO-2026-5856
   - https://pkg.go.dev/vuln/GO-2026-5970

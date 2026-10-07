@@ -59,12 +59,15 @@ func loadScriptsFrom(filesystem fs.FS) (map[string]Compiler, error) {
 	compilers := map[string]Compiler{}
 
 	for _, dirEntry := range dirEntries {
-		if !dirEntry.Type().IsRegular() {
+		if dirEntry.Type().IsDir() {
 			continue
 		}
 
 		filename := dirEntry.Name()
 		if !strings.HasSuffix(filename, ".js") {
+			log.Debug().
+				Str("script", dirEntry.Name()).
+				Msg("job compiler: no .js suffix, so skipping file")
 			continue
 		}
 
