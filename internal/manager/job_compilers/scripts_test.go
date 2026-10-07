@@ -68,7 +68,7 @@ func BenchmarkLoadScripts_fromEmbedded(b *testing.B) {
 	zerolog.SetGlobalLevel(zerolog.Disabled)
 	initEmbeddedFS()
 
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		compilers, err := loadScriptsFrom(embeddedScriptsFS)
 		require.NoError(b, err)
 		assert.NotEmpty(b, compilers)
@@ -79,7 +79,7 @@ func BenchmarkLoadScripts_fromDisk(b *testing.B) {
 	zerolog.SetGlobalLevel(zerolog.Disabled)
 
 	onDiskFS := os.DirFS("scripts-for-unittest")
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		compilers, err := loadScriptsFrom(onDiskFS)
 		require.NoError(b, err)
 		assert.NotEmpty(b, compilers)
@@ -88,7 +88,7 @@ func BenchmarkLoadScripts_fromDisk(b *testing.B) {
 
 func BenchmarkLoadScripts(b *testing.B) {
 	zerolog.SetGlobalLevel(zerolog.Disabled)
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		loadScripts()
 	}
 }
