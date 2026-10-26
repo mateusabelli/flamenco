@@ -22,6 +22,12 @@ bugs in actually-released versions.
 - Upgrade Go to 1.26.5 and upgrade some dependencies to fix these vulnerabilities:
   - https://pkg.go.dev/vuln/GO-2026-5856
   - https://pkg.go.dev/vuln/GO-2026-5970
+  - https://pkg.go.dev/vuln/GO-2026-6112
+  - https://pkg.go.dev/vuln/GO-2026-6275
+  - https://pkg.go.dev/vuln/GO-2026-6293
+  - https://pkg.go.dev/vuln/GO-2026-6603
+  - https://pkg.go.dev/vuln/GO-2026-6610
+  - https://pkg.go.dev/vuln/GO-2026-6611
 
 ## 3.9.3 - released 2026-07-23
 
