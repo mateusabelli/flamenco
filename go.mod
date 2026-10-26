@@ -1,8 +1,8 @@
 module projects.blender.org/studio/flamenco
 
-go 1.26.0
+go 1.27
 
-toolchain go1.26.5
+toolchain go1.27.3
 
 require (
 	github.com/adrg/xdg v0.4.0
