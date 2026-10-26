@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"projects.blender.org/studio/flamenco/internal/worker/persistence/sqlc"
 	"projects.blender.org/studio/flamenco/pkg/api"
 )
 
@@ -68,12 +67,10 @@ func TestUpstreamBufferQueue(t *testing.T) {
 	require.NoError(t, err)
 	{
 		expect := TaskUpdate{
-			TaskUpdate: sqlc.TaskUpdate{
-				ID:        1,
-				CreatedAt: fixedNow,
-				TaskID:    taskUUID,
-				Payload:   []byte(`{"activity":"Tešt active","taskStatus":"active"}`),
-			},
+			ID:        1,
+			CreatedAt: fixedNow,
+			TaskID:    taskUUID,
+			Payload:   []byte(`{"activity":"Tešt active","taskStatus":"active"}`),
 		}
 		assert.Equal(t, &expect, first)
 	}
@@ -88,12 +85,10 @@ func TestUpstreamBufferQueue(t *testing.T) {
 	require.NoError(t, err)
 	{
 		expect := TaskUpdate{
-			TaskUpdate: sqlc.TaskUpdate{
-				ID:        2,
-				CreatedAt: fixedNow,
-				TaskID:    taskUUID,
-				Payload:   []byte(`{"taskStatus":"completed"}`),
-			},
+			ID:        2,
+			CreatedAt: fixedNow,
+			TaskID:    taskUUID,
+			Payload:   []byte(`{"taskStatus":"completed"}`),
 		}
 		assert.Equal(t, &expect, second)
 	}

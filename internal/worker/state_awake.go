@@ -77,8 +77,7 @@ func (w *Worker) runStateAwake(ctx context.Context) {
 		// to the Manager. This code only needs to fetch a task and run it.
 		err := w.runTask(ctx, *task)
 		if err != nil {
-			var abortError taskRunAborted
-			if errors.As(err, &abortError) {
+			if _, ok := errors.AsType[taskRunAborted](err); ok {
 				log.Warn().
 					Str("task", task.Uuid).
 					Str("reason", err.Error()).

@@ -338,10 +338,8 @@ func TestBlockingAfterFailure(t *testing.T) {
 	}
 
 	conf := config.Conf{
-		Base: config.Base{
-			TaskFailAfterSoftFailCount: 3,
-			BlocklistThreshold:         3,
-		},
+		TaskFailAfterSoftFailCount: 3,
+		BlocklistThreshold:         3,
 	}
 	mf.config.EXPECT().Get().Return(&conf).AnyTimes()
 

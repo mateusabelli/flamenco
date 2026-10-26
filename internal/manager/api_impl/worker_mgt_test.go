@@ -118,25 +118,21 @@ func TestFetchWorker(t *testing.T) {
 	err = mf.flamenco.FetchWorker(echo, workerUUID)
 	require.NoError(t, err)
 	assertResponseJSON(t, echo, http.StatusOK, api.Worker{
-		WorkerSummary: api.WorkerSummary{
-			Id:      workerUUID,
-			Name:    "дрон",
-			Version: "3.0",
-			Status:  api.WorkerStatusAwake,
-		},
+		Id:                 workerUUID,
+		Name:               "дрон",
+		Version:            "3.0",
+		Status:             api.WorkerStatusAwake,
 		IpAddress:          "fe80::5054:ff:fede:2ad7",
 		Platform:           "linux",
 		SupportedTaskTypes: []string{"blender", "ffmpeg", "file-management", "misc"},
 		Task: &api.WorkerTask{
-			TaskSummary: api.TaskSummary{
-				Id:     assignedTask.UUID,
-				Name:   assignedTask.Name,
-				Status: assignedTask.Status,
-				Worker: &api.TaskWorker{
-					Address: "fe80::5054:ff:fede:2ad7",
-					Id:      "e7632d62-c3b8-4af0-9e78-01752928952c",
-					Name:    "дрон",
-				},
+			Id:     assignedTask.UUID,
+			Name:   assignedTask.Name,
+			Status: assignedTask.Status,
+			Worker: &api.TaskWorker{
+				Address: "fe80::5054:ff:fede:2ad7",
+				Id:      "e7632d62-c3b8-4af0-9e78-01752928952c",
+				Name:    "дрон",
 			},
 			JobId: assignedJob.UUID,
 		},
@@ -157,13 +153,11 @@ func TestFetchWorker(t *testing.T) {
 	err = mf.flamenco.FetchWorker(echo, worker.UUID)
 	require.NoError(t, err)
 	assertResponseJSON(t, echo, http.StatusOK, api.Worker{
-		WorkerSummary: api.WorkerSummary{
-			Id:           workerUUID,
-			Name:         "дрон",
-			Version:      "3.0",
-			Status:       api.WorkerStatusAwake,
-			StatusChange: &api.WorkerStatusChangeRequest{Status: requestedStatus},
-		},
+		Id:                 workerUUID,
+		Name:               "дрон",
+		Version:            "3.0",
+		Status:             api.WorkerStatusAwake,
+		StatusChange:       &api.WorkerStatusChangeRequest{Status: requestedStatus},
 		IpAddress:          "fe80::5054:ff:fede:2ad7",
 		Platform:           "linux",
 		SupportedTaskTypes: []string{"blender", "ffmpeg", "file-management", "misc"},

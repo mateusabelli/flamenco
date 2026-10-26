@@ -442,9 +442,7 @@ func TestUpdateConfigurationFile(t *testing.T) {
 	// Test situation where manager name is updated
 	{
 		form := config.Conf{
-			Base: config.Base{
-				ManagerName: "abc",
-			},
+			ManagerName: "abc",
 		}
 
 		updatedConfig := doTest(form)
@@ -457,9 +455,7 @@ func TestUpdateConfigurationFile(t *testing.T) {
 	// Test situation where listen is updated
 	{
 		form := config.Conf{
-			Base: config.Base{
-				Listen: ":3000",
-			},
+			Listen: ":3000",
 		}
 
 		updatedConfig := doTest(form)
@@ -473,10 +469,8 @@ func TestUpdateConfigurationFile(t *testing.T) {
 	// Test situation where shaman enabled is updated
 	{
 		form := config.Conf{
-			Base: config.Base{
-				Shaman: shaman_config.Config{
-					Enabled: true,
-				},
+			Shaman: shaman_config.Config{
+				Enabled: true,
 			},
 		}
 
@@ -491,9 +485,7 @@ func TestUpdateConfigurationFile(t *testing.T) {
 	// Test situation where shaman enabled is omitted defaults to false
 	{
 		form := config.Conf{
-			Base: config.Base{
-				Shaman: shaman_config.Config{},
-			},
+			Shaman: shaman_config.Config{},
 		}
 
 		updatedConfig := doTest(form)

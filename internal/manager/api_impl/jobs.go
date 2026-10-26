@@ -755,11 +755,9 @@ func (f *Flamenco) lastRenderedInfoForJob(logger zerolog.Logger, jobUUID string)
 // find the job's worker tag.
 func jobDBtoAPI(ctx context.Context, persist PersistenceService, dbJob *persistence.Job) api.Job {
 	apiJob := api.Job{
-		SubmittedJob: api.SubmittedJob{
-			Name:     dbJob.Name,
-			Priority: int(dbJob.Priority),
-			Type:     dbJob.JobType,
-		},
+		Name:     dbJob.Name,
+		Priority: int(dbJob.Priority),
+		Type:     dbJob.JobType,
 
 		Id:       dbJob.UUID,
 		Created:  dbJob.CreatedAt,

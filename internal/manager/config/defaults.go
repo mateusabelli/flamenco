@@ -15,37 +15,35 @@ const DefaultBlenderArguments = "-b -y"
 
 // The default configuration, use DefaultConfig() to obtain a copy.
 var defaultConfig = Conf{
-	Base: Base{
-		Meta: ConfMeta{Version: latestConfigVersion},
+	Meta: ConfMeta{Version: latestConfigVersion},
 
-		ManagerName:             "Flamenco",
-		Listen:                  ":8080",
-		DatabaseDSN:             "flamenco-manager.sqlite",
-		DBIntegrityCheck:        duration.Duration(10 * time.Minute),
-		SSDPDiscovery:           true,
-		LocalManagerStoragePath: "./flamenco-manager-storage",
-		SharedStoragePath:       "", // Empty string means "first run", and should trigger the config setup assistant.
+	ManagerName:             "Flamenco",
+	Listen:                  ":8080",
+	DatabaseDSN:             "flamenco-manager.sqlite",
+	DBIntegrityCheck:        duration.Duration(10 * time.Minute),
+	SSDPDiscovery:           true,
+	LocalManagerStoragePath: "./flamenco-manager-storage",
+	SharedStoragePath:       "", // Empty string means "first run", and should trigger the config setup assistant.
 
-		Shaman: shaman_config.Config{
-			// Enable Shaman by default, except on Windows where symlinks are still tricky.
-			Enabled: runtime.GOOS != "windows",
-			GarbageCollect: shaman_config.GarbageCollect{
-				Period: duration.Duration(24 * time.Hour),
-				MaxAge: duration.Duration(31 * 24 * time.Hour),
-			},
+	Shaman: shaman_config.Config{
+		// Enable Shaman by default, except on Windows where symlinks are still tricky.
+		Enabled: runtime.GOOS != "windows",
+		GarbageCollect: shaman_config.GarbageCollect{
+			Period: duration.Duration(24 * time.Hour),
+			MaxAge: duration.Duration(31 * 24 * time.Hour),
 		},
+	},
 
-		TaskTimeout:   duration.Duration(10 * time.Minute),
-		WorkerTimeout: duration.Duration(1 * time.Minute),
+	TaskTimeout:   duration.Duration(10 * time.Minute),
+	WorkerTimeout: duration.Duration(1 * time.Minute),
 
-		BlocklistThreshold:         3,
-		TaskFailAfterSoftFailCount: 3,
+	BlocklistThreshold:         3,
+	TaskFailAfterSoftFailCount: 3,
 
-		MQTT: MQTTConfig{
-			Client: eventbus.MQTTClientConfig{
-				ClientID:    eventbus.MQTTDefaultClientID,
-				TopicPrefix: eventbus.MQTTDefaultTopicPrefix,
-			},
+	MQTT: MQTTConfig{
+		Client: eventbus.MQTTClientConfig{
+			ClientID:    eventbus.MQTTDefaultClientID,
+			TopicPrefix: eventbus.MQTTDefaultTopicPrefix,
 		},
 	},
 

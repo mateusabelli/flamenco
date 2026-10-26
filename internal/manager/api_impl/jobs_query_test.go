@@ -53,26 +53,22 @@ func TestFetchJobs(t *testing.T) {
 	expectedJobs := api.JobsQueryResult{
 		Jobs: []api.Job{
 			{
-				SubmittedJob: api.SubmittedJob{
-					Name:     "работа",
-					Type:     "test",
-					Priority: 50,
-					Settings: &api.JobSettings{
-						"result": "/render/frames/exploding.kittens",
-					},
-					Metadata: &api.JobMetadata{
-						"project": "/projects/exploding-kittens",
-					},
+				Name:     "работа",
+				Type:     "test",
+				Priority: 50,
+				Settings: &api.JobSettings{
+					"result": "/render/frames/exploding.kittens",
+				},
+				Metadata: &api.JobMetadata{
+					"project": "/projects/exploding-kittens",
 				},
 				Id:     "afc47568-bd9d-4368-8016-e91d945db36d",
 				Status: api.JobStatusActive,
 			},
 			{
-				SubmittedJob: api.SubmittedJob{
-					Name:     "уходить",
-					Type:     "test",
-					Priority: 75,
-				},
+				Name:              "уходить",
+				Type:              "test",
+				Priority:          75,
 				Id:                "d912ac69-de48-48ba-8028-35d82cb41451",
 				Status:            api.JobStatusCompleted,
 				DeleteRequestedAt: &deletionRequestedAt,
@@ -113,20 +109,18 @@ func TestFetchJob(t *testing.T) {
 	require.NoError(t, mf.flamenco.FetchJob(echoCtx, dbJob.UUID))
 
 	expectedJob := api.Job{
-		SubmittedJob: api.SubmittedJob{
-			Name:     "работа",
-			Type:     "test",
-			Priority: 50,
-			Settings: &api.JobSettings{
-				"result": "/render/frames/exploding.kittens",
-			},
-			Metadata: &api.JobMetadata{
-				"project": "/projects/exploding-kittens",
-			},
-			WorkerTag: new("d86e1b84-5ee2-4784-a178-65963eeb484b"),
+		Name:     "работа",
+		Type:     "test",
+		Priority: 50,
+		Settings: &api.JobSettings{
+			"result": "/render/frames/exploding.kittens",
 		},
-		Id:     "afc47568-bd9d-4368-8016-e91d945db36d",
-		Status: api.JobStatusActive,
+		Metadata: &api.JobMetadata{
+			"project": "/projects/exploding-kittens",
+		},
+		WorkerTag: new("d86e1b84-5ee2-4784-a178-65963eeb484b"),
+		Id:        "afc47568-bd9d-4368-8016-e91d945db36d",
+		Status:    api.JobStatusActive,
 	}
 
 	assertResponseJSON(t, echoCtx, http.StatusOK, expectedJob)

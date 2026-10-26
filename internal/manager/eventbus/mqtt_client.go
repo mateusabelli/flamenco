@@ -88,18 +88,16 @@ func NewMQTTForwarder(config MQTTClientConfig) *MQTTForwarder {
 		queue:       make(chan mqttQueuedMessage, mqttQueueSize),
 	}
 	client.config = autopaho.ClientConfig{
-		BrokerUrls:        []*url.URL{brokerURL},
-		ConnectUsername:   config.Username,
-		ConnectPassword:   []byte(config.Password),
-		KeepAlive:         keepAlive,
-		ConnectRetryDelay: connectRetryDelay,
-		OnConnectionUp:    client.onConnectionUp,
-		OnConnectError:    client.onConnectionError,
-		ClientConfig: paho.ClientConfig{
-			ClientID:           config.ClientID,
-			OnClientError:      client.onClientError,
-			OnServerDisconnect: client.onServerDisconnect,
-		},
+		BrokerUrls:         []*url.URL{brokerURL},
+		ConnectUsername:    config.Username,
+		ConnectPassword:    []byte(config.Password),
+		KeepAlive:          keepAlive,
+		ConnectRetryDelay:  connectRetryDelay,
+		OnConnectionUp:     client.onConnectionUp,
+		OnConnectError:     client.onConnectionError,
+		ClientID:           config.ClientID,
+		OnClientError:      client.onClientError,
+		OnServerDisconnect: client.onServerDisconnect,
 	}
 	return &client
 }
