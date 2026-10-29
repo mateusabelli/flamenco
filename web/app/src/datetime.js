@@ -28,6 +28,10 @@ export function relativeTime(timestamp, options) {
   if (!options) options = relativeTimeDefaultOptions;
 
   const now = DateTime.local();
+  // Present anything that's less than 10 seconds from "now" (in either direction) as "just now".
+  if (Math.abs(now.diff(parsedTimestamp).as('seconds')) < 10) {
+    return 'just now';
+  }
   const ageInDays = now.diff(parsedTimestamp).as('days');
   if (ageInDays > options.format) return parsedTimestamp.toLocaleString(options.format);
   return parsedTimestamp.toRelative({ style: 'narrow' });
